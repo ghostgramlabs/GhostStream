@@ -22,6 +22,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.Cookie
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.OutgoingContent
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
@@ -42,6 +43,8 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import io.ktor.utils.io.ByteWriteChannel
+import io.ktor.utils.io.writeFully
 import java.io.InputStream
 import java.io.File
 import java.io.FileInputStream
@@ -442,32 +445,52 @@ class KtorGhostStreamServer(
             val range = parseRange(request.header(HttpHeaders.Range), totalLength)
             val status = if (range != null) HttpStatusCode.PartialContent else HttpStatusCode.OK
             val lengthToSend = range?.let { (it.last - it.first + 1).coerceAtLeast(0) } ?: totalLength
-            applyResponseHeaders(
-                displayName = item.displayName,
-                totalLength = totalLength,
-                lengthToSend = lengthToSend,
-                range = range,
-                asAttachment = asAttachment,
-            )
+            val mimeType = playbackSource.mimeType ?: item.playbackDecision.browserMimeType ?: item.mimeType ?: "application/octet-stream"
+            val callerHost = remoteHost()
 
-            sessionManager.onTransferStarted(remoteHost(), activity, asAttachment)
+            sessionManager.onTransferStarted(callerHost, activity, asAttachment)
             try {
-                respondOutputStream(
-                    contentType = ContentType.parse(playbackSource.mimeType ?: item.playbackDecision.browserMimeType ?: item.mimeType ?: "application/octet-stream"),
-                    status = status,
-                ) {
-                    streamContent(
-                        inputFactory = { resolver.openInputStream(uri) },
-                        totalLength = totalLength,
-                        range = range,
-                        onChunk = { bytes ->
-                            sessionManager.onTransferProgress(this@streamOriginalUri.remoteHost(), bytes, activity)
-                        },
-                        output = this,
-                    )
-                }
+                respond(object : OutgoingContent.WriteChannelContent() {
+                    override val status: HttpStatusCode = if (range != null) HttpStatusCode.PartialContent else HttpStatusCode.OK
+                    override val contentType: ContentType = ContentType.parse(mimeType)
+                    override val contentLength: Long = lengthToSend
+                    override val headers = io.ktor.http.Headers.build {
+                        append(HttpHeaders.AcceptRanges, "bytes")
+                        if (range != null) {
+                            append(HttpHeaders.ContentRange, "bytes ${range.first}-${range.last}/$totalLength")
+                        }
+                        if (asAttachment) {
+                            append(
+                                HttpHeaders.ContentDisposition,
+                                ContentDisposition.Attachment.withParameter(
+                                    ContentDisposition.Parameters.FileName,
+                                    item.displayName,
+                                ).toString(),
+                            )
+                        }
+                    }
+
+                    override suspend fun writeTo(channel: ByteWriteChannel) {
+                        withContext(Dispatchers.IO) {
+                            resolver.openInputStream(uri)?.use { input ->
+                                seekStream(input, range?.first ?: 0L)
+                                val buffer = ByteArray(STREAMING_BUFFER_SIZE)
+                                var remaining = lengthToSend
+                                while (remaining > 0) {
+                                    val toRead = minOf(buffer.size.toLong(), remaining).toInt()
+                                    val read = input.read(buffer, 0, toRead)
+                                    if (read <= 0) break
+                                    channel.writeFully(buffer, 0, read)
+                                    channel.flush()
+                                    remaining -= read
+                                    sessionManager.onTransferProgress(callerHost, read.toLong(), activity)
+                                }
+                            }
+                        }
+                    }
+                })
             } finally {
-                sessionManager.onTransferCompleted(remoteHost(), activity, asAttachment)
+                sessionManager.onTransferCompleted(callerHost, activity, asAttachment)
             }
         }
     }
@@ -495,34 +518,53 @@ class KtorGhostStreamServer(
         }
         val totalLength = file.length()
         val range = parseRange(request.header(HttpHeaders.Range), totalLength)
-        val status = if (range != null) HttpStatusCode.PartialContent else HttpStatusCode.OK
         val lengthToSend = range?.let { (it.last - it.first + 1).coerceAtLeast(0) } ?: totalLength
-        applyResponseHeaders(
-            displayName = item.displayName,
-            totalLength = totalLength,
-            lengthToSend = lengthToSend,
-            range = range,
-            asAttachment = asAttachment,
-        )
+        val mimeType = playbackSource.mimeType ?: item.playbackDecision.browserMimeType ?: "application/octet-stream"
+        val callerHost = remoteHost()
 
-        sessionManager.onTransferStarted(remoteHost(), activity, asAttachment)
+        sessionManager.onTransferStarted(callerHost, activity, asAttachment)
         try {
-            respondOutputStream(
-                contentType = ContentType.parse(playbackSource.mimeType ?: item.playbackDecision.browserMimeType ?: "application/octet-stream"),
-                status = status,
-            ) {
-                streamContent(
-                    inputFactory = { FileInputStream(file) },
-                    totalLength = totalLength,
-                    range = range,
-                    onChunk = { bytes ->
-                        sessionManager.onTransferProgress(this@streamCachedFile.remoteHost(), bytes, activity)
-                    },
-                    output = this,
-                )
-            }
+            respond(object : OutgoingContent.WriteChannelContent() {
+                override val status: HttpStatusCode = if (range != null) HttpStatusCode.PartialContent else HttpStatusCode.OK
+                override val contentType: ContentType = ContentType.parse(mimeType)
+                override val contentLength: Long = lengthToSend
+                override val headers = io.ktor.http.Headers.build {
+                    append(HttpHeaders.AcceptRanges, "bytes")
+                    if (range != null) {
+                        append(HttpHeaders.ContentRange, "bytes ${range.first}-${range.last}/$totalLength")
+                    }
+                    if (asAttachment) {
+                        append(
+                            HttpHeaders.ContentDisposition,
+                            ContentDisposition.Attachment.withParameter(
+                                ContentDisposition.Parameters.FileName,
+                                item.displayName,
+                            ).toString(),
+                        )
+                    }
+                }
+
+                override suspend fun writeTo(channel: ByteWriteChannel) {
+                    withContext(Dispatchers.IO) {
+                        RandomAccessFile(file, "r").use { raf ->
+                            raf.seek(range?.first ?: 0L)
+                            val buffer = ByteArray(STREAMING_BUFFER_SIZE)
+                            var remaining = lengthToSend
+                            while (remaining > 0) {
+                                val toRead = minOf(buffer.size.toLong(), remaining).toInt()
+                                val read = raf.read(buffer, 0, toRead)
+                                if (read <= 0) break
+                                channel.writeFully(buffer, 0, read)
+                                channel.flush()
+                                remaining -= read
+                                sessionManager.onTransferProgress(callerHost, read.toLong(), activity)
+                            }
+                        }
+                    }
+                }
+            })
         } finally {
-            sessionManager.onTransferCompleted(remoteHost(), activity, asAttachment)
+            sessionManager.onTransferCompleted(callerHost, activity, asAttachment)
         }
     }
 
@@ -533,14 +575,17 @@ class KtorGhostStreamServer(
         asAttachment: Boolean,
         activity: ClientActivity,
     ) {
-        applyResponseHeaders(
-            displayName = item.displayName,
-            totalLength = null,
-            lengthToSend = null,
-            range = null,
-            asAttachment = asAttachment,
-        )
+        response.headers.append(HttpHeaders.AcceptRanges, "none")
         response.headers.append(HttpHeaders.CacheControl, "no-store")
+        if (asAttachment) {
+            response.headers.append(
+                HttpHeaders.ContentDisposition,
+                ContentDisposition.Attachment.withParameter(
+                    ContentDisposition.Parameters.FileName,
+                    item.displayName,
+                ).toString(),
+            )
+        }
 
         sessionManager.onTransferStarted(remoteHost(), activity, asAttachment)
         try {
@@ -562,31 +607,6 @@ class KtorGhostStreamServer(
         }
     }
 
-    private fun io.ktor.server.application.ApplicationCall.applyResponseHeaders(
-        displayName: String,
-        totalLength: Long?,
-        lengthToSend: Long?,
-        range: LongRange?,
-        asAttachment: Boolean,
-    ) {
-        response.headers.append(HttpHeaders.AcceptRanges, if (totalLength != null) "bytes" else "none")
-        if (asAttachment) {
-            response.headers.append(
-                HttpHeaders.ContentDisposition,
-                ContentDisposition.Attachment.withParameter(
-                    ContentDisposition.Parameters.FileName,
-                    displayName,
-                ).toString(),
-            )
-        }
-        if (range != null && totalLength != null) {
-            response.headers.append(HttpHeaders.ContentRange, "bytes ${range.first}-${range.last}/$totalLength")
-        }
-        if (lengthToSend != null) {
-            response.headers.append(HttpHeaders.ContentLength, lengthToSend.toString())
-        }
-    }
-
     private fun io.ktor.server.application.ApplicationCall.remoteHost(): String {
         return request.origin.remoteHost
     }
@@ -599,26 +619,25 @@ class KtorGhostStreamServer(
         return if (start in 0..end) start..end else null
     }
 
-    private suspend fun streamContent(
-        inputFactory: () -> InputStream?,
-        totalLength: Long,
-        range: LongRange?,
-        onChunk: (Long) -> Unit,
-        output: java.io.OutputStream,
-    ) {
-        withContext(Dispatchers.IO) {
-            inputFactory()?.use { input ->
-                skipFully(input, range?.first ?: 0L)
-                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-                var remaining = range?.let { it.last - it.first + 1 } ?: totalLength.takeIf { it > 0 } ?: Long.MAX_VALUE
-                while (remaining > 0) {
-                    val read = input.read(buffer, 0, minOf(buffer.size.toLong(), remaining).toInt())
-                    if (read <= 0) break
-                    output.write(buffer, 0, read)
-                    remaining -= read
-                    onChunk(read.toLong())
-                }
-                output.flush()
+    /**
+     * Seek an [InputStream] to the given byte offset.
+     * [InputStream.skip] is unreliable on Android content-provider streams — it
+     * may skip fewer bytes than requested. This method calls skip in a loop
+     * and falls back to [InputStream.read] if skip stalls, guaranteeing all
+     * bytes are consumed.
+     */
+    private fun seekStream(input: InputStream, offset: Long) {
+        var remaining = offset
+        while (remaining > 0) {
+            val skipped = input.skip(remaining)
+            if (skipped > 0) {
+                remaining -= skipped
+            } else {
+                // skip() returned 0 or -1; fall back to reading to advance
+                val readBuf = ByteArray(minOf(8192L, remaining).toInt())
+                val read = input.read(readBuf)
+                if (read <= 0) break // genuine EOF
+                remaining -= read
             }
         }
     }
@@ -667,14 +686,7 @@ class KtorGhostStreamServer(
         }
     }
 
-    private fun skipFully(input: InputStream, bytes: Long) {
-        var remaining = bytes
-        while (remaining > 0) {
-            val skipped = input.skip(remaining)
-            if (skipped <= 0) break
-            remaining -= skipped
-        }
-    }
+
 
     private fun readText(uri: Uri): String? {
         return runCatching {
@@ -827,5 +839,6 @@ class KtorGhostStreamServer(
         const val COOKIE_NAME = "ghost_session"
         const val GROWING_FILE_POLL_INTERVAL_MS = 300L
         const val MAX_GROWING_FILE_IDLE_POLLS = 300
+        const val STREAMING_BUFFER_SIZE = 64 * 1024
     }
 }

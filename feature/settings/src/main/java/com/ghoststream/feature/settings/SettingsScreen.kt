@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -46,6 +47,7 @@ fun SettingsScreen(
     onToggleLargeTvCards: (Boolean) -> Unit,
     onToggleProminentDownloads: (Boolean) -> Unit,
     onAutoStopSelected: (AutoStopOption) -> Unit,
+    onManualPinChanged: (String) -> Unit,
     onOpenWifiSettings: () -> Unit,
     onOpenHotspotSettings: () -> Unit,
     onOpenHelp: () -> Unit,
@@ -70,10 +72,10 @@ fun SettingsScreen(
 
         item {
             SettingsGroup(title = "Sharing") {
-                SettingsToggleRow("Keep screen awake while session screen is open", settings.keepScreenAwake, onToggleKeepScreenAwake)
-                SettingsToggleRow("Haptic feedback on device connect", settings.hapticOnDeviceConnect, onToggleHaptics)
-                SettingsToggleRow("Show transfer speed", settings.showTransferSpeed, onToggleTransferSpeed)
-                SettingsToggleRow("Show recent sessions", settings.showRecentSessions, onToggleRecentSessions)
+                SettingsToggleRow("Keep screen awake", "Prevents screen from locking while session screen is open", settings.keepScreenAwake, onToggleKeepScreenAwake)
+                SettingsToggleRow("Haptic on connect", "Vibrate when a new device connects", settings.hapticOnDeviceConnect, onToggleHaptics)
+                SettingsToggleRow("Show transfer speed", "Display MB/s on the active session screen", settings.showTransferSpeed, onToggleTransferSpeed)
+                SettingsToggleRow("Show recent sessions", "Track session history locally", settings.showRecentSessions, onToggleRecentSessions)
                 SettingsChoiceRow(
                     title = "Auto-stop after inactivity",
                     value = when (settings.autoStop) {
@@ -97,25 +99,30 @@ fun SettingsScreen(
 
         item {
             SettingsGroup(title = "Security") {
-                SettingsToggleRow("Require session PIN", settings.requireSessionPin, onToggleRequirePin)
-                SettingsToggleRow("Auto-generate PIN", settings.autoGeneratePin, onToggleAutoGeneratePin)
-                SettingsToggleRow("Clear auth on stop", settings.clearAuthOnStop, onToggleClearAuthOnStop)
-                SettingsToggleRow("Ghost Mode", settings.ghostMode, onToggleGhostMode)
+                SettingsToggleRow("Require session PIN", "Browsers must enter a PIN to access your files", settings.requireSessionPin, onToggleRequirePin)
+                if (settings.requireSessionPin) {
+                    SettingsToggleRow("Auto-generate PIN", "Create a random 4-digit PIN each session", settings.autoGeneratePin, onToggleAutoGeneratePin)
+                    if (!settings.autoGeneratePin) {
+                        ManualPinRow(currentPin = settings.manualPin, onPinChanged = onManualPinChanged)
+                    }
+                }
+                SettingsToggleRow("Clear auth on stop", "Expire all browser sessions when sharing stops", settings.clearAuthOnStop, onToggleClearAuthOnStop)
+                SettingsToggleRow("Ghost Mode", "Auto-wipe temp files, cached streams, and auth on stop", settings.ghostMode, onToggleGhostMode)
             }
         }
 
         item {
             SettingsGroup(title = "Browser UI") {
-                SettingsToggleRow("Force dark browser theme", settings.forceDarkBrowserTheme, onToggleDarkBrowserTheme)
-                SettingsToggleRow("Show thumbnails", settings.showThumbnails, onToggleShowThumbnails)
-                SettingsToggleRow("Larger TV-friendly cards", settings.largeTvCards, onToggleLargeTvCards)
-                SettingsToggleRow("Prominent download buttons", settings.prominentDownloadButton, onToggleProminentDownloads)
+                SettingsToggleRow("Force dark theme", "Always use dark mode in the browser", settings.forceDarkBrowserTheme, onToggleDarkBrowserTheme)
+                SettingsToggleRow("Show thumbnails", "Generate and display preview images", settings.showThumbnails, onToggleShowThumbnails)
+                SettingsToggleRow("Larger TV-friendly cards", "Bigger cards for smart TV browsers", settings.largeTvCards, onToggleLargeTvCards)
+                SettingsToggleRow("Prominent download buttons", "Show download button on every card", settings.prominentDownloadButton, onToggleProminentDownloads)
             }
         }
 
         item {
             SettingsGroup(title = "Network Help") {
-                SettingsChoiceRow("Open Wi-Fi settings", "Nearby devices on the same network", onOpenWifiSettings)
+                SettingsChoiceRow("Open Wi-Fi settings", "Connect nearby devices to the same network", onOpenWifiSettings)
                 SettingsChoiceRow("Open hotspot settings", "Best for travel and direct sharing", onOpenHotspotSettings)
             }
         }
@@ -184,7 +191,7 @@ private fun SettingsGroup(title: String, content: @Composable () -> Unit) {
 }
 
 @Composable
-private fun SettingsToggleRow(title: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+private fun SettingsToggleRow(title: String, description: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -193,9 +200,30 @@ private fun SettingsToggleRow(title: String, checked: Boolean, onCheckedChange: 
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, modifier = Modifier.weight(1f))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title)
+            Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
+}
+
+@Composable
+private fun ManualPinRow(currentPin: String, onPinChanged: (String) -> Unit) {
+    OutlinedTextField(
+        value = currentPin,
+        onValueChange = { newValue ->
+            val cleaned = newValue.filter(Char::isDigit).take(6)
+            onPinChanged(cleaned)
+        },
+        modifier = Modifier
+            .padding(horizontal = 18.dp, vertical = 8.dp)
+            .fillMaxWidth(),
+        label = { Text("Custom PIN") },
+        placeholder = { Text("Enter 4–6 digit PIN") },
+        shape = RoundedCornerShape(14.dp),
+        singleLine = true,
+    )
 }
 
 @Composable

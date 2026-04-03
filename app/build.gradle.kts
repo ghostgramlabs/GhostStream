@@ -20,9 +20,19 @@ android {
         vectorDrawables.useSupportLibrary = true
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = rootProject.file("ghoststream-release.jks")
+            storePassword = "ghoststreamGhostGram1@#"
+            keyAlias = "ghoststream"
+            keyPassword = "ghoststreamGhostGram1@#"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

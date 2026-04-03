@@ -54,6 +54,8 @@ fun ActiveSessionScreen(
     onStopSharing: () -> Unit,
     onBlockClient: (String) -> Unit,
     onUnblockClient: (String) -> Unit,
+    onRegeneratePin: () -> Unit,
+    onDisconnectAll: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val haptics = LocalHapticFeedback.current
@@ -150,10 +152,21 @@ fun ActiveSessionScreen(
                     }
                     if (sessionState.authEnabled) {
                         Spacer(modifier = Modifier.height(14.dp))
-                        Text(
-                            text = "Session PIN: ${sessionState.pin ?: "----"}",
-                            style = MaterialTheme.typography.titleMedium,
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Text(
+                                text = "Session PIN: ${sessionState.pin ?: "----"}",
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            OutlinedButton(
+                                onClick = onRegeneratePin,
+                                shape = RoundedCornerShape(14.dp),
+                            ) {
+                                Text("Regenerate", style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
                     }
                 }
             }
@@ -180,7 +193,7 @@ fun ActiveSessionScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 SessionMetric("Network", sessionState.networkAvailability.type.name, Modifier.weight(1f))
-                SessionMetric("Streams", sessionState.transferStats.activeStreamCount.toString(), Modifier.weight(1f))
+                SessionMetric("Elapsed", formatElapsed(sessionState.transferStats.startedAtEpochMs), Modifier.weight(1f))
                 SessionMetric("Downloads", sessionState.transferStats.completedDownloads.toString(), Modifier.weight(1f))
             }
         }
@@ -194,11 +207,25 @@ fun ActiveSessionScreen(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF0A101A)),
             ) {
                 Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        text = if (sessionState.connectedClients.isEmpty()) "Waiting for devices..." else "${sessionState.connectedClients.size} devices connected",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.SemiBold,
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = if (sessionState.connectedClients.isEmpty()) "Waiting for devices…" else "${sessionState.connectedClients.size} devices connected",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        if (sessionState.connectedClients.size > 1) {
+                            OutlinedButton(
+                                onClick = onDisconnectAll,
+                                shape = RoundedCornerShape(14.dp),
+                            ) {
+                                Text("Disconnect All")
+                            }
+                        }
+                    }
                     if (sessionState.connectedClients.isEmpty()) {
                         Text(
                             text = "Nearby browsers will appear here when they open the session.",
@@ -340,3 +367,16 @@ private fun formatBytes(bytes: Long): String {
 }
 
 private fun formatSpeed(bytesPerSecond: Long): String = "${formatBytes(bytesPerSecond)}/s"
+
+private fun formatElapsed(startedAtEpochMs: Long?): String {
+    if (startedAtEpochMs == null || startedAtEpochMs == 0L) return "0s"
+    val elapsed = (System.currentTimeMillis() - startedAtEpochMs).coerceAtLeast(0) / 1000
+    val hours = elapsed / 3600
+    val mins = (elapsed % 3600) / 60
+    val secs = elapsed % 60
+    return when {
+        hours > 0 -> "${hours}h ${mins.toString().padStart(2, '0')}m"
+        mins > 0 -> "${mins}m ${secs.toString().padStart(2, '0')}s"
+        else -> "${secs}s"
+    }
+}

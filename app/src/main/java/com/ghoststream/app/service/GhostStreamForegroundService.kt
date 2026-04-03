@@ -74,21 +74,23 @@ class GhostStreamForegroundService : Service() {
                         }
                         return START_NOT_STICKY
                     }
+                    // If the ViewModel already started the session, just keep the service alive
                     if (container.sessionManager.sessionState.value.isSharing) {
                         startupInProgress = false
-                        return START_STICKY
-                    }
-                    serviceScope.launch {
-                        when (val result = container.sharingCoordinator.beginSharing()) {
-                            is ShareStartResult.Started -> {
-                                startupInProgress = false
-                            }
+                    } else {
+                        // Service was started independently — need to begin sharing
+                        serviceScope.launch {
+                            when (val result = container.sharingCoordinator.beginSharing()) {
+                                is ShareStartResult.Started -> {
+                                    startupInProgress = false
+                                }
 
-                            is ShareStartResult.Failure -> {
-                                startupInProgress = false
-                                container.sharingCoordinator.stopSharing(result.message)
-                                stopForeground(STOP_FOREGROUND_REMOVE)
-                                stopSelf()
+                                is ShareStartResult.Failure -> {
+                                    startupInProgress = false
+                                    container.sharingCoordinator.stopSharing(result.message)
+                                    stopForeground(STOP_FOREGROUND_REMOVE)
+                                    stopSelf()
+                                }
                             }
                         }
                     }

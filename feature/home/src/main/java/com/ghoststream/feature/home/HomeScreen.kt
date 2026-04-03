@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,14 +21,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AddBox
 import androidx.compose.material.icons.outlined.Collections
 import androidx.compose.material.icons.outlined.FolderOpen
-import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.NetworkCheck
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -51,12 +54,13 @@ fun HomeScreen(
     libraryState: LibraryState,
     sessionState: SessionState,
     recentSessions: List<RecentSession>,
+    isStartingShare: Boolean,
     onStartSharing: () -> Unit,
     onAddFiles: () -> Unit,
     onAddFolder: () -> Unit,
     onBatchSelect: () -> Unit,
     onOpenLibrary: () -> Unit,
-    onOpenRecentShares: () -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -70,17 +74,32 @@ fun HomeScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
-            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
-                Text(
-                    text = "GhostStream",
-                    style = MaterialTheme.typography.headlineLarge,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    text = "Offline media sharing",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = 20.dp, vertical = 20.dp)
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column {
+                    Text(
+                        text = "GhostStream",
+                        style = MaterialTheme.typography.headlineLarge,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = "Offline media sharing",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                IconButton(onClick = onOpenSettings) {
+                    Icon(
+                        imageVector = Icons.Outlined.Settings,
+                        contentDescription = "Settings",
+                        tint = Color(0xFF8AE3FF),
+                    )
+                }
             }
         }
 
@@ -120,6 +139,7 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(20.dp))
                     Button(
                         onClick = onStartSharing,
+                        enabled = !isStartingShare,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(58.dp),
@@ -129,9 +149,19 @@ fun HomeScreen(
                             contentColor = Color(0xFF001A24),
                         ),
                     ) {
-                        Icon(Icons.Outlined.PlayArrow, contentDescription = null)
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text("Start Sharing", style = MaterialTheme.typography.titleMedium)
+                        if (isStartingShare) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(22.dp),
+                                color = Color(0xFF001A24),
+                                strokeWidth = 2.dp,
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text("Starting…", style = MaterialTheme.typography.titleMedium)
+                        } else {
+                            Icon(Icons.Outlined.PlayArrow, contentDescription = null)
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text("Start Sharing", style = MaterialTheme.typography.titleMedium)
+                        }
                     }
                 }
             }
@@ -188,7 +218,7 @@ fun HomeScreen(
                 QuickActionButton(label = "Add Files", icon = Icons.Outlined.AddBox, onClick = onAddFiles)
                 QuickActionButton(label = "Add Folder", icon = Icons.Outlined.FolderOpen, onClick = onAddFolder)
                 QuickActionButton(label = "Batch Select", icon = Icons.Outlined.Collections, onClick = onBatchSelect)
-                QuickActionButton(label = "Recent Shares", icon = Icons.Outlined.History, onClick = onOpenRecentShares)
+                QuickActionButton(label = "Settings", icon = Icons.Outlined.Settings, onClick = onOpenSettings)
                 OutlinedButton(
                     onClick = onOpenLibrary,
                     shape = RoundedCornerShape(18.dp),

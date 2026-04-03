@@ -10,6 +10,8 @@ import com.ghoststream.core.settings.SettingsRepository
 import com.ghoststream.core.storage.StorageRepository
 import kotlinx.coroutines.flow.first
 import kotlin.random.Random
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 sealed interface SharePreflightResult {
     data object Ready : SharePreflightResult
@@ -40,15 +42,15 @@ class SharingCoordinator(
             if (library.items.isEmpty()) {
                 return SharePreflightResult.NoContent
             }
-            val network = networkInspector.inspect()
+            val network = withContext(Dispatchers.IO) { networkInspector.inspect() }
             sessionManager.updateNetworkAvailability(network)
             if (!network.isReady) {
                 SharePreflightResult.NeedsNetwork(network)
             } else {
                 SharePreflightResult.Ready
             }
-        }.getOrElse {
-            SharePreflightResult.Failure("Unable to prepare sharing right now. Please try again.")
+        }.getOrElse { e ->
+            SharePreflightResult.Failure("Preflight check failed: ${e.message ?: e.javaClass.simpleName}")
         }
     }
 
@@ -67,7 +69,7 @@ class SharingCoordinator(
 
         val settings = settingsRepository.settings.first()
         val library = storageRepository.libraryState.value
-        val network = networkInspector.inspect()
+        val network = withContext(Dispatchers.IO) { networkInspector.inspect() }
 
         return runCatching {
             val binding = server.start(port = 0)
@@ -88,8 +90,8 @@ class SharingCoordinator(
                 pin = pin,
             )
             ShareStartResult.Started(binding.url)
-        }.getOrElse {
-            ShareStartResult.Failure("Unable to start sharing right now. Please try again.")
+        }.getOrElse { e ->
+            ShareStartResult.Failure("Server failed to start: ${e.message ?: e.javaClass.simpleName}")
         }
     }
 

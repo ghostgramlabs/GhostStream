@@ -151,15 +151,19 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
                     popUpTo(Routes.Home) { inclusive = true }
                 }
                 AppEvent.StartSharingService -> {
-                    GhostStreamForegroundService.start(context)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-                    ) {
-                        pendingStartService = true
-                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    runCatching {
+                        GhostStreamForegroundService.start(context)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                        ) {
+                            pendingStartService = true
+                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }.onFailure {
+                        // Ignore crashes here, falling back to basic background sharing
                     }
                 }
-                AppEvent.StopSharingService -> GhostStreamForegroundService.stop(context)
+                AppEvent.StopSharingService -> runCatching { GhostStreamForegroundService.stop(context) }
             }
         }
     }
@@ -170,7 +174,7 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
         NavHost(
             navController = navController,
             startDestination = Routes.Splash,
-            modifier = Modifier.background(MaterialTheme.colorScheme.background),
+            modifier = Modifier.padding(innerPadding).background(MaterialTheme.colorScheme.background),
         ) {
             composable(Routes.Splash) {
                 SplashRoute()
@@ -188,6 +192,7 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
                     libraryState = uiState.libraryState,
                     sessionState = uiState.sessionState,
                     recentSessions = uiState.recentSessions,
+                    isStartingShare = uiState.isStartingShare,
                     onStartSharing = viewModel::requestStartSharing,
                     onAddFiles = { navController.navigate(Routes.AddFiles) },
                     onAddFolder = { navController.navigate(Routes.AddFolder) },
@@ -196,7 +201,7 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
                         navController.navigate(Routes.BatchSelect)
                     },
                     onOpenLibrary = { navController.navigate(Routes.Library) },
-                    onOpenRecentShares = { navController.navigate(Routes.Settings) },
+                    onOpenSettings = { navController.navigate(Routes.Settings) },
                     modifier = Modifier.padding(innerPadding),
                 )
             }
@@ -279,6 +284,8 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
                     onStopSharing = viewModel::requestStopSharing,
                     onBlockClient = viewModel::blockClient,
                     onUnblockClient = viewModel::unblockClient,
+                    onRegeneratePin = viewModel::regeneratePin,
+                    onDisconnectAll = viewModel::disconnectAll,
                     modifier = Modifier.padding(innerPadding),
                 )
             }
@@ -299,6 +306,7 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
                     onToggleLargeTvCards = { viewModel.updateSettings { current -> current.copy(largeTvCards = it) } },
                     onToggleProminentDownloads = { viewModel.updateSettings { current -> current.copy(prominentDownloadButton = it) } },
                     onAutoStopSelected = viewModel::updateAutoStop,
+                    onManualPinChanged = { pin -> viewModel.updateSettings { current -> current.copy(manualPin = pin) } },
                     onOpenWifiSettings = { context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS)) },
                     onOpenHotspotSettings = { context.startActivity(Intent("android.settings.TETHER_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) },
                     onOpenHelp = { navController.navigate(Routes.Help) },

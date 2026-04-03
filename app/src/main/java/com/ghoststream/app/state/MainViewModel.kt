@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
 
 class MainViewModel(
     private val container: AppContainer,
@@ -139,29 +140,34 @@ class MainViewModel(
             }
 
             startSharingInProgress.value = true
-            when (val result = container.sharingCoordinator.preflight()) {
-                SharePreflightResult.NoContent -> _events.emit(
-                    AppEvent.ShowMessage("Add some content first to start sharing."),
-                ).also {
-                    pendingShareAfterNetworkReady.value = false
-                    startSharingInProgress.value = false
-                }
+            try {
+                when (val result = container.sharingCoordinator.preflight()) {
+                    SharePreflightResult.NoContent -> {
+                        _events.emit(
+                            AppEvent.ShowMessage("Add some content first to start sharing."),
+                        )
+                    }
 
-                is SharePreflightResult.NeedsNetwork -> {
-                    pendingShareAfterNetworkReady.value = true
-                    startSharingInProgress.value = false
-                    _events.emit(AppEvent.NavigateNetworkSetup)
-                }
+                    is SharePreflightResult.NeedsNetwork -> {
+                        pendingShareAfterNetworkReady.value = true
+                        _events.emit(AppEvent.NavigateNetworkSetup)
+                    }
 
-                is SharePreflightResult.Failure -> {
-                    pendingShareAfterNetworkReady.value = false
-                    startSharingInProgress.value = false
-                    _events.emit(AppEvent.ShowMessage(result.message))
-                }
+                    is SharePreflightResult.Failure -> {
+                        _events.emit(AppEvent.ShowMessage(result.message))
+                    }
 
-                SharePreflightResult.Ready -> {
-                    pendingShareAfterNetworkReady.value = false
-                    startSharingAfterReadyCheck()
+                    SharePreflightResult.Ready -> {
+                        pendingShareAfterNetworkReady.value = false
+                        startSharingAfterReadyCheck()
+                        return@launch // startSharingInProgress reset inside
+                    }
+                }
+            } catch (e: Exception) {
+                _events.emit(AppEvent.ShowMessage("Something went wrong. Please try again."))
+            } finally {
+                if (pendingShareAfterNetworkReady.value.not()) {
+                    startSharingInProgress.value = false
                 }
             }
         }
@@ -212,8 +218,28 @@ class MainViewModel(
         }
     }
 
+    fun regeneratePin() {
+        container.sessionManager.regeneratePin()
+    }
+
+    fun disconnectAll() {
+        container.sessionManager.disconnectAllClients()
+    }
+
     private suspend fun startSharingAfterReadyCheck() {
-        when (val startResult = container.sharingCoordinator.beginSharing(assumePreflightReady = true)) {
+        val startJob = viewModelScope.async(kotlinx.coroutines.Dispatchers.IO) {
+            container.sharingCoordinator.beginSharing(assumePreflightReady = true)
+        }
+        
+        val startResult = kotlinx.coroutines.withTimeoutOrNull(5_000) {
+            startJob.await()
+        } ?: com.ghoststream.app.state.ShareStartResult.Failure("Server initialization timed out. Please try again.")
+
+        if (startResult is com.ghoststream.app.state.ShareStartResult.Failure) {
+            startJob.cancel() // Attempt to free the background thread if it was deadlocked
+        }
+
+        when (startResult) {
             is ShareStartResult.Started -> {
                 pendingShareAfterNetworkReady.value = false
                 startSharingInProgress.value = false
