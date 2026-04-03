@@ -204,9 +204,9 @@ function renderHome() {
   shell(`
     <section class="gs-hero">
       <div class="gs-hero-copy">
-        <span class="gs-eyebrow">GhostStream receiver</span>
-        <h1>Your local media hub</h1>
-        <p>${esc(sessionSubtitle)}. Browse, play, preview, or download ${total} shared items without leaving the browser.</p>
+        <span class="gs-eyebrow">Private receiver view</span>
+        <h1>Stream & share files offline</h1>
+        <p>${esc(sessionSubtitle)}. Browse, play, preview, or download ${total} shared items on the same local network.</p>
       </div>
       <div class="gs-hero-actions">
         <a class="gs-btn gs-btn-accent" data-link href="/videos">Browse videos</a>
@@ -514,14 +514,6 @@ function hydrateVideoPlayer(item, options = {}) {
   video.addEventListener("loadedmetadata", clearVideoError);
   video.addEventListener("canplay", clearVideoError);
   video.addEventListener("playing", clearVideoError);
-  video.addEventListener("play", () => setNowPlaying({
-    type: "Video",
-    title: item.title,
-    element: video,
-    route: location.pathname,
-  }));
-  video.addEventListener("pause", () => clearNowPlaying(video));
-  video.addEventListener("ended", () => clearNowPlaying(video));
   video.addEventListener("error", () => {
     if (errorCard) errorCard.classList.add("is-visible");
     if (errorText) {

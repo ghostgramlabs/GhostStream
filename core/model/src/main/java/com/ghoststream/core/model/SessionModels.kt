@@ -63,6 +63,7 @@ data class SessionState(
     val startedAtEpochMs: Long? = null,
     val serverPort: Int? = null,
     val sessionUrl: String? = null,
+    val advertisedName: String? = null,
     val networkAvailability: NetworkAvailability = NetworkAvailability(
         type = NetworkType.NONE,
         isReady = false,
@@ -79,4 +80,3 @@ data class SessionState(
     val message: String = "Not sharing",
     val errorMessage: String? = null,
 )
-

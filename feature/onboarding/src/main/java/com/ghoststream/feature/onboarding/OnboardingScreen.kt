@@ -60,8 +60,8 @@ fun OnboardingScreen(
         ),
         OnboardingCard(
             icon = Icons.Outlined.QrCode2,
-            title = "Scan, open, play",
-            description = "The receiver only needs a browser. Scan the QR code, stream media, or download the original file.",
+            title = "Open in any browser",
+            description = "The receiver only needs a browser. Scan the QR code, stream media, or download the original file instantly.",
         ),
         OnboardingCard(
             icon = Icons.Outlined.Lock,
@@ -77,7 +77,7 @@ fun OnboardingScreen(
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(Color(0xFF05080E), Color(0xFF09121F), Color(0xFF030406)),
+                    listOf(Color(0xFF07080C), Color(0xFF10141B), Color(0xFF090B10)),
                 ),
             )
             .padding(24.dp),
@@ -100,11 +100,11 @@ fun OnboardingScreen(
             ) { page ->
                 Card(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(vertical = 12.dp),
+                    .fillMaxSize()
+                    .padding(vertical = 12.dp),
                     shape = RoundedCornerShape(32.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF101826),
+                        containerColor = Color(0xFF121823),
                     ),
                 ) {
                     Column(
@@ -116,13 +116,13 @@ fun OnboardingScreen(
                         Surface(
                             modifier = Modifier.size(72.dp),
                             shape = CircleShape,
-                            color = Color(0xFF17273A),
+                            color = Color(0xFF1A2527),
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = pages[page].icon,
                                     contentDescription = null,
-                                    tint = Color(0xFF8AE3FF),
+                                    tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(34.dp),
                                 )
                             }
@@ -155,7 +155,7 @@ fun OnboardingScreen(
                             .padding(horizontal = 4.dp)
                             .size(width = if (pagerState.currentPage == index) 28.dp else 8.dp, height = 8.dp)
                             .background(
-                                color = if (pagerState.currentPage == index) Color(0xFF8AE3FF) else Color(0xFF32445B),
+                                color = if (pagerState.currentPage == index) MaterialTheme.colorScheme.primary else Color(0xFF334050),
                                 shape = RoundedCornerShape(99.dp),
                             ),
                     )

@@ -32,6 +32,11 @@ interface SessionManager {
         pin: String?,
     )
 
+    fun updateAdvertisedAccess(
+        advertisedName: String?,
+        hostname: String?,
+    )
+
     suspend fun stopSession(message: String = "Sharing stopped")
 
     suspend fun blockClient(ipAddress: String)

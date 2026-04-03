@@ -21,7 +21,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AddBox
 import androidx.compose.material.icons.outlined.Collections
 import androidx.compose.material.icons.outlined.FolderOpen
+import androidx.compose.material.icons.outlined.NearMe
 import androidx.compose.material.icons.outlined.NetworkCheck
+import androidx.compose.material.icons.outlined.OpenInBrowser
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.VideoLibrary
@@ -45,6 +47,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ghoststream.core.model.LibraryState
+import com.ghoststream.core.model.NearbyDevice
+import com.ghoststream.core.model.NearbyDiscoveryState
 import com.ghoststream.core.model.NetworkType
 import com.ghoststream.core.model.RecentSession
 import com.ghoststream.core.model.SessionState
@@ -55,8 +59,11 @@ fun HomeScreen(
     libraryState: LibraryState,
     sessionState: SessionState,
     recentSessions: List<RecentSession>,
+    nearbyDiscoveryState: NearbyDiscoveryState,
+    connectingNearbyDeviceId: String?,
     isStartingShare: Boolean,
     onStartSharing: () -> Unit,
+    onOpenNearbyDevice: (NearbyDevice) -> Unit,
     onAddFiles: () -> Unit,
     onAddFolder: () -> Unit,
     onBatchSelect: () -> Unit,
@@ -69,7 +76,7 @@ fun HomeScreen(
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(Color(0xFF04070C), Color(0xFF0D1421), Color(0xFF06080D)),
+                    listOf(Color(0xFF07080C), Color(0xFF0E1219), Color(0xFF090B10)),
                 ),
             ),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -78,7 +85,7 @@ fun HomeScreen(
             Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
                 AssistChip(
                     onClick = {},
-                    label = { Text("Private local sharing") },
+                    label = { Text("Offline media hub") },
                 )
                 Spacer(modifier = Modifier.height(14.dp))
                 Text(
@@ -88,7 +95,7 @@ fun HomeScreen(
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "Stream and share files nearby with no internet required.",
+                    text = "Private local streaming for nearby browsers. No cloud. No internet required.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -101,7 +108,7 @@ fun HomeScreen(
                     .padding(horizontal = 20.dp)
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(30.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF101826)),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF121823)),
             ) {
                 Column(modifier = Modifier.padding(22.dp)) {
                     Row(
@@ -111,16 +118,16 @@ fun HomeScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = if (sessionState.isSharing) "Sharing is live" else "Ready to share",
+                                text = if (sessionState.isSharing) "Private session live" else "Ready to go live",
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.SemiBold,
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = when {
-                                    sessionState.isSharing -> "Nearby devices can scan your QR code and open the browser hub instantly."
-                                    libraryState.summary.totalItems == 0 -> "Add files or a folder first, then start a local sharing session."
-                                    sessionState.networkAvailability.isReady -> "Your files stay on this device. Nearby browsers connect over Wi-Fi or hotspot."
+                                    sessionState.isSharing -> "Nearby devices can scan in and open a clean browser experience instantly."
+                                    libraryState.summary.totalItems == 0 -> "Add files or a folder first, then launch a private local session."
+                                    sessionState.networkAvailability.isReady -> "Your files stay on this phone. Nearby browsers connect over Wi-Fi or your hotspot."
                                     else -> "Connect both devices to the same Wi-Fi or hotspot before starting."
                                 },
                                 style = MaterialTheme.typography.bodyMedium,
@@ -151,14 +158,14 @@ fun HomeScreen(
                             .height(58.dp),
                         shape = RoundedCornerShape(18.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF87E6FF),
-                            contentColor = Color(0xFF001A24),
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
                         ),
                     ) {
                         if (isStartingShare) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(22.dp),
-                                color = Color(0xFF001A24),
+                                color = MaterialTheme.colorScheme.onPrimary,
                                 strokeWidth = 2.dp,
                             )
                             Spacer(modifier = Modifier.width(10.dp))
@@ -179,7 +186,7 @@ fun HomeScreen(
                     .padding(horizontal = 20.dp)
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF0B121D)),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF10151D)),
             ) {
                 Row(
                     modifier = Modifier.padding(18.dp),
@@ -187,10 +194,10 @@ fun HomeScreen(
                 ) {
                     Surface(
                         shape = RoundedCornerShape(14.dp),
-                        color = Color(0xFF162435),
+                        color = Color(0xFF1A2527),
                     ) {
                         Box(modifier = Modifier.padding(12.dp)) {
-                            Icon(Icons.Outlined.NetworkCheck, contentDescription = null, tint = Color(0xFF8AE3FF))
+                            Icon(Icons.Outlined.NetworkCheck, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                     Spacer(modifier = Modifier.width(14.dp))
@@ -211,6 +218,60 @@ fun HomeScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                    }
+                }
+            }
+        }
+
+        item {
+            Card(
+                modifier = Modifier
+                    .padding(horizontal = 20.dp)
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF10141B)),
+            ) {
+                Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(shape = RoundedCornerShape(14.dp), color = Color(0xFF162027)) {
+                            Box(modifier = Modifier.padding(12.dp)) {
+                                Icon(Icons.Outlined.NearMe, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(14.dp))
+                        Column {
+                            Text(
+                                text = "Nearby GhostStream devices",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Medium,
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = nearbyDiscoveryState.helperText,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+
+                    if (nearbyDiscoveryState.devices.isEmpty()) {
+                        Text(
+                            text = if (nearbyDiscoveryState.isDiscovering) {
+                                "Waiting for another GhostStream session on this network."
+                            } else {
+                                "Nearby discovery is idle. Open GhostStream on another device to make it appear here."
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        nearbyDiscoveryState.devices.take(3).forEach { device ->
+                            NearbyDeviceRow(
+                                device = device,
+                                isConnecting = connectingNearbyDeviceId == device.id,
+                                onOpen = { onOpenNearbyDevice(device) },
+                            )
+                        }
                     }
                 }
             }
@@ -238,7 +299,7 @@ fun HomeScreen(
                     .padding(horizontal = 20.dp, vertical = 4.dp)
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF0C1018)),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF10141B)),
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Text(
@@ -249,7 +310,7 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(14.dp))
                     if (recentSessions.isEmpty()) {
                         Text(
-                            text = "Add a folder for a fast media library, then start sharing when both devices are on the same Wi-Fi or your hotspot.",
+                            text = "Build a shelf from your local files, then go live when both devices share the same Wi-Fi or your hotspot.",
                             style = MaterialTheme.typography.bodyLarge,
                         )
                     } else {
@@ -271,6 +332,62 @@ fun HomeScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun NearbyDeviceRow(
+    device: NearbyDevice,
+    isConnecting: Boolean,
+    onOpen: () -> Unit,
+) {
+    Card(
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF18202A)),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(device.serviceName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = device.friendlyUrl ?: "Browser-ready on this local network",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    AssistChip(onClick = {}, label = { Text("Available") })
+                    if (device.authRequired) {
+                        AssistChip(onClick = {}, label = { Text("PIN required") })
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            OutlinedButton(onClick = onOpen, shape = RoundedCornerShape(16.dp), enabled = !isConnecting) {
+                if (isConnecting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Connecting")
+                } else {
+                    Icon(Icons.Outlined.OpenInBrowser, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Open")
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun StatusChip(sessionState: SessionState) {
     val label = when {
@@ -288,7 +405,7 @@ private fun StatusChip(sessionState: SessionState) {
 private fun HeroStat(label: String, value: String) {
     Card(
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF131D2C)),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF18202A)),
     ) {
         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
             Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)

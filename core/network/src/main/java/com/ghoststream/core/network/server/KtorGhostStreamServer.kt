@@ -189,7 +189,7 @@ class KtorGhostStreamServer(
                 call.respond(
                     BrowserBootstrap(
                         title = "GhostStream",
-                        subtitle = "Scan, open, play",
+                        subtitle = "Stream & share files offline",
                         authEnabled = state.authEnabled,
                         sessionUrl = buildSessionAccessUrl(
                             sessionUrl = state.sessionUrl,
@@ -465,7 +465,7 @@ class KtorGhostStreamServer(
         }
         val html = assetLoader.readText("web/index.html")
             .replace("__SESSION_TITLE__", "GhostStream")
-            .replace("__SESSION_SUBTITLE__", "Local-only streaming")
+            .replace("__SESSION_SUBTITLE__", "Stream & share files offline")
         respondText(html, ContentType.Text.Html)
     }
 
@@ -698,7 +698,74 @@ class KtorGhostStreamServer(
         asAttachment: Boolean,
         activity: ClientActivity,
     ) {
-        response.headers.append(HttpHeaders.AcceptRanges, "none")
+        val requestedRange = parseRequestedGrowingRange(request.header(HttpHeaders.Range))
+        if (requestedRange != null) {
+            val availableLength = waitForGrowingFileOffset(
+                itemId = item.id,
+                file = file,
+                requiredOffset = requestedRange.start,
+            )
+            if (availableLength <= requestedRange.start) {
+                response.headers.append(HttpHeaders.ContentRange, "bytes */$availableLength")
+                respond(
+                    HttpStatusCode.RequestedRangeNotSatisfiable,
+                    ErrorPayload("That part of the video is still being prepared."),
+                )
+                return
+            }
+
+            val range = requestedRange.start..minOf(
+                requestedRange.endInclusive ?: (availableLength - 1),
+                availableLength - 1,
+            )
+            val callerHost = remoteHost()
+            sessionManager.onTransferStarted(callerHost, activity, asAttachment)
+            try {
+                respond(object : OutgoingContent.WriteChannelContent() {
+                    override val status: HttpStatusCode = HttpStatusCode.PartialContent
+                    override val contentType: ContentType = ContentType.parse(mimeType)
+                    override val contentLength: Long = range.last - range.first + 1
+                    override val headers = io.ktor.http.Headers.build {
+                        append(HttpHeaders.AcceptRanges, "bytes")
+                        append(HttpHeaders.CacheControl, "no-store")
+                        append(HttpHeaders.ContentRange, "bytes ${range.first}-${range.last}/$availableLength")
+                        if (asAttachment) {
+                            append(
+                                HttpHeaders.ContentDisposition,
+                                ContentDisposition.Attachment.withParameter(
+                                    ContentDisposition.Parameters.FileName,
+                                    item.displayName,
+                                ).toString(),
+                            )
+                        }
+                    }
+
+                    override suspend fun writeTo(channel: ByteWriteChannel) {
+                        withContext(Dispatchers.IO) {
+                            RandomAccessFile(file, "r").use { raf ->
+                                raf.seek(range.first)
+                                val buffer = ByteArray(STREAMING_BUFFER_SIZE)
+                                var remaining = contentLength
+                                while (remaining > 0) {
+                                    val toRead = minOf(buffer.size.toLong(), remaining).toInt()
+                                    val read = raf.read(buffer, 0, toRead)
+                                    if (read <= 0) break
+                                    channel.writeFully(buffer, 0, read)
+                                    channel.flush()
+                                    remaining -= read
+                                    sessionManager.onTransferProgress(callerHost, read.toLong(), activity)
+                                }
+                            }
+                        }
+                    }
+                })
+            } finally {
+                sessionManager.onTransferCompleted(callerHost, activity, asAttachment)
+            }
+            return
+        }
+
+        response.headers.append(HttpHeaders.AcceptRanges, "bytes")
         response.headers.append(HttpHeaders.CacheControl, "no-store")
         if (asAttachment) {
             response.headers.append(
@@ -883,6 +950,45 @@ class KtorGhostStreamServer(
         val start = raw.substringBefore('-').toLongOrNull() ?: 0L
         val end = raw.substringAfter('-', "").toLongOrNull()?.coerceAtMost(totalLength - 1) ?: (totalLength - 1)
         return if (start in 0..end) start..end else null
+    }
+
+    private fun parseRequestedGrowingRange(rangeHeader: String?): RequestedGrowingRange? {
+        if (rangeHeader.isNullOrBlank() || !rangeHeader.startsWith("bytes=")) return null
+        val raw = rangeHeader.removePrefix("bytes=").substringBefore(',').trim()
+        if (raw.isBlank()) return null
+        val startPart = raw.substringBefore('-')
+        if (startPart.isBlank()) return null
+        val start = startPart.toLongOrNull() ?: return null
+        val endInclusive = raw.substringAfter('-', "").takeIf { it.isNotBlank() }?.toLongOrNull()
+        return RequestedGrowingRange(
+            start = start,
+            endInclusive = endInclusive,
+        )
+    }
+
+    private fun waitForGrowingFileOffset(
+        itemId: String,
+        file: File,
+        requiredOffset: Long,
+    ): Long {
+        var idlePolls = 0
+        while (idlePolls < MAX_GROWING_FILE_IDLE_POLLS) {
+            val available = file.length()
+            if (available > requiredOffset) {
+                return available
+            }
+
+            val job = compatibilityPipeline.currentJob(itemId)
+            val finalized = job?.preparedAsset?.isComplete == true || job?.status == CompatibilityStatus.READY
+            val failed = job?.status == CompatibilityStatus.FAILED
+            if (finalized || failed) {
+                return available
+            }
+
+            idlePolls += 1
+            Thread.sleep(GROWING_FILE_POLL_INTERVAL_MS)
+        }
+        return file.length()
     }
 
     /**
@@ -1115,6 +1221,11 @@ class KtorGhostStreamServer(
         val item: SharedItem,
         val job: CompatibilityJob,
         val file: File,
+    )
+
+    private data class RequestedGrowingRange(
+        val start: Long,
+        val endInclusive: Long?,
     )
 
     private companion object {

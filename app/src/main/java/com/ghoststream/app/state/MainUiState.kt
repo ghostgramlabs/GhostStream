@@ -4,6 +4,7 @@ import android.net.Uri
 import com.ghoststream.core.media.CompatibilityJob
 import com.ghoststream.core.model.AppSettings
 import com.ghoststream.core.model.LibraryState
+import com.ghoststream.core.model.NearbyDiscoveryState
 import com.ghoststream.core.model.RecentSession
 import com.ghoststream.core.model.SessionState
 import com.ghoststream.core.model.SmartSelectionGroup
@@ -17,8 +18,10 @@ data class MainUiState(
     val smartGroups: List<SmartSelectionGroup> = emptyList(),
     val smartGroupsLoading: Boolean = false,
     val compatibilityJobs: Map<String, CompatibilityJob> = emptyMap(),
+    val nearbyDiscoveryState: NearbyDiscoveryState = NearbyDiscoveryState(),
     val pendingShareAfterNetworkReady: Boolean = false,
     val isStartingShare: Boolean = false,
+    val connectingNearbyDeviceId: String? = null,
 )
 
 sealed interface AppEvent {
@@ -29,4 +32,5 @@ sealed interface AppEvent {
     data object StartSharingService : AppEvent
     data object StopSharingService : AppEvent
     data class ShareDebugLog(val uri: Uri) : AppEvent
+    data class OpenExternalUrl(val url: String) : AppEvent
 }

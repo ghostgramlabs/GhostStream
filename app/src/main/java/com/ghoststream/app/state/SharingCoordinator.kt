@@ -7,6 +7,8 @@ import com.ghoststream.core.model.buildSessionAccessUrl
 import com.ghoststream.core.model.NetworkAvailability
 import com.ghoststream.core.model.NoOpDebugLogSink
 import com.ghoststream.core.network.AndroidNetworkInspector
+import com.ghoststream.core.network.discovery.AdvertisedSessionInfo
+import com.ghoststream.core.network.discovery.NsdAdvertiser
 import com.ghoststream.core.network.server.GhostStreamServer
 import com.ghoststream.core.session.SessionManager
 import com.ghoststream.core.settings.SettingsRepository
@@ -36,6 +38,7 @@ class SharingCoordinator(
     private val server: GhostStreamServer,
     private val mediaAnalyzer: MediaAnalyzer,
     private val compatibilityPipeline: CompatibilityPipeline,
+    private val nsdAdvertiser: NsdAdvertiser,
     private val debugLogSink: DebugLogSink = NoOpDebugLogSink,
 ) {
 
@@ -118,6 +121,29 @@ class SharingCoordinator(
                 pin = pin,
             )
             debugLogSink.log("SharingCoordinator", "session started authEnabled=${settings.requireSessionPin} pinSet=${pin != null}")
+            val sessionId = sessionManager.sessionState.value.sessionId
+            if (sessionId != null) {
+                val advertised = nsdAdvertiser.start(
+                    AdvertisedSessionInfo(
+                        port = binding.port,
+                        sessionId = sessionId,
+                        authRequired = settings.requireSessionPin,
+                        browserSupported = true,
+                        streamingSupported = library.items.any { item -> item.category != com.ghoststream.core.model.MediaCategory.FILE },
+                        deviceLabel = android.os.Build.MODEL ?: "Android",
+                    ),
+                )
+                if (advertised != null) {
+                    sessionManager.updateAdvertisedAccess(
+                        advertisedName = advertised.serviceName,
+                        hostname = advertised.hostname,
+                    )
+                    debugLogSink.log(
+                        "SharingCoordinator",
+                        "nearby advertisement live serviceName=${advertised.serviceName} hostname=${advertised.hostname} displayUrl=${advertised.displayUrl}",
+                    )
+                }
+            }
             ShareStartResult.Started(sessionUrl)
         }.getOrElse { e ->
             debugLogSink.log("SharingCoordinator", "server failed to start", e)
@@ -128,6 +154,7 @@ class SharingCoordinator(
     suspend fun stopSharing(message: String = "Sharing stopped") {
         debugLogSink.log("SharingCoordinator", "stopSharing message=$message")
         val settings = settingsRepository.settings.first()
+        runCatching { nsdAdvertiser.stop() }
         runCatching { server.stop() }
         compatibilityPipeline.clearTemporaryOutputs()
         if (settings.clearAuthOnStop || settings.ghostMode) {

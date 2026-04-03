@@ -61,9 +61,9 @@ import com.ghoststream.app.state.MainViewModel
 import com.ghoststream.app.ui.theme.GhostStreamTheme
 import com.ghoststream.core.model.resolvedAccessUrl
 import com.ghoststream.feature.home.HomeScreen
-import com.ghoststream.feature.library.AddFilesScreen
-import com.ghoststream.feature.library.AddFolderScreen
-import com.ghoststream.feature.library.BatchSelectScreen
+import com.ghoststream.feature.library.AddFilesRoute
+import com.ghoststream.feature.library.AddFolderRoute
+import com.ghoststream.feature.library.BatchSelectRoute
 import com.ghoststream.feature.library.SharedLibraryScreen
 import com.ghoststream.feature.networksetup.NetworkSetupScreen
 import com.ghoststream.feature.onboarding.OnboardingScreen
@@ -202,6 +202,19 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
                         }
                     }
                 }
+                is AppEvent.OpenExternalUrl -> {
+                    runCatching {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, android.net.Uri.parse(event.url)).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            },
+                        )
+                    }.onFailure {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("No browser was available to open that nearby session.")
+                        }
+                    }
+                }
             }
         }
     }
@@ -226,12 +239,25 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
             }
             composable(Routes.Home) {
                 ResumeRefreshEffect(onResume = viewModel::refreshNetwork)
+                LaunchedEffect(uiState.sessionState.isSharing) {
+                    if (uiState.sessionState.isSharing) {
+                        viewModel.stopNearbyDiscovery()
+                    } else {
+                        viewModel.startNearbyDiscovery()
+                    }
+                }
+                DisposableEffect(Unit) {
+                    onDispose { viewModel.stopNearbyDiscovery() }
+                }
                 HomeScreen(
                     libraryState = uiState.libraryState,
                     sessionState = uiState.sessionState,
                     recentSessions = uiState.recentSessions,
+                    nearbyDiscoveryState = uiState.nearbyDiscoveryState,
+                    connectingNearbyDeviceId = uiState.connectingNearbyDeviceId,
                     isStartingShare = uiState.isStartingShare,
                     onStartSharing = viewModel::requestStartSharing,
+                    onOpenNearbyDevice = viewModel::openNearbyDevice,
                     onAddFiles = { navController.navigate(Routes.AddFiles) },
                     onAddFolder = { navController.navigate(Routes.AddFolder) },
                     onBatchSelect = {
@@ -259,21 +285,21 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
                 )
             }
             composable(Routes.AddFiles) {
-                AddFilesScreen(
+                AddFilesRoute(
                     onBack = { navController.popBackStack() },
                     onAddSelected = viewModel::addFiles,
                     modifier = Modifier.padding(innerPadding),
                 )
             }
             composable(Routes.AddFolder) {
-                AddFolderScreen(
+                AddFolderRoute(
                     onBack = { navController.popBackStack() },
                     onAddFolder = viewModel::addFolder,
                     modifier = Modifier.padding(innerPadding),
                 )
             }
             composable(Routes.BatchSelect) {
-                BatchSelectScreen(
+                BatchSelectRoute(
                     groups = uiState.smartGroups,
                     onBack = { navController.popBackStack() },
                     onAddGroup = viewModel::addSmartSelection,

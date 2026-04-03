@@ -100,7 +100,7 @@ fun SharedLibraryScreen(
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(Color(0xFF05070A), Color(0xFF0E1724)),
+                    listOf(Color(0xFF07080C), Color(0xFF10141B)),
                 ),
             ),
         verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -119,7 +119,7 @@ fun SharedLibraryScreen(
                     .padding(horizontal = 20.dp)
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF0F1725)),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF121823)),
             ) {
                 Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     OutlinedTextField(
@@ -217,7 +217,7 @@ internal fun LibraryEmptyState(title: String, description: String) {
             .padding(horizontal = 20.dp)
             .fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF0E1522)),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF111720)),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -231,7 +231,7 @@ internal fun LibraryEmptyState(title: String, description: String) {
 private fun FolderRow(folder: SharedFolder, onRemoveFolder: (String) -> Unit) {
     Card(
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF131C2B)),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF18202A)),
     ) {
         Row(
             modifier = Modifier
@@ -241,7 +241,7 @@ private fun FolderRow(folder: SharedFolder, onRemoveFolder: (String) -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.Folder, contentDescription = null, tint = Color(0xFF8AE3FF))
+                Icon(Icons.Outlined.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(modifier = Modifier.width(10.dp))
                 Column {
                     Text(folder.displayName, style = MaterialTheme.typography.titleMedium)
@@ -268,7 +268,7 @@ private fun LibraryItemRow(
             .padding(horizontal = 20.dp)
             .fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF0F1725)),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF121823)),
     ) {
         Row(
             modifier = Modifier.padding(14.dp),
@@ -280,7 +280,7 @@ private fun LibraryItemRow(
                     contentDescription = null,
                     modifier = Modifier
                         .size(76.dp)
-                        .background(Color(0xFF1A2433), RoundedCornerShape(14.dp)),
+                        .background(Color(0xFF1B222C), RoundedCornerShape(14.dp)),
                 )
             } else {
                 Icon(
@@ -291,7 +291,7 @@ private fun LibraryItemRow(
                         MediaCategory.FILE -> Icons.Outlined.InsertDriveFile
                     },
                     contentDescription = null,
-                    tint = Color(0xFF8AE3FF),
+                    tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(42.dp),
                 )
             }
@@ -310,7 +310,7 @@ private fun LibraryItemRow(
                 )
                 item.playbackDecision.compatibilityLabel?.let { label ->
                     Spacer(modifier = Modifier.height(6.dp))
-                    Text(label, color = Color(0xFF8AE3FF), style = MaterialTheme.typography.bodySmall)
+                    Text(label, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
                 }
                 compatibilityJob
                     ?.takeIf { item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT }
@@ -320,7 +320,7 @@ private fun LibraryItemRow(
                             text = compatibilityStatusLabel(job),
                             color = when (job.status) {
                                 CompatibilityStatus.FAILED -> MaterialTheme.colorScheme.error
-                                CompatibilityStatus.READY -> Color(0xFF8AE3FF)
+                                CompatibilityStatus.READY -> MaterialTheme.colorScheme.primary
                                 else -> MaterialTheme.colorScheme.onSurfaceVariant
                             },
                             style = MaterialTheme.typography.bodySmall,

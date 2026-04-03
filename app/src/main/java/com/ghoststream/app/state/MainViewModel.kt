@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import com.ghoststream.core.model.AppSettings
 import com.ghoststream.core.model.AutoStopOption
 import com.ghoststream.core.model.LibraryState
+import com.ghoststream.core.model.NearbyDevice
+import com.ghoststream.core.model.NearbyDiscoveryState
 import com.ghoststream.core.model.SessionState
 import com.ghoststream.core.model.SmartSelectionGroup
 import com.ghoststream.core.model.RecentSession
@@ -31,6 +33,7 @@ class MainViewModel(
     private val smartGroupsLoading = MutableStateFlow(false)
     private val pendingShareAfterNetworkReady = MutableStateFlow(false)
     private val startSharingInProgress = MutableStateFlow(false)
+    private val connectingNearbyDeviceId = MutableStateFlow<String?>(null)
     private val _events = MutableSharedFlow<AppEvent>(extraBufferCapacity = 8)
 
     val events = _events.asSharedFlow()
@@ -43,8 +46,10 @@ class MainViewModel(
         smartGroups,
         smartGroupsLoading,
         container.compatibilityPipeline.jobs,
+        container.nsdDiscoveryManager.discoveryState,
         pendingShareAfterNetworkReady,
         startSharingInProgress,
+        connectingNearbyDeviceId,
     ) { values ->
         val settings = values[0] as AppSettings
         val library = values[1] as LibraryState
@@ -53,8 +58,10 @@ class MainViewModel(
         val groups = values[4] as List<SmartSelectionGroup>
         val loading = values[5] as Boolean
         val compatibilityJobs = values[6] as Map<String, CompatibilityJob>
-        val pendingShare = values[7] as Boolean
-        val isStartingShare = values[8] as Boolean
+        val nearbyDiscoveryState = values[7] as NearbyDiscoveryState
+        val pendingShare = values[8] as Boolean
+        val isStartingShare = values[9] as Boolean
+        val connectingNearbyId = values[10] as String?
         MainUiState(
             isReady = true,
             settings = settings,
@@ -64,8 +71,10 @@ class MainViewModel(
             smartGroups = groups,
             smartGroupsLoading = loading,
             compatibilityJobs = compatibilityJobs,
+            nearbyDiscoveryState = nearbyDiscoveryState,
             pendingShareAfterNetworkReady = pendingShare,
             isStartingShare = isStartingShare,
+            connectingNearbyDeviceId = connectingNearbyId,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -268,6 +277,28 @@ class MainViewModel(
                     container.debugLogRepository.log("MainViewModel", "clearDebugLog failed", it)
                     _events.emit(AppEvent.ShowMessage("Unable to clear the debug log right now."))
                 }
+        }
+    }
+
+    fun startNearbyDiscovery() {
+        container.debugLogRepository.log("MainViewModel", "startNearbyDiscovery")
+        container.nsdDiscoveryManager.start()
+    }
+
+    fun stopNearbyDiscovery() {
+        container.debugLogRepository.log("MainViewModel", "stopNearbyDiscovery")
+        container.nsdDiscoveryManager.stop()
+    }
+
+    fun openNearbyDevice(device: NearbyDevice) {
+        viewModelScope.launch {
+            connectingNearbyDeviceId.value = device.id
+            container.debugLogRepository.log(
+                "MainViewModel",
+                "openNearbyDevice id=${device.id} serviceName=${device.serviceName} launchUrl=${device.launchUrl}",
+            )
+            _events.emit(AppEvent.OpenExternalUrl(device.launchUrl))
+            connectingNearbyDeviceId.value = null
         }
     }
 

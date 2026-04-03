@@ -10,6 +10,10 @@ import com.ghoststream.core.media.Media3FragmentedMp4CompatibilityWorker
 import com.ghoststream.core.media.QueuedCompatibilityPipeline
 import com.ghoststream.core.media.TempPlaybackCache
 import com.ghoststream.core.network.AndroidNetworkInspector
+import com.ghoststream.core.network.discovery.FriendlyUrlManager
+import com.ghoststream.core.network.discovery.NsdAdvertiser
+import com.ghoststream.core.network.discovery.NsdDiscoveryManager
+import com.ghoststream.core.network.discovery.SessionEndpointResolver
 import com.ghoststream.core.network.server.GhostStreamServer
 import com.ghoststream.core.network.server.KtorGhostStreamServer
 import com.ghoststream.core.session.InMemorySessionManager
@@ -37,6 +41,24 @@ class AppContainer(
     val storageRepository: StorageRepository by lazy { AndroidStorageRepository(appContext, mediaAnalyzer) }
     val sessionManager: SessionManager by lazy { InMemorySessionManager(debugLogRepository) }
     val networkInspector: AndroidNetworkInspector by lazy { AndroidNetworkInspector(appContext, debugLogRepository) }
+    private val friendlyUrlManager: FriendlyUrlManager by lazy { FriendlyUrlManager() }
+    private val sessionEndpointResolver: SessionEndpointResolver by lazy {
+        SessionEndpointResolver(friendlyUrlManager = friendlyUrlManager)
+    }
+    val nsdAdvertiser: NsdAdvertiser by lazy {
+        NsdAdvertiser(
+            context = appContext,
+            endpointResolver = sessionEndpointResolver,
+            debugLogSink = debugLogRepository,
+        )
+    }
+    val nsdDiscoveryManager: NsdDiscoveryManager by lazy {
+        NsdDiscoveryManager(
+            context = appContext,
+            endpointResolver = sessionEndpointResolver,
+            debugLogSink = debugLogRepository,
+        )
+    }
     val server: GhostStreamServer by lazy {
         KtorGhostStreamServer(
             context = appContext,
@@ -58,6 +80,7 @@ class AppContainer(
             server = server,
             mediaAnalyzer = mediaAnalyzer,
             compatibilityPipeline = compatibilityPipeline,
+            nsdAdvertiser = nsdAdvertiser,
             debugLogSink = debugLogRepository,
         )
     }

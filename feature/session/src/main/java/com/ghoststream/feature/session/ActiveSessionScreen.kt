@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import com.ghoststream.core.model.BlockedClient
 import com.ghoststream.core.model.ConnectedClient
 import com.ghoststream.core.model.SessionState
+import com.ghoststream.core.model.displayAccessUrl
 import com.ghoststream.core.model.resolvedAccessUrl
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
@@ -68,6 +69,14 @@ fun ActiveSessionScreen(
     val accessUrl = remember(sessionState.sessionUrl, sessionState.networkAvailability.localAddress, sessionState.serverPort) {
         sessionState.resolvedAccessUrl()
     }
+    val displayUrl = remember(
+        sessionState.hostname,
+        sessionState.sessionUrl,
+        sessionState.networkAvailability.localAddress,
+        sessionState.serverPort,
+    ) {
+        sessionState.displayAccessUrl()
+    }
     LaunchedEffect(sessionState.connectedClients.size, hapticOnDeviceConnect) {
         if (hapticOnDeviceConnect && sessionState.connectedClients.isNotEmpty()) {
             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -79,7 +88,7 @@ fun ActiveSessionScreen(
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(Color(0xFF030507), Color(0xFF0B1624), Color(0xFF04070B)),
+                    listOf(Color(0xFF07080C), Color(0xFF10151C), Color(0xFF0A0C11)),
                 ),
             ),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -90,7 +99,7 @@ fun ActiveSessionScreen(
                     .padding(horizontal = 20.dp, vertical = 20.dp)
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(30.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF0F1725)),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF121823)),
             ) {
                 Column(
                     modifier = Modifier.padding(22.dp),
@@ -103,7 +112,7 @@ fun ActiveSessionScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = if (sessionState.isSharing) "Sharing is live" else "Preparing browser access",
+                                text = if (sessionState.isSharing) "Private session live" else "Preparing browser access",
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.SemiBold,
                             )
@@ -160,9 +169,10 @@ fun ActiveSessionScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             SessionHighlight(
-                                title = "Access link",
-                                value = accessUrl ?: "Waiting for local link",
-                                supporting = sessionState.networkAvailability.localAddress?.let { "Local IP: $it" } ?: sessionState.message,
+                                title = if (sessionState.hostname != null) "Friendly local link" else "Access link",
+                                value = displayUrl ?: accessUrl ?: "Waiting for local link",
+                                supporting = sessionState.advertisedName?.let { "Nearby GhostStream apps will see $it." }
+                                    ?: "QR and Share use the most reliable local browser path.",
                             )
                             SessionHighlight(
                                 title = "Session security",
@@ -176,10 +186,10 @@ fun ActiveSessionScreen(
                                 onAction = if (sessionState.authEnabled) onRegeneratePin else null,
                             )
                             SessionHighlight(
-                                title = "Local port",
-                                value = sessionState.serverPort?.toString() ?: "Not assigned",
-                                supporting = sessionState.hostname?.let { "Host name: $it" }
-                                    ?: "Use this same port on your local network link.",
+                                title = "Nearby name",
+                                value = sessionState.advertisedName ?: "Advertising local session",
+                                supporting = sessionState.hostname?.let { "Local hostname: $it" }
+                                    ?: "Nearby GhostStream apps can discover this session without showing the raw IP.",
                             )
                         }
                     }
@@ -224,7 +234,7 @@ fun ActiveSessionScreen(
                     .padding(horizontal = 20.dp)
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF0A101A)),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF10141B)),
             ) {
                 Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(
@@ -321,8 +331,8 @@ private fun SessionHighlight(
 ) {
     Card(
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF131D2C)),
-    ) {
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF131D2C)),
+            ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(title, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
             Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)

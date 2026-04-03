@@ -67,6 +67,7 @@ class InMemorySessionManager(
                 serverPort = port,
                 sessionUrl = sessionUrl,
                 hostname = hostname,
+                advertisedName = null,
                 selectedItems = items,
                 selectedFolders = folders,
                 networkAvailability = networkAvailability,
@@ -77,6 +78,22 @@ class InMemorySessionManager(
             )
         }
         debugLogSink.log("SessionManager", "startSession completed stateSharing=${_sessionState.value.isSharing} stateUrl=${_sessionState.value.sessionUrl}")
+    }
+
+    override fun updateAdvertisedAccess(
+        advertisedName: String?,
+        hostname: String?,
+    ) {
+        _sessionState.update { current ->
+            if (!current.isSharing) {
+                current
+            } else {
+                current.copy(
+                    advertisedName = advertisedName ?: current.advertisedName,
+                    hostname = hostname ?: current.hostname,
+                )
+            }
+        }
     }
 
     override suspend fun stopSession(message: String) {
