@@ -14,6 +14,20 @@
   --danger: #ff8e8a;
   --radius: 18px;
   --radius-lg: 28px;
+  --plyr-color-main: #87e6ff;
+  --plyr-font-family: "Segoe UI", system-ui, sans-serif;
+  --plyr-control-radius: 14px;
+  --plyr-video-control-background: rgba(8, 14, 24, 0.72);
+  --plyr-video-controls-background: linear-gradient(180deg, rgba(5, 8, 14, 0) 0%, rgba(5, 8, 14, 0.9) 100%);
+  --plyr-video-control-color-hover: #041b24;
+  --plyr-audio-control-color-hover: #041b24;
+  --plyr-range-fill-background: #87e6ff;
+  --plyr-tooltip-background: rgba(10, 18, 28, 0.94);
+  --plyr-tooltip-color: #eef2f7;
+  --plyr-menu-background: rgba(10, 18, 28, 0.96);
+  --plyr-menu-color: #eef2f7;
+  --plyr-menu-item-arrow-color: #87e6ff;
+  --plyr-menu-item-arrow-size: 4px;
 }
 
 *,
@@ -481,12 +495,44 @@ input {
   position: relative;
 }
 
+.gs-video-wrap .plyr,
 .gs-video-wrap video,
 .gs-preview {
   width: 100%;
   border-radius: 20px;
   border: 1px solid var(--border);
   background: #000;
+}
+
+.gs-video-wrap .plyr {
+  overflow: hidden;
+  box-shadow: 0 22px 56px rgba(0, 0, 0, 0.28);
+}
+
+.gs-video-wrap video.gs-native-video {
+  box-shadow: 0 22px 56px rgba(0, 0, 0, 0.24);
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+}
+
+.gs-video-wrap .plyr__poster,
+.gs-video-wrap .plyr__video-wrapper {
+  background: #000;
+}
+
+.gs-video-wrap .plyr--video .plyr__control--overlaid {
+  background: rgba(135, 230, 255, 0.2);
+  border: 1px solid rgba(135, 230, 255, 0.28);
+  backdrop-filter: blur(10px);
+}
+
+.gs-video-wrap .plyr--video .plyr__control--overlaid:hover {
+  background: var(--accent);
+}
+
+.gs-video-wrap .plyr__menu__container,
+.gs-video-wrap .plyr__tooltip {
+  backdrop-filter: blur(14px);
 }
 
 .gs-preview {
@@ -551,29 +597,23 @@ iframe.gs-preview {
 }
 
 .gs-music-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   margin-top: 10px;
 }
 
-.gs-music-row audio {
-  display: none;
+.gs-music-row .plyr {
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid rgba(135, 230, 255, 0.14);
+  background: rgba(8, 14, 24, 0.72);
 }
 
-.gs-music-bar {
-  flex: 1;
-  height: 4px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  overflow: hidden;
+.gs-music-row .plyr--audio .plyr__controls {
+  background: transparent;
+  padding: 10px 12px;
 }
 
-.gs-music-fill {
-  display: block;
-  height: 100%;
-  width: 0;
-  background: var(--accent);
+.gs-music-row .plyr__control {
+  border-radius: 12px;
 }
 
 .gs-now {

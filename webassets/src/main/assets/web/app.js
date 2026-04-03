@@ -9,6 +9,9 @@ const state = {
   selectMode: false,
   libraryItems: [],
   nowPlaying: null,
+  plyr: null,
+  plyrItemId: null,
+  musicPlayers: [],
   searchTimer: null,
   compatPollToken: 0,
   compatPollTimer: null,
@@ -33,6 +36,8 @@ document.addEventListener("click", (event) => {
 
 async function boot() {
   cancelCompatPolling();
+  destroyPlyr();
+  destroyMusicPlayers();
   const path = location.pathname;
   if (path === "/login") {
     renderLogin();
@@ -65,6 +70,61 @@ function navigate(path, replace = false) {
   boot();
 }
 
+function isMobileBrowser() {
+  const ua = navigator.userAgent || "";
+  const mobileUa = /Android|iPhone|iPad|iPod|Mobile|Windows Phone|Opera Mini/i.test(ua);
+  const coarsePointer = window.matchMedia?.("(pointer: coarse)")?.matches;
+  const narrowViewport = window.innerWidth <= 900;
+  return Boolean(mobileUa || (coarsePointer && narrowViewport));
+}
+
+function isAppleMobileReceiver() {
+  const ua = navigator.userAgent || "";
+  const appleHandheld = /iPhone|iPad|iPod/i.test(ua);
+  const iPadDesktopMode = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+  return Boolean(appleHandheld || iPadDesktopMode);
+}
+
+function shouldUseHlsPlayback(item) {
+  return Boolean(item.hlsUrl && item.playbackMode !== "DIRECT" && isAppleMobileReceiver());
+}
+
+function shouldUseNativeVideoPlayer(item) {
+  return isMobileBrowser() || item.playbackMode !== "DIRECT";
+}
+
+function shouldStartCompatibilityPlayback(item, job = null) {
+  if (item.playbackMode === "DIRECT") return true;
+  const complete = job ? Boolean(job.complete) : Boolean(item.compatibilityComplete);
+  const ready = job
+    ? Boolean(job.ready || job.status === "READY")
+    : Boolean(item.streamReady || item.compatibilityStatus === "READY");
+  return ready || complete;
+}
+
+function compatibilityHeadline(item, streamLive = item.streamReady) {
+  if (item.compatibilityStatus === "FAILED") {
+    return "Playback preparation failed";
+  }
+  if (!streamLive) {
+    return "Preparing browser playback";
+  }
+  if (item.compatibilityComplete || item.compatibilityStatus === "READY") {
+    return "Compatibility playback is ready";
+  }
+  return "Streaming while finishing conversion";
+}
+
+function compatibilityBody(item, streamLive = item.streamReady) {
+  if (!streamLive && item.compatibilityMessage) {
+    return item.compatibilityMessage;
+  }
+  if (streamLive) {
+    return item.compatibilityMessage || "GhostStream is finishing the compatible stream in the background.";
+  }
+  return item.compatibilityMessage || "GhostStream is preparing a compatible stream for this browser.";
+}
+
 async function api(url, options = {}) {
   const response = await fetch(url, {
     credentials: "include",
@@ -87,6 +147,8 @@ async function api(url, options = {}) {
 }
 
 function shell(content, options = {}) {
+  destroyPlyr();
+  destroyMusicPlayers();
   if (options.resetNowPlaying !== false) {
     state.nowPlaying = null;
   }
@@ -313,6 +375,8 @@ function downloadItems(items) {
 
 async function renderVideoPlayer(id) {
   const item = await api(`/api/item/${id}`);
+  const shouldMountReadyPlayer = shouldStartCompatibilityPlayback(item);
+  const playbackItem = shouldMountReadyPlayer ? { ...item, streamReady: true } : { ...item, streamReady: false };
   shell(`
     <section class="gs-section">
       <div class="gs-player">
@@ -327,29 +391,33 @@ async function renderVideoPlayer(id) {
           </div>
         </div>
         <div class="gs-badges">
-          ${item.compatibility ? `<span class="gs-badge">${esc(item.compatibility)}</span>` : ""}
-          ${item.subtitleUrl ? '<span class="gs-badge">Subtitles available</span>' : ""}
-          <span class="gs-badge">${esc(item.playbackMode)}</span>
+          ${playbackItem.compatibility ? `<span class="gs-badge">${esc(playbackItem.compatibility)}</span>` : ""}
+          ${playbackItem.subtitleUrl ? '<span class="gs-badge">Subtitles available</span>' : ""}
+          <span class="gs-badge">${esc(playbackItem.playbackMode)}</span>
         </div>
-        <div id="playerStage">${renderVideoStage(item)}</div>
-        ${item.playbackMode !== "DIRECT" ? `
-          <div class="gs-compat-inline${item.streamReady ? " is-visible" : ""}" id="compatInline">
-            <span class="gs-badge" data-compat-badge>${esc(item.compatibilityStatus || (item.streamReady ? "STREAM LIVE" : "PREPARING"))}</span>
+        <div id="playerStage">${renderVideoStage(playbackItem)}</div>
+        ${playbackItem.playbackMode !== "DIRECT" ? `
+          <div class="gs-compat-inline${playbackItem.streamReady ? " is-visible" : ""}" id="compatInline">
+            <span class="gs-badge" data-compat-badge>${esc(playbackItem.compatibilityStatus || (playbackItem.streamReady ? "STREAM LIVE" : "PREPARING"))}</span>
             <div class="gs-compat-inline-copy">
-              <strong data-compat-title>${item.streamReady ? "Streaming while finishing conversion" : "Preparing browser playback"}</strong>
-              <p class="gs-meta" data-compat-message>${esc(item.compatibilityMessage || "GhostStream is preparing a compatible stream for this browser.")}</p>
+              <strong data-compat-title>${compatibilityHeadline(playbackItem)}</strong>
+              <p class="gs-meta" data-compat-message>${esc(compatibilityBody(playbackItem))}</p>
             </div>
-            <span class="gs-meta" data-compat-progress>${item.compatibilityProgressPercent != null ? `${item.compatibilityProgressPercent}%` : "Preparing"}</span>
+            <span class="gs-meta" data-compat-progress>${playbackItem.compatibilityProgressPercent != null ? `${playbackItem.compatibilityProgressPercent}%` : "Preparing"}</span>
           </div>
         ` : ""}
       </div>
     </section>
   `);
 
-  hydrateVideoPlayer(item);
+  if (playbackItem.streamReady) {
+    ensureCompatiblePlayerMounted(playbackItem);
+  } else {
+    hydrateVideoPlayer(playbackItem);
+  }
 
-  if (item.playbackMode !== "DIRECT" && item.compatibilityStatus !== "READY") {
-    pollCompat(id, item);
+  if (playbackItem.playbackMode !== "DIRECT" && !playbackItem.streamReady) {
+    pollCompat(id, playbackItem);
   }
 }
 
@@ -359,17 +427,20 @@ function renderVideoStage(item) {
     : `
       <div class="gs-compat-card" id="compatStageCard">
         <span class="gs-badge" data-compat-badge>${esc(item.compatibilityStatus || "PREPARING")}</span>
-        <h3 data-compat-title>Preparing browser playback</h3>
-        <p data-compat-message>${esc(item.compatibilityMessage || "GhostStream is preparing a compatible stream for this browser.")}</p>
+        <h3 data-compat-title>${compatibilityHeadline(item, false)}</h3>
+        <p data-compat-message>${esc(compatibilityBody(item, false))}</p>
         <p class="gs-meta" data-compat-progress>${item.compatibilityProgressPercent != null ? `${item.compatibilityProgressPercent}%` : "Preparing"}</p>
       </div>
     `;
 }
 
 function videoMarkup(item) {
+  const nativeClass = shouldUseNativeVideoPlayer(item) ? " gs-native-video" : "";
+  const preload = shouldUseNativeVideoPlayer(item) ? "metadata" : "auto";
+  const sourceUrl = shouldUseHlsPlayback(item) ? item.hlsUrl : item.streamUrl;
   return `
     <div class="gs-video-wrap">
-      <video id="vPlayer" controls playsinline preload="auto" src="${item.streamUrl}">
+      <video id="vPlayer" class="gs-plyr-target${nativeClass}" controls playsinline webkit-playsinline="true" x-webkit-airplay="allow" preload="${preload}" src="${sourceUrl}">
         ${item.subtitleUrl ? `<track kind="subtitles" src="${item.subtitleUrl}" srclang="en" label="Subtitle" default>` : ""}
       </video>
       <div class="gs-video-error" id="vError">
@@ -384,14 +455,65 @@ function videoMarkup(item) {
   `;
 }
 
-function hydrateVideoPlayer(item) {
+function hydrateVideoPlayer(item, options = {}) {
   const video = document.getElementById("vPlayer");
   if (!video || video.dataset.bound === "true") return;
+  destroyPlyr();
   video.dataset.bound = "true";
+  const useNativePlayer = shouldUseNativeVideoPlayer(item);
   const errorCard = document.getElementById("vError");
   const errorText = document.getElementById("vErrorText");
   let autoRetryUsed = false;
 
+  if (!useNativePlayer && typeof window.Plyr === "function") {
+    state.plyr = new window.Plyr(video, {
+      iconUrl: "/plyr.svg",
+      controls: [
+        "play-large",
+        "rewind",
+        "play",
+        "fast-forward",
+        "progress",
+        "current-time",
+        "duration",
+        "mute",
+        "volume",
+        "captions",
+        "settings",
+        "pip",
+        "airplay",
+        "fullscreen",
+      ],
+      settings: ["captions", "speed"],
+      captions: {
+        active: Boolean(item.subtitleUrl),
+        update: true,
+      },
+      keyboard: {
+        focused: true,
+        global: false,
+      },
+      fullscreen: {
+        enabled: true,
+        iosNative: true,
+      },
+      storage: {
+        enabled: false,
+      },
+      clickToPlay: true,
+      hideControls: false,
+      ratio: "16:9",
+    });
+    state.plyrItemId = item.id;
+  }
+
+  const clearVideoError = () => {
+    if (errorCard) errorCard.classList.remove("is-visible");
+  };
+
+  video.addEventListener("loadedmetadata", clearVideoError);
+  video.addEventListener("canplay", clearVideoError);
+  video.addEventListener("playing", clearVideoError);
   video.addEventListener("play", () => setNowPlaying({
     type: "Video",
     title: item.title,
@@ -405,27 +527,49 @@ function hydrateVideoPlayer(item) {
     if (errorText) {
       errorText.textContent = item.playbackMode === "DIRECT"
         ? "This browser could not start the original stream. Try downloading the original file."
-        : "The compatibility stream is still warming up. Retry in a moment.";
+        : (shouldUseHlsPlayback(item)
+            ? "GhostStream is opening the HLS playback path for this device. Retry in a moment."
+            : "The compatibility stream is still warming up. Retry in a moment.");
     }
     if (item.playbackMode !== "DIRECT" && !autoRetryUsed) {
       autoRetryUsed = true;
       setTimeout(() => {
         if (location.pathname !== `/player/video/${item.id}`) return;
-        if (errorCard) errorCard.classList.remove("is-visible");
+        clearVideoError();
         video.load();
       }, 1800);
     }
   });
   document.getElementById("retryVideoBtn")?.addEventListener("click", () => {
-    if (errorCard) errorCard.classList.remove("is-visible");
-    video.load();
-    video.play().catch(() => {});
+    clearVideoError();
+    if (state.plyr && state.plyrItemId === item.id) {
+      state.plyr.restart();
+      state.plyr.play().catch(() => {});
+    } else {
+      video.load();
+      video.play().catch(() => {});
+    }
   });
+
+  if (options.autoplay) {
+    setTimeout(() => {
+      if (state.plyr && state.plyrItemId === item.id) {
+        state.plyr.play().catch(() => {});
+      } else {
+        video.play().catch(() => {});
+      }
+    }, 180);
+  }
 }
 
 function updateCompatElements(job, streamLive) {
   document.querySelectorAll("[data-compat-message]").forEach((element) => {
-    element.textContent = job.message || "Preparing";
+    element.textContent = compatibilityBody({
+      compatibilityMessage: job.message,
+      compatibilityStatus: job.status,
+      compatibilityComplete: job.complete,
+      streamReady: streamLive,
+    }, streamLive);
   });
   document.querySelectorAll("[data-compat-progress]").forEach((element) => {
     element.textContent = job.progressPercent != null ? `${job.progressPercent}%` : (streamLive ? "Streaming" : "Preparing");
@@ -434,9 +578,11 @@ function updateCompatElements(job, streamLive) {
     element.textContent = job.status || (streamLive ? "STREAM LIVE" : "PREPARING");
   });
   document.querySelectorAll("[data-compat-title]").forEach((element) => {
-    element.textContent = streamLive
-      ? (job.complete ? "Compatibility playback is ready" : "Streaming while finishing conversion")
-      : "Preparing browser playback";
+    element.textContent = compatibilityHeadline({
+      compatibilityStatus: job.status,
+      compatibilityComplete: job.complete,
+      streamReady: streamLive,
+    }, streamLive);
   });
   const inline = document.getElementById("compatInline");
   if (inline) {
@@ -445,11 +591,14 @@ function updateCompatElements(job, streamLive) {
 }
 
 function ensureCompatiblePlayerMounted(item) {
-  if (document.getElementById("vPlayer")) return;
+  if (document.getElementById("vPlayer")) {
+    hydrateVideoPlayer(item);
+    return;
+  }
   const stage = document.getElementById("playerStage");
   if (!stage) return;
   stage.innerHTML = videoMarkup(item);
-  hydrateVideoPlayer(item);
+  hydrateVideoPlayer(item, { autoplay: true });
 }
 
 async function renderPhotoViewer(id) {
@@ -536,7 +685,7 @@ function card(item, selectable = false) {
     : item.category === "photo"
       ? `<a class="gs-btn gs-btn-accent gs-btn-sm" data-link href="/photo/${item.id}">View</a>`
       : item.category === "music"
-        ? `<button class="gs-btn gs-btn-accent gs-btn-sm music-play-btn" data-url="${item.streamUrl}" data-title="${esc(item.title)}">Play</button>`
+        ? `<button class="gs-btn gs-btn-accent gs-btn-sm music-play-btn" data-audio-item-id="${item.id}" data-title="${esc(item.title)}">Play</button>`
         : item.title.toLowerCase().endsWith(".pdf")
           ? `<a class="gs-btn gs-btn-accent gs-btn-sm" data-link href="/photo/${item.id}">Preview</a>`
           : "";
@@ -553,9 +702,9 @@ function card(item, selectable = false) {
         ${item.compatibilityLabel ? `<div class="gs-card-caption">${esc(item.compatibilityLabel)}</div>` : ""}
         ${item.category === "music" ? `
           <div class="gs-music-row">
-            <audio preload="none" src="${item.streamUrl}"></audio>
-            <div class="gs-music-bar"><span class="gs-music-fill"></span></div>
-            <span class="gs-music-time gs-meta">0:00</span>
+            <audio class="gs-audio-player" preload="none" src="${item.streamUrl}">
+              Your browser does not support audio playback.
+            </audio>
           </div>
         ` : ""}
         <div class="gs-card-actions">
@@ -567,55 +716,76 @@ function card(item, selectable = false) {
 }
 
 function attachMusicPlayers() {
-  document.querySelectorAll(".music-play-btn").forEach((button) => {
-    button.addEventListener("click", () => {
-      const cardElement = button.closest(".gs-card");
-      const audio = cardElement?.querySelector("audio");
-      if (!audio) return;
+  destroyMusicPlayers();
+  document.querySelectorAll(".gs-audio-player").forEach((audio) => {
+    const cardElement = audio.closest(".gs-card");
+    const button = cardElement?.querySelector(".music-play-btn");
+    const title = button?.dataset.title || cardElement?.querySelector(".gs-card-title")?.textContent || "Music";
+    const player = typeof window.Plyr === "function"
+      ? new window.Plyr(audio, {
+          iconUrl: "/plyr.svg",
+          controls: ["play", "progress", "current-time", "mute", "volume"],
+          settings: [],
+          storage: {
+            enabled: false,
+          },
+          keyboard: {
+            focused: false,
+            global: false,
+          },
+        })
+      : null;
 
-      if (!audio.paused) {
-        audio.pause();
-        button.textContent = "Play";
-        return;
-      }
+    if (player) {
+      state.musicPlayers.push(player);
+    }
 
-      document.querySelectorAll("audio").forEach((element) => {
-        if (element !== audio) element.pause();
+    const mediaElement = player?.media || audio;
+
+    mediaElement.addEventListener("play", () => {
+      document.querySelectorAll(".gs-audio-player").forEach((element) => {
+        if (element !== audio) {
+          element.pause();
+        }
+      });
+      state.musicPlayers.forEach((other) => {
+        if (other?.media && other.media !== audio) {
+          other.pause();
+        }
       });
       document.querySelectorAll(".music-play-btn").forEach((element) => {
         element.textContent = "Play";
       });
-
-      audio.play().catch(() => {});
-      button.textContent = "Pause";
+      if (button) button.textContent = "Pause";
       setNowPlaying({
         type: "Music",
-        title: button.dataset.title,
-        element: audio,
+        title,
+        element: mediaElement,
         route: location.pathname,
       });
+    });
 
-      audio.ontimeupdate = () => {
-        const fill = cardElement.querySelector(".gs-music-fill");
-        const time = cardElement.querySelector(".gs-music-time");
-        if (fill && audio.duration > 0) {
-          fill.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
-        }
-        if (time) {
-          time.textContent = audio.duration > 0
-            ? `${fmtDur(audio.currentTime * 1000)} / ${fmtDur(audio.duration * 1000)}`
-            : fmtDur(audio.currentTime * 1000);
-        }
-      };
-      audio.onpause = () => {
-        if (audio.ended) return;
-        button.textContent = "Play";
-        clearNowPlaying(audio);
-      };
-      audio.onended = () => {
-        button.textContent = "Play";
-        clearNowPlaying(audio);
-      };
+    mediaElement.addEventListener("pause", () => {
+      if (mediaElement.ended) return;
+      if (button) button.textContent = "Play";
+      clearNowPlaying(mediaElement);
+    });
+
+    mediaElement.addEventListener("ended", () => {
+      if (button) button.textContent = "Play";
+      clearNowPlaying(mediaElement);
+    });
+
+    button?.addEventListener("click", () => {
+      if (!mediaElement.paused) {
+        mediaElement.pause();
+        return;
+      }
+      if (player) {
+        player.play().catch(() => {});
+      } else {
+        mediaElement.play().catch(() => {});
+      }
     });
   });
 }
@@ -637,15 +807,23 @@ async function pollCompat(id, item) {
     try {
       const job = await api(`/api/compat/${id}`);
       if (token !== state.compatPollToken || location.pathname !== route) return;
+      const canStartPlayback = shouldStartCompatibilityPlayback(item, job);
+      const nextItem = {
+        ...item,
+        streamReady: canStartPlayback,
+        compatibilityStatus: job.status,
+        compatibilityMessage: job.message,
+        compatibilityProgressPercent: job.progressPercent,
+        compatibilityComplete: job.complete,
+      };
+
+      updateCompatElements(job, canStartPlayback);
+      if (canStartPlayback) {
+        ensureCompatiblePlayerMounted(nextItem);
+      }
       if (job.complete) {
-        updateCompatElements(job, true);
-        ensureCompatiblePlayerMounted(item);
         cancelCompatPolling();
         return;
-      }
-      updateCompatElements(job, job.ready);
-      if (job.ready) {
-        ensureCompatiblePlayerMounted(item);
       }
       if (job.status === "FAILED") {
         updateCompatElements(job, false);
@@ -665,6 +843,25 @@ function cancelCompatPolling() {
     clearTimeout(state.compatPollTimer);
     state.compatPollTimer = null;
   }
+}
+
+function destroyPlyr() {
+  if (state.plyr) {
+    try {
+      state.plyr.destroy();
+    } catch (_) {}
+  }
+  state.plyr = null;
+  state.plyrItemId = null;
+}
+
+function destroyMusicPlayers() {
+  state.musicPlayers.forEach((player) => {
+    try {
+      player.destroy();
+    } catch (_) {}
+  });
+  state.musicPlayers = [];
 }
 
 function setNowPlaying(next) {
