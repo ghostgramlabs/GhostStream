@@ -1,6 +1,7 @@
 package com.ghoststream.app
 
 import android.Manifest
+import android.content.ClipData
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -58,6 +59,7 @@ import com.ghoststream.app.service.GhostStreamForegroundService
 import com.ghoststream.app.state.AppEvent
 import com.ghoststream.app.state.MainViewModel
 import com.ghoststream.app.ui.theme.GhostStreamTheme
+import com.ghoststream.core.model.resolvedAccessUrl
 import com.ghoststream.feature.home.HomeScreen
 import com.ghoststream.feature.library.AddFilesScreen
 import com.ghoststream.feature.library.AddFolderScreen
@@ -99,10 +101,24 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
     var pendingStartService by remember { mutableStateOf(false) }
     var launchHandled by remember { mutableStateOf(false) }
     var lastSessionMessage by remember { mutableStateOf<String?>(null) }
+    val startForegroundSharingService = remember(context, viewModel) {
+        {
+            runCatching {
+                GhostStreamForegroundService.start(context)
+            }.onFailure {
+                viewModel.onServiceStartFailure(
+                    "Sharing started, but background protection could not start. Keep GhostStream open while you use it.",
+                )
+            }
+        }
+    }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(RequestPermission()) { granted ->
-        if (!granted && pendingStartService) {
-            scope.launch {
-                snackbarHostState.showSnackbar("Sharing can still run, but notification visibility is limited.")
+        if (pendingStartService) {
+            startForegroundSharingService()
+            if (!granted) {
+                scope.launch {
+                    snackbarHostState.showSnackbar("Sharing can still run, but Android may hide the notification until notifications are allowed.")
+                }
             }
         }
         pendingStartService = false
@@ -124,7 +140,7 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
         uiState.sessionState.networkAvailability.localAddress,
         uiState.sessionState.serverPort,
     ) {
-        if (uiState.sessionState.isSharing && SessionAccessUrl(uiState.sessionState) != null) {
+        if (uiState.sessionState.isSharing && uiState.sessionState.resolvedAccessUrl() != null) {
             navController.navigate(Routes.Session) {
                 launchSingleTop = true
             }
@@ -151,19 +167,41 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
                     popUpTo(Routes.Home) { inclusive = true }
                 }
                 AppEvent.StartSharingService -> {
-                    runCatching {
-                        GhostStreamForegroundService.start(context)
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    val needsNotificationPermission =
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-                        ) {
-                            pendingStartService = true
-                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        }
-                    }.onFailure {
-                        // Ignore crashes here, falling back to basic background sharing
+                    if (needsNotificationPermission) {
+                        pendingStartService = true
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        startForegroundSharingService()
                     }
                 }
                 AppEvent.StopSharingService -> runCatching { GhostStreamForegroundService.stop(context) }
+                is AppEvent.ShareDebugLog -> {
+                    val emailSelector = Intent(Intent.ACTION_SENDTO).apply {
+                        data = android.net.Uri.parse("mailto:")
+                    }
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_SUBJECT, "GhostStream debug log")
+                        putExtra(
+                            Intent.EXTRA_TEXT,
+                            "GhostStream debug log attached. This file is generated only in debug builds to diagnose local server startup issues.",
+                        )
+                        putExtra(Intent.EXTRA_STREAM, event.uri)
+                        clipData = ClipData.newRawUri("GhostStream debug log", event.uri)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        selector = emailSelector
+                    }
+                    runCatching {
+                        context.startActivity(Intent.createChooser(shareIntent, "Email debug log"))
+                    }.onFailure {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("No compatible email app was found to share the debug log.")
+                        }
+                    }
+                }
             }
         }
     }
@@ -267,18 +305,30 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
                     sessionState = uiState.sessionState,
                     hapticOnDeviceConnect = uiState.settings.hapticOnDeviceConnect,
                     onCopyLink = {
-                        SessionAccessUrl(uiState.sessionState)?.let { url ->
+                        val url = uiState.sessionState.resolvedAccessUrl()
+                        if (url != null) {
                             clipboardManager.setText(AnnotatedString(url))
                             scope.launch { snackbarHostState.showSnackbar("Link copied") }
+                        } else {
+                            viewModel.refreshNetwork()
+                            scope.launch {
+                                snackbarHostState.showSnackbar("GhostStream is still preparing your local link.")
+                            }
                         }
                     },
                     onShareLink = {
-                        SessionAccessUrl(uiState.sessionState)?.let { url ->
+                        val url = uiState.sessionState.resolvedAccessUrl()
+                        if (url != null) {
                             val intent = Intent(Intent.ACTION_SEND).apply {
                                 type = "text/plain"
                                 putExtra(Intent.EXTRA_TEXT, url)
                             }
                             context.startActivity(Intent.createChooser(intent, "Share GhostStream link"))
+                        } else {
+                            viewModel.refreshNetwork()
+                            scope.launch {
+                                snackbarHostState.showSnackbar("A local link is not ready yet. Check Wi-Fi or hotspot and try again.")
+                            }
                         }
                     },
                     onStopSharing = viewModel::requestStopSharing,
@@ -306,10 +356,21 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
                     onToggleLargeTvCards = { viewModel.updateSettings { current -> current.copy(largeTvCards = it) } },
                     onToggleProminentDownloads = { viewModel.updateSettings { current -> current.copy(prominentDownloadButton = it) } },
                     onAutoStopSelected = viewModel::updateAutoStop,
+                    onPreferredPortChanged = { port ->
+                        viewModel.updateSettings { current ->
+                            current.copy(
+                                preferredPort = port.toIntOrNull()?.coerceIn(1024, 65535) ?: current.preferredPort,
+                            )
+                        }
+                    },
                     onManualPinChanged = { pin -> viewModel.updateSettings { current -> current.copy(manualPin = pin) } },
                     onOpenWifiSettings = { context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS)) },
                     onOpenHotspotSettings = { context.startActivity(Intent("android.settings.TETHER_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) },
                     onOpenHelp = { navController.navigate(Routes.Help) },
+                    showDebugTools = BuildConfig.DEBUG,
+                    debugLogLocation = viewModel.debugLogLocationDescription(),
+                    onShareDebugLog = viewModel::shareDebugLog,
+                    onClearDebugLog = viewModel::clearDebugLog,
                     modifier = Modifier.padding(innerPadding),
                 )
             }
@@ -344,14 +405,6 @@ private fun SplashRoute() {
             Spacer(modifier = Modifier.height(6.dp))
             Text("File Transfer & Stream", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-    }
-}
-
-private fun SessionAccessUrl(state: com.ghoststream.core.model.SessionState): String? {
-    return state.sessionUrl
-        ?.takeIf { it.startsWith("http://") && !it.startsWith("http://:") }
-        ?: state.networkAvailability.localAddress?.let { address ->
-        state.serverPort?.let { port -> "http://$address:$port" }
     }
 }
 

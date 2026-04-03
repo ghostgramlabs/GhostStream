@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -56,7 +58,7 @@ import com.ghoststream.core.model.SharedFolder
 import com.ghoststream.core.model.SharedItem
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun SharedLibraryScreen(
     libraryState: LibraryState,
@@ -106,58 +108,64 @@ fun SharedLibraryScreen(
         item {
             Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
                 Text("Shared Library", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.SemiBold)
-                Text("Manage everything available to nearby browsers", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(modifier = Modifier.height(6.dp))
+                Text("Curate everything available to nearby browsers.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
         item {
-            OutlinedTextField(
-                value = query,
-                onValueChange = { query = it },
+            Card(
                 modifier = Modifier
                     .padding(horizontal = 20.dp)
                     .fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                label = { Text("Search by filename") },
-            )
-        }
-
-        item {
-            Row(
-                modifier = Modifier.padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF0F1725)),
             ) {
-                categories.forEach { category ->
-                    AssistChip(
-                        onClick = { selectedCategory = category },
-                        label = { Text(category) },
+                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    OutlinedTextField(
+                        value = query,
+                        onValueChange = { query = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(18.dp),
+                        label = { Text("Search by filename") },
+                        singleLine = true,
                     )
-                }
-            }
-        }
 
-        item {
-            Row(
-                modifier = Modifier.padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                OutlinedButton(onClick = { sortMenuExpanded = true }, shape = RoundedCornerShape(16.dp)) {
-                    Text("Sort: $sortOption")
-                }
-                DropdownMenu(expanded = sortMenuExpanded, onDismissRequest = { sortMenuExpanded = false }) {
-                    listOf("Newest", "Name", "Size").forEach { option ->
-                        DropdownMenuItem(
-                            text = { Text(option) },
-                            onClick = {
-                                sortOption = option
-                                sortMenuExpanded = false
-                            },
-                        )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        categories.forEach { category ->
+                            AssistChip(
+                                onClick = { selectedCategory = category },
+                                label = { Text(category) },
+                            )
+                        }
+                    }
+
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        OutlinedButton(onClick = { sortMenuExpanded = true }, shape = RoundedCornerShape(16.dp)) {
+                            Text("Sort: $sortOption")
+                        }
+                        DropdownMenu(expanded = sortMenuExpanded, onDismissRequest = { sortMenuExpanded = false }) {
+                            listOf("Newest", "Name", "Size").forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option) },
+                                    onClick = {
+                                        sortOption = option
+                                        sortMenuExpanded = false
+                                    },
+                                )
+                            }
+                        }
+                        OutlinedButton(onClick = onOpenAddFiles, shape = RoundedCornerShape(16.dp)) { Text("Add files") }
+                        OutlinedButton(onClick = onOpenAddFolder, shape = RoundedCornerShape(16.dp)) { Text("Add folder") }
+                        OutlinedButton(onClick = onOpenBatchSelect, shape = RoundedCornerShape(16.dp)) { Text("Batch select") }
                     }
                 }
-                OutlinedButton(onClick = onOpenAddFiles, shape = RoundedCornerShape(16.dp)) { Text("Add files") }
-                OutlinedButton(onClick = onOpenAddFolder, shape = RoundedCornerShape(16.dp)) { Text("Add folder") }
-                OutlinedButton(onClick = onOpenBatchSelect, shape = RoundedCornerShape(16.dp)) { Text("Batch select") }
             }
         }
 
@@ -180,12 +188,21 @@ fun SharedLibraryScreen(
                 }
             }
 
-            items(filteredItems, key = { it.id }) { item ->
-                LibraryItemRow(
-                    item = item,
-                    compatibilityJob = compatibilityJobs[item.id],
-                    onRemoveItem = onRemoveItem,
-                )
+            if (filteredItems.isEmpty()) {
+                item {
+                    LibraryEmptyState(
+                        title = "Nothing matches this view",
+                        description = "Try another filter or search term.",
+                    )
+                }
+            } else {
+                items(filteredItems, key = { it.id }) { item ->
+                    LibraryItemRow(
+                        item = item,
+                        compatibilityJob = compatibilityJobs[item.id],
+                        onRemoveItem = onRemoveItem,
+                    )
+                }
             }
         }
 
@@ -262,7 +279,7 @@ private fun LibraryItemRow(
                     model = Uri.parse(item.uri),
                     contentDescription = null,
                     modifier = Modifier
-                        .size(72.dp)
+                        .size(76.dp)
                         .background(Color(0xFF1A2433), RoundedCornerShape(14.dp)),
                 )
             } else {

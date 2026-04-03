@@ -14,6 +14,7 @@ enum class AutoStopOption(val minutes: Int?) {
 data class AppSettings(
     val onboardingCompleted: Boolean = false,
     val autoStop: AutoStopOption = AutoStopOption.NEVER,
+    val preferredPort: Int = 43183,
     val keepScreenAwake: Boolean = true,
     val hapticOnDeviceConnect: Boolean = true,
     val showTransferSpeed: Boolean = true,
@@ -37,4 +38,3 @@ data class RecentSession(
     val totalBytesSent: Long,
     val networkType: NetworkType,
 )
-

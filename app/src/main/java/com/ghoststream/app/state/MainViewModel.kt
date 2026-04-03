@@ -11,6 +11,7 @@ import com.ghoststream.core.model.SessionState
 import com.ghoststream.core.model.SmartSelectionGroup
 import com.ghoststream.core.model.RecentSession
 import com.ghoststream.core.media.CompatibilityJob
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -19,9 +20,8 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.async
+import kotlinx.coroutines.withContext
 
 class MainViewModel(
     private val container: AppContainer,
@@ -75,6 +75,7 @@ class MainViewModel(
 
     init {
         refreshNetwork()
+        container.debugLogRepository.log("MainViewModel", "initialized")
     }
 
     fun completeOnboarding() {
@@ -86,6 +87,7 @@ class MainViewModel(
 
     fun refreshNetwork() {
         viewModelScope.launch {
+            container.debugLogRepository.log("MainViewModel", "refreshNetwork requested")
             container.sessionManager.updateNetworkAvailability(container.networkInspector.inspect())
         }
     }
@@ -135,40 +137,52 @@ class MainViewModel(
         viewModelScope.launch {
             if (startSharingInProgress.value) return@launch
             if (container.sessionManager.sessionState.value.isSharing) {
+                container.debugLogRepository.log("MainViewModel", "requestStartSharing ignored because session already sharing")
                 _events.emit(AppEvent.NavigateSession)
                 return@launch
             }
 
+            container.debugLogRepository.log("MainViewModel", "requestStartSharing started")
             startSharingInProgress.value = true
             try {
-                when (val result = container.sharingCoordinator.preflight()) {
+                when (val result = withContext(Dispatchers.IO) { container.sharingCoordinator.preflight() }) {
                     SharePreflightResult.NoContent -> {
+                        container.debugLogRepository.log("MainViewModel", "preflight result: no content")
+                        pendingShareAfterNetworkReady.value = false
+                        startSharingInProgress.value = false
                         _events.emit(
                             AppEvent.ShowMessage("Add some content first to start sharing."),
                         )
                     }
 
                     is SharePreflightResult.NeedsNetwork -> {
+                        container.debugLogRepository.log(
+                            "MainViewModel",
+                            "preflight result: needs network type=${result.availability.type} localAddress=${result.availability.localAddress}",
+                        )
                         pendingShareAfterNetworkReady.value = true
+                        startSharingInProgress.value = false
                         _events.emit(AppEvent.NavigateNetworkSetup)
                     }
 
                     is SharePreflightResult.Failure -> {
+                        container.debugLogRepository.log("MainViewModel", "preflight result: failure message=${result.message}")
+                        pendingShareAfterNetworkReady.value = false
+                        startSharingInProgress.value = false
                         _events.emit(AppEvent.ShowMessage(result.message))
                     }
 
                     SharePreflightResult.Ready -> {
+                        container.debugLogRepository.log("MainViewModel", "preflight result: ready")
                         pendingShareAfterNetworkReady.value = false
                         startSharingAfterReadyCheck()
-                        return@launch // startSharingInProgress reset inside
                     }
                 }
             } catch (e: Exception) {
+                container.debugLogRepository.log("MainViewModel", "requestStartSharing crashed", e)
+                pendingShareAfterNetworkReady.value = false
+                startSharingInProgress.value = false
                 _events.emit(AppEvent.ShowMessage("Something went wrong. Please try again."))
-            } finally {
-                if (pendingShareAfterNetworkReady.value.not()) {
-                    startSharingInProgress.value = false
-                }
             }
         }
     }
@@ -176,6 +190,7 @@ class MainViewModel(
     fun resumePendingShareAfterNetworkReady() {
         viewModelScope.launch {
             if (!pendingShareAfterNetworkReady.value || startSharingInProgress.value) return@launch
+            container.debugLogRepository.log("MainViewModel", "resumePendingShareAfterNetworkReady")
             startSharingInProgress.value = true
             startSharingAfterReadyCheck()
         }
@@ -183,8 +198,10 @@ class MainViewModel(
 
     fun requestStopSharing() {
         viewModelScope.launch {
+            container.debugLogRepository.log("MainViewModel", "requestStopSharing")
             pendingShareAfterNetworkReady.value = false
             startSharingInProgress.value = false
+            container.sharingCoordinator.stopSharing()
             _events.emit(AppEvent.StopSharingService)
             _events.emit(AppEvent.NavigateHome)
         }
@@ -192,6 +209,7 @@ class MainViewModel(
 
     fun onServiceStartFailure(message: String) {
         viewModelScope.launch {
+            container.debugLogRepository.log("MainViewModel", "service start failure message=$message")
             _events.emit(AppEvent.ShowMessage(message))
         }
     }
@@ -226,28 +244,50 @@ class MainViewModel(
         container.sessionManager.disconnectAllClients()
     }
 
+    fun debugLogLocationDescription(): String = container.debugLogRepository.locationDescription()
+
+    fun shareDebugLog() {
+        if (!container.debugLogRepository.isEnabled()) return
+        viewModelScope.launch {
+            container.debugLogRepository.log("MainViewModel", "shareDebugLog requested")
+            container.debugLogRepository.shareableUri()
+                .onSuccess { uri -> _events.emit(AppEvent.ShareDebugLog(uri)) }
+                .onFailure {
+                    container.debugLogRepository.log("MainViewModel", "shareDebugLog failed", it)
+                    _events.emit(AppEvent.ShowMessage("Unable to prepare the debug log right now."))
+                }
+        }
+    }
+
+    fun clearDebugLog() {
+        if (!container.debugLogRepository.isEnabled()) return
+        viewModelScope.launch {
+            container.debugLogRepository.clear()
+                .onSuccess { _events.emit(AppEvent.ShowMessage("Debug log cleared.")) }
+                .onFailure {
+                    container.debugLogRepository.log("MainViewModel", "clearDebugLog failed", it)
+                    _events.emit(AppEvent.ShowMessage("Unable to clear the debug log right now."))
+                }
+        }
+    }
+
     private suspend fun startSharingAfterReadyCheck() {
-        val startJob = viewModelScope.async(kotlinx.coroutines.Dispatchers.IO) {
+        container.debugLogRepository.log("MainViewModel", "startSharingAfterReadyCheck")
+        when (val startResult = withContext(Dispatchers.IO) {
             container.sharingCoordinator.beginSharing(assumePreflightReady = true)
-        }
-        
-        val startResult = kotlinx.coroutines.withTimeoutOrNull(5_000) {
-            startJob.await()
-        } ?: com.ghoststream.app.state.ShareStartResult.Failure("Server initialization timed out. Please try again.")
-
-        if (startResult is com.ghoststream.app.state.ShareStartResult.Failure) {
-            startJob.cancel() // Attempt to free the background thread if it was deadlocked
-        }
-
-        when (startResult) {
+        }) {
             is ShareStartResult.Started -> {
+                container.debugLogRepository.log("MainViewModel", "share started url=${startResult.url}")
                 pendingShareAfterNetworkReady.value = false
                 startSharingInProgress.value = false
+                container.debugLogRepository.log("MainViewModel", "emitting StartSharingService")
                 _events.emit(AppEvent.StartSharingService)
+                container.debugLogRepository.log("MainViewModel", "emitting NavigateSession")
                 _events.emit(AppEvent.NavigateSession)
             }
 
             is ShareStartResult.Failure -> {
+                container.debugLogRepository.log("MainViewModel", "share failed message=${startResult.message}")
                 pendingShareAfterNetworkReady.value = false
                 startSharingInProgress.value = false
                 _events.emit(AppEvent.ShowMessage(startResult.message))

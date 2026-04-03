@@ -9,9 +9,12 @@ import com.ghoststream.core.media.MediaAnalyzer
 import com.ghoststream.core.media.PlaybackResolution
 import com.ghoststream.core.media.PlaybackSource
 import com.ghoststream.core.model.ClientActivity
+import com.ghoststream.core.model.DebugLogSink
 import com.ghoststream.core.model.MediaCategory
+import com.ghoststream.core.model.NoOpDebugLogSink
 import com.ghoststream.core.model.PlaybackMode
 import com.ghoststream.core.model.SharedItem
+import com.ghoststream.core.model.buildSessionAccessUrl
 import com.ghoststream.core.network.AndroidNetworkInspector
 import com.ghoststream.core.network.assets.WebAssetLoader
 import com.ghoststream.core.session.SessionManager
@@ -67,20 +70,24 @@ class KtorGhostStreamServer(
     private val networkInspector: AndroidNetworkInspector,
     private val assetLoader: WebAssetLoader = WebAssetLoader(context),
     private val json: Json = Json { ignoreUnknownKeys = true },
+    private val debugLogSink: DebugLogSink = NoOpDebugLogSink,
 ) : GhostStreamServer {
 
     private var engine: ApplicationEngine? = null
     private val running = AtomicBoolean(false)
 
-    override suspend fun start(port: Int): ServerBinding = withContext(Dispatchers.IO) {
+    override suspend fun start(port: Int): ServerBinding {
+        debugLogSink.log("LocalServer", "start requested port=$port running=${running.get()}")
         if (running.get()) {
             val currentPort = engine?.environment?.connectors?.firstOrNull()?.port ?: port
             val network = networkInspector.inspect()
-            val currentUrl = sessionManager.sessionState.value.sessionUrl
-                ?.takeIf { it.startsWith("http://") && !it.startsWith("http://:") }
-                ?: network.localAddress?.let { "http://$it:$currentPort" }
-                ?: "http://127.0.0.1:$currentPort"
-            return@withContext ServerBinding(
+            val currentUrl = buildSessionAccessUrl(
+                sessionUrl = sessionManager.sessionState.value.sessionUrl,
+                localAddress = network.localAddress,
+                port = currentPort,
+            ) ?: "http://127.0.0.1:$currentPort"
+            debugLogSink.log("LocalServer", "already running currentPort=$currentPort currentUrl=$currentUrl")
+            return ServerBinding(
                 port = currentPort,
                 url = currentUrl,
             )
@@ -89,6 +96,10 @@ class KtorGhostStreamServer(
         val resolvedPort = if (port == 0) nextFreePort() else port
         val network = networkInspector.inspect()
         val address = network.localAddress ?: "127.0.0.1"
+        debugLogSink.log(
+            "LocalServer",
+            "binding host=0.0.0.0 resolvedPort=$resolvedPort networkType=${network.type} address=$address ready=${network.isReady}",
+        )
 
         engine = embeddedServer(
             factory = CIO,
@@ -101,19 +112,20 @@ class KtorGhostStreamServer(
             configureRouting()
         }.start(wait = false)
         running.set(true)
+        debugLogSink.log("LocalServer", "engine started port=$resolvedPort url=http://$address:$resolvedPort")
 
-        ServerBinding(
+        return ServerBinding(
             port = resolvedPort,
             url = "http://$address:$resolvedPort",
         )
     }
 
     override suspend fun stop() {
-        withContext(Dispatchers.IO) {
-            engine?.stop(gracePeriodMillis = 500, timeoutMillis = 2_000)
-            engine = null
-            running.set(false)
-        }
+        debugLogSink.log("LocalServer", "stop requested running=${running.get()}")
+        engine?.stop(gracePeriodMillis = 500, timeoutMillis = 2_000)
+        engine = null
+        running.set(false)
+        debugLogSink.log("LocalServer", "engine stopped")
     }
 
     override fun isRunning(): Boolean = running.get()
@@ -159,6 +171,12 @@ class KtorGhostStreamServer(
                         title = "GhostStream",
                         subtitle = "Scan, open, play",
                         authEnabled = state.authEnabled,
+                        sessionUrl = buildSessionAccessUrl(
+                            sessionUrl = state.sessionUrl,
+                            localAddress = state.networkAvailability.localAddress,
+                            port = state.serverPort,
+                        ),
+                        sessionPort = state.serverPort,
                         categories = BrowserCategories(
                             videos = state.selectedItems.count { it.category == MediaCategory.VIDEO },
                             photos = state.selectedItems.count { it.category == MediaCategory.PHOTO },
@@ -472,7 +490,7 @@ class KtorGhostStreamServer(
 
                     override suspend fun writeTo(channel: ByteWriteChannel) {
                         withContext(Dispatchers.IO) {
-                            resolver.openInputStream(uri)?.use { input ->
+                            assetDescriptor.createInputStream().use { input ->
                                 seekStream(input, range?.first ?: 0L)
                                 val buffer = ByteArray(STREAMING_BUFFER_SIZE)
                                 var remaining = lengthToSend
@@ -727,6 +745,8 @@ class KtorGhostStreamServer(
         val title: String,
         val subtitle: String,
         val authEnabled: Boolean,
+        val sessionUrl: String?,
+        val sessionPort: Int?,
         val categories: BrowserCategories,
         val recent: List<BrowserItemCard>,
         val forceDarkTheme: Boolean,
@@ -830,7 +850,7 @@ class KtorGhostStreamServer(
                 message = job.message,
                 progressPercent = job.progressPercent,
                 ready = job.canServePlayback,
-                complete = job.status == CompatibilityStatus.READY,
+                complete = job.status == CompatibilityStatus.READY || job.preparedAsset?.isComplete == true,
             )
         }
     }

@@ -204,10 +204,10 @@ class Media3FragmentedMp4CompatibilityWorker(
                         status = CompatibilityStatus.PREPARING,
                         message = when {
                             streamable && item.playbackDecision.mode == PlaybackMode.REMUX ->
-                                "Fragmented playback is live. Finishing the container optimization."
+                                "Finalizing the optimized browser stream."
 
                             streamable ->
-                                "Fragmented playback is live. Finishing compatibility conversion."
+                                "Finalizing the compatible browser stream."
 
                             item.playbackDecision.mode == PlaybackMode.REMUX ->
                                 "Preparing fragmented playback for fast browser start..."
@@ -266,6 +266,6 @@ class Media3FragmentedMp4CompatibilityWorker(
     private companion object {
         const val FRAGMENT_DURATION_MS = 2_000L
         const val PROGRESS_POLL_INTERVAL_MS = 700L
-        const val STREAMABLE_BYTES_THRESHOLD = 192 * 1024L
+        const val STREAMABLE_BYTES_THRESHOLD = 4L * 1024L * 1024L
     }
 }

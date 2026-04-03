@@ -129,10 +129,7 @@ class AndroidStorageRepository(
     override suspend fun refreshAvailability() {
         stateMutex.withLock {
             val current = currentPersistedState()
-            val refreshedItems = current.items.map { item ->
-                item.copy(isAvailable = isUriAvailable(item.uri.toUri()))
-            }
-            val merged = current.copy(items = refreshedItems).withSummary()
+            val merged = refreshExistingState(current)
             persistAndPublish(merged)
         }
     }
@@ -411,7 +408,55 @@ class AndroidStorageRepository(
     private fun CoroutineScope.launchStateRestore() {
         launch {
             val restored = currentPersistedState().withSummary()
-            _libraryState.value = restored
+            val refreshed = refreshExistingState(restored)
+            if (refreshed != restored) {
+                persistAndPublish(refreshed)
+            } else {
+                _libraryState.value = refreshed
+            }
+        }
+    }
+
+    private suspend fun refreshExistingState(state: LibraryState): LibraryState = withContext(Dispatchers.IO) {
+        val refreshedItems = state.items.map { item ->
+            refreshExistingItemSync(item)
+        }
+        mergeState(
+            items = refreshedItems,
+            folders = state.folders,
+        )
+    }
+
+    private fun refreshExistingItemSync(item: SharedItem): SharedItem {
+        val uri = item.uri.toUri()
+        val available = isUriAvailable(uri)
+        if (!available) {
+            return item.copy(isAvailable = false)
+        }
+
+        return runCatching {
+            val meta = context.contentResolver.queryOpenableMeta(uri)
+            val resolvedMimeType = meta.mimeType ?: item.mimeType
+            val inspection = mediaAnalyzer.inspect(uri, resolvedMimeType, meta.displayName)
+            val playbackDecision = mediaAnalyzer.decidePlayback(inspection)
+            item.copy(
+                displayName = meta.displayName,
+                mimeType = resolvedMimeType,
+                category = determineCategory(resolvedMimeType, meta.displayName),
+                sizeBytes = meta.sizeBytes.takeIf { it > 0L } ?: item.sizeBytes,
+                durationMs = mediaAnalyzer.readDurationMs(uri, resolvedMimeType) ?: item.durationMs,
+                lastModifiedEpochMs = meta.lastModifiedEpochMs ?: item.lastModifiedEpochMs,
+                playbackDecision = playbackDecision,
+                isAvailable = true,
+                metadata = buildMap {
+                    put("source", uri.authority ?: "local")
+                    inspection.videoTrackMimeType?.let { put("video_codec", it) }
+                    inspection.audioTrackMimeType?.let { put("audio_codec", it) }
+                    put("browser_safe", inspection.browserSafe.toString())
+                },
+            )
+        }.getOrElse {
+            item.copy(isAvailable = false)
         }
     }
 

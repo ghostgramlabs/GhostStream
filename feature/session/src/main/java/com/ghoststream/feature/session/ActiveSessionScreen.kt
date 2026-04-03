@@ -4,7 +4,10 @@ import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,6 +22,7 @@ import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.StopCircle
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -41,10 +45,12 @@ import androidx.compose.ui.unit.dp
 import com.ghoststream.core.model.BlockedClient
 import com.ghoststream.core.model.ConnectedClient
 import com.ghoststream.core.model.SessionState
+import com.ghoststream.core.model.resolvedAccessUrl
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import kotlin.math.roundToInt
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ActiveSessionScreen(
     sessionState: SessionState,
@@ -60,11 +66,7 @@ fun ActiveSessionScreen(
 ) {
     val haptics = LocalHapticFeedback.current
     val accessUrl = remember(sessionState.sessionUrl, sessionState.networkAvailability.localAddress, sessionState.serverPort) {
-        sessionState.sessionUrl
-            ?.takeIf { it.startsWith("http://") && !it.startsWith("http://:") }
-            ?: sessionState.networkAvailability.localAddress?.let { address ->
-            sessionState.serverPort?.let { port -> "http://$address:$port" }
-        }
+        sessionState.resolvedAccessUrl()
     }
     LaunchedEffect(sessionState.connectedClients.size, hapticOnDeviceConnect) {
         if (hapticOnDeviceConnect && sessionState.connectedClients.isNotEmpty()) {
@@ -87,85 +89,114 @@ fun ActiveSessionScreen(
                 modifier = Modifier
                     .padding(horizontal = 20.dp, vertical = 20.dp)
                     .fillMaxWidth(),
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(30.dp),
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF0F1725)),
             ) {
                 Column(
                     modifier = Modifier.padding(22.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(18.dp),
                 ) {
-                    Text(
-                        text = if (sessionState.isSharing) "Sharing is live" else "Preparing browser access...",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    accessUrl?.let { url ->
-                        val qrBitmap = remember(url) { generateQrBitmap(url) }
-                        qrBitmap?.let {
-                            Image(
-                                bitmap = it.asImageBitmap(),
-                                contentDescription = "Session QR",
-                                modifier = Modifier
-                                    .size(220.dp)
-                                    .padding(top = 8.dp),
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(url, style = MaterialTheme.typography.bodyLarge)
-                        sessionState.hostname?.let { hostname ->
-                            Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Local name: $hostname",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                text = if (sessionState.isSharing) "Sharing is live" else "Preparing browser access",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.SemiBold,
                             )
-                        }
-                    } ?: run {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = sessionState.message,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        sessionState.networkAvailability.localAddress?.let { address ->
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Local IP: $address",
+                                text = if (sessionState.isSharing) {
+                                    "Scan the QR code or open the local link on a nearby browser."
+                                } else {
+                                    sessionState.message
+                                },
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        AssistChip(
+                            onClick = {},
+                            label = {
+                                Text(
+                                    when {
+                                        sessionState.isSharing -> "Live"
+                                        sessionState.networkAvailability.isReady -> "Starting"
+                                        else -> "Network required"
+                                    },
+                                )
+                            },
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(18.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            accessUrl?.let { url ->
+                                val qrBitmap = remember(url) { generateQrBitmap(url) }
+                                qrBitmap?.let {
+                                    Image(
+                                        bitmap = it.asImageBitmap(),
+                                        contentDescription = "Session QR",
+                                        modifier = Modifier.size(220.dp),
+                                    )
+                                }
+                            } ?: Text(
+                                text = "Preparing QR",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            SessionHighlight(
+                                title = "Access link",
+                                value = accessUrl ?: "Waiting for local link",
+                                supporting = sessionState.networkAvailability.localAddress?.let { "Local IP: $it" } ?: sessionState.message,
+                            )
+                            SessionHighlight(
+                                title = "Session security",
+                                value = if (sessionState.authEnabled) "PIN ${sessionState.pin ?: "----"}" else "PIN off",
+                                supporting = if (sessionState.authEnabled) {
+                                    "Nearby browsers must enter this code before viewing your library."
+                                } else {
+                                    "Receivers can open the session link directly."
+                                },
+                                actionLabel = if (sessionState.authEnabled) "Regenerate" else null,
+                                onAction = if (sessionState.authEnabled) onRegeneratePin else null,
+                            )
+                            SessionHighlight(
+                                title = "Local port",
+                                value = sessionState.serverPort?.toString() ?: "Not assigned",
+                                supporting = sessionState.hostname?.let { "Host name: $it" }
+                                    ?: "Use this same port on your local network link.",
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
                         OutlinedButton(onClick = onCopyLink, shape = RoundedCornerShape(16.dp)) {
                             Icon(Icons.Outlined.ContentCopy, contentDescription = null)
                             Spacer(modifier = Modifier.size(8.dp))
-                            Text("Copy")
+                            Text("Copy link")
                         }
                         OutlinedButton(onClick = onShareLink, shape = RoundedCornerShape(16.dp)) {
                             Icon(Icons.Outlined.Share, contentDescription = null)
                             Spacer(modifier = Modifier.size(8.dp))
-                            Text("Share")
-                        }
-                    }
-                    if (sessionState.authEnabled) {
-                        Spacer(modifier = Modifier.height(14.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Text(
-                                text = "Session PIN: ${sessionState.pin ?: "----"}",
-                                style = MaterialTheme.typography.titleMedium,
-                            )
-                            OutlinedButton(
-                                onClick = onRegeneratePin,
-                                shape = RoundedCornerShape(14.dp),
-                            ) {
-                                Text("Regenerate", style = MaterialTheme.typography.bodySmall)
-                            }
+                            Text("Share link")
                         }
                     }
                 }
@@ -173,28 +204,17 @@ fun ActiveSessionScreen(
         }
 
         item {
-            Row(
-                modifier = Modifier
-                    .padding(horizontal = 20.dp)
-                    .fillMaxWidth(),
+            FlowRow(
+                modifier = Modifier.padding(horizontal = 20.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                SessionMetric("Devices", sessionState.connectedClients.size.toString(), Modifier.weight(1f))
-                SessionMetric("Speed", formatSpeed(sessionState.transferStats.currentBytesPerSecond), Modifier.weight(1f))
-                SessionMetric("Sent", formatBytes(sessionState.transferStats.totalBytesSent), Modifier.weight(1f))
-            }
-        }
-
-        item {
-            Row(
-                modifier = Modifier
-                    .padding(horizontal = 20.dp)
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                SessionMetric("Network", sessionState.networkAvailability.type.name, Modifier.weight(1f))
-                SessionMetric("Elapsed", formatElapsed(sessionState.transferStats.startedAtEpochMs), Modifier.weight(1f))
-                SessionMetric("Downloads", sessionState.transferStats.completedDownloads.toString(), Modifier.weight(1f))
+                SessionMetric("Devices", sessionState.connectedClients.size.toString())
+                SessionMetric("Speed", formatSpeed(sessionState.transferStats.currentBytesPerSecond))
+                SessionMetric("Sent", formatBytes(sessionState.transferStats.totalBytesSent))
+                SessionMetric("Network", sessionState.networkAvailability.type.name)
+                SessionMetric("Elapsed", formatElapsed(sessionState.transferStats.startedAtEpochMs))
+                SessionMetric("Downloads", sessionState.transferStats.completedDownloads.toString())
             }
         }
 
@@ -212,23 +232,35 @@ fun ActiveSessionScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(
-                            text = if (sessionState.connectedClients.isEmpty()) "Waiting for devices…" else "${sessionState.connectedClients.size} devices connected",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold,
-                        )
+                        Column {
+                            Text(
+                                text = if (sessionState.connectedClients.isEmpty()) "Waiting for devices" else "${sessionState.connectedClients.size} devices connected",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = if (sessionState.connectedClients.isEmpty()) {
+                                    "Nearby browsers will appear here as soon as they open the session."
+                                } else {
+                                    "Track browsing, playback, and downloads in real time."
+                                },
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                        }
                         if (sessionState.connectedClients.size > 1) {
                             OutlinedButton(
                                 onClick = onDisconnectAll,
                                 shape = RoundedCornerShape(14.dp),
                             ) {
-                                Text("Disconnect All")
+                                Text("Disconnect all")
                             }
                         }
                     }
                     if (sessionState.connectedClients.isEmpty()) {
                         Text(
-                            text = "Nearby browsers will appear here when they open the session.",
+                            text = "No devices connected yet.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -271,7 +303,7 @@ fun ActiveSessionScreen(
             ) {
                 Icon(Icons.Outlined.StopCircle, contentDescription = null)
                 Spacer(modifier = Modifier.size(8.dp))
-                Text("Stop Sharing")
+                Text("Stop sharing")
             }
         }
 
@@ -280,9 +312,33 @@ fun ActiveSessionScreen(
 }
 
 @Composable
-private fun SessionMetric(label: String, value: String, modifier: Modifier = Modifier) {
+private fun SessionHighlight(
+    title: String,
+    value: String,
+    supporting: String,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
+) {
     Card(
-        modifier = modifier,
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF131D2C)),
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(title, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(supporting, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            if (actionLabel != null && onAction != null) {
+                OutlinedButton(onClick = onAction, shape = RoundedCornerShape(14.dp)) {
+                    Text(actionLabel)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SessionMetric(label: String, value: String) {
+    Card(
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF111A28)),
     ) {
@@ -309,6 +365,7 @@ private fun ConnectedClientRow(client: ConnectedClient, onBlockClient: (String) 
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(client.ipAddress, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = listOfNotNull(client.displayName, client.activity.name.replace('_', ' ')).joinToString(" | "),
                     style = MaterialTheme.typography.bodyMedium,

@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -5,9 +7,22 @@ plugins {
     alias(libs.plugins.compose.compiler)
 }
 
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) {
+        file.inputStream().use(::load)
+    }
+}
+
 android {
     namespace = "com.ghoststream.app"
     compileSdk = 35
+    val releaseKeystorePath = keystoreProperties.getProperty("storeFile") ?: "ghoststream-release.jks"
+    val releaseKeystoreFile = rootProject.file(releaseKeystorePath)
+    val hasReleaseSigning = releaseKeystoreFile.exists() &&
+        !keystoreProperties.getProperty("storePassword").isNullOrBlank() &&
+        !keystoreProperties.getProperty("keyAlias").isNullOrBlank() &&
+        !keystoreProperties.getProperty("keyPassword").isNullOrBlank()
 
     defaultConfig {
         applicationId = "com.ghoststream.app"
@@ -21,18 +36,20 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            storeFile = rootProject.file("ghoststream-release.jks")
-            storePassword = "ghoststreamGhostGram1@#"
-            keyAlias = "ghoststream"
-            keyPassword = "ghoststreamGhostGram1@#"
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = releaseKeystoreFile
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
         }
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = true
-            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

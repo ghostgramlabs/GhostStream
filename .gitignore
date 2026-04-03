@@ -1,7 +1,11 @@
 .gradle/
+.gradle-home/
+.android-home/
+.kotlin-daemon/
 .kotlin/
 .idea/
 local.properties
+keystore.properties
 **/build/
 captures/
 *.iml

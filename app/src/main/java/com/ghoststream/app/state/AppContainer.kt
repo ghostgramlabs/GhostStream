@@ -1,6 +1,8 @@
 package com.ghoststream.app.state
 
 import android.app.Application
+import com.ghoststream.app.BuildConfig
+import com.ghoststream.app.debug.DebugLogRepository
 import com.ghoststream.core.media.AndroidMediaAnalyzer
 import com.ghoststream.core.media.CompatibilityPipeline
 import com.ghoststream.core.media.MediaAnalyzer
@@ -22,6 +24,7 @@ class AppContainer(
 ) {
     private val appContext = application.applicationContext
 
+    val debugLogRepository: DebugLogRepository by lazy { DebugLogRepository(appContext, enabled = BuildConfig.DEBUG) }
     val settingsRepository: SettingsRepository by lazy { DataStoreSettingsRepository(appContext) }
     val mediaAnalyzer: MediaAnalyzer by lazy { AndroidMediaAnalyzer(appContext) }
     private val tempPlaybackCache: TempPlaybackCache by lazy { TempPlaybackCache(appContext) }
@@ -32,8 +35,8 @@ class AppContainer(
         )
     }
     val storageRepository: StorageRepository by lazy { AndroidStorageRepository(appContext, mediaAnalyzer) }
-    val sessionManager: SessionManager by lazy { InMemorySessionManager() }
-    val networkInspector: AndroidNetworkInspector by lazy { AndroidNetworkInspector(appContext) }
+    val sessionManager: SessionManager by lazy { InMemorySessionManager(debugLogRepository) }
+    val networkInspector: AndroidNetworkInspector by lazy { AndroidNetworkInspector(appContext, debugLogRepository) }
     val server: GhostStreamServer by lazy {
         KtorGhostStreamServer(
             context = appContext,
@@ -43,6 +46,7 @@ class AppContainer(
             mediaAnalyzer = mediaAnalyzer,
             compatibilityPipeline = compatibilityPipeline,
             networkInspector = networkInspector,
+            debugLogSink = debugLogRepository,
         )
     }
     val sharingCoordinator: SharingCoordinator by lazy {
@@ -54,6 +58,7 @@ class AppContainer(
             server = server,
             mediaAnalyzer = mediaAnalyzer,
             compatibilityPipeline = compatibilityPipeline,
+            debugLogSink = debugLogRepository,
         )
     }
 }

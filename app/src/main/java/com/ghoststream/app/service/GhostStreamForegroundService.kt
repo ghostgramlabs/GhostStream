@@ -29,24 +29,32 @@ class GhostStreamForegroundService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val container by lazy { (application as GhostStreamApplication).container }
     private var startupInProgress = false
+    private val debugLogRepository by lazy { container.debugLogRepository }
 
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
+        debugLogRepository.log("ForegroundService", "onCreate")
         serviceScope.launch {
             container.sessionManager.sessionState.collectLatest { state ->
                 runCatching {
                     NotificationManagerCompat.from(this@GhostStreamForegroundService)
                         .notify(NOTIFICATION_ID, buildNotification(state))
+                    debugLogRepository.log(
+                        "ForegroundService",
+                        "notification updated isSharing=${state.isSharing} url=${state.sessionUrl} port=${state.serverPort}",
+                    )
                 }
             }
         }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        debugLogRepository.log("ForegroundService", "onStartCommand action=${intent?.action} startupInProgress=$startupInProgress")
         when (intent?.action) {
             ACTION_STOP -> {
                 serviceScope.launch {
+                    debugLogRepository.log("ForegroundService", "stop action received")
                     container.sharingCoordinator.stopSharing()
                     stopForeground(STOP_FOREGROUND_REMOVE)
                     stopSelf()
@@ -65,6 +73,7 @@ class GhostStreamForegroundService : Service() {
                         )
                     }
                     if (startForegroundResult.isFailure) {
+                        debugLogRepository.log("ForegroundService", "startForeground failed", startForegroundResult.exceptionOrNull())
                         startupInProgress = false
                         serviceScope.launch {
                             container.sharingCoordinator.stopSharing(
@@ -76,16 +85,20 @@ class GhostStreamForegroundService : Service() {
                     }
                     // If the ViewModel already started the session, just keep the service alive
                     if (container.sessionManager.sessionState.value.isSharing) {
+                        debugLogRepository.log("ForegroundService", "session already active when service started")
                         startupInProgress = false
                     } else {
-                        // Service was started independently — need to begin sharing
+                        // Service was started independently - need to begin sharing
                         serviceScope.launch {
+                            debugLogRepository.log("ForegroundService", "service starting sharing directly")
                             when (val result = container.sharingCoordinator.beginSharing()) {
                                 is ShareStartResult.Started -> {
+                                    debugLogRepository.log("ForegroundService", "service started sharing url=${result.url}")
                                     startupInProgress = false
                                 }
 
                                 is ShareStartResult.Failure -> {
+                                    debugLogRepository.log("ForegroundService", "service failed to start sharing message=${result.message}")
                                     startupInProgress = false
                                     container.sharingCoordinator.stopSharing(result.message)
                                     stopForeground(STOP_FOREGROUND_REMOVE)
@@ -103,6 +116,7 @@ class GhostStreamForegroundService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        debugLogRepository.log("ForegroundService", "onDestroy")
         serviceScope.cancel()
         super.onDestroy()
     }
@@ -135,6 +149,7 @@ class GhostStreamForegroundService : Service() {
             .setContentTitle(getString(R.string.notification_title))
             .setContentText(contentText)
             .setContentIntent(openAppIntent)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .addAction(

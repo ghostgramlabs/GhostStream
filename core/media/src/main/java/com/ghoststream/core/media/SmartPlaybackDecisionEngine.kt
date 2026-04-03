@@ -9,6 +9,12 @@ interface SmartPlaybackDecisionEngine {
 
 class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
     override fun decide(inspection: MediaInspection): PlaybackDecision {
+        val videoLike = inspection.videoTrackMimeType != null ||
+            inspection.originalMimeType?.startsWith("video/") == true ||
+            inspection.normalizedMimeType?.startsWith("video/") == true ||
+            inspection.container == MediaContainer.MP4 ||
+            inspection.container == MediaContainer.MATROSKA ||
+            inspection.container == MediaContainer.QUICKTIME
         val browserVideoCompatible = inspection.videoTrackMimeType == null || inspection.videoTrackMimeType == "video/avc"
         val browserAudioCompatible = inspection.audioTrackMimeType == null ||
             inspection.audioTrackMimeType == "audio/mp4a-latm" ||
@@ -33,6 +39,13 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
                 browserMimeType = "video/mp4",
                 compatibilityLabel = "Compatibility conversion available",
                 reason = "This format needs compatibility conversion for browser playback",
+            )
+
+            videoLike -> PlaybackDecision(
+                mode = PlaybackMode.TRANSCODE,
+                browserMimeType = "video/mp4",
+                compatibilityLabel = "Compatibility conversion available",
+                reason = "Preparing this video for broader browser playback is recommended",
             )
 
             inspection.container == MediaContainer.PDF -> PlaybackDecision(

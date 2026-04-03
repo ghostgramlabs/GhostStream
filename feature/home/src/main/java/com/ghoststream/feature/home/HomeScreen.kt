@@ -2,10 +2,10 @@ package com.ghoststream.feature.home
 
 import android.text.format.DateUtils
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,13 +24,13 @@ import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.NetworkCheck
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.VideoLibrary
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -41,6 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ghoststream.core.model.LibraryState
@@ -74,32 +75,23 @@ fun HomeScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
-            Row(
-                modifier = Modifier
-                    .padding(horizontal = 20.dp, vertical = 20.dp)
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column {
-                    Text(
-                        text = "GhostStream",
-                        style = MaterialTheme.typography.headlineLarge,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Text(
-                        text = "Offline media sharing",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                IconButton(onClick = onOpenSettings) {
-                    Icon(
-                        imageVector = Icons.Outlined.Settings,
-                        contentDescription = "Settings",
-                        tint = Color(0xFF8AE3FF),
-                    )
-                }
+            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
+                AssistChip(
+                    onClick = {},
+                    label = { Text("Private local sharing") },
+                )
+                Spacer(modifier = Modifier.height(14.dp))
+                Text(
+                    text = "GhostStream",
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "Stream and share files nearby with no internet required.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
 
@@ -108,34 +100,48 @@ fun HomeScreen(
                 modifier = Modifier
                     .padding(horizontal = 20.dp)
                     .fillMaxWidth(),
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(30.dp),
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF101826)),
             ) {
-                Column(modifier = Modifier.padding(20.dp)) {
+                Column(modifier = Modifier.padding(22.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
+                        verticalAlignment = Alignment.Top,
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = if (sessionState.isSharing) "Sharing is live" else "Stream & share files offline",
-                                style = MaterialTheme.typography.titleLarge,
+                                text = if (sessionState.isSharing) "Sharing is live" else "Ready to share",
+                                style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.SemiBold,
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = when {
-                                    sessionState.isSharing -> "Nearby devices can scan the QR code and start playing in a browser."
-                                    sessionState.networkAvailability.isReady -> "No internet needed. Add content and start a local sharing session."
-                                    else -> "Connect both devices to the same Wi-Fi or hotspot."
+                                    sessionState.isSharing -> "Nearby devices can scan your QR code and open the browser hub instantly."
+                                    libraryState.summary.totalItems == 0 -> "Add files or a folder first, then start a local sharing session."
+                                    sessionState.networkAvailability.isReady -> "Your files stay on this device. Nearby browsers connect over Wi-Fi or hotspot."
+                                    else -> "Connect both devices to the same Wi-Fi or hotspot before starting."
                                 },
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
+                        Spacer(modifier = Modifier.width(12.dp))
                         StatusChip(sessionState = sessionState)
                     }
+
+                    Spacer(modifier = Modifier.height(18.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        HeroStat(label = "Selected", value = libraryState.summary.totalItems.toString())
+                        HeroStat(label = "Videos", value = libraryState.summary.videos.toString())
+                        HeroStat(label = "Photos", value = libraryState.summary.photos.toString())
+                        HeroStat(label = "Size", value = formatBytes(libraryState.summary.totalBytes))
+                    }
+
                     Spacer(modifier = Modifier.height(20.dp))
                     Button(
                         onClick = onStartSharing,
@@ -156,7 +162,7 @@ fun HomeScreen(
                                 strokeWidth = 2.dp,
                             )
                             Spacer(modifier = Modifier.width(10.dp))
-                            Text("Starting…", style = MaterialTheme.typography.titleMedium)
+                            Text("Starting sharing", style = MaterialTheme.typography.titleMedium)
                         } else {
                             Icon(Icons.Outlined.PlayArrow, contentDescription = null)
                             Spacer(modifier = Modifier.width(10.dp))
@@ -199,6 +205,7 @@ fun HomeScreen(
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Medium,
                         )
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = sessionState.networkAvailability.helperText,
                             style = MaterialTheme.typography.bodyMedium,
@@ -210,36 +217,18 @@ fun HomeScreen(
         }
 
         item {
-            FlowRow(
-                modifier = Modifier.padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                QuickActionButton(label = "Add Files", icon = Icons.Outlined.AddBox, onClick = onAddFiles)
-                QuickActionButton(label = "Add Folder", icon = Icons.Outlined.FolderOpen, onClick = onAddFolder)
-                QuickActionButton(label = "Batch Select", icon = Icons.Outlined.Collections, onClick = onBatchSelect)
-                QuickActionButton(label = "Settings", icon = Icons.Outlined.Settings, onClick = onOpenSettings)
-                OutlinedButton(
-                    onClick = onOpenLibrary,
-                    shape = RoundedCornerShape(18.dp),
+            Column(modifier = Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Quick actions", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Text("Shared Library")
+                    QuickActionButton(label = "Add files", icon = Icons.Outlined.AddBox, onClick = onAddFiles)
+                    QuickActionButton(label = "Add folder", icon = Icons.Outlined.FolderOpen, onClick = onAddFolder)
+                    QuickActionButton(label = "Batch select", icon = Icons.Outlined.Collections, onClick = onBatchSelect)
+                    QuickActionButton(label = "Shared library", icon = Icons.Outlined.VideoLibrary, onClick = onOpenLibrary)
+                    QuickActionButton(label = "Settings", icon = Icons.Outlined.Settings, onClick = onOpenSettings)
                 }
-            }
-        }
-
-        item {
-            FlowRow(
-                modifier = Modifier.padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                SummaryCard("Videos", libraryState.summary.videos.toString())
-                SummaryCard("Photos", libraryState.summary.photos.toString())
-                SummaryCard("Music", libraryState.summary.music.toString())
-                SummaryCard("Files", libraryState.summary.files.toString())
-                SummaryCard("Selected", libraryState.summary.totalItems.toString())
-                SummaryCard("Size", formatBytes(libraryState.summary.totalBytes))
             }
         }
 
@@ -260,7 +249,7 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(14.dp))
                     if (recentSessions.isEmpty()) {
                         Text(
-                            text = "Add a folder to share albums fast, then open Start Sharing when both devices are nearby.",
+                            text = "Add a folder for a fast media library, then start sharing when both devices are on the same Wi-Fi or your hotspot.",
                             style = MaterialTheme.typography.bodyLarge,
                         )
                     } else {
@@ -286,7 +275,7 @@ fun HomeScreen(
 private fun StatusChip(sessionState: SessionState) {
     val label = when {
         sessionState.isSharing -> "Sharing"
-        sessionState.networkAvailability.isReady -> "Not sharing"
+        sessionState.networkAvailability.isReady -> "Ready"
         else -> "Network required"
     }
     AssistChip(
@@ -296,7 +285,21 @@ private fun StatusChip(sessionState: SessionState) {
 }
 
 @Composable
-private fun QuickActionButton(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit) {
+private fun HeroStat(label: String, value: String) {
+    Card(
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF131D2C)),
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}
+
+@Composable
+private fun QuickActionButton(label: String, icon: ImageVector, onClick: () -> Unit) {
     OutlinedButton(
         onClick = onClick,
         shape = RoundedCornerShape(18.dp),
@@ -304,20 +307,6 @@ private fun QuickActionButton(label: String, icon: androidx.compose.ui.graphics.
         Icon(icon, contentDescription = null)
         Spacer(modifier = Modifier.width(8.dp))
         Text(label)
-    }
-}
-
-@Composable
-private fun SummaryCard(label: String, value: String) {
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF101826)),
-    ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
-            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        }
     }
 }
 

@@ -1,5 +1,6 @@
 package com.ghoststream.app.state
 
+import android.net.Uri
 import com.ghoststream.core.media.CompatibilityJob
 import com.ghoststream.core.model.AppSettings
 import com.ghoststream.core.model.LibraryState
@@ -27,4 +28,5 @@ sealed interface AppEvent {
     data object NavigateHome : AppEvent
     data object StartSharingService : AppEvent
     data object StopSharingService : AppEvent
+    data class ShareDebugLog(val uri: Uri) : AppEvent
 }

@@ -7,316 +7,460 @@ const state = {
   query: "",
   selected: new Set(),
   selectMode: false,
+  libraryItems: [],
+  nowPlaying: null,
+  searchTimer: null,
+  compatPollToken: 0,
+  compatPollTimer: null,
 };
 
 const routes = {
   "/": renderHome,
-  "/login": renderLogin,
-  "/videos": () => renderLibrary("videos", "Videos", "🎬"),
-  "/photos": () => renderLibrary("photos", "Photos", "📷"),
-  "/music": () => renderLibrary("music", "Music", "🎵"),
-  "/files": () => renderLibrary("files", "Files", "📄"),
+  "/login": () => renderLogin(),
+  "/videos": () => renderLibrary("videos", "Videos"),
+  "/photos": () => renderLibrary("photos", "Photos"),
+  "/music": () => renderLibrary("music", "Music"),
+  "/files": () => renderLibrary("files", "Files"),
 };
 
 window.addEventListener("popstate", () => boot());
-document.addEventListener("click", (e) => {
-  const a = e.target.closest("[data-link]");
-  if (!a) return;
-  e.preventDefault();
-  navigate(a.getAttribute("href"));
+document.addEventListener("click", (event) => {
+  const link = event.target.closest("[data-link]");
+  if (!link) return;
+  event.preventDefault();
+  navigate(link.getAttribute("href"));
 });
 
 async function boot() {
+  cancelCompatPolling();
   const path = location.pathname;
-  if (path === "/login") return renderLogin();
+  if (path === "/login") {
+    renderLogin();
+    return;
+  }
 
   try {
     state.bootstrap = await api("/api/bootstrap");
-    if (path.startsWith("/player/video/")) return renderVideoPlayer(path.split("/").pop());
-    if (path.startsWith("/photo/")) return renderPhotoViewer(path.split("/").pop());
+    if (path.startsWith("/player/video/")) {
+      renderVideoPlayer(path.split("/").pop());
+      return;
+    }
+    if (path.startsWith("/photo/")) {
+      renderPhotoViewer(path.split("/").pop());
+      return;
+    }
     (routes[path] || renderHome)();
-  } catch (err) {
-    if (err.status === 401) return navigate("/login", true);
-    renderError(err.message || "Unable to load GhostStream.");
+  } catch (error) {
+    if (error.status === 401) {
+      navigate("/login", true);
+      return;
+    }
+    renderError(error.message || "Unable to load GhostStream.");
   }
 }
 
-function navigate(path, replace) {
+function navigate(path, replace = false) {
+  cancelCompatPolling();
   history[replace ? "replaceState" : "pushState"]({}, "", path);
   boot();
 }
 
-async function api(url, opts = {}) {
-  const r = await fetch(url, { credentials: "include", headers: { "Content-Type": "application/json", ...(opts.headers || {}) }, ...opts });
-  if (!r.ok) {
-    let p = {}; try { p = await r.json(); } catch (_) {}
-    const e = new Error(p.message || `Request failed (${r.status})`);
-    e.status = r.status;
-    throw e;
+async function api(url, options = {}) {
+  const response = await fetch(url, {
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+    ...options,
+  });
+  if (!response.ok) {
+    let payload = {};
+    try {
+      payload = await response.json();
+    } catch (_) {}
+    const error = new Error(payload.message || `Request failed (${response.status})`);
+    error.status = response.status;
+    throw error;
   }
-  return (r.headers.get("content-type") || "").includes("json") ? r.json() : r.text();
+  return (response.headers.get("content-type") || "").includes("json") ? response.json() : response.text();
 }
 
-/* ── Shell ── */
+function shell(content, options = {}) {
+  if (options.resetNowPlaying !== false) {
+    state.nowPlaying = null;
+  }
+  const bootstrap = state.bootstrap;
+  const path = location.pathname;
+  const securityLabel = bootstrap?.authEnabled ? "PIN protected" : "Open on local network";
+  const sessionLink = bootstrap?.sessionUrl ? `<span class="gs-status-link">${esc(bootstrap.sessionUrl)}</span>` : "";
 
-function shell(content) {
-  const b = state.bootstrap;
-  const p = location.pathname;
   app.innerHTML = `
     <div class="gs-shell">
       <nav class="gs-nav">
         <a class="gs-logo" data-link href="/">
-          <span class="gs-logo-icon">◈</span>
-          <span>${esc(b?.title || sessionTitle)}</span>
+          <span class="gs-logo-mark"></span>
+          <span>${esc(bootstrap?.title || sessionTitle)}</span>
         </a>
         <div class="gs-nav-links">
-          <a class="gs-tab${p === '/' ? ' on' : ''}" data-link href="/">Home</a>
-          <a class="gs-tab${p === '/videos' ? ' on' : ''}" data-link href="/videos">Videos</a>
-          <a class="gs-tab${p === '/photos' ? ' on' : ''}" data-link href="/photos">Photos</a>
-          <a class="gs-tab${p === '/music' ? ' on' : ''}" data-link href="/music">Music</a>
-          <a class="gs-tab${p === '/files' ? ' on' : ''}" data-link href="/files">Files</a>
+          <a class="gs-tab${path === "/" ? " on" : ""}" data-link href="/">Home</a>
+          <a class="gs-tab${path === "/videos" ? " on" : ""}" data-link href="/videos">Videos</a>
+          <a class="gs-tab${path === "/photos" ? " on" : ""}" data-link href="/photos">Photos</a>
+          <a class="gs-tab${path === "/music" ? " on" : ""}" data-link href="/music">Music</a>
+          <a class="gs-tab${path === "/files" ? " on" : ""}" data-link href="/files">Files</a>
         </div>
-        ${b?.authEnabled ? `<button class="gs-btn gs-btn-sm" id="logoutBtn">Log out</button>` : ""}
+        <div class="gs-nav-meta">
+          <span class="gs-status-pill">${securityLabel}</span>
+          ${bootstrap?.authEnabled ? '<button class="gs-btn gs-btn-sm" id="logoutBtn">Log out</button>' : ""}
+        </div>
       </nav>
+      <div class="gs-status-strip">
+        <span>${esc(bootstrap?.subtitle || sessionSubtitle)}</span>
+        ${sessionLink}
+      </div>
       <main class="gs-main">${content}</main>
+      <div class="gs-now${state.nowPlaying ? " is-visible" : ""}" id="nowPlayingBar"></div>
     </div>`;
+
   document.getElementById("logoutBtn")?.addEventListener("click", async () => {
     await api("/auth/logout", { method: "POST" });
     navigate("/login", true);
   });
+  renderNowPlayingBar();
 }
 
-/* ── Home ── */
-
 function renderHome() {
-  const b = state.bootstrap;
-  const cats = [
-    { key: "videos", label: "Videos", count: b.categories.videos, icon: "🎬", href: "/videos" },
-    { key: "photos", label: "Photos", count: b.categories.photos, icon: "📷", href: "/photos" },
-    { key: "music",  label: "Music",  count: b.categories.music,  icon: "🎵", href: "/music" },
-    { key: "files",  label: "Files",  count: b.categories.files,  icon: "📄", href: "/files" },
+  const bootstrap = state.bootstrap;
+  const categories = [
+    { key: "videos", label: "Videos", count: bootstrap.categories.videos, href: "/videos" },
+    { key: "photos", label: "Photos", count: bootstrap.categories.photos, href: "/photos" },
+    { key: "music", label: "Music", count: bootstrap.categories.music, href: "/music" },
+    { key: "files", label: "Files", count: bootstrap.categories.files, href: "/files" },
   ];
-  const total = cats.reduce((s, c) => s + c.count, 0);
+  const total = categories.reduce((sum, category) => sum + category.count, 0);
+
   shell(`
     <section class="gs-hero">
-      <h1>Your local media hub</h1>
-      <p>No internet. No app install. Just open and enjoy — ${total} items available.</p>
+      <div class="gs-hero-copy">
+        <span class="gs-eyebrow">GhostStream receiver</span>
+        <h1>Your local media hub</h1>
+        <p>${esc(sessionSubtitle)}. Browse, play, preview, or download ${total} shared items without leaving the browser.</p>
+      </div>
       <div class="gs-hero-actions">
-        <button class="gs-btn gs-btn-accent" id="downloadAllBtn">⬇ Download Everything (${total})</button>
+        <a class="gs-btn gs-btn-accent" data-link href="/videos">Browse videos</a>
+        <button class="gs-btn" id="downloadAllBtn">Download all files</button>
       </div>
     </section>
 
-    <div class="gs-cat-row">
-      ${cats.map(c => `
-        <a class="gs-cat" data-link href="${c.href}">
-          <span class="gs-cat-icon">${c.icon}</span>
-          <span class="gs-cat-label">${c.label}</span>
-          <span class="gs-cat-count">${c.count}</span>
+    <section class="gs-category-grid">
+      ${categories.map((category) => `
+        <a class="gs-category-card" data-link href="${category.href}">
+          <span class="gs-category-kicker">${category.label}</span>
+          <strong>${category.count}</strong>
+          <span class="gs-category-meta">Open ${category.label.toLowerCase()}</span>
         </a>
       `).join("")}
-    </div>
+    </section>
 
-    ${b.recent.length ? `
+    ${bootstrap.recent.length ? `
       <section class="gs-section">
-        <h2>Recently added</h2>
-        <div class="gs-grid">${b.recent.map(item => card(item)).join("")}</div>
+        <div class="gs-section-head">
+          <h2>Recently added</h2>
+          <span class="gs-section-meta">${bootstrap.recent.length} highlighted items</span>
+        </div>
+        <div class="gs-grid">${bootstrap.recent.map((item) => card(item)).join("")}</div>
       </section>
     ` : ""}
   `);
-  document.getElementById("downloadAllBtn")?.addEventListener("click", () => downloadAllFromBootstrap());
+
+  document.getElementById("downloadAllBtn")?.addEventListener("click", async () => {
+    const all = await api("/api/items?category=all");
+    downloadItems(all);
+  });
 }
 
-/* ── Library ── */
-
-async function renderLibrary(category, title, icon) {
-  state.selected.clear();
-  state.selectMode = false;
+async function renderLibrary(category, title) {
   shell(`
     <section class="gs-section">
-      <div class="gs-toolbar">
-        <h2>${icon} ${title}</h2>
-        <div class="gs-toolbar-right">
-          <input class="gs-search" id="libSearch" placeholder="Search…" value="${esc(state.query)}">
-          <button class="gs-btn gs-btn-sm" id="selectBtn">☐ Select</button>
-          <button class="gs-btn gs-btn-accent gs-btn-sm" id="dlAllBtn">⬇ Download All</button>
-        </div>
+      <div class="gs-section-head">
+        <h2>${esc(title)}</h2>
+        <span class="gs-section-meta">Select files or download the whole shelf.</span>
       </div>
-      <div class="gs-select-bar" id="selectBar" style="display:none">
-        <span id="selectCount">0 selected</span>
-        <button class="gs-btn gs-btn-sm" id="selectAllBtn">Select All</button>
-        <button class="gs-btn gs-btn-sm" id="deselectAllBtn">Deselect All</button>
-        <button class="gs-btn gs-btn-accent gs-btn-sm" id="dlSelectedBtn">⬇ Download Selected</button>
-        <button class="gs-btn gs-btn-sm" id="cancelSelectBtn">Cancel</button>
+      <div class="gs-control-card">
+        <div class="gs-toolbar">
+          <input class="gs-search" id="libSearch" placeholder="Search by file name" value="${esc(state.query)}">
+          <div class="gs-toolbar-actions">
+            <button class="gs-btn" id="selectBtn">${state.selectMode ? "Selection on" : "Select files"}</button>
+            <button class="gs-btn" id="downloadAllBtn">Download all</button>
+          </div>
+        </div>
+        <div class="gs-select-bar${state.selectMode ? " is-visible" : ""}" id="selectBar">
+          <span id="selectCount">0 selected</span>
+          <div class="gs-toolbar-actions">
+            <button class="gs-btn gs-btn-sm" id="selectAllBtn">Select all</button>
+            <button class="gs-btn gs-btn-sm" id="clearSelectBtn">Clear</button>
+            <button class="gs-btn gs-btn-accent gs-btn-sm" id="downloadSelectedBtn">Download selected</button>
+          </div>
+        </div>
       </div>
       <div class="gs-grid" id="grid">${skeletons(6)}</div>
     </section>
   `);
 
-  // Wire up search
-  const searchEl = document.getElementById("libSearch");
-  searchEl?.addEventListener("input", (e) => {
-    state.query = e.target.value;
-    clearTimeout(window.__t);
-    window.__t = setTimeout(() => renderLibrary(category, title, icon), 200);
+  document.getElementById("libSearch")?.addEventListener("input", (event) => {
+    state.query = event.target.value;
+    clearTimeout(state.searchTimer);
+    state.searchTimer = setTimeout(() => renderLibrary(category, title), 180);
   });
 
-  // Fetch items
-  let items = [];
-  try {
-    items = await api(`/api/items?category=${encodeURIComponent(category)}&q=${encodeURIComponent(state.query || "")}`);
-    const grid = document.getElementById("grid");
-    if (grid) {
-      grid.innerHTML = items.length
-        ? items.map(item => card(item, true)).join("")
-        : `<div class="gs-empty">No items found.</div>`;
+  state.libraryItems = await api(`/api/items?category=${encodeURIComponent(category)}&q=${encodeURIComponent(state.query || "")}`);
+  const grid = document.getElementById("grid");
+  grid.innerHTML = state.libraryItems.length
+    ? state.libraryItems.map((item) => card(item, true)).join("")
+    : '<div class="gs-empty">No matching files were found in this section.</div>';
+
+  attachMusicPlayers();
+  bindSelectableCards();
+  bindLibraryControls();
+  updateSelectionUi();
+}
+
+function bindLibraryControls() {
+  document.getElementById("selectBtn")?.addEventListener("click", () => {
+    state.selectMode = !state.selectMode;
+    if (!state.selectMode) {
+      state.selected.clear();
     }
-    attachMusicPlayers();
-  } catch (err) {
-    const grid = document.getElementById("grid");
-    if (grid) grid.innerHTML = `<div class="gs-empty">${esc(err.message)}</div>`;
-  }
-
-  // Download All
-  document.getElementById("dlAllBtn")?.addEventListener("click", () => {
-    downloadItems(items);
+    renderLibrary(location.pathname.slice(1), titleForPath(location.pathname));
   });
 
-  // Select mode
-  document.getElementById("selectBtn")?.addEventListener("click", () => toggleSelectMode(true, items));
-  document.getElementById("cancelSelectBtn")?.addEventListener("click", () => toggleSelectMode(false, items));
+  document.getElementById("downloadAllBtn")?.addEventListener("click", () => {
+    downloadItems(state.libraryItems);
+  });
+
   document.getElementById("selectAllBtn")?.addEventListener("click", () => {
-    items.forEach(i => state.selected.add(i.id));
-    updateSelectUI(items);
+    state.libraryItems.forEach((item) => state.selected.add(item.id));
+    updateSelectionUi();
   });
-  document.getElementById("deselectAllBtn")?.addEventListener("click", () => {
+
+  document.getElementById("clearSelectBtn")?.addEventListener("click", () => {
     state.selected.clear();
-    updateSelectUI(items);
+    updateSelectionUi();
   });
-  document.getElementById("dlSelectedBtn")?.addEventListener("click", () => {
-    const sel = items.filter(i => state.selected.has(i.id));
-    if (sel.length) downloadItems(sel);
+
+  document.getElementById("downloadSelectedBtn")?.addEventListener("click", () => {
+    const selectedItems = state.libraryItems.filter((item) => state.selected.has(item.id));
+    downloadItems(selectedItems);
   });
 }
 
-function toggleSelectMode(on, items) {
-  state.selectMode = on;
-  if (!on) state.selected.clear();
-  document.getElementById("selectBar").style.display = on ? "flex" : "none";
-  document.querySelectorAll(".gs-card-select").forEach(el => el.style.display = on ? "flex" : "none");
-  updateSelectUI(items);
+function bindSelectableCards() {
+  document.querySelectorAll("[data-select-card]").forEach((cardElement) => {
+    cardElement.addEventListener("click", (event) => {
+      if (!state.selectMode) return;
+      if (event.target.closest("a,button,audio")) return;
+      toggleSelected(cardElement.dataset.selectCard);
+    });
+  });
+
+  document.querySelectorAll("[data-select-toggle]").forEach((toggle) => {
+    toggle.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleSelected(toggle.dataset.selectToggle);
+    });
+  });
 }
 
-function updateSelectUI(items) {
+function toggleSelected(itemId) {
+  if (state.selected.has(itemId)) {
+    state.selected.delete(itemId);
+  } else {
+    state.selected.add(itemId);
+  }
+  updateSelectionUi();
+}
+
+function updateSelectionUi() {
   const count = state.selected.size;
-  const el = document.getElementById("selectCount");
-  if (el) el.textContent = `${count} selected`;
-  document.querySelectorAll(".gs-card-select").forEach(cb => {
-    const id = cb.dataset.id;
-    cb.classList.toggle("checked", state.selected.has(id));
+  const selectBar = document.getElementById("selectBar");
+  const selectCount = document.getElementById("selectCount");
+  if (selectBar) {
+    selectBar.classList.toggle("is-visible", state.selectMode);
+  }
+  if (selectCount) {
+    selectCount.textContent = `${count} selected`;
+  }
+  document.querySelectorAll("[data-select-card]").forEach((cardElement) => {
+    cardElement.classList.toggle("is-selected", state.selected.has(cardElement.dataset.selectCard));
   });
 }
-
-/* ── Download All (individual files) ── */
 
 function downloadItems(items) {
   if (!items.length) return;
-  // Stagger downloads slightly to avoid browser blocking
-  items.forEach((item, i) => {
+  items.forEach((item, index) => {
     setTimeout(() => {
-      const a = document.createElement("a");
-      a.href = item.downloadUrl;
-      a.download = item.title || "";
-      a.style.display = "none";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }, i * 350);
+      const anchor = document.createElement("a");
+      anchor.href = item.downloadUrl;
+      anchor.download = item.title || "";
+      anchor.style.display = "none";
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+    }, index * 280);
   });
 }
 
-function downloadAllFromBootstrap() {
-  const items = state.bootstrap?.recent || [];
-  if (!items.length) return;
-  // Fetch all items then download
-  api("/api/items?category=all").then(all => downloadItems(all)).catch(() => downloadItems(items));
-}
-
-/* ── Video Player ── */
-
 async function renderVideoPlayer(id) {
   const item = await api(`/api/item/${id}`);
-  const ready = item.streamReady;
   shell(`
     <section class="gs-section">
       <div class="gs-player">
         <div class="gs-player-top">
           <div>
             <h2>${esc(item.title)}</h2>
-            <span class="gs-meta">${fmtBytes(item.sizeBytes)}${item.durationMs ? ` · ${fmtDur(item.durationMs)}` : ""}</span>
+            <div class="gs-meta">${fmtBytes(item.sizeBytes)}${item.durationMs ? ` | ${fmtDur(item.durationMs)}` : ""}</div>
           </div>
-          <div class="gs-actions">
-            <a class="gs-btn gs-btn-sm" data-link href="/videos">← Back</a>
-            <a class="gs-btn gs-btn-accent gs-btn-sm" href="${item.downloadUrl}">⬇ Download</a>
+          <div class="gs-toolbar-actions">
+            <a class="gs-btn gs-btn-sm" data-link href="/videos">Back to videos</a>
+            <a class="gs-btn" href="${item.downloadUrl}">Download original</a>
           </div>
         </div>
-        ${item.compatibility || item.subtitleUrl ? `
-          <div class="gs-badges">
-            ${item.compatibility ? `<span class="gs-badge">${esc(item.compatibility)}</span>` : ""}
-            ${item.subtitleUrl ? `<span class="gs-badge">Subtitles</span>` : ""}
+        <div class="gs-badges">
+          ${item.compatibility ? `<span class="gs-badge">${esc(item.compatibility)}</span>` : ""}
+          ${item.subtitleUrl ? '<span class="gs-badge">Subtitles available</span>' : ""}
+          <span class="gs-badge">${esc(item.playbackMode)}</span>
+        </div>
+        <div id="playerStage">${renderVideoStage(item)}</div>
+        ${item.playbackMode !== "DIRECT" ? `
+          <div class="gs-compat-inline${item.streamReady ? " is-visible" : ""}" id="compatInline">
+            <span class="gs-badge" data-compat-badge>${esc(item.compatibilityStatus || (item.streamReady ? "STREAM LIVE" : "PREPARING"))}</span>
+            <div class="gs-compat-inline-copy">
+              <strong data-compat-title>${item.streamReady ? "Streaming while finishing conversion" : "Preparing browser playback"}</strong>
+              <p class="gs-meta" data-compat-message>${esc(item.compatibilityMessage || "GhostStream is preparing a compatible stream for this browser.")}</p>
+            </div>
+            <span class="gs-meta" data-compat-progress>${item.compatibilityProgressPercent != null ? `${item.compatibilityProgressPercent}%` : "Preparing"}</span>
           </div>
         ` : ""}
-        ${ready ? `
-          <div class="gs-video-wrap">
-            <video id="vPlayer" controls playsinline autoplay preload="auto" src="${item.streamUrl}">
-              ${item.subtitleUrl ? `<track kind="subtitles" src="${item.subtitleUrl}" srclang="en" label="Subtitle" default>` : ""}
-            </video>
-            <div class="gs-video-err" id="vErr" style="display:none">
-              <div style="font-size:2.4rem">⚠️</div>
-              <p id="vErrMsg">This format may not be supported.</p>
-              <div class="gs-actions">
-                <button class="gs-btn gs-btn-accent gs-btn-sm" id="vRetry">Retry</button>
-                <a class="gs-btn gs-btn-sm" href="${item.downloadUrl}">Download Original</a>
-              </div>
-            </div>
-          </div>
-        ` : `
-          <div class="gs-compat-card">
-            <span class="gs-badge">${esc(item.compatibilityStatus || "PENDING")}</span>
-            <p id="compatMsg">${esc(item.compatibilityMessage || "Optimizing for browser playback…")}</p>
-            <p class="gs-meta" id="compatProg">${item.compatibilityProgressPercent != null ? item.compatibilityProgressPercent + "%" : "Preparing…"}</p>
-          </div>
-        `}
       </div>
     </section>
   `);
 
-  const v = document.getElementById("vPlayer");
-  if (v) {
-    v.addEventListener("error", () => {
-      document.getElementById("vErr").style.display = "flex";
-      const msg = v.error?.code === 4
-        ? "This format isn't supported by your browser. Try downloading."
-        : "Playback failed. Check connection and retry.";
-      document.getElementById("vErrMsg").textContent = msg;
-    });
-    document.getElementById("vRetry")?.addEventListener("click", () => {
-      document.getElementById("vErr").style.display = "none";
-      v.load(); v.play().catch(() => {});
-    });
+  hydrateVideoPlayer(item);
+
+  if (item.playbackMode !== "DIRECT" && item.compatibilityStatus !== "READY") {
+    pollCompat(id, item);
   }
-  if (!ready && item.playbackMode !== "DIRECT") pollCompat(id);
 }
 
-/* ── Photo Viewer ── */
+function renderVideoStage(item) {
+  return item.streamReady
+    ? videoMarkup(item)
+    : `
+      <div class="gs-compat-card" id="compatStageCard">
+        <span class="gs-badge" data-compat-badge>${esc(item.compatibilityStatus || "PREPARING")}</span>
+        <h3 data-compat-title>Preparing browser playback</h3>
+        <p data-compat-message>${esc(item.compatibilityMessage || "GhostStream is preparing a compatible stream for this browser.")}</p>
+        <p class="gs-meta" data-compat-progress>${item.compatibilityProgressPercent != null ? `${item.compatibilityProgressPercent}%` : "Preparing"}</p>
+      </div>
+    `;
+}
+
+function videoMarkup(item) {
+  return `
+    <div class="gs-video-wrap">
+      <video id="vPlayer" controls playsinline preload="auto" src="${item.streamUrl}">
+        ${item.subtitleUrl ? `<track kind="subtitles" src="${item.subtitleUrl}" srclang="en" label="Subtitle" default>` : ""}
+      </video>
+      <div class="gs-video-error" id="vError">
+        <strong>Playback needs attention</strong>
+        <p id="vErrorText">This browser could not start the video.</p>
+        <div class="gs-toolbar-actions">
+          <button class="gs-btn gs-btn-accent gs-btn-sm" id="retryVideoBtn">Retry</button>
+          <a class="gs-btn gs-btn-sm" href="${item.downloadUrl}">Download original</a>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function hydrateVideoPlayer(item) {
+  const video = document.getElementById("vPlayer");
+  if (!video || video.dataset.bound === "true") return;
+  video.dataset.bound = "true";
+  const errorCard = document.getElementById("vError");
+  const errorText = document.getElementById("vErrorText");
+  let autoRetryUsed = false;
+
+  video.addEventListener("play", () => setNowPlaying({
+    type: "Video",
+    title: item.title,
+    element: video,
+    route: location.pathname,
+  }));
+  video.addEventListener("pause", () => clearNowPlaying(video));
+  video.addEventListener("ended", () => clearNowPlaying(video));
+  video.addEventListener("error", () => {
+    if (errorCard) errorCard.classList.add("is-visible");
+    if (errorText) {
+      errorText.textContent = item.playbackMode === "DIRECT"
+        ? "This browser could not start the original stream. Try downloading the original file."
+        : "The compatibility stream is still warming up. Retry in a moment.";
+    }
+    if (item.playbackMode !== "DIRECT" && !autoRetryUsed) {
+      autoRetryUsed = true;
+      setTimeout(() => {
+        if (location.pathname !== `/player/video/${item.id}`) return;
+        if (errorCard) errorCard.classList.remove("is-visible");
+        video.load();
+      }, 1800);
+    }
+  });
+  document.getElementById("retryVideoBtn")?.addEventListener("click", () => {
+    if (errorCard) errorCard.classList.remove("is-visible");
+    video.load();
+    video.play().catch(() => {});
+  });
+}
+
+function updateCompatElements(job, streamLive) {
+  document.querySelectorAll("[data-compat-message]").forEach((element) => {
+    element.textContent = job.message || "Preparing";
+  });
+  document.querySelectorAll("[data-compat-progress]").forEach((element) => {
+    element.textContent = job.progressPercent != null ? `${job.progressPercent}%` : (streamLive ? "Streaming" : "Preparing");
+  });
+  document.querySelectorAll("[data-compat-badge]").forEach((element) => {
+    element.textContent = job.status || (streamLive ? "STREAM LIVE" : "PREPARING");
+  });
+  document.querySelectorAll("[data-compat-title]").forEach((element) => {
+    element.textContent = streamLive
+      ? (job.complete ? "Compatibility playback is ready" : "Streaming while finishing conversion")
+      : "Preparing browser playback";
+  });
+  const inline = document.getElementById("compatInline");
+  if (inline) {
+    inline.classList.toggle("is-visible", streamLive);
+  }
+}
+
+function ensureCompatiblePlayerMounted(item) {
+  if (document.getElementById("vPlayer")) return;
+  const stage = document.getElementById("playerStage");
+  if (!stage) return;
+  stage.innerHTML = videoMarkup(item);
+  hydrateVideoPlayer(item);
+}
 
 async function renderPhotoViewer(id) {
   const item = await api(`/api/item/${id}`);
-  let prev = null, next = null;
+  let prev = null;
+  let next = null;
   try {
     const all = await api("/api/items?category=photos");
-    const idx = all.findIndex(p => p.id === id);
-    if (idx > 0) prev = all[idx - 1].id;
-    if (idx >= 0 && idx < all.length - 1) next = all[idx + 1].id;
+    const index = all.findIndex((photo) => photo.id === id);
+    if (index > 0) prev = all[index - 1].id;
+    if (index >= 0 && index < all.length - 1) next = all[index + 1].id;
   } catch (_) {}
 
   shell(`
@@ -325,13 +469,13 @@ async function renderPhotoViewer(id) {
         <div class="gs-player-top">
           <div>
             <h2>${esc(item.title)}</h2>
-            <span class="gs-meta">${fmtBytes(item.sizeBytes)}</span>
+            <div class="gs-meta">${fmtBytes(item.sizeBytes)}</div>
           </div>
-          <div class="gs-actions">
-            ${prev ? `<a class="gs-btn gs-btn-sm" data-link href="/photo/${prev}">←</a>` : ""}
-            ${next ? `<a class="gs-btn gs-btn-sm" data-link href="/photo/${next}">→</a>` : ""}
+          <div class="gs-toolbar-actions">
+            ${prev ? `<a class="gs-btn gs-btn-sm" data-link href="/photo/${prev}">Previous</a>` : ""}
+            ${next ? `<a class="gs-btn gs-btn-sm" data-link href="/photo/${next}">Next</a>` : ""}
             <a class="gs-btn gs-btn-sm" data-link href="/photos">Gallery</a>
-            <a class="gs-btn gs-btn-accent gs-btn-sm" href="${item.downloadUrl}">⬇ Download</a>
+            <a class="gs-btn" href="${item.downloadUrl}">Download original</a>
           </div>
         </div>
         ${item.mimeType === "application/pdf"
@@ -342,58 +486,72 @@ async function renderPhotoViewer(id) {
   `);
 }
 
-/* ── Login ── */
-
-function renderLogin(err = "") {
+function renderLogin(errorMessage = "") {
+  const bootstrap = state.bootstrap;
   app.innerHTML = `
     <div class="gs-center">
       <div class="gs-login">
-        <div class="gs-logo" style="justify-content:center;margin-bottom:20px">
-          <span class="gs-logo-icon" style="font-size:2rem">◈</span>
-          <span style="font-size:1.4rem;font-weight:700">GhostStream</span>
+        <div class="gs-logo gs-login-logo">
+          <span class="gs-logo-mark"></span>
+          <span>${esc(bootstrap?.title || sessionTitle)}</span>
         </div>
-        <p class="gs-meta" style="text-align:center">Enter the PIN shown on the host phone.</p>
+        <span class="gs-eyebrow">PIN protected session</span>
+        <h1>Enter access PIN</h1>
+        <p class="gs-meta">Use the PIN shown on the host phone to unlock this local session.</p>
         <form id="loginForm">
-          <input id="pinInput" class="gs-pin" inputmode="numeric" maxlength="6" placeholder="• • • •" autofocus>
-          ${err ? `<p class="gs-err">${esc(err)}</p>` : ""}
-          <button class="gs-btn gs-btn-accent" style="width:100%;margin-top:16px" type="submit">Continue</button>
+          <input id="pinInput" class="gs-pin" inputmode="numeric" maxlength="6" placeholder="Enter PIN" autofocus>
+          ${errorMessage ? `<p class="gs-error-text">${esc(errorMessage)}</p>` : ""}
+          <button class="gs-btn gs-btn-accent gs-btn-block" type="submit">Continue</button>
         </form>
       </div>
     </div>`;
-  document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
-    e.preventDefault();
+
+  document.getElementById("loginForm")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
     try {
-      await api("/auth/login", { method: "POST", body: JSON.stringify({ pin: document.getElementById("pinInput").value.trim() }) });
+      await api("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ pin: document.getElementById("pinInput").value.trim() }),
+      });
       navigate("/", true);
-    } catch (err) { renderLogin(err.message || "Wrong PIN."); }
+    } catch (error) {
+      renderLogin(error.message || "That PIN did not match.");
+    }
   });
 }
 
-function renderError(msg) {
-  app.innerHTML = `<div class="gs-center"><div class="gs-login"><h1>GhostStream</h1><p class="gs-err">${esc(msg)}</p></div></div>`;
+function renderError(message) {
+  app.innerHTML = `
+    <div class="gs-center">
+      <div class="gs-login">
+        <h1>${esc(sessionTitle)}</h1>
+        <p class="gs-error-text">${esc(message)}</p>
+      </div>
+    </div>`;
 }
 
-/* ── Card Component ── */
-
 function card(item, selectable = false) {
-  const cat = item.category;
-  const action =
-    cat === "video" ? `<a class="gs-btn gs-btn-accent gs-btn-sm" data-link href="/player/video/${item.id}">▶ Play</a>` :
-    cat === "photo" ? `<a class="gs-btn gs-btn-accent gs-btn-sm" data-link href="/photo/${item.id}">View</a>` :
-    cat === "music" ? `<button class="gs-btn gs-btn-accent gs-btn-sm music-play-btn" data-url="${item.streamUrl}" data-title="${esc(item.title)}">▶ Play</button>` :
-    item.title.toLowerCase().endsWith(".pdf") ? `<a class="gs-btn gs-btn-accent gs-btn-sm" data-link href="/photo/${item.id}">Preview</a>` :
-    "";
+  const action = item.category === "video"
+    ? `<a class="gs-btn gs-btn-accent gs-btn-sm" data-link href="/player/video/${item.id}">Play</a>`
+    : item.category === "photo"
+      ? `<a class="gs-btn gs-btn-accent gs-btn-sm" data-link href="/photo/${item.id}">View</a>`
+      : item.category === "music"
+        ? `<button class="gs-btn gs-btn-accent gs-btn-sm music-play-btn" data-url="${item.streamUrl}" data-title="${esc(item.title)}">Play</button>`
+        : item.title.toLowerCase().endsWith(".pdf")
+          ? `<a class="gs-btn gs-btn-accent gs-btn-sm" data-link href="/photo/${item.id}">Preview</a>`
+          : "";
 
   return `
-    <article class="gs-card" data-id="${item.id}">
-      ${selectable ? `<div class="gs-card-select" data-id="${item.id}" style="display:${state.selectMode ? 'flex' : 'none'}" onclick="toggleSelect('${item.id}')"></div>` : ""}
+    <article class="gs-card${selectable && state.selectMode ? " gs-card-selectable" : ""}${state.selected.has(item.id) ? " is-selected" : ""}" data-select-card="${selectable ? item.id : ""}">
+      ${selectable ? `<button class="gs-card-toggle${state.selectMode ? " is-visible" : ""}" data-select-toggle="${item.id}">${state.selected.has(item.id) ? "Selected" : "Select"}</button>` : ""}
       ${item.thumbnailUrl
         ? `<img class="gs-card-img" loading="lazy" src="${item.thumbnailUrl}" alt="">`
-        : `<div class="gs-card-img gs-card-placeholder"><span>${cat === "video" ? "🎬" : cat === "photo" ? "📷" : cat === "music" ? "🎵" : "📄"}</span></div>`}
+        : `<div class="gs-card-img gs-card-placeholder"><span>${esc(item.category.toUpperCase())}</span></div>`}
       <div class="gs-card-body">
         <div class="gs-card-title">${esc(item.title)}</div>
-        <div class="gs-meta">${fmtBytes(item.sizeBytes)}${item.durationMs ? ` · ${fmtDur(item.durationMs)}` : ""}</div>
-        ${cat === "music" ? `
+        <div class="gs-meta">${fmtBytes(item.sizeBytes)}${item.durationMs ? ` | ${fmtDur(item.durationMs)}` : ""}</div>
+        ${item.compatibilityLabel ? `<div class="gs-card-caption">${esc(item.compatibilityLabel)}</div>` : ""}
+        ${item.category === "music" ? `
           <div class="gs-music-row">
             <audio preload="none" src="${item.streamUrl}"></audio>
             <div class="gs-music-bar"><span class="gs-music-fill"></span></div>
@@ -402,93 +560,209 @@ function card(item, selectable = false) {
         ` : ""}
         <div class="gs-card-actions">
           ${action}
-          <a class="gs-btn gs-btn-sm" href="${item.downloadUrl}">⬇</a>
+          <a class="gs-btn gs-btn-sm" href="${item.downloadUrl}">Download</a>
         </div>
       </div>
     </article>`;
 }
 
-// Global function for inline onclick
-window.toggleSelect = function(id) {
-  if (state.selected.has(id)) state.selected.delete(id);
-  else state.selected.add(id);
-  updateSelectUI([]);
-};
+function attachMusicPlayers() {
+  document.querySelectorAll(".music-play-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      const cardElement = button.closest(".gs-card");
+      const audio = cardElement?.querySelector("audio");
+      if (!audio) return;
 
-function skeletons(n) {
-  return Array.from({ length: n }, () => `
+      if (!audio.paused) {
+        audio.pause();
+        button.textContent = "Play";
+        return;
+      }
+
+      document.querySelectorAll("audio").forEach((element) => {
+        if (element !== audio) element.pause();
+      });
+      document.querySelectorAll(".music-play-btn").forEach((element) => {
+        element.textContent = "Play";
+      });
+
+      audio.play().catch(() => {});
+      button.textContent = "Pause";
+      setNowPlaying({
+        type: "Music",
+        title: button.dataset.title,
+        element: audio,
+        route: location.pathname,
+      });
+
+      audio.ontimeupdate = () => {
+        const fill = cardElement.querySelector(".gs-music-fill");
+        const time = cardElement.querySelector(".gs-music-time");
+        if (fill && audio.duration > 0) {
+          fill.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
+        }
+        if (time) {
+          time.textContent = audio.duration > 0
+            ? `${fmtDur(audio.currentTime * 1000)} / ${fmtDur(audio.duration * 1000)}`
+            : fmtDur(audio.currentTime * 1000);
+        }
+      };
+      audio.onpause = () => {
+        if (audio.ended) return;
+        button.textContent = "Play";
+        clearNowPlaying(audio);
+      };
+      audio.onended = () => {
+        button.textContent = "Play";
+        clearNowPlaying(audio);
+      };
+    });
+  });
+}
+
+async function pollCompat(id, item) {
+  cancelCompatPolling();
+  const route = `/player/video/${id}`;
+  const token = ++state.compatPollToken;
+  try {
+    await api(`/api/compat/${id}/prepare`, { method: "POST" });
+  } catch (_) {}
+
+  let attempts = 0;
+  async function tick() {
+    if (token !== state.compatPollToken || location.pathname !== route) return;
+    attempts += 1;
+    if (attempts > 600) return;
+
+    try {
+      const job = await api(`/api/compat/${id}`);
+      if (token !== state.compatPollToken || location.pathname !== route) return;
+      if (job.complete) {
+        updateCompatElements(job, true);
+        ensureCompatiblePlayerMounted(item);
+        cancelCompatPolling();
+        return;
+      }
+      updateCompatElements(job, job.ready);
+      if (job.ready) {
+        ensureCompatiblePlayerMounted(item);
+      }
+      if (job.status === "FAILED") {
+        updateCompatElements(job, false);
+        return;
+      }
+    } catch (_) {}
+
+    state.compatPollTimer = setTimeout(tick, 1200);
+  }
+
+  state.compatPollTimer = setTimeout(tick, 700);
+}
+
+function cancelCompatPolling() {
+  state.compatPollToken += 1;
+  if (state.compatPollTimer) {
+    clearTimeout(state.compatPollTimer);
+    state.compatPollTimer = null;
+  }
+}
+
+function setNowPlaying(next) {
+  state.nowPlaying = next;
+  renderNowPlayingBar();
+}
+
+function clearNowPlaying(element) {
+  if (state.nowPlaying?.element === element) {
+    state.nowPlaying = null;
+    renderNowPlayingBar();
+  }
+}
+
+function renderNowPlayingBar() {
+  const bar = document.getElementById("nowPlayingBar");
+  if (!bar) return;
+  if (!state.nowPlaying) {
+    bar.className = "gs-now";
+    bar.innerHTML = "";
+    return;
+  }
+
+  bar.className = "gs-now is-visible";
+  bar.innerHTML = `
+    <div>
+      <div class="gs-now-label">Now playing</div>
+      <strong>${esc(state.nowPlaying.title)}</strong>
+      <div class="gs-meta">${esc(state.nowPlaying.type)}</div>
+    </div>
+    <div class="gs-toolbar-actions">
+      <button class="gs-btn gs-btn-sm" id="nowPlayingToggleBtn">${state.nowPlaying.element?.paused ? "Resume" : "Pause"}</button>
+      ${state.nowPlaying.route ? `<a class="gs-btn gs-btn-sm" data-link href="${state.nowPlaying.route}">Open</a>` : ""}
+    </div>`;
+
+  document.getElementById("nowPlayingToggleBtn")?.addEventListener("click", () => {
+    const element = state.nowPlaying?.element;
+    if (!element) return;
+    if (element.paused) {
+      element.play().catch(() => {});
+    } else {
+      element.pause();
+    }
+    renderNowPlayingBar();
+  });
+}
+
+function skeletons(count) {
+  return Array.from({ length: count }, () => `
     <article class="gs-card gs-skeleton">
       <div class="gs-skel gs-skel-img"></div>
       <div class="gs-card-body">
         <div class="gs-skel gs-skel-line" style="width:70%"></div>
-        <div class="gs-skel gs-skel-line" style="width:40%"></div>
+        <div class="gs-skel gs-skel-line" style="width:44%"></div>
       </div>
     </article>
   `).join("");
 }
 
-/* ── Music ── */
-
-function attachMusicPlayers() {
-  document.querySelectorAll(".music-play-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const card = btn.closest(".gs-card");
-      const audio = card?.querySelector("audio");
-      if (!audio) return;
-      if (!audio.paused) { audio.pause(); btn.textContent = "▶ Play"; return; }
-      document.querySelectorAll("audio").forEach(a => { if (a !== audio) a.pause(); });
-      document.querySelectorAll(".music-play-btn").forEach(b => { b.textContent = "▶ Play"; });
-      audio.play().catch(() => {});
-      btn.textContent = "⏸ Pause";
-      audio.ontimeupdate = () => {
-        const fill = card.querySelector(".gs-music-fill");
-        const time = card.querySelector(".gs-music-time");
-        if (fill && audio.duration > 0) fill.style.width = `${(audio.currentTime / audio.duration) * 100}%`;
-        if (time) time.textContent = audio.duration > 0 ? `${fmtDur(audio.currentTime * 1000)} / ${fmtDur(audio.duration * 1000)}` : fmtDur(audio.currentTime * 1000);
-      };
-      audio.onended = () => { btn.textContent = "▶ Play"; };
-    });
-  });
-}
-
-/* ── Compat Polling ── */
-
-async function pollCompat(id) {
-  try { await api(`/api/compat/${id}/prepare`, { method: "POST" }); } catch (_) {}
-  let attempts = 0;
-  async function tick() {
-    if (++attempts > 20) return;
-    try {
-      const job = await api(`/api/compat/${id}`);
-      const m = document.getElementById("compatMsg");
-      const p = document.getElementById("compatProg");
-      if (m) m.textContent = job.message;
-      if (p) p.textContent = job.progressPercent != null ? `${job.progressPercent}%` : "Preparing…";
-      if (job.ready) return renderVideoPlayer(id);
-      if (job.status === "FAILED") return;
-    } catch (_) {}
-    setTimeout(tick, 1500);
+function titleForPath(path) {
+  switch (path) {
+    case "/videos": return "Videos";
+    case "/photos": return "Photos";
+    case "/music": return "Music";
+    case "/files": return "Files";
+    default: return "Library";
   }
-  setTimeout(tick, 800);
 }
 
-/* ── Utilities ── */
-
-function fmtBytes(b) {
-  if (!b) return "0 B";
-  const u = ["B", "KB", "MB", "GB"];
-  let v = b, i = 0;
-  while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
-  return `${v >= 100 || i === 0 ? v.toFixed(0) : v.toFixed(1)} ${u[i]}`;
+function fmtBytes(bytes) {
+  if (!bytes) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  let value = bytes;
+  let index = 0;
+  while (value >= 1024 && index < units.length - 1) {
+    value /= 1024;
+    index += 1;
+  }
+  return `${value >= 100 || index === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[index]}`;
 }
 
 function fmtDur(ms) {
-  const s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
-  return h > 0 ? `${h}:${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}` : `${m}:${String(sec).padStart(2,"0")}`;
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return hours > 0
+    ? `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+    : `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
-function esc(s) {
-  return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+function esc(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 boot();
