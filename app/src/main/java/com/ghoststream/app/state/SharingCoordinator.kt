@@ -163,6 +163,9 @@ class SharingCoordinator(
         if (settings.ghostMode) {
             mediaAnalyzer.clearTemporaryCache()
         }
-        sessionManager.stopSession(message)
+        sessionManager.stopSession(
+            message = message,
+            recordRecentSession = settings.showRecentSessions,
+        )
     }
 }

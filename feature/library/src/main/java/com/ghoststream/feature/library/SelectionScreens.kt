@@ -136,9 +136,7 @@ private fun SelectionScreenScaffold(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(listOf(Color(0xFF05070A), Color(0xFF111927))),
-            ),
+            .background(selectionBackdropBrush()),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
@@ -154,7 +152,7 @@ private fun SelectionScreenScaffold(
                     .padding(horizontal = 20.dp)
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF0E1522)),
+                colors = CardDefaults.cardColors(containerColor = selectionPanelColor()),
             ) {
                 Column(
                     modifier = Modifier.padding(18.dp),
@@ -206,7 +204,7 @@ private fun SelectionScreenScaffold(
 private fun SelectionUriRow(uri: Uri, title: String = uri.lastPathSegment ?: "Selected item") {
     Card(
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF131C2B)),
+        colors = CardDefaults.cardColors(containerColor = selectionRaisedColor()),
     ) {
         Row(
             modifier = Modifier
@@ -214,7 +212,7 @@ private fun SelectionUriRow(uri: Uri, title: String = uri.lastPathSegment ?: "Se
                 .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(Icons.Outlined.InsertDriveFile, contentDescription = null, tint = Color(0xFF8AE3FF))
+            Icon(Icons.Outlined.InsertDriveFile, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.width(10.dp))
             Column {
                 Text(title, style = MaterialTheme.typography.titleMedium)
@@ -223,3 +221,21 @@ private fun SelectionUriRow(uri: Uri, title: String = uri.lastPathSegment ?: "Se
         }
     }
 }
+
+@Composable
+private fun selectionBackdropBrush(): Brush {
+    val colors = MaterialTheme.colorScheme
+    return Brush.verticalGradient(
+        listOf(
+            colors.background,
+            colors.surface.copy(alpha = 0.98f),
+            colors.surfaceVariant.copy(alpha = 0.86f),
+        ),
+    )
+}
+
+@Composable
+private fun selectionPanelColor(): Color = MaterialTheme.colorScheme.surface
+
+@Composable
+private fun selectionRaisedColor(): Color = MaterialTheme.colorScheme.surfaceVariant

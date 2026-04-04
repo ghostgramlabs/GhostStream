@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -41,8 +42,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -61,6 +61,7 @@ import com.ghoststream.app.state.AppEvent
 import com.ghoststream.app.state.MainViewModel
 import com.ghoststream.app.ui.theme.GhostStreamTheme
 import com.ghoststream.core.model.resolvedAccessUrl
+import com.ghoststream.core.model.ThemeMode
 import com.ghoststream.feature.home.HomeScreen
 import com.ghoststream.feature.library.AddFilesRoute
 import com.ghoststream.feature.library.AddFolderRoute
@@ -84,16 +85,21 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            GhostStreamTheme {
-                GhostStreamApp(viewModel = viewModel)
-            }
+            GhostStreamRoot(viewModel = viewModel)
         }
     }
 }
 
 @Composable
-private fun GhostStreamApp(viewModel: MainViewModel) {
+private fun GhostStreamRoot(viewModel: MainViewModel) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    GhostStreamTheme(themeMode = uiState.settings.themeMode) {
+        GhostStreamApp(viewModel = viewModel, uiState = uiState)
+    }
+}
+
+@Composable
+private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghoststream.app.state.MainUiState) {
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -103,6 +109,7 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
     var pendingBatchSelectNavigation by remember { mutableStateOf(false) }
     var launchHandled by remember { mutableStateOf(false) }
     var lastSessionMessage by remember { mutableStateOf<String?>(null) }
+    var allowHomeBackToResumeSession by remember { mutableStateOf(false) }
     val startForegroundSharingService = remember(context, viewModel) {
         {
             runCatching {
@@ -178,9 +185,16 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
         uiState.sessionState.serverPort,
     ) {
         if (uiState.sessionState.isSharing && uiState.sessionState.resolvedAccessUrl() != null) {
+            allowHomeBackToResumeSession = false
             navController.navigate(Routes.Session) {
                 launchSingleTop = true
             }
+        }
+    }
+
+    LaunchedEffect(uiState.sessionState.isSharing) {
+        if (!uiState.sessionState.isSharing) {
+            allowHomeBackToResumeSession = false
         }
     }
 
@@ -275,6 +289,14 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
                 )
             }
             composable(Routes.Home) {
+                BackHandler(
+                    enabled = allowHomeBackToResumeSession && uiState.sessionState.isSharing,
+                ) {
+                    allowHomeBackToResumeSession = false
+                    navController.navigate(Routes.Session) {
+                        launchSingleTop = true
+                    }
+                }
                 ResumeRefreshEffect(onResume = viewModel::refreshNetwork)
                 LaunchedEffect(uiState.sessionState.isSharing) {
                     if (uiState.sessionState.isSharing) {
@@ -295,7 +317,16 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
                     nearbyDiscoveryState = uiState.nearbyDiscoveryState,
                     connectingNearbyDeviceId = uiState.connectingNearbyDeviceId,
                     isStartingShare = uiState.isStartingShare,
-                    onStartSharing = viewModel::requestStartSharing,
+                    onStartSharing = {
+                        if (uiState.sessionState.isSharing) {
+                            allowHomeBackToResumeSession = false
+                            navController.navigate(Routes.Session) {
+                                launchSingleTop = true
+                            }
+                        } else {
+                            viewModel.requestStartSharing()
+                        }
+                    },
                     onSavePreset = viewModel::saveCurrentAsPreset,
                     onApplyPreset = viewModel::applyPreset,
                     onDeletePreset = viewModel::deletePreset,
@@ -316,6 +347,7 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
                 SharedLibraryScreen(
                     libraryState = uiState.libraryState,
                     compatibilityJobs = uiState.compatibilityJobs,
+                    showThumbnails = uiState.settings.showThumbnails,
                     onPrepareItem = viewModel::requestPrepareItem,
                     onSavePresetSelection = viewModel::saveSelectedItemsAsPreset,
                     onRemoveItem = viewModel::removeItem,
@@ -379,9 +411,17 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
                 )
             }
             composable(Routes.Session) {
+                BackHandler(enabled = uiState.sessionState.isSharing) {
+                    allowHomeBackToResumeSession = true
+                    navController.popBackStack()
+                }
+                KeepScreenAwakeEffect(
+                    enabled = uiState.settings.keepScreenAwake && uiState.sessionState.isSharing,
+                )
                 ActiveSessionScreen(
                     sessionState = uiState.sessionState,
                     hapticOnDeviceConnect = uiState.settings.hapticOnDeviceConnect,
+                    showTransferSpeed = uiState.settings.showTransferSpeed,
                     onCopyLink = {
                         val url = uiState.sessionState.resolvedAccessUrl()
                         if (url != null) {
@@ -429,7 +469,9 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
                     onToggleAutoGeneratePin = { viewModel.updateSettings { current -> current.copy(autoGeneratePin = it) } },
                     onToggleClearAuthOnStop = { viewModel.updateSettings { current -> current.copy(clearAuthOnStop = it) } },
                     onToggleGhostMode = { viewModel.updateSettings { current -> current.copy(ghostMode = it) } },
-                    onToggleDarkBrowserTheme = { viewModel.updateSettings { current -> current.copy(forceDarkBrowserTheme = it) } },
+                    onThemeModeSelected = { themeMode ->
+                        viewModel.updateSettings { current -> current.copy(themeMode = themeMode) }
+                    },
                     onToggleShowThumbnails = { viewModel.updateSettings { current -> current.copy(showThumbnails = it) } },
                     onToggleLargeTvCards = { viewModel.updateSettings { current -> current.copy(largeTvCards = it) } },
                     onToggleProminentDownloads = { viewModel.updateSettings { current -> current.copy(prominentDownloadButton = it) } },
@@ -464,24 +506,20 @@ private fun SplashRoute() {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF03060A), Color(0xFF0A121E), Color(0xFF030508)),
-                ),
-            ),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Icon(
                 imageVector = Icons.Outlined.PlayArrow,
                 contentDescription = null,
-                tint = Color(0xFF87E6FF),
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(88.dp),
             )
             Spacer(modifier = Modifier.height(18.dp))
-            Text("GhostStream: Share & Stream", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
+            Text("GhostStream", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(6.dp))
-            Text("Private local media hub", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Private local sharing", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -510,6 +548,18 @@ private object Routes {
     const val Session = "session"
     const val Settings = "settings"
     const val Help = "help"
+}
+
+@Composable
+private fun KeepScreenAwakeEffect(enabled: Boolean) {
+    val view = LocalView.current
+    DisposableEffect(view, enabled) {
+        val previous = view.keepScreenOn
+        view.keepScreenOn = enabled
+        onDispose {
+            view.keepScreenOn = previous
+        }
+    }
 }
 
 private fun requiredBatchSelectionPermissions(): Array<String> {

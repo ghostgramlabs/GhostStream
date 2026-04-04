@@ -46,6 +46,7 @@ async function boot() {
 
   try {
     state.bootstrap = await api("/api/bootstrap");
+    applyBootstrapUi();
     if (path.startsWith("/player/video/")) {
       renderVideoPlayer(path.split("/").pop());
       return;
@@ -62,6 +63,17 @@ async function boot() {
     }
     renderError(error.message || "Unable to load GhostStream.");
   }
+}
+
+function applyBootstrapUi() {
+  const bootstrap = state.bootstrap;
+  const themeMode = bootstrap?.themeMode || "SYSTEM";
+  document.documentElement.style.colorScheme =
+    themeMode === "DARK" ? "dark" : themeMode === "LIGHT" ? "light" : "";
+  document.body.classList.toggle("gs-theme-dark", themeMode === "DARK");
+  document.body.classList.toggle("gs-theme-light", themeMode === "LIGHT");
+  document.body.classList.toggle("gs-large-cards", Boolean(bootstrap?.largeCards));
+  document.body.classList.toggle("gs-prominent-downloads", Boolean(bootstrap?.prominentDownloadButton));
 }
 
 function navigate(path, replace = false) {
@@ -155,7 +167,14 @@ function shell(content, options = {}) {
   const bootstrap = state.bootstrap;
   const path = location.pathname;
   const securityLabel = bootstrap?.authEnabled ? "PIN protected" : "Open on local network";
-  const sessionLink = bootstrap?.sessionUrl ? `<span class="gs-status-link">${esc(bootstrap.sessionUrl)}</span>` : "";
+  const sessionLink = bootstrap?.sessionUrl
+    ? `
+      <div class="gs-inline-note">
+        <span class="gs-inline-note-label">Link</span>
+        <span class="gs-status-link">${esc(bootstrap.sessionUrl)}</span>
+      </div>
+    `
+    : "";
 
   app.innerHTML = `
     <div class="gs-shell">
@@ -177,7 +196,10 @@ function shell(content, options = {}) {
         </div>
       </nav>
       <div class="gs-status-strip">
-        <span>${esc(bootstrap?.subtitle || sessionSubtitle)}</span>
+        <div class="gs-inline-note">
+          <span class="gs-inline-note-label">Session</span>
+          <span>${esc(bootstrap?.subtitle || sessionSubtitle)}</span>
+        </div>
         ${sessionLink}
       </div>
       <main class="gs-main">${content}</main>
@@ -208,9 +230,23 @@ function renderHome() {
         <h1>Stream & share files offline</h1>
         <p>${esc(sessionSubtitle)}. Browse, play, preview, or download ${total} shared items on the same local network.</p>
       </div>
-      <div class="gs-hero-actions">
-        <a class="gs-btn gs-btn-accent" data-link href="/videos">Browse videos</a>
-        <button class="gs-btn" id="downloadAllBtn">Download all files</button>
+      <div class="gs-hero-side">
+        <div class="gs-hero-summary">
+          <div class="gs-hero-stat">
+            <span class="gs-inline-note-label">Shared now</span>
+            <strong>${total} items</strong>
+            <span class="gs-meta">Ready on this local session</span>
+          </div>
+          <div class="gs-hero-stat">
+            <span class="gs-inline-note-label">Access</span>
+            <strong>${bootstrap?.authEnabled ? "PIN required" : "Instant open"}</strong>
+            <span class="gs-meta">${bootstrap?.authEnabled ? "Enter the code from the host phone" : "Open in any browser on this network"}</span>
+          </div>
+        </div>
+        <div class="gs-hero-actions">
+          <a class="gs-btn gs-btn-accent" data-link href="/videos">Browse videos</a>
+          <button class="gs-btn gs-btn-download" id="downloadAllBtn">Download all files</button>
+        </div>
       </div>
     </section>
 
@@ -253,7 +289,7 @@ async function renderLibrary(category, title) {
           <input class="gs-search" id="libSearch" placeholder="Search by file name" value="${esc(state.query)}">
           <div class="gs-toolbar-actions">
             <button class="gs-btn" id="selectBtn">${state.selectMode ? "Selection on" : "Select files"}</button>
-            <button class="gs-btn" id="downloadAllBtn">Download all</button>
+            <button class="gs-btn gs-btn-download" id="downloadAllBtn">Download all</button>
           </div>
         </div>
         <div class="gs-select-bar${state.selectMode ? " is-visible" : ""}" id="selectBar">
@@ -387,7 +423,7 @@ async function renderVideoPlayer(id) {
           </div>
           <div class="gs-toolbar-actions">
             <a class="gs-btn gs-btn-sm" data-link href="/videos">Back to videos</a>
-            <a class="gs-btn" href="${item.downloadUrl}">Download original</a>
+            <a class="gs-btn gs-btn-download" href="${item.downloadUrl}">Download original</a>
           </div>
         </div>
         <div class="gs-badges">
@@ -448,7 +484,7 @@ function videoMarkup(item) {
         <p id="vErrorText">This browser could not start the video.</p>
         <div class="gs-toolbar-actions">
           <button class="gs-btn gs-btn-accent gs-btn-sm" id="retryVideoBtn">Retry</button>
-          <a class="gs-btn gs-btn-sm" href="${item.downloadUrl}">Download original</a>
+          <a class="gs-btn gs-btn-download gs-btn-sm" href="${item.downloadUrl}">Download original</a>
         </div>
       </div>
     </div>
@@ -616,7 +652,7 @@ async function renderPhotoViewer(id) {
             ${prev ? `<a class="gs-btn gs-btn-sm" data-link href="/photo/${prev}">Previous</a>` : ""}
             ${next ? `<a class="gs-btn gs-btn-sm" data-link href="/photo/${next}">Next</a>` : ""}
             <a class="gs-btn gs-btn-sm" data-link href="/photos">Gallery</a>
-            <a class="gs-btn" href="${item.downloadUrl}">Download original</a>
+            <a class="gs-btn gs-btn-download" href="${item.downloadUrl}">Download original</a>
           </div>
         </div>
         ${item.mimeType === "application/pdf"
@@ -672,14 +708,20 @@ function renderError(message) {
 }
 
 function card(item, selectable = false) {
+  const actionBtnClass = state.bootstrap?.prominentDownloadButton
+    ? "gs-btn gs-btn-sm"
+    : "gs-btn gs-btn-accent gs-btn-sm";
+  const downloadBtnClass = state.bootstrap?.prominentDownloadButton
+    ? "gs-btn gs-btn-download gs-btn-sm"
+    : "gs-btn gs-btn-sm";
   const action = item.category === "video"
-    ? `<a class="gs-btn gs-btn-accent gs-btn-sm" data-link href="/player/video/${item.id}">Play</a>`
+    ? `<a class="${actionBtnClass}" data-link href="/player/video/${item.id}">Play</a>`
     : item.category === "photo"
-      ? `<a class="gs-btn gs-btn-accent gs-btn-sm" data-link href="/photo/${item.id}">View</a>`
+      ? `<a class="${actionBtnClass}" data-link href="/photo/${item.id}">View</a>`
       : item.category === "music"
-        ? `<button class="gs-btn gs-btn-accent gs-btn-sm music-play-btn" data-audio-item-id="${item.id}" data-title="${esc(item.title)}">Play</button>`
+        ? `<button class="${actionBtnClass} music-play-btn" data-audio-item-id="${item.id}" data-title="${esc(item.title)}">Play</button>`
         : item.title.toLowerCase().endsWith(".pdf")
-          ? `<a class="gs-btn gs-btn-accent gs-btn-sm" data-link href="/photo/${item.id}">Preview</a>`
+          ? `<a class="${actionBtnClass}" data-link href="/photo/${item.id}">Preview</a>`
           : "";
 
   return `
@@ -689,9 +731,13 @@ function card(item, selectable = false) {
         ? `<img class="gs-card-img" loading="lazy" src="${item.thumbnailUrl}" alt="">`
         : `<div class="gs-card-img gs-card-placeholder"><span>${esc(item.category.toUpperCase())}</span></div>`}
       <div class="gs-card-body">
+        <div class="gs-card-topline">
+          <span class="gs-card-type">${esc(item.category)}</span>
+          ${item.compatibilityLabel ? `<span class="gs-card-tag">${esc(item.compatibilityLabel)}</span>` : ""}
+        </div>
         <div class="gs-card-title">${esc(item.title)}</div>
         <div class="gs-meta">${fmtBytes(item.sizeBytes)}${item.durationMs ? ` | ${fmtDur(item.durationMs)}` : ""}</div>
-        ${item.compatibilityLabel ? `<div class="gs-card-caption">${esc(item.compatibilityLabel)}</div>` : ""}
+        ${item.compatibilityLabel ? `<div class="gs-card-caption">Browser playback is prepared when needed.</div>` : ""}
         ${item.category === "music" ? `
           <div class="gs-music-row">
             <audio class="gs-audio-player" preload="none" src="${item.streamUrl}">
@@ -701,7 +747,7 @@ function card(item, selectable = false) {
         ` : ""}
         <div class="gs-card-actions">
           ${action}
-          <a class="gs-btn gs-btn-sm" href="${item.downloadUrl}">Download</a>
+          <a class="${downloadBtnClass}" href="${item.downloadUrl}">Download</a>
         </div>
       </div>
     </article>`;

@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -71,7 +72,7 @@ class MainViewModel(
             settings = settings,
             libraryState = library,
             sessionState = session,
-            recentSessions = recent,
+            recentSessions = if (settings.showRecentSessions) recent else emptyList(),
             sharePresets = presets,
             smartGroups = groups,
             smartGroupsLoading = loading,
@@ -166,10 +167,10 @@ class MainViewModel(
         viewModelScope.launch {
             container.sharePresetStore.saveCurrentSelection(name, container.storageRepository.libraryState.value)
                 .onSuccess { preset ->
-                    _events.emit(AppEvent.ShowMessage("Saved \"${preset.name}\" to Saved Shares."))
+                    _events.emit(AppEvent.ShowMessage("Saved \"${preset.name}\" to Collections."))
                 }
                 .onFailure {
-                    _events.emit(AppEvent.ShowMessage(it.message ?: "Unable to save this to Saved Shares right now."))
+                    _events.emit(AppEvent.ShowMessage(it.message ?: "Unable to save this collection right now."))
                 }
         }
     }
@@ -181,9 +182,9 @@ class MainViewModel(
                 selectedItemIds = itemIds,
                 libraryState = container.storageRepository.libraryState.value,
             ).onSuccess { preset ->
-                _events.emit(AppEvent.ShowMessage("Saved selected files as \"${preset.name}\"."))
+                _events.emit(AppEvent.ShowMessage("Saved collection \"${preset.name}\"."))
             }.onFailure {
-                _events.emit(AppEvent.ShowMessage(it.message ?: "Unable to save those files right now."))
+                _events.emit(AppEvent.ShowMessage(it.message ?: "Unable to save this collection right now."))
             }
         }
     }
@@ -192,10 +193,10 @@ class MainViewModel(
         viewModelScope.launch {
             container.sharePresetStore.applyPreset(presetId, container.storageRepository)
                 .onSuccess { presetState ->
-                    _events.emit(AppEvent.ShowMessage("Opened saved share with ${presetState.summary.totalItems} items."))
+                    _events.emit(AppEvent.ShowMessage("Collection ready with ${presetState.summary.totalItems} items."))
                 }
                 .onFailure {
-                    _events.emit(AppEvent.ShowMessage(it.message ?: "Unable to load that saved share right now."))
+                    _events.emit(AppEvent.ShowMessage(it.message ?: "Unable to open that collection right now."))
                 }
         }
     }
@@ -203,7 +204,7 @@ class MainViewModel(
     fun deletePreset(presetId: String) {
         viewModelScope.launch {
             container.sharePresetStore.deletePreset(presetId)
-            _events.emit(AppEvent.ShowMessage("Saved share removed."))
+            _events.emit(AppEvent.ShowMessage("Collection removed."))
         }
     }
 
@@ -290,7 +291,12 @@ class MainViewModel(
 
     fun updateSettings(transform: (AppSettings) -> AppSettings) {
         viewModelScope.launch {
-            container.settingsRepository.update(transform)
+            val current = container.settingsRepository.settings.first()
+            val updated = transform(current)
+            container.settingsRepository.update { updated }
+            if (current.showRecentSessions && !updated.showRecentSessions) {
+                container.sessionManager.clearRecentSessions()
+            }
         }
     }
 

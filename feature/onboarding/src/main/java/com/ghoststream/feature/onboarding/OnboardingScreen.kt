@@ -75,11 +75,7 @@ fun OnboardingScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF07080C), Color(0xFF10141B), Color(0xFF090B10)),
-                ),
-            )
+            .background(ghostBackdropBrush())
             .padding(24.dp),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -104,7 +100,7 @@ fun OnboardingScreen(
                     .padding(vertical = 12.dp),
                     shape = RoundedCornerShape(32.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFF121823),
+                        containerColor = ghostPanelColor(),
                     ),
                 ) {
                     Column(
@@ -116,7 +112,7 @@ fun OnboardingScreen(
                         Surface(
                             modifier = Modifier.size(72.dp),
                             shape = CircleShape,
-                            color = Color(0xFF1A2527),
+                            color = ghostAccentSurface(),
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
@@ -155,7 +151,7 @@ fun OnboardingScreen(
                             .padding(horizontal = 4.dp)
                             .size(width = if (pagerState.currentPage == index) 28.dp else 8.dp, height = 8.dp)
                             .background(
-                                color = if (pagerState.currentPage == index) MaterialTheme.colorScheme.primary else Color(0xFF334050),
+                                color = if (pagerState.currentPage == index) MaterialTheme.colorScheme.primary else ghostMutedSurface(),
                                 shape = RoundedCornerShape(99.dp),
                             ),
                     )
@@ -187,3 +183,24 @@ private data class OnboardingCard(
     val title: String,
     val description: String,
 )
+
+@Composable
+private fun ghostBackdropBrush(): Brush {
+    val colors = MaterialTheme.colorScheme
+    return Brush.verticalGradient(
+        listOf(
+            colors.background,
+            colors.surface.copy(alpha = 0.98f),
+            colors.surfaceVariant.copy(alpha = 0.86f),
+        ),
+    )
+}
+
+@Composable
+private fun ghostPanelColor(): Color = MaterialTheme.colorScheme.surface
+
+@Composable
+private fun ghostAccentSurface(): Color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.58f)
+
+@Composable
+private fun ghostMutedSurface(): Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.78f)

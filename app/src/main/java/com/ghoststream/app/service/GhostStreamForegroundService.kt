@@ -17,11 +17,16 @@ import com.ghoststream.app.GhostStreamApplication
 import com.ghoststream.app.MainActivity
 import com.ghoststream.app.R
 import com.ghoststream.app.state.ShareStartResult
+import com.ghoststream.core.model.AppSettings
+import com.ghoststream.core.model.AutoStopOption
 import com.ghoststream.core.model.SessionState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -29,6 +34,7 @@ class GhostStreamForegroundService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val container by lazy { (application as GhostStreamApplication).container }
     private var startupInProgress = false
+    private var autoStopJob: Job? = null
     private val debugLogRepository by lazy { container.debugLogRepository }
 
     override fun onCreate() {
@@ -45,6 +51,16 @@ class GhostStreamForegroundService : Service() {
                         "notification updated isSharing=${state.isSharing} url=${state.sessionUrl} port=${state.serverPort}",
                     )
                 }
+            }
+        }
+        serviceScope.launch {
+            combine(
+                container.settingsRepository.settings,
+                container.sessionManager.sessionState,
+            ) { settings, sessionState ->
+                settings to sessionState
+            }.collectLatest { (settings, sessionState) ->
+                scheduleAutoStop(settings, sessionState)
             }
         }
     }
@@ -117,8 +133,48 @@ class GhostStreamForegroundService : Service() {
 
     override fun onDestroy() {
         debugLogRepository.log("ForegroundService", "onDestroy")
+        autoStopJob?.cancel()
         serviceScope.cancel()
         super.onDestroy()
+    }
+
+    private fun scheduleAutoStop(settings: AppSettings, state: SessionState) {
+        autoStopJob?.cancel()
+        val timeoutMinutes = settings.autoStop.minutes
+        if (!state.isSharing || timeoutMinutes == null) {
+            return
+        }
+
+        val lastActivityEpochMs = state.transferStats.lastActivityEpochMs
+            ?: state.transferStats.startedAtEpochMs
+            ?: state.startedAtEpochMs
+            ?: System.currentTimeMillis()
+        val delayMs = (timeoutMinutes * 60_000L) - (System.currentTimeMillis() - lastActivityEpochMs)
+        if (delayMs <= 0L) {
+            autoStopJob = serviceScope.launch {
+                debugLogRepository.log("ForegroundService", "auto-stop reached immediately minutes=$timeoutMinutes")
+                stopForAutoStop()
+            }
+            return
+        }
+
+        autoStopJob = serviceScope.launch {
+            debugLogRepository.log(
+                "ForegroundService",
+                "auto-stop scheduled minutes=$timeoutMinutes delayMs=$delayMs lastActivity=$lastActivityEpochMs",
+            )
+            delay(delayMs)
+            if (container.sessionManager.sessionState.value.isSharing) {
+                debugLogRepository.log("ForegroundService", "auto-stop firing after inactivity")
+                stopForAutoStop()
+            }
+        }
+    }
+
+    private suspend fun stopForAutoStop() {
+        container.sharingCoordinator.stopSharing("Sharing stopped after inactivity.")
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
     }
 
     private fun buildNotification(state: SessionState): android.app.Notification {

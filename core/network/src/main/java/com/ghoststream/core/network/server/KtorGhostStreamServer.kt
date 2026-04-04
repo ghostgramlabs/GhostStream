@@ -14,6 +14,7 @@ import com.ghoststream.core.model.MediaCategory
 import com.ghoststream.core.model.NoOpDebugLogSink
 import com.ghoststream.core.model.PlaybackMode
 import com.ghoststream.core.model.SharedItem
+import com.ghoststream.core.model.ThemeMode
 import com.ghoststream.core.model.buildSessionAccessUrl
 import com.ghoststream.core.network.AndroidNetworkInspector
 import com.ghoststream.core.network.assets.WebAssetLoader
@@ -184,11 +185,12 @@ class KtorGhostStreamServer(
                     recentCards += BrowserItemCard.from(
                         item = item,
                         compatibilityJob = compatibilitySnapshotFor(item, triggerPreparation = false),
+                        showThumbnails = settings.showThumbnails,
                     )
                 }
                 call.respond(
                     BrowserBootstrap(
-                        title = "GhostStream: Share & Stream",
+                        title = "GhostStream",
                         subtitle = "Stream & share files offline",
                         authEnabled = state.authEnabled,
                         sessionUrl = buildSessionAccessUrl(
@@ -204,7 +206,8 @@ class KtorGhostStreamServer(
                             files = state.selectedItems.count { it.category == MediaCategory.FILE },
                         ),
                         recent = recentCards,
-                        forceDarkTheme = settings.forceDarkBrowserTheme,
+                        themeMode = settings.themeMode,
+                        showThumbnails = settings.showThumbnails,
                         largeCards = settings.largeTvCards,
                         prominentDownloadButton = settings.prominentDownloadButton,
                     ),
@@ -213,6 +216,7 @@ class KtorGhostStreamServer(
 
             get("/api/items") {
                 if (!call.authorizeBrowserCall()) return@get
+                val settings = settingsRepository.settings.first()
                 val category = call.request.queryParameters["category"]?.lowercase()
                 val query = call.request.queryParameters["q"]?.trim().orEmpty()
                 val items = sessionManager.sessionState.value.selectedItems
@@ -235,6 +239,7 @@ class KtorGhostStreamServer(
                     cards += BrowserItemCard.from(
                         item = item,
                         compatibilityJob = compatibilitySnapshotFor(item, triggerPreparation = false),
+                        showThumbnails = settings.showThumbnails,
                     )
                 }
                 call.respond(cards)
@@ -304,6 +309,11 @@ class KtorGhostStreamServer(
 
             get("/thumb/{id}") {
                 if (!call.authorizeBrowserCall()) return@get
+                val settings = settingsRepository.settings.first()
+                if (!settings.showThumbnails) {
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload("Preview unavailable"))
+                    return@get
+                }
                 val item = resolveItem(call.parameters["id"]) ?: run {
                     call.respond(HttpStatusCode.NotFound, ErrorPayload("Preview unavailable"))
                     return@get
@@ -464,7 +474,7 @@ class KtorGhostStreamServer(
             return
         }
         val html = assetLoader.readText("web/index.html")
-            .replace("__SESSION_TITLE__", "GhostStream: Share & Stream")
+            .replace("__SESSION_TITLE__", "GhostStream")
             .replace("__SESSION_SUBTITLE__", "Stream & share files offline")
         respondText(html, ContentType.Text.Html)
     }
@@ -1103,7 +1113,8 @@ class KtorGhostStreamServer(
         val sessionPort: Int?,
         val categories: BrowserCategories,
         val recent: List<BrowserItemCard>,
-        val forceDarkTheme: Boolean,
+        val themeMode: ThemeMode,
+        val showThumbnails: Boolean,
         val largeCards: Boolean,
         val prominentDownloadButton: Boolean,
     )
@@ -1131,13 +1142,24 @@ class KtorGhostStreamServer(
         val compatibilityStatus: CompatibilityStatus? = null,
     ) {
         companion object {
-            fun from(item: SharedItem, compatibilityJob: CompatibilityJob): BrowserItemCard = BrowserItemCard(
+            fun from(
+                item: SharedItem,
+                compatibilityJob: CompatibilityJob,
+                showThumbnails: Boolean,
+            ): BrowserItemCard = BrowserItemCard(
                 id = item.id,
                 title = item.displayName,
                 category = item.category.name.lowercase(),
                 sizeBytes = item.sizeBytes,
                 durationMs = item.durationMs,
-                thumbnailUrl = if (item.category == MediaCategory.PHOTO || item.category == MediaCategory.VIDEO) "/thumb/${item.id}" else null,
+                thumbnailUrl = if (
+                    showThumbnails &&
+                    (item.category == MediaCategory.PHOTO || item.category == MediaCategory.VIDEO)
+                ) {
+                    "/thumb/${item.id}"
+                } else {
+                    null
+                },
                 streamUrl = "/stream/${item.id}",
                 downloadUrl = "/download/${item.id}",
                 subtitleUrl = item.subtitleMatch?.let { "/subtitle/${item.id}" },

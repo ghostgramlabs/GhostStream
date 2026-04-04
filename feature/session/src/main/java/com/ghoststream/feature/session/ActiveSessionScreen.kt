@@ -3,8 +3,10 @@ package com.ghoststream.feature.session
 import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -22,25 +25,26 @@ import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.StopCircle
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ghoststream.core.model.BlockedClient
 import com.ghoststream.core.model.ConnectedClient
@@ -56,6 +60,7 @@ import kotlin.math.roundToInt
 fun ActiveSessionScreen(
     sessionState: SessionState,
     hapticOnDeviceConnect: Boolean,
+    showTransferSpeed: Boolean,
     onCopyLink: () -> Unit,
     onShareLink: () -> Unit,
     onStopSharing: () -> Unit,
@@ -77,6 +82,7 @@ fun ActiveSessionScreen(
     ) {
         sessionState.displayAccessUrl()
     }
+
     LaunchedEffect(sessionState.connectedClients.size, hapticOnDeviceConnect) {
         if (hapticOnDeviceConnect && sessionState.connectedClients.isNotEmpty()) {
             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -86,219 +92,42 @@ fun ActiveSessionScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF07080C), Color(0xFF10151C), Color(0xFF0A0C11)),
-                ),
-            ),
+            .background(MaterialTheme.colorScheme.background),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
-            Card(
-                modifier = Modifier
-                    .padding(horizontal = 20.dp, vertical = 20.dp)
-                    .fillMaxWidth(),
-                shape = RoundedCornerShape(30.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF121823)),
-            ) {
-                Column(
-                    modifier = Modifier.padding(22.dp),
-                    verticalArrangement = Arrangement.spacedBy(18.dp),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Top,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = if (sessionState.isSharing) "Private session live" else "Preparing browser access",
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = if (sessionState.isSharing) {
-                                    "Scan the QR code or open the local link on a nearby browser."
-                                } else {
-                                    sessionState.message
-                                },
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        AssistChip(
-                            onClick = {},
-                            label = {
-                                Text(
-                                    when {
-                                        sessionState.isSharing -> "Live"
-                                        sessionState.networkAvailability.isReady -> "Starting"
-                                        else -> "Network required"
-                                    },
-                                )
-                            },
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(18.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Box(
-                            modifier = Modifier.weight(1f),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            accessUrl?.let { url ->
-                                val qrBitmap = remember(url) { generateQrBitmap(url) }
-                                qrBitmap?.let {
-                                    Image(
-                                        bitmap = it.asImageBitmap(),
-                                        contentDescription = "Session QR",
-                                        modifier = Modifier.size(220.dp),
-                                    )
-                                }
-                            } ?: Text(
-                                text = "Preparing QR",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            SessionHighlight(
-                                title = if (sessionState.hostname != null) "Friendly local link" else "Access link",
-                                value = displayUrl ?: accessUrl ?: "Waiting for local link",
-                                supporting = sessionState.advertisedName?.let { "Nearby GhostStream apps will see $it." }
-                                    ?: "QR and Share use the most reliable local browser path.",
-                            )
-                            SessionHighlight(
-                                title = "Session security",
-                                value = if (sessionState.authEnabled) "PIN ${sessionState.pin ?: "----"}" else "PIN off",
-                                supporting = if (sessionState.authEnabled) {
-                                    "Nearby browsers must enter this code before viewing your library."
-                                } else {
-                                    "Receivers can open the session link directly."
-                                },
-                                actionLabel = if (sessionState.authEnabled) "Regenerate" else null,
-                                onAction = if (sessionState.authEnabled) onRegeneratePin else null,
-                            )
-                            SessionHighlight(
-                                title = "Nearby name",
-                                value = sessionState.advertisedName ?: "Advertising local session",
-                                supporting = sessionState.hostname?.let { "Local hostname: $it" }
-                                    ?: "Nearby GhostStream apps can discover this session without showing the raw IP.",
-                            )
-                        }
-                    }
-
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        OutlinedButton(onClick = onCopyLink, shape = RoundedCornerShape(16.dp)) {
-                            Icon(Icons.Outlined.ContentCopy, contentDescription = null)
-                            Spacer(modifier = Modifier.size(8.dp))
-                            Text("Copy link")
-                        }
-                        OutlinedButton(onClick = onShareLink, shape = RoundedCornerShape(16.dp)) {
-                            Icon(Icons.Outlined.Share, contentDescription = null)
-                            Spacer(modifier = Modifier.size(8.dp))
-                            Text("Share link")
-                        }
-                    }
-                }
-            }
+            SessionHeroCard(
+                sessionState = sessionState,
+                accessUrl = accessUrl,
+                displayUrl = displayUrl ?: accessUrl ?: "Waiting for local link",
+                onCopyLink = onCopyLink,
+                onShareLink = onShareLink,
+                onRegeneratePin = onRegeneratePin,
+            )
         }
 
         item {
-            FlowRow(
-                modifier = Modifier.padding(horizontal = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                SessionMetric("Devices", sessionState.connectedClients.size.toString())
-                SessionMetric("Speed", formatSpeed(sessionState.transferStats.currentBytesPerSecond))
-                SessionMetric("Sent", formatBytes(sessionState.transferStats.totalBytesSent))
-                SessionMetric("Network", sessionState.networkAvailability.type.name)
-                SessionMetric("Elapsed", formatElapsed(sessionState.transferStats.startedAtEpochMs))
-                SessionMetric("Downloads", sessionState.transferStats.completedDownloads.toString())
-            }
+            SessionStatsRow(
+                sessionState = sessionState,
+                showTransferSpeed = showTransferSpeed,
+            )
         }
 
         item {
-            Card(
-                modifier = Modifier
-                    .padding(horizontal = 20.dp)
-                    .fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF10141B)),
-            ) {
-                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column {
-                            Text(
-                                text = if (sessionState.connectedClients.isEmpty()) "Waiting for devices" else "${sessionState.connectedClients.size} devices connected",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.SemiBold,
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = if (sessionState.connectedClients.isEmpty()) {
-                                    "Nearby browsers will appear here as soon as they open the session."
-                                } else {
-                                    "Track browsing, playback, and downloads in real time."
-                                },
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                        }
-                        if (sessionState.connectedClients.size > 1) {
-                            OutlinedButton(
-                                onClick = onDisconnectAll,
-                                shape = RoundedCornerShape(14.dp),
-                            ) {
-                                Text("Disconnect all")
-                            }
-                        }
-                    }
-                    if (sessionState.connectedClients.isEmpty()) {
-                        Text(
-                            text = "No devices connected yet.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    } else {
-                        sessionState.connectedClients.forEach { client ->
-                            ConnectedClientRow(client = client, onBlockClient = onBlockClient)
-                        }
-                    }
-                }
-            }
+            ConnectedDevicesCard(
+                sessionState = sessionState,
+                onBlockClient = onBlockClient,
+                onDisconnectAll = onDisconnectAll,
+            )
         }
 
         if (sessionState.blockedClients.isNotEmpty()) {
             item {
-                Card(
-                    modifier = Modifier
-                        .padding(horizontal = 20.dp)
-                        .fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF120E13)),
-                ) {
-                    Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Blocked devices", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                        sessionState.blockedClients.forEach { blocked ->
-                            BlockedClientRow(blocked = blocked, onUnblockClient = onUnblockClient)
-                        }
-                    }
-                }
+                BlockedDevicesCard(
+                    blockedClients = sessionState.blockedClients,
+                    onUnblockClient = onUnblockClient,
+                )
             }
         }
 
@@ -306,40 +135,100 @@ fun ActiveSessionScreen(
             Button(
                 onClick = onStopSharing,
                 modifier = Modifier
-                    .padding(horizontal = 20.dp, vertical = 8.dp)
+                    .padding(horizontal = 20.dp)
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(18.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
             ) {
                 Icon(Icons.Outlined.StopCircle, contentDescription = null)
-                Spacer(modifier = Modifier.size(8.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 Text("Stop sharing")
             }
         }
-
-        item { Spacer(modifier = Modifier.height(16.dp)) }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SessionHighlight(
-    title: String,
-    value: String,
-    supporting: String,
-    actionLabel: String? = null,
-    onAction: (() -> Unit)? = null,
+private fun SessionHeroCard(
+    sessionState: SessionState,
+    accessUrl: String?,
+    displayUrl: String,
+    onCopyLink: () -> Unit,
+    onShareLink: () -> Unit,
+    onRegeneratePin: () -> Unit,
 ) {
     Card(
-        shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF131D2C)),
+        modifier = Modifier
+            .padding(horizontal = 20.dp)
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Column(
+            modifier = Modifier.padding(22.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top,
             ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text(supporting, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
-            if (actionLabel != null && onAction != null) {
-                OutlinedButton(onClick = onAction, shape = RoundedCornerShape(14.dp)) {
-                    Text(actionLabel)
+                Column(modifier = Modifier.weight(1f)) {
+                    SessionStatePill(sessionState = sessionState)
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Text(
+                        text = if (sessionState.isSharing) "Sharing is live" else "Preparing your share",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = if (sessionState.isSharing) {
+                            "Scan the code or open the link on another device."
+                        } else {
+                            sessionState.message
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+
+            BoxWithConstraints {
+                val stacked = maxWidth < 700.dp
+                if (stacked) {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        SessionQrCard(accessUrl = accessUrl)
+                        SessionAccessPanel(
+                            sessionState = sessionState,
+                            displayUrl = displayUrl,
+                            onCopyLink = onCopyLink,
+                            onShareLink = onShareLink,
+                            onRegeneratePin = onRegeneratePin,
+                        )
+                    }
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        SessionQrCard(
+                            accessUrl = accessUrl,
+                            modifier = Modifier.weight(0.95f),
+                        )
+                        SessionAccessPanel(
+                            sessionState = sessionState,
+                            displayUrl = displayUrl,
+                            onCopyLink = onCopyLink,
+                            onShareLink = onShareLink,
+                            onRegeneratePin = onRegeneratePin,
+                            modifier = Modifier.weight(1.05f),
+                        )
+                    }
                 }
             }
         }
@@ -347,24 +236,279 @@ private fun SessionHighlight(
 }
 
 @Composable
-private fun SessionMetric(label: String, value: String) {
-    Card(
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF111A28)),
+private fun SessionQrCard(
+    accessUrl: String?,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Column(
+            modifier = Modifier.padding(18.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Text(
+                text = "Scan to open",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = "Works in any browser on the same Wi-Fi or hotspot.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = Color.White,
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(248.dp)
+                        .padding(18.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    accessUrl?.let { url ->
+                        val qrBitmap = remember(url) { generateQrBitmap(url) }
+                        qrBitmap?.let {
+                            Image(
+                                bitmap = it.asImageBitmap(),
+                                contentDescription = "Session QR",
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        }
+                    } ?: Text(
+                        text = "Preparing QR",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Black.copy(alpha = 0.72f),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SessionAccessPanel(
+    sessionState: SessionState,
+    displayUrl: String,
+    onCopyLink: () -> Unit,
+    onShareLink: () -> Unit,
+    onRegeneratePin: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = "Open link",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.tertiary,
+                )
+                Text(
+                    text = displayUrl,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                SessionDetailChip(label = "Network", value = networkLabel(sessionState), showDot = true)
+                SessionDetailChip(
+                    label = "PIN",
+                    value = if (sessionState.authEnabled) (sessionState.pin ?: "----") else "Off",
+                    showDot = sessionState.authEnabled,
+                )
+                sessionState.advertisedName?.takeIf { it.isNotBlank() }?.let { nearby ->
+                    SessionDetailChip(label = "Nearby", value = nearby)
+                }
+            }
+
+            SessionInfoRow(title = "Status", value = if (sessionState.isSharing) "Waiting for devices" else "Preparing browser access")
+            sessionState.hostname?.takeIf { it.isNotBlank() }?.let { host ->
+                SessionInfoRow(title = "Host name", value = host)
+            }
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Button(
+                    onClick = onCopyLink,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
+                ) {
+                    Icon(Icons.Outlined.ContentCopy, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Copy link")
+                }
+                OutlinedButton(onClick = onShareLink, shape = RoundedCornerShape(16.dp)) {
+                    Icon(Icons.Outlined.Share, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Share")
+                }
+                if (sessionState.authEnabled) {
+                    OutlinedButton(onClick = onRegeneratePin, shape = RoundedCornerShape(16.dp)) {
+                        Text("New PIN")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SessionStatsRow(
+    sessionState: SessionState,
+    showTransferSpeed: Boolean,
+) {
+    FlowRow(
+        modifier = Modifier.padding(horizontal = 20.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        SessionMetric("Devices", sessionState.connectedClients.size.toString())
+        SessionMetric("Sent", formatBytes(sessionState.transferStats.totalBytesSent))
+        if (showTransferSpeed) {
+            SessionMetric("Speed", formatSpeed(sessionState.transferStats.currentBytesPerSecond))
+        }
+        SessionMetric("Elapsed", formatElapsed(sessionState.transferStats.startedAtEpochMs))
+    }
+}
+
+@Composable
+private fun SessionMetric(
+    label: String,
+    value: String,
+) {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Column(
+            modifier = Modifier
+                .width(108.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.tertiary,
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
         }
     }
 }
 
 @Composable
-private fun ConnectedClientRow(client: ConnectedClient, onBlockClient: (String) -> Unit) {
+private fun ConnectedDevicesCard(
+    sessionState: SessionState,
+    onBlockClient: (String) -> Unit,
+    onDisconnectAll: () -> Unit,
+) {
     Card(
+        modifier = Modifier
+            .padding(horizontal = 20.dp)
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (sessionState.connectedClients.isEmpty()) "Waiting for devices" else "Connected devices",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = if (sessionState.connectedClients.isEmpty()) {
+                            "They will appear here when someone opens your session."
+                        } else {
+                            "${sessionState.connectedClients.size} device${if (sessionState.connectedClients.size == 1) "" else "s"} active right now."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (sessionState.connectedClients.size > 1) {
+                    OutlinedButton(onClick = onDisconnectAll, shape = RoundedCornerShape(14.dp)) {
+                        Text("Disconnect all")
+                    }
+                }
+            }
+
+            if (sessionState.connectedClients.isEmpty()) {
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                ) {
+                    Text(
+                        text = "No devices connected yet.",
+                        modifier = Modifier.padding(16.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else {
+                sessionState.connectedClients.forEach { client ->
+                    ConnectedClientRow(client = client, onBlockClient = onBlockClient)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ConnectedClientRow(
+    client: ConnectedClient,
+    onBlockClient: (String) -> Unit,
+) {
+    Surface(
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF131E2F)),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Row(
             modifier = Modifier
@@ -374,17 +518,23 @@ private fun ConnectedClientRow(client: ConnectedClient, onBlockClient: (String) 
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(client.ipAddress, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
+                Text(
+                    text = client.ipAddress,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = listOfNotNull(client.displayName, client.activity.name.replace('_', ' ')).joinToString(" | "),
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = listOfNotNull(client.displayName, client.activity.name.replace('_', ' ')).joinToString(" • "),
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            Spacer(modifier = Modifier.width(12.dp))
             OutlinedButton(onClick = { onBlockClient(client.ipAddress) }, shape = RoundedCornerShape(14.dp)) {
                 Icon(Icons.Outlined.Block, contentDescription = null)
-                Spacer(modifier = Modifier.size(8.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 Text("Block")
             }
         }
@@ -392,19 +542,157 @@ private fun ConnectedClientRow(client: ConnectedClient, onBlockClient: (String) 
 }
 
 @Composable
-private fun BlockedClientRow(blocked: BlockedClient, onUnblockClient: (String) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
+private fun BlockedDevicesCard(
+    blockedClients: List<BlockedClient>,
+    onUnblockClient: (String) -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .padding(horizontal = 20.dp)
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
-        Column {
-            Text(blocked.ipAddress, style = MaterialTheme.typography.titleMedium)
-            Text(blocked.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = "Blocked devices",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            blockedClients.forEach { blocked ->
+                BlockedClientRow(blocked = blocked, onUnblockClient = onUnblockClient)
+            }
         }
-        OutlinedButton(onClick = { onUnblockClient(blocked.ipAddress) }, shape = RoundedCornerShape(14.dp)) {
-            Text("Unblock")
+    }
+}
+
+@Composable
+private fun BlockedClientRow(
+    blocked: BlockedClient,
+    onUnblockClient: (String) -> Unit,
+) {
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(blocked.ipAddress, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(blocked.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            OutlinedButton(onClick = { onUnblockClient(blocked.ipAddress) }, shape = RoundedCornerShape(14.dp)) {
+                Text("Unblock")
+            }
         }
+    }
+}
+
+@Composable
+private fun SessionStatePill(sessionState: SessionState) {
+    val label = when {
+        sessionState.isSharing -> "Sharing now"
+        sessionState.networkAvailability.isReady -> "Preparing"
+        else -> "Network needed"
+    }
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = Color.Transparent,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .background(
+                        color = if (sessionState.isSharing || sessionState.networkAvailability.isReady) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.tertiary
+                        },
+                        shape = RoundedCornerShape(999.dp),
+                    ),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SessionDetailChip(
+    label: String,
+    value: String,
+    showDot: Boolean = false,
+) {
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = Color.Transparent,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (showDot) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(999.dp)),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+            Text(
+                text = "$label ",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.tertiary,
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SessionInfoRow(
+    title: String,
+    value: String,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.tertiary,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -414,7 +702,11 @@ private fun generateQrBitmap(content: String): Bitmap? {
         Bitmap.createBitmap(bitMatrix.width, bitMatrix.height, Bitmap.Config.ARGB_8888).apply {
             for (x in 0 until bitMatrix.width) {
                 for (y in 0 until bitMatrix.height) {
-                    setPixel(x, y, if (bitMatrix[x, y]) android.graphics.Color.WHITE else android.graphics.Color.TRANSPARENT)
+                    setPixel(
+                        x,
+                        y,
+                        if (bitMatrix[x, y]) android.graphics.Color.parseColor("#0F172A") else android.graphics.Color.WHITE,
+                    )
                 }
             }
         }
@@ -434,6 +726,15 @@ private fun formatBytes(bytes: Long): String {
 }
 
 private fun formatSpeed(bytesPerSecond: Long): String = "${formatBytes(bytesPerSecond)}/s"
+
+private fun networkLabel(sessionState: SessionState): String {
+    return when {
+        sessionState.networkAvailability.type.name == "HOTSPOT" -> "Hotspot"
+        sessionState.networkAvailability.type.name == "WIFI" -> "Wi-Fi"
+        sessionState.networkAvailability.type.name == "LOCAL" -> "Local"
+        else -> "Offline"
+    }
+}
 
 private fun formatElapsed(startedAtEpochMs: Long?): String {
     if (startedAtEpochMs == null || startedAtEpochMs == 0L) return "0s"

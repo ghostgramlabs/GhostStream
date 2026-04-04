@@ -22,13 +22,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ghoststream.core.model.AppSettings
 import com.ghoststream.core.model.AutoStopOption
 import com.ghoststream.core.model.RecentSession
+import com.ghoststream.core.model.ThemeMode
 
 @Composable
 fun SettingsScreen(
@@ -42,7 +41,7 @@ fun SettingsScreen(
     onToggleAutoGeneratePin: (Boolean) -> Unit,
     onToggleClearAuthOnStop: (Boolean) -> Unit,
     onToggleGhostMode: (Boolean) -> Unit,
-    onToggleDarkBrowserTheme: (Boolean) -> Unit,
+    onThemeModeSelected: (ThemeMode) -> Unit,
     onToggleShowThumbnails: (Boolean) -> Unit,
     onToggleLargeTvCards: (Boolean) -> Unit,
     onToggleProminentDownloads: (Boolean) -> Unit,
@@ -61,28 +60,36 @@ fun SettingsScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF04070A), Color(0xFF0F1724), Color(0xFF05080C)),
-                ),
-            ),
+            .background(ghostBackdropBrush()),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
             Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
                 Text("Settings", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.SemiBold)
-                Text("Control privacy, playback, and local session behavior.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Choose how GhostStream feels and behaves.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
         item {
-            SettingsGroup(title = "Sharing") {
-                SettingsToggleRow("Keep screen awake", "Keep the host screen on while you watch a live session.", settings.keepScreenAwake, onToggleKeepScreenAwake)
-                SettingsToggleRow("Vibrate when someone connects", "Adds a small haptic when a nearby browser connects for the first time.", settings.hapticOnDeviceConnect, onToggleHaptics)
-                SettingsToggleRow("Show transfer speed", "Show live sharing speed on the session screen.", settings.showTransferSpeed, onToggleTransferSpeed)
-                SettingsToggleRow("Show recent shares", "Keep a lightweight local history of finished shares.", settings.showRecentSessions, onToggleRecentSessions)
+            SettingsGroup(title = "General") {
                 SettingsChoiceRow(
-                    title = "Auto-stop when idle",
+                    title = "Theme",
+                    value = settings.themeMode.label(),
+                    onClick = {
+                        val next = when (settings.themeMode) {
+                            ThemeMode.SYSTEM -> ThemeMode.DARK
+                            ThemeMode.DARK -> ThemeMode.LIGHT
+                            ThemeMode.LIGHT -> ThemeMode.SYSTEM
+                        }
+                        onThemeModeSelected(next)
+                    },
+                )
+                SettingsToggleRow("Keep screen awake", "Keep the host screen on during sharing.", settings.keepScreenAwake, onToggleKeepScreenAwake)
+                SettingsToggleRow("Vibrate on connect", "Give a small vibration when someone joins.", settings.hapticOnDeviceConnect, onToggleHaptics)
+                SettingsToggleRow("Show speed", "Show live transfer speed on the session screen.", settings.showTransferSpeed, onToggleTransferSpeed)
+                SettingsToggleRow("Show recent shares", "Keep a short history on this device.", settings.showRecentSessions, onToggleRecentSessions)
+                SettingsChoiceRow(
+                    title = "Auto-stop",
                     value = when (settings.autoStop) {
                         AutoStopOption.NEVER -> "Never"
                         AutoStopOption.MINUTES_15 -> "15 min"
@@ -103,10 +110,10 @@ fun SettingsScreen(
         }
 
         item {
-            SettingsGroup(title = "Security") {
-                SettingsToggleRow("Lock with PIN", "Browsers must enter a code before opening your library.", settings.requireSessionPin, onToggleRequirePin)
+            SettingsGroup(title = "Privacy") {
+                SettingsToggleRow("Use PIN", "Ask browsers for a code before opening the session.", settings.requireSessionPin, onToggleRequirePin)
                 if (settings.requireSessionPin) {
-                    SettingsToggleRow("Use a new PIN each time", "Create a fresh random PIN for each share session.", settings.autoGeneratePin, onToggleAutoGeneratePin)
+                    SettingsToggleRow("New PIN each time", "Create a fresh code for every session.", settings.autoGeneratePin, onToggleAutoGeneratePin)
                     if (!settings.autoGeneratePin) {
                         ManualPinRow(currentPin = settings.manualPin, onPinChanged = onManualPinChanged)
                     }
@@ -115,37 +122,37 @@ fun SettingsScreen(
         }
 
         item {
-            SettingsGroup(title = "Browser Look") {
-                SettingsToggleRow("Use dark browser theme", "Keep the receiver browser experience in the GhostStream dark look.", settings.forceDarkBrowserTheme, onToggleDarkBrowserTheme)
-                SettingsToggleRow("Show thumbnails", "Generate quick visual previews for photos and videos.", settings.showThumbnails, onToggleShowThumbnails)
-                SettingsToggleRow("Larger TV layout", "Use bigger spacing and cards for TV browsers and distance viewing.", settings.largeTvCards, onToggleLargeTvCards)
-                SettingsToggleRow("Show download buttons clearly", "Keep file download actions easy to spot beside playback.", settings.prominentDownloadButton, onToggleProminentDownloads)
+            SettingsGroup(title = "Browser") {
+                SettingsToggleRow("Show thumbnails", "Show quick previews for media.", settings.showThumbnails, onToggleShowThumbnails)
+                SettingsToggleRow("Large TV layout", "Make cards and spacing bigger on TVs.", settings.largeTvCards, onToggleLargeTvCards)
+                SettingsToggleRow("Highlight downloads", "Keep download buttons easy to spot.", settings.prominentDownloadButton, onToggleProminentDownloads)
             }
         }
 
         item {
             SettingsGroup(title = "Advanced") {
-                SettingsToggleRow("Sign browsers out when sharing ends", "End every browser session as soon as sharing stops.", settings.clearAuthOnStop, onToggleClearAuthOnStop)
-                SettingsToggleRow("Erase temporary playback files", "Remove temporary prepared playback files when sharing stops.", settings.ghostMode, onToggleGhostMode)
+                SettingsToggleRow("Sign out on stop", "End browser access when sharing stops.", settings.clearAuthOnStop, onToggleClearAuthOnStop)
+                SettingsToggleRow("Clear temporary files", "Remove prepared playback files when sharing stops.", settings.ghostMode, onToggleGhostMode)
                 ManualPortRow(currentPort = settings.preferredPort.toString(), onPortChanged = onPreferredPortChanged)
             }
         }
 
         item {
-            SettingsGroup(title = "Network Help") {
-                SettingsChoiceRow("Open Wi-Fi settings", "Connect nearby devices to the same Wi-Fi network.", onOpenWifiSettings)
-                SettingsChoiceRow("Open hotspot settings", "Use your phone hotspot when public Wi-Fi blocks device-to-device traffic.", onOpenHotspotSettings)
+            SettingsGroup(title = "Network") {
+                SettingsChoiceRow("Wi-Fi settings", "Put both devices on the same Wi-Fi.", onOpenWifiSettings)
+                SettingsChoiceRow("Hotspot settings", "Use your hotspot when Wi-Fi blocks local traffic.", onOpenHotspotSettings)
             }
         }
 
         item {
-            SettingsGroup(title = "About") {
-                SettingsChoiceRow("Privacy promise", "Data stays on your device. No cloud relay, no account system.", onOpenHelp)
-                SettingsChoiceRow("How GhostStream works", "Nearby devices open a browser and stream over your local network.", onOpenHelp)
+            SettingsGroup(title = "Help") {
+                SettingsChoiceRow("Privacy promise", "Your files stay on this phone.", onOpenHelp)
+                SettingsChoiceRow("How it works", "Nearby devices open the link in a browser.", onOpenHelp)
                 Text(
-                    text = "Recent sessions tracked locally: ${recentSessions.size}",
+                    text = "Recent shares saved on this device: ${recentSessions.size}",
                     modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
                 )
             }
         }
@@ -168,22 +175,19 @@ fun HelpScreen(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(listOf(Color(0xFF04070A), Color(0xFF121B27))),
-            )
+            .background(ghostBackdropBrush())
             .padding(24.dp),
     ) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(28.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF101826)),
+            colors = CardDefaults.cardColors(containerColor = ghostPanelColor()),
         ) {
             Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text("About GhostStream: Share & Stream", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-                Text("GhostStream: Share & Stream turns your phone into a private local media server for nearby devices.", style = MaterialTheme.typography.bodyLarge)
-                Text("It does not create cloud accounts, remote internet links, or screen mirroring sessions.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("Some formats may need compatibility preparation before smooth browser playback. The original file download stays available.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("Nearby and offline only. The receiver only needs a browser.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("About GhostStream", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+                Text("GhostStream lets nearby devices stream or download from your phone in a browser.", style = MaterialTheme.typography.bodyLarge)
+                Text("No cloud. No account. No internet required.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Some videos may need a temporary browser-ready copy for smoother playback. The original file stays available to download.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -196,7 +200,7 @@ private fun SettingsGroup(title: String, content: @Composable () -> Unit) {
             .padding(horizontal = 20.dp)
             .fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF0E1522)),
+        colors = CardDefaults.cardColors(containerColor = ghostPanelColor()),
     ) {
         Column(modifier = Modifier.padding(vertical = 10.dp)) {
             Text(
@@ -239,8 +243,8 @@ private fun ManualPinRow(currentPin: String, onPinChanged: (String) -> Unit) {
         modifier = Modifier
             .padding(horizontal = 18.dp, vertical = 8.dp)
             .fillMaxWidth(),
-        label = { Text("Your PIN") },
-        placeholder = { Text("Enter 4-6 digit PIN") },
+        label = { Text("PIN") },
+        placeholder = { Text("4-6 digits") },
         shape = RoundedCornerShape(14.dp),
         singleLine = true,
     )
@@ -257,11 +261,11 @@ private fun ManualPortRow(currentPort: String, onPortChanged: (String) -> Unit) 
         modifier = Modifier
             .padding(horizontal = 18.dp, vertical = 8.dp)
             .fillMaxWidth(),
-        label = { Text("Preferred sharing port") },
+        label = { Text("Sharing port") },
         placeholder = { Text("43183") },
         supportingText = {
             Text(
-                text = "GhostStream will try to reuse this local port for each sharing session. Most people can leave this alone.",
+                text = "Most people can leave this alone.",
                 style = MaterialTheme.typography.bodySmall,
             )
         },
@@ -283,3 +287,24 @@ private fun SettingsChoiceRow(title: String, value: String, onClick: () -> Unit)
         Text(value, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
     }
 }
+
+private fun ThemeMode.label(): String = when (this) {
+    ThemeMode.SYSTEM -> "Default to system"
+    ThemeMode.DARK -> "Dark"
+    ThemeMode.LIGHT -> "Light"
+}
+
+@Composable
+private fun ghostBackdropBrush(): androidx.compose.ui.graphics.Brush {
+    val colors = MaterialTheme.colorScheme
+    return androidx.compose.ui.graphics.Brush.verticalGradient(
+        listOf(
+            colors.background,
+            colors.surface.copy(alpha = 0.98f),
+            colors.surfaceVariant.copy(alpha = 0.86f),
+        ),
+    )
+}
+
+@Composable
+private fun ghostPanelColor(): androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.surface

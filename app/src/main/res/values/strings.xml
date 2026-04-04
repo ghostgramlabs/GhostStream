@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">GhostStream: Share &amp; Stream</string>
-    <string name="app_tagline">Private local media sharing</string>
+    <string name="app_name">GhostStream</string>
+    <string name="app_tagline">Private local sharing</string>
     <string name="notification_channel_name">Sharing session</string>
     <string name="notification_channel_description">Keeps GhostStream sharing active in the background.</string>
     <string name="notification_title">GhostStream is sharing</string>

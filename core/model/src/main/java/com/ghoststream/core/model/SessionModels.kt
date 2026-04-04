@@ -46,6 +46,7 @@ data class TransferStats(
     val activeDownloads: Int = 0,
     val completedDownloads: Int = 0,
     val startedAtEpochMs: Long? = null,
+    val lastActivityEpochMs: Long? = null,
 )
 
 @Serializable

@@ -1,9 +1,14 @@
 package com.ghoststream.feature.home
 
 import android.text.format.DateUtils
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -30,7 +35,6 @@ import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.VideoLibrary
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -46,13 +50,14 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ghoststream.core.model.ConnectionDiagnostics
@@ -94,11 +99,7 @@ fun HomeScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF050607), Color(0xFF0A0D10), Color(0xFF0E1317)),
-                ),
-            ),
+            .background(MaterialTheme.colorScheme.background),
         verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
         item {
@@ -142,7 +143,7 @@ fun HomeScreen(
                     canSavePreset = libraryState.summary.totalItems > 0,
                     onSavePreset = {
                         presetName = libraryState.folders.firstOrNull()?.displayName
-                            ?: if (libraryState.summary.videos > 0) "Movie Night" else "My Share"
+                            ?: if (libraryState.summary.videos > 0) "Movie Night" else "My collection"
                         showPresetDialog = true
                     },
                     onApplyPreset = onApplyPreset,
@@ -151,8 +152,10 @@ fun HomeScreen(
             }
         }
 
-        item {
-            RecentSessionsCard(recentSessions = recentSessions)
+        if (recentSessions.isNotEmpty()) {
+            item {
+                RecentSessionsCard(recentSessions = recentSessions)
+            }
         }
 
         item {
@@ -163,12 +166,12 @@ fun HomeScreen(
     if (showPresetDialog) {
         AlertDialog(
             onDismissRequest = { showPresetDialog = false },
-            title = { Text("Save Current Library") },
+            title = { Text("Save collection") },
             text = {
                 OutlinedTextField(
                     value = presetName,
                     onValueChange = { presetName = it },
-                    label = { Text("Saved share name") },
+                    label = { Text("Collection name") },
                     singleLine = true,
                 )
             },
@@ -205,37 +208,29 @@ private fun TopBrandHeader(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "GHOSTSTREAM: SHARE & STREAM",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Private local streaming",
+                text = "GhostStream",
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.SemiBold,
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "Scan, open, play. No internet. No cloud.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                text = "Share files on your local network",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.tertiary,
             )
         }
         Spacer(modifier = Modifier.width(12.dp))
         Surface(
-            shape = RoundedCornerShape(18.dp),
-            color = Color(0xFF11161A),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.55f)),
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             modifier = Modifier.clickable(onClick = onOpenSettings),
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
-                verticalAlignment = Alignment.CenterVertically,
+            Box(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Outlined.Settings, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Settings", style = MaterialTheme.typography.labelLarge)
+                Icon(Icons.Outlined.Settings, contentDescription = "Settings", modifier = Modifier.size(18.dp))
             }
         }
     }
@@ -254,16 +249,12 @@ private fun SessionHeroCard(
         modifier = Modifier
             .padding(horizontal = 20.dp)
             .fillMaxWidth(),
-        shape = RoundedCornerShape(32.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF0F1417)),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(
             modifier = Modifier
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color(0xFF11191B), Color(0xFF0F1417)),
-                    ),
-                )
                 .padding(24.dp),
         ) {
             Row(
@@ -271,16 +262,13 @@ private fun SessionHeroCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                AssistChip(
-                    onClick = {},
-                    label = { Text("Local session") },
-                )
+                MinimalChip(label = "Local session")
                 StatusChip(sessionState = sessionState)
             }
 
             Spacer(modifier = Modifier.height(18.dp))
             Text(
-                text = if (sessionState.isSharing) "Sharing is live" else "Turn this phone into a private media lounge",
+                text = if (sessionState.isSharing) "Sharing is live" else "Ready to share",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -306,6 +294,8 @@ private fun SessionHeroCard(
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
+                    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                    disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f),
                 ),
             ) {
                 if (isStartingShare) {
@@ -315,11 +305,11 @@ private fun SessionHeroCard(
                         strokeWidth = 2.dp,
                     )
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text("Starting sharing", style = MaterialTheme.typography.titleMedium)
+                    Text("Starting...", style = MaterialTheme.typography.titleMedium)
                 } else {
                     Icon(Icons.Outlined.PlayArrow, contentDescription = null)
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text("Start Sharing", style = MaterialTheme.typography.titleMedium)
+                    Text(if (sessionState.isSharing) "Open session" else "Start sharing", style = MaterialTheme.typography.titleMedium)
                 }
             }
 
@@ -336,9 +326,8 @@ private fun SummaryStrip(libraryState: LibraryState) {
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        HeroStat(label = "Items", value = libraryState.summary.totalItems.toString())
-        HeroStat(label = "Videos", value = libraryState.summary.videos.toString())
-        HeroStat(label = "Photos", value = libraryState.summary.photos.toString())
+        HeroStat(label = "Files", value = libraryState.summary.totalItems.toString())
+        HeroStat(label = "Media", value = (libraryState.summary.videos + libraryState.summary.photos + libraryState.summary.music).toString())
         HeroStat(label = "Size", value = formatBytes(libraryState.summary.totalBytes))
     }
 }
@@ -355,14 +344,15 @@ private fun ActionShelf(
         modifier = Modifier
             .padding(horizontal = 20.dp)
             .fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF11161A)),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text("Quick actions", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            Text("Add content", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                "Add content fast, open your library, or build a smart set in two taps.",
+                "Choose how you want to build this share.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -398,7 +388,7 @@ private fun ActionShelf(
                         )
                         ActionTile(
                             label = "Shared library",
-                            detail = "Curate content",
+                            detail = "Review items",
                             icon = Icons.Outlined.VideoLibrary,
                             onClick = onOpenLibrary,
                             modifier = Modifier.width(tileWidth),
@@ -418,25 +408,40 @@ private fun ActionTile(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(targetValue = if (pressed) 0.97f else 1f, label = "actionTileScale")
+    val containerColor by animateColorAsState(
+        targetValue = if (pressed) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.14f) else MaterialTheme.colorScheme.surfaceVariant,
+        label = "actionTileColor",
+    )
     Card(
         modifier = modifier
-            .clickable(onClick = onClick),
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = LocalIndication.current,
+                onClick = onClick,
+            ),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF151B20)),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.45f)),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
             Box(
                 modifier = Modifier
                     .size(36.dp)
-                    .background(Color(0xFF1C2628), RoundedCornerShape(12.dp)),
+                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             }
             Spacer(modifier = Modifier.height(12.dp))
             Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(3.dp))
             Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
@@ -456,8 +461,9 @@ private fun SupportPanel(
         modifier = Modifier
             .padding(horizontal = 20.dp)
             .fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF11161A)),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(
@@ -466,13 +472,7 @@ private fun SupportPanel(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Session readiness", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        connectionDiagnostics.summary,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Text("Connection", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                 }
                 OutlinedButton(onClick = onRefreshDiagnostics, shape = RoundedCornerShape(16.dp)) {
                     Text("Refresh")
@@ -485,17 +485,20 @@ private fun SupportPanel(
                     NetworkType.WIFI -> "Wi-Fi connected"
                     NetworkType.HOTSPOT -> "Hotspot active"
                     NetworkType.LOCAL -> "Local network ready"
-                    NetworkType.NONE -> "Local network needed"
+                    NetworkType.NONE -> "Network needed"
                 },
-                detail = sessionState.networkAvailability.helperText,
+                detail = when {
+                    sessionState.networkAvailability.isReady -> "Nearby devices can open the link on this network."
+                    else -> "Connect both devices to the same Wi-Fi or hotspot."
+                },
             )
 
             if (nearbyDiscoveryState.devices.isEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     SupportRow(
                         icon = Icons.Outlined.OpenInBrowser,
-                        title = "Browser link stays primary",
-                        detail = "${nearbyDiscoveryState.helperText} Optional if the other device also has GhostStream.",
+                        title = "Nearby app optional",
+                        detail = "QR and link work in any browser. The GhostStream app is just a shortcut.",
                     )
                     OutlinedButton(
                         onClick = onRefreshDiagnostics,
@@ -520,7 +523,7 @@ private fun SupportPanel(
                         }
                     }
                     Text(
-                        "Optional shortcut. This is only useful when the receiving device also has GhostStream.",
+                        "Only useful when the other device also has GhostStream.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -545,8 +548,8 @@ private fun SupportRow(
 ) {
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = Color(0xFF151B20),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Row(
             modifier = Modifier
@@ -574,8 +577,8 @@ private fun NearbyDeviceRow(
 ) {
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = Color(0xFF151B20),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Row(
             modifier = Modifier
@@ -588,7 +591,7 @@ private fun NearbyDeviceRow(
                 Text(device.serviceName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = device.friendlyUrl ?: "Browser-ready on this local network",
+                    text = device.friendlyUrl ?: "Ready on this network",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -597,9 +600,9 @@ private fun NearbyDeviceRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    AssistChip(onClick = {}, label = { Text("Available") })
+                    MinimalChip(label = "Available", showAccentDot = true)
                     if (device.authRequired) {
-                        AssistChip(onClick = {}, label = { Text("PIN") })
+                        MinimalChip(label = "PIN")
                     }
                 }
             }
@@ -629,8 +632,9 @@ private fun SharePresetsCard(
         modifier = Modifier
             .padding(horizontal = 20.dp)
             .fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF11161A)),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(
@@ -639,10 +643,10 @@ private fun SharePresetsCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Saved Shares", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                    Text("Collections", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        "Save the current library here, or pick individual files from Shared Library.",
+                        "Save a set of files so you can use it again later.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -652,13 +656,13 @@ private fun SharePresetsCard(
                     enabled = canSavePreset,
                     shape = RoundedCornerShape(16.dp),
                 ) {
-                    Text("Save this library")
+                    Text("Save setup")
                 }
             }
 
             if (presets.isEmpty()) {
                 Text(
-                    text = "No saved shares yet. Save the current library when it feels right.",
+                    text = "No collections yet.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -683,8 +687,8 @@ private fun SharePresetRow(
 ) {
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = Color(0xFF151B20),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(preset.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -699,7 +703,7 @@ private fun SharePresetRow(
                 if (stacked) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         OutlinedButton(onClick = onApply, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                            Text("Open saved share")
+                            Text("Use")
                         }
                         OutlinedButton(onClick = onDelete, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
                             Text("Delete")
@@ -708,7 +712,7 @@ private fun SharePresetRow(
                 } else {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         OutlinedButton(onClick = onApply, shape = RoundedCornerShape(16.dp)) {
-                            Text("Open saved share")
+                            Text("Use")
                         }
                         OutlinedButton(onClick = onDelete, shape = RoundedCornerShape(16.dp)) {
                             Text("Delete")
@@ -728,44 +732,69 @@ private fun RecentSessionsCard(
         modifier = Modifier
             .padding(horizontal = 20.dp)
             .fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF11161A)),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                text = if (recentSessions.isEmpty()) "Quick tip" else "Recent sessions",
+                text = "Recent shares",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
             )
-            if (recentSessions.isEmpty()) {
-                Text(
-                    text = "For the cleanest first run, add a few files, check that Wi-Fi or hotspot is ready, then start sharing.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            } else {
-                recentSessions.take(3).forEach { session ->
-                    Surface(
-                        shape = RoundedCornerShape(18.dp),
-                        color = Color(0xFF151B20),
+            recentSessions.take(3).forEach { session ->
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 14.dp, vertical = 12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text("${session.totalItems} items", style = MaterialTheme.typography.titleMedium)
-                            Text(
-                                DateUtils.getRelativeTimeSpanString(session.endedAtEpochMs).toString(),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+                        Text("${session.totalItems} items", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            DateUtils.getRelativeTimeSpanString(session.endedAtEpochMs).toString(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun MinimalChip(
+    label: String,
+    showAccentDot: Boolean = false,
+) {
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = Color.Transparent,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (showAccentDot) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(999.dp)),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
         }
     }
 }
@@ -777,15 +806,18 @@ private fun StatusChip(sessionState: SessionState) {
         sessionState.networkAvailability.isReady -> "Ready"
         else -> "Setup needed"
     }
-    AssistChip(onClick = {}, label = { Text(label) })
+    MinimalChip(
+        label = label,
+        showAccentDot = sessionState.isSharing || sessionState.networkAvailability.isReady,
+    )
 }
 
 @Composable
 private fun HeroStat(label: String, value: String) {
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = Color(0xFF151B20),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
             Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -801,11 +833,11 @@ private fun heroMessage(
     diagnostics: ConnectionDiagnostics,
 ): String {
     return when {
-        sessionState.isSharing -> "Nearby devices can join right now from the same Wi-Fi or hotspot."
-        libraryState.summary.totalItems == 0 -> "Add files or a folder first, then launch a private browser session."
-        diagnostics.actionCount > 0 -> "A quick setup step is still missing before nearby devices can connect."
-        diagnostics.warningCount > 0 -> "Everything is close. A little prep now will make playback smoother."
-        else -> "Your files stay on this phone while nearby browsers stream over your local network."
+        sessionState.isSharing -> "Open the link or scan the QR code on another device."
+        libraryState.summary.totalItems == 0 -> "Add files or a folder to get started."
+        diagnostics.actionCount > 0 -> "Connect both devices to the same Wi-Fi or hotspot."
+        diagnostics.warningCount > 0 -> "Everything is almost ready."
+        else -> "Your files stay on this phone."
     }
 }
 

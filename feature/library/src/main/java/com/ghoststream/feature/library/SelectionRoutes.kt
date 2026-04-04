@@ -137,9 +137,7 @@ fun BatchSelectRoute(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(listOf(Color(0xFF05070A), Color(0xFF121A28))),
-            ),
+            .background(selectionBackdropBrush()),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
@@ -169,7 +167,7 @@ fun BatchSelectRoute(
                         .padding(horizontal = 20.dp)
                         .fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0E1522)),
+                    colors = CardDefaults.cardColors(containerColor = selectionPanelColor()),
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         Text("Media access needed", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -199,7 +197,7 @@ fun BatchSelectRoute(
                         .padding(horizontal = 20.dp)
                         .fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0E1522)),
+                    colors = CardDefaults.cardColors(containerColor = selectionPanelColor()),
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         Text("No smart groups found yet", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -222,7 +220,7 @@ fun BatchSelectRoute(
                         .padding(horizontal = 20.dp)
                         .fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0E1522)),
+                    colors = CardDefaults.cardColors(containerColor = selectionPanelColor()),
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         Text(group.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -264,9 +262,7 @@ private fun SelectionRouteScaffold(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(listOf(Color(0xFF05070A), Color(0xFF111927))),
-            ),
+            .background(selectionBackdropBrush()),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
@@ -282,7 +278,7 @@ private fun SelectionRouteScaffold(
                     .padding(horizontal = 20.dp)
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF0E1522)),
+                colors = CardDefaults.cardColors(containerColor = selectionPanelColor()),
             ) {
                 Column(
                     modifier = Modifier.padding(18.dp),
@@ -325,7 +321,7 @@ private fun SelectionUriCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF121B29)),
+        colors = CardDefaults.cardColors(containerColor = selectionRaisedColor()),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -341,3 +337,21 @@ private fun SelectionUriCard(
         }
     }
 }
+
+@Composable
+private fun selectionBackdropBrush(): Brush {
+    val colors = MaterialTheme.colorScheme
+    return Brush.verticalGradient(
+        listOf(
+            colors.background,
+            colors.surface.copy(alpha = 0.98f),
+            colors.surfaceVariant.copy(alpha = 0.86f),
+        ),
+    )
+}
+
+@Composable
+private fun selectionPanelColor(): Color = MaterialTheme.colorScheme.surface
+
+@Composable
+private fun selectionRaisedColor(): Color = MaterialTheme.colorScheme.surfaceVariant

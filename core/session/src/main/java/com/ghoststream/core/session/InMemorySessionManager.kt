@@ -73,7 +73,10 @@ class InMemorySessionManager(
                 networkAvailability = networkAvailability,
                 authEnabled = authEnabled,
                 pin = pin,
-                transferStats = TransferStats(startedAtEpochMs = now),
+                transferStats = TransferStats(
+                    startedAtEpochMs = now,
+                    lastActivityEpochMs = now,
+                ),
                 message = "Sharing is live",
             )
         }
@@ -96,14 +99,14 @@ class InMemorySessionManager(
         }
     }
 
-    override suspend fun stopSession(message: String) {
-        debugLogSink.log("SessionManager", "stopSession begin message=$message")
+    override suspend fun stopSession(message: String, recordRecentSession: Boolean) {
+        debugLogSink.log("SessionManager", "stopSession begin message=$message recordRecentSession=$recordRecentSession")
         synchronized(stateLock) {
             val current = _sessionState.value
             val endedAt = System.currentTimeMillis()
             val sessionId = current.sessionId
             val startedAtEpochMs = current.startedAtEpochMs
-            if (sessionId != null && startedAtEpochMs != null) {
+            if (recordRecentSession && sessionId != null && startedAtEpochMs != null) {
                 _recentSessions.value = listOf(
                     RecentSession(
                         sessionId = sessionId,
@@ -128,6 +131,10 @@ class InMemorySessionManager(
             )
         }
         debugLogSink.log("SessionManager", "stopSession completed")
+    }
+
+    override fun clearRecentSessions() {
+        _recentSessions.value = emptyList()
     }
 
     override suspend fun blockClient(ipAddress: String) {
@@ -180,17 +187,20 @@ class InMemorySessionManager(
             )
             current.copy(
                 connectedClients = current.connectedClients.filterNot { it.ipAddress == ipAddress } + updated,
+                transferStats = current.transferStats.copy(lastActivityEpochMs = now),
             )
         }
     }
 
     override fun onTransferStarted(ipAddress: String, activity: ClientActivity, isDownload: Boolean) {
+        val now = System.currentTimeMillis()
         observeClient(ipAddress = ipAddress, userAgent = null, activity = activity)
         _sessionState.update { current ->
             current.copy(
                 transferStats = current.transferStats.copy(
                     activeStreamCount = current.transferStats.activeStreamCount + 1,
                     activeDownloads = current.transferStats.activeDownloads + if (isDownload) 1 else 0,
+                    lastActivityEpochMs = now,
                 ),
             )
         }
@@ -222,6 +232,7 @@ class InMemorySessionManager(
                 transferStats = current.transferStats.copy(
                     totalBytesSent = current.transferStats.totalBytesSent + bytes,
                     currentBytesPerSecond = speedWindowBytes,
+                    lastActivityEpochMs = now,
                 ),
             )
         }
@@ -243,6 +254,7 @@ class InMemorySessionManager(
                         current.transferStats.activeDownloads - if (wasDownload) 1 else 0
                     ).coerceAtLeast(0),
                     completedDownloads = current.transferStats.completedDownloads + if (wasDownload) 1 else 0,
+                    lastActivityEpochMs = now,
                 ),
             )
         }
@@ -277,8 +289,12 @@ class InMemorySessionManager(
     }
 
     override fun disconnectAllClients() {
+        val now = System.currentTimeMillis()
         _sessionState.update { current ->
-            current.copy(connectedClients = emptyList())
+            current.copy(
+                connectedClients = emptyList(),
+                transferStats = current.transferStats.copy(lastActivityEpochMs = now),
+            )
         }
         authTokens.clear()
     }

@@ -35,9 +35,7 @@ fun BatchSelectScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(listOf(Color(0xFF05070A), Color(0xFF121A28))),
-            ),
+            .background(selectionBackdropBrush()),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
@@ -61,7 +59,7 @@ fun BatchSelectScreen(
                         .padding(horizontal = 20.dp)
                         .fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0E1522)),
+                    colors = CardDefaults.cardColors(containerColor = selectionPanelColor()),
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         Text(group.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -87,3 +85,18 @@ fun BatchSelectScreen(
         item { Spacer(modifier = Modifier.height(18.dp)) }
     }
 }
+
+@Composable
+private fun selectionBackdropBrush(): Brush {
+    val colors = MaterialTheme.colorScheme
+    return Brush.verticalGradient(
+        listOf(
+            colors.background,
+            colors.surface.copy(alpha = 0.98f),
+            colors.surfaceVariant.copy(alpha = 0.86f),
+        ),
+    )
+}
+
+@Composable
+private fun selectionPanelColor(): Color = MaterialTheme.colorScheme.surface

@@ -48,9 +48,9 @@ class SharePresetStore(
 
     suspend fun saveCurrentSelection(name: String, libraryState: LibraryState): Result<SharePreset> = runCatching {
         val trimmed = name.trim()
-        require(trimmed.isNotBlank()) { "Enter a name for this saved share first." }
+        require(trimmed.isNotBlank()) { "Enter a collection name first." }
         require(libraryState.summary.totalItems > 0 || libraryState.folders.isNotEmpty()) {
-            "Add some content first before saving to Saved Shares."
+            "Add some content first before saving a collection."
         }
 
         val existing = currentPresets()
@@ -78,7 +78,7 @@ class SharePresetStore(
         libraryState: LibraryState,
     ): Result<SharePreset> = runCatching {
         val trimmed = name.trim()
-        require(trimmed.isNotBlank()) { "Enter a name for this saved share first." }
+        require(trimmed.isNotBlank()) { "Enter a collection name first." }
         require(selectedItemIds.isNotEmpty()) { "Select at least one file first." }
 
         val selectedIdSet = selectedItemIds.toSet()
@@ -117,7 +117,7 @@ class SharePresetStore(
     ): Result<LibraryState> = runCatching {
         val presets = currentPresets()
         val preset = presets.firstOrNull { it.id == presetId }
-            ?: error("This saved share is no longer available.")
+            ?: error("This collection is no longer available.")
 
         withContext(Dispatchers.IO) {
             storageRepository.clearSelection()
@@ -138,7 +138,7 @@ class SharePresetStore(
 
         val refreshedState = storageRepository.libraryState.value
         if (refreshedState.summary.totalItems == 0 && preset.itemCount > 0) {
-            error("That saved share couldn't be restored. Some files or permissions are no longer available.")
+            error("That collection couldn't be restored. Some files or permissions are no longer available.")
         }
 
         val now = System.currentTimeMillis()

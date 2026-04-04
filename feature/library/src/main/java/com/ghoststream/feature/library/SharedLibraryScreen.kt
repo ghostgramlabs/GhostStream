@@ -1,13 +1,16 @@
 package com.ghoststream.feature.library
 
 import android.net.Uri
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,13 +29,15 @@ import androidx.compose.material.icons.outlined.InsertDriveFile
 import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.Photo
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -49,9 +54,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.ghoststream.core.media.CompatibilityJob
@@ -68,6 +73,7 @@ import kotlin.math.roundToInt
 fun SharedLibraryScreen(
     libraryState: LibraryState,
     compatibilityJobs: Map<String, CompatibilityJob>,
+    showThumbnails: Boolean,
     onPrepareItem: (String) -> Unit,
     onSavePresetSelection: (String, Collection<String>) -> Unit,
     onRemoveItem: (String) -> Unit,
@@ -109,163 +115,67 @@ fun SharedLibraryScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFF07080C), Color(0xFF10141B)),
-                ),
-            ),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+            .background(MaterialTheme.colorScheme.background),
+        contentPadding = PaddingValues(vertical = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        item { LibraryHeader(libraryState = libraryState) }
         item {
-            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
-                Text("Shared Library", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.SemiBold)
-                Spacer(modifier = Modifier.height(6.dp))
-                Text("Curate what nearby browsers can see, and save exact file picks as saved shares.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-
-        item {
-            Card(
-                modifier = Modifier
-                    .padding(horizontal = 20.dp)
-                    .fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF121823)),
-            ) {
-                Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    if (selectionMode) {
-                        Surface(
-                            shape = RoundedCornerShape(18.dp),
-                            color = Color(0xFF171E26),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
-                        ) {
-                            Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
-                                Text(
-                                    "Saved-share selection",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    "Choose the exact files you want, then save that smaller collection as a saved share.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
-                    }
-
-                    OutlinedTextField(
-                        value = query,
-                        onValueChange = { query = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(18.dp),
-                        label = { Text("Search by filename") },
-                        singleLine = true,
-                    )
-
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        categories.forEach { category ->
-                            AssistChip(
-                                onClick = { selectedCategory = category },
-                                label = { Text(category) },
-                            )
-                        }
-                    }
-
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        OutlinedButton(onClick = { sortMenuExpanded = true }, shape = RoundedCornerShape(16.dp)) {
-                            Text("Sort: $sortOption")
-                        }
-                        DropdownMenu(expanded = sortMenuExpanded, onDismissRequest = { sortMenuExpanded = false }) {
-                            listOf("Newest", "Name", "Size").forEach { option ->
-                                DropdownMenuItem(
-                                    text = { Text(option) },
-                                    onClick = {
-                                        sortOption = option
-                                        sortMenuExpanded = false
-                                    },
-                                )
-                            }
-                        }
-                        OutlinedButton(onClick = onOpenAddFiles, shape = RoundedCornerShape(16.dp)) { Text("Add files") }
-                        OutlinedButton(onClick = onOpenAddFolder, shape = RoundedCornerShape(16.dp)) { Text("Add folder") }
-                        OutlinedButton(onClick = onOpenBatchSelect, shape = RoundedCornerShape(16.dp)) { Text("Smart Picks") }
-                        if (selectionMode) {
-                            OutlinedButton(
-                                onClick = {
-                                    selectionMode = false
-                                    selectedItemIds.clear()
-                                },
-                                shape = RoundedCornerShape(16.dp),
-                            ) {
-                                Text("Cancel")
-                            }
-                            OutlinedButton(
-                                onClick = {
-                                    presetName = if (selectedItemIds.size == 1) "Single pick" else "Selected picks"
-                                    showPresetDialog = true
-                                },
-                                enabled = selectedItemIds.isNotEmpty(),
-                                shape = RoundedCornerShape(16.dp),
-                            ) {
-                                Text("Save ${selectedItemIds.size} files")
-                            }
-                        } else {
-                            OutlinedButton(
-                                onClick = {
-                                    selectionMode = true
-                                    selectedItemIds.clear()
-                                },
-                                shape = RoundedCornerShape(16.dp),
-                            ) {
-                                Text("Pick files for saved share")
-                            }
-                        }
-                    }
-
-                    if (libraryState.items.any { it.category == MediaCategory.VIDEO && it.playbackDecision.mode != PlaybackMode.DIRECT }) {
-                        Surface(
-                            shape = RoundedCornerShape(18.dp),
-                            color = Color(0xFF171E26),
-                        ) {
-                            Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
-                                Text(
-                                    "Browser prep keeps the original file",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    "Prepare creates a temporary browser-ready copy for streaming. Downloads still use your original file.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                        }
-                    }
-                }
-            }
+            LibraryControlsCard(
+                query = query,
+                onQueryChange = { query = it },
+                categories = categories,
+                selectedCategory = selectedCategory,
+                onSelectCategory = { selectedCategory = it },
+                sortOption = sortOption,
+                sortMenuExpanded = sortMenuExpanded,
+                onSortExpand = { sortMenuExpanded = true },
+                onSortDismiss = { sortMenuExpanded = false },
+                onSortSelected = {
+                    sortOption = it
+                    sortMenuExpanded = false
+                },
+                selectionMode = selectionMode,
+                selectedCount = selectedItemIds.size,
+                hasNonDirectVideo = libraryState.items.any {
+                    it.category == MediaCategory.VIDEO && it.playbackDecision.mode != PlaybackMode.DIRECT
+                },
+                onOpenAddFiles = onOpenAddFiles,
+                onOpenAddFolder = onOpenAddFolder,
+                onOpenBatchSelect = onOpenBatchSelect,
+                onEnterSelectionMode = {
+                    selectionMode = true
+                    selectedItemIds.clear()
+                },
+                onCancelSelectionMode = {
+                    selectionMode = false
+                    selectedItemIds.clear()
+                },
+                onSaveSelection = {
+                    presetName = if (selectedItemIds.size == 1) "Single file" else "Selected files"
+                    showPresetDialog = true
+                },
+            )
         }
 
         if (libraryState.items.isEmpty() && libraryState.folders.isEmpty()) {
             item {
                 LibraryEmptyState(
                     title = "No files added yet",
-                    description = "Pick files, add a folder, or use Smart Picks to build your offline library.",
+                    description = "Pick files, add a folder, or use Smart Picks to build your library.",
                 )
             }
         } else {
             if (libraryState.folders.isNotEmpty()) {
                 item {
-                    Column(modifier = Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Folders", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                    Column(
+                        modifier = Modifier.padding(horizontal = 20.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        SectionHeader(
+                            title = "Folders",
+                            subtitle = "These folders stay linked to your current share.",
+                        )
                         libraryState.folders.forEach { folder ->
                             FolderRow(folder = folder, onRemoveFolder = onRemoveFolder)
                         }
@@ -281,18 +191,22 @@ fun SharedLibraryScreen(
                     )
                 }
             } else {
+                item {
+                    SectionHeader(
+                        title = "Files",
+                        subtitle = "${filteredItems.size} item${if (filteredItems.size == 1) "" else "s"} in this view",
+                        modifier = Modifier.padding(horizontal = 20.dp),
+                    )
+                }
                 items(filteredItems, key = { it.id }) { item ->
                     LibraryItemRow(
                         item = item,
                         compatibilityJob = compatibilityJobs[item.id],
+                        showThumbnails = showThumbnails,
                         selectionMode = selectionMode,
                         isSelected = item.id in selectedItemIds,
                         onToggleSelected = { itemId ->
-                            if (itemId in selectedItemIds) {
-                                selectedItemIds.remove(itemId)
-                            } else {
-                                selectedItemIds.add(itemId)
-                            }
+                            if (itemId in selectedItemIds) selectedItemIds.remove(itemId) else selectedItemIds.add(itemId)
                         },
                         onPrepareItem = onPrepareItem,
                         onRemoveItem = onRemoveItem,
@@ -307,12 +221,12 @@ fun SharedLibraryScreen(
     if (showPresetDialog) {
         AlertDialog(
             onDismissRequest = { showPresetDialog = false },
-            title = { Text("Save Selected Files") },
+            title = { Text("Save collection") },
             text = {
                 OutlinedTextField(
                     value = presetName,
                     onValueChange = { presetName = it },
-                    label = { Text("Saved share name") },
+                    label = { Text("Collection name") },
                     singleLine = true,
                 )
             },
@@ -330,11 +244,104 @@ fun SharedLibraryScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showPresetDialog = false }) {
-                    Text("Cancel")
-                }
+                TextButton(onClick = { showPresetDialog = false }) { Text("Cancel") }
             },
         )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun LibraryHeader(
+    libraryState: LibraryState,
+) {
+    Card(
+        modifier = Modifier
+            .padding(horizontal = 20.dp)
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Column(
+            modifier = Modifier.padding(22.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Text(
+                text = "Shared Library",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = "Review what nearby devices can browse, stream, or download.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                LibraryInfoChip(label = "Items", value = libraryState.summary.totalItems.toString(), showDot = true)
+                LibraryInfoChip(label = "Folders", value = libraryState.folders.size.toString())
+                LibraryInfoChip(label = "Size", value = formatBytes(libraryState.summary.totalBytes))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionHeader(
+    title: String,
+    subtitle: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Text(
+            text = subtitle,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun LibraryInfoChip(
+    label: String,
+    value: String,
+    showDot: Boolean = false,
+) {
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = Color.Transparent,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (showDot) {
+                Box(
+                    modifier = Modifier
+                        .size(8.dp)
+                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(999.dp)),
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+            Text("$label ", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.tertiary)
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
     }
 }
 
@@ -345,42 +352,214 @@ internal fun LibraryEmptyState(title: String, description: String) {
             .padding(horizontal = 20.dp)
             .fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF111720)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
             Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(description, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@Composable
+private fun LibraryControlsCard(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    categories: List<String>,
+    selectedCategory: String,
+    onSelectCategory: (String) -> Unit,
+    sortOption: String,
+    sortMenuExpanded: Boolean,
+    onSortExpand: () -> Unit,
+    onSortDismiss: () -> Unit,
+    onSortSelected: (String) -> Unit,
+    selectionMode: Boolean,
+    selectedCount: Int,
+    hasNonDirectVideo: Boolean,
+    onOpenAddFiles: () -> Unit,
+    onOpenAddFolder: () -> Unit,
+    onOpenBatchSelect: () -> Unit,
+    onEnterSelectionMode: () -> Unit,
+    onCancelSelectionMode: () -> Unit,
+    onSaveSelection: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .padding(horizontal = 20.dp)
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            if (selectionMode) {
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text("Building a collection", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            text = if (selectedCount == 0) {
+                                "Choose the files you want, then save them together."
+                            } else {
+                                "$selectedCount file${if (selectedCount == 1) "" else "s"} selected."
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+
+            OutlinedTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(18.dp),
+                label = { Text("Search files") },
+                singleLine = true,
+            )
+
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                SectionHeader(title = "Filter", subtitle = "Choose what you want to see")
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    categories.forEach { category ->
+                        FilterChip(
+                            selected = selectedCategory == category,
+                            onClick = { onSelectCategory(category) },
+                            label = { Text(category) },
+                        )
+                    }
+                }
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                SectionHeader(title = "Actions", subtitle = "Add content or save a collection")
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    OutlinedButton(onClick = onSortExpand, shape = RoundedCornerShape(16.dp)) {
+                        Text("Sort: $sortOption")
+                    }
+                    DropdownMenu(expanded = sortMenuExpanded, onDismissRequest = onSortDismiss) {
+                        listOf("Newest", "Name", "Size").forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = { onSortSelected(option) },
+                            )
+                        }
+                    }
+                    OutlinedButton(onClick = onOpenAddFiles, shape = RoundedCornerShape(16.dp)) { Text("Add files") }
+                    OutlinedButton(onClick = onOpenAddFolder, shape = RoundedCornerShape(16.dp)) { Text("Add folder") }
+                    OutlinedButton(onClick = onOpenBatchSelect, shape = RoundedCornerShape(16.dp)) { Text("Smart Picks") }
+
+                    if (selectionMode) {
+                        OutlinedButton(onClick = onCancelSelectionMode, shape = RoundedCornerShape(16.dp)) {
+                            Text("Cancel")
+                        }
+                        Button(
+                            onClick = onSaveSelection,
+                            enabled = selectedCount > 0,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                            ),
+                        ) {
+                            Text("Save collection")
+                        }
+                    } else {
+                        OutlinedButton(onClick = onEnterSelectionMode, shape = RoundedCornerShape(16.dp)) {
+                            Text("New collection")
+                        }
+                    }
+                }
+            }
+
+            if (hasNonDirectVideo) {
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text("Browser prep keeps the original", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "GhostStream may make a temporary browser copy for playback. Downloads still use the original file.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun FolderRow(folder: SharedFolder, onRemoveFolder: (String) -> Unit) {
-    Card(
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF18202A)),
+private fun FolderRow(
+    folder: SharedFolder,
+    onRemoveFolder: (String) -> Unit,
+) {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
+                .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Outlined.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.width(10.dp))
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Outlined.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                }
+                Spacer(modifier = Modifier.width(12.dp))
                 Column {
-                    Text(folder.displayName, style = MaterialTheme.typography.titleMedium)
-                    Text("${folder.fileCount} files | ${formatBytes(folder.totalSizeBytes)}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(folder.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "${folder.fileCount} files • ${formatBytes(folder.totalSizeBytes)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
-            Icon(
-                Icons.Outlined.Delete,
-                contentDescription = "Remove folder",
-                modifier = Modifier.clickable { onRemoveFolder(folder.id) },
-            )
+            Spacer(modifier = Modifier.width(12.dp))
+            OutlinedButton(onClick = { onRemoveFolder(folder.id) }, shape = RoundedCornerShape(14.dp)) {
+                Text("Remove")
+            }
         }
     }
 }
@@ -390,6 +569,7 @@ private fun FolderRow(folder: SharedFolder, onRemoveFolder: (String) -> Unit) {
 private fun LibraryItemRow(
     item: SharedItem,
     compatibilityJob: CompatibilityJob?,
+    showThumbnails: Boolean,
     selectionMode: Boolean,
     isSelected: Boolean,
     onToggleSelected: (String) -> Unit,
@@ -401,157 +581,234 @@ private fun LibraryItemRow(
             .padding(horizontal = 20.dp)
             .fillMaxWidth()
             .clickable(enabled = selectionMode) { onToggleSelected(item.id) },
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) Color(0xFF182821) else Color(0xFF121823),
-        ),
-        border = if (isSelected) {
-            BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.65f))
-        } else {
-            null
-        },
-    ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (item.category == MediaCategory.PHOTO || item.category == MediaCategory.VIDEO) {
-                AsyncImage(
-                    model = Uri.parse(item.uri),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .size(76.dp)
-                        .background(Color(0xFF1B222C), RoundedCornerShape(14.dp)),
-                )
+            containerColor = if (isSelected) {
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.14f)
             } else {
-                Icon(
-                    imageVector = when (item.category) {
-                        MediaCategory.VIDEO -> Icons.Outlined.Movie
-                        MediaCategory.PHOTO -> Icons.Outlined.Photo
-                        MediaCategory.MUSIC -> Icons.Outlined.MusicNote
-                        MediaCategory.FILE -> Icons.Outlined.InsertDriveFile
-                    },
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(42.dp),
-                )
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(item.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
-                Text(
-                    text = listOfNotNull(
-                        item.category.name.lowercase().replaceFirstChar { it.uppercase() },
-                        item.durationMs?.let(::formatDuration),
-                        formatBytes(item.sizeBytes),
-                        if (!item.isAvailable) "Unavailable" else null,
-                    ).joinToString(" | "),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                FlowRow(
-                    modifier = Modifier.padding(top = 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                MaterialTheme.colorScheme.surface
+            },
+        ),
+        border = BorderStroke(
+            1.dp,
+            if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.55f) else MaterialTheme.colorScheme.outline,
+        ),
+    ) {
+        BoxWithConstraints {
+            val compactActions = maxWidth < 520.dp
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    item.playbackDecision.compatibilityLabel?.let { label ->
-                        AssistChip(onClick = {}, label = { Text(label) })
-                    }
-                    if (item.playbackDecision.mode == PlaybackMode.DIRECT && item.category == MediaCategory.VIDEO) {
-                        AssistChip(onClick = {}, label = { Text("Direct Play") })
-                    }
-                    if (item.subtitleMatch != null) {
-                        AssistChip(onClick = {}, label = { Text("Subtitle") })
-                    }
-                    if (!item.isAvailable) {
-                        AssistChip(onClick = {}, label = { Text("Unavailable") })
+                    LibraryItemVisual(item = item, showThumbnails = showThumbnails)
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            text = item.displayName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = listOfNotNull(
+                                itemTypeLabel(item.category),
+                                item.durationMs?.let(::formatDuration),
+                                formatBytes(item.sizeBytes),
+                                if (!item.isAvailable) "Unavailable" else null,
+                            ).joinToString(" • "),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            if (item.category == MediaCategory.VIDEO && item.playbackDecision.mode == PlaybackMode.DIRECT) {
+                                ItemPill("Direct Play", accent = true)
+                            }
+                            item.playbackDecision.compatibilityLabel?.let { label -> ItemPill(label) }
+                            if (item.subtitleMatch != null) {
+                                ItemPill("Subtitle")
+                            }
+                            if (!item.isAvailable) {
+                                ItemPill("Unavailable")
+                            }
+                            if (selectionMode) {
+                                ItemPill(if (isSelected) "Selected" else "Tap to select", accent = isSelected)
+                            }
+                        }
                     }
                 }
-                compatibilityJob
-                    ?.takeIf { item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT }
-                    ?.let { job ->
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = compatibilityStatusLabel(job),
-                        color = when (job.status) {
-                            CompatibilityStatus.FAILED -> MaterialTheme.colorScheme.error
-                            CompatibilityStatus.READY -> MaterialTheme.colorScheme.primary
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
+
                 if (item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Creates a temporary browser-ready copy. The original file stays unchanged for downloads.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    when (compatibilityJob?.status) {
-                        CompatibilityStatus.QUEUED,
-                        CompatibilityStatus.PREPARING,
-                        -> OutlinedButton(
-                            onClick = {},
-                            enabled = false,
-                            shape = RoundedCornerShape(16.dp),
+                    Surface(
+                        shape = RoundedCornerShape(18.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
-                            Text("Preparing browser copy")
-                        }
-
-                        CompatibilityStatus.READY -> OutlinedButton(
-                            onClick = {},
-                            enabled = false,
-                            shape = RoundedCornerShape(16.dp),
-                        ) {
-                            Text("Browser copy ready")
-                        }
-
-                        else -> OutlinedButton(
-                            onClick = { onPrepareItem(item.id) },
-                            enabled = item.isAvailable,
-                            shape = RoundedCornerShape(16.dp),
-                        ) {
+                            compatibilityJob?.let { job ->
+                                Text(
+                                    text = compatibilityStatusLabel(job),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = when (job.status) {
+                                        CompatibilityStatus.FAILED -> MaterialTheme.colorScheme.error
+                                        CompatibilityStatus.READY -> MaterialTheme.colorScheme.primary
+                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
+                                )
+                            }
                             Text(
-                                if (compatibilityJob?.status == CompatibilityStatus.FAILED) {
-                                    "Retry browser prep"
-                                } else {
-                                    "Prepare browser copy"
-                                },
+                                text = "This creates a temporary browser copy. Downloads still use the original file.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
                 }
-            }
-            if (selectionMode) {
-                AssistChip(
-                    onClick = { onToggleSelected(item.id) },
-                    label = { Text(if (isSelected) "Selected" else "Select") },
-                )
-            } else {
-                Icon(
-                    Icons.Outlined.Delete,
-                    contentDescription = "Remove item",
-                    modifier = Modifier.clickable { onRemoveItem(item.id) },
-                )
+
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    if (selectionMode) {
+                        OutlinedButton(onClick = { onToggleSelected(item.id) }, shape = RoundedCornerShape(16.dp)) {
+                            Text(if (isSelected) "Selected" else "Select")
+                        }
+                    } else {
+                        OutlinedButton(onClick = { onRemoveItem(item.id) }, shape = RoundedCornerShape(16.dp)) {
+                            Icon(Icons.Outlined.Delete, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Remove")
+                        }
+                    }
+
+                    if (item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT) {
+                        when (compatibilityJob?.status) {
+                            CompatibilityStatus.QUEUED,
+                            CompatibilityStatus.PREPARING,
+                            -> OutlinedButton(onClick = {}, enabled = false, shape = RoundedCornerShape(16.dp)) {
+                                Text(if (compactActions) "Preparing" else "Preparing for browser")
+                            }
+
+                            CompatibilityStatus.READY -> OutlinedButton(onClick = {}, enabled = false, shape = RoundedCornerShape(16.dp)) {
+                                Text(if (compactActions) "Ready" else "Ready for browser")
+                            }
+
+                            else -> Button(
+                                onClick = { onPrepareItem(item.id) },
+                                enabled = item.isAvailable,
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                                ),
+                            ) {
+                                Text(
+                                    if (compatibilityJob?.status == CompatibilityStatus.FAILED) {
+                                        if (compactActions) "Try again" else "Try browser prep again"
+                                    } else {
+                                        if (compactActions) "Prepare" else "Prepare for browser"
+                                    },
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 }
 
+@Composable
+private fun LibraryItemVisual(
+    item: SharedItem,
+    showThumbnails: Boolean,
+) {
+    val shape = RoundedCornerShape(16.dp)
+    if (showThumbnails && (item.category == MediaCategory.PHOTO || item.category == MediaCategory.VIDEO)) {
+        AsyncImage(
+            model = Uri.parse(item.uri),
+            contentDescription = null,
+            modifier = Modifier
+                .size(84.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant, shape),
+        )
+    } else {
+        Box(
+            modifier = Modifier
+                .size(72.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(18.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = when (item.category) {
+                    MediaCategory.VIDEO -> Icons.Outlined.Movie
+                    MediaCategory.PHOTO -> Icons.Outlined.Photo
+                    MediaCategory.MUSIC -> Icons.Outlined.MusicNote
+                    MediaCategory.FILE -> Icons.Outlined.InsertDriveFile
+                },
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(32.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ItemPill(
+    label: String,
+    accent: Boolean = false,
+) {
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = if (accent) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent,
+        border = BorderStroke(
+            1.dp,
+            if (accent) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f) else MaterialTheme.colorScheme.outline,
+        ),
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = if (accent) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+private fun itemTypeLabel(category: MediaCategory): String {
+    return when (category) {
+        MediaCategory.VIDEO -> "Video"
+        MediaCategory.PHOTO -> "Photo"
+        MediaCategory.MUSIC -> "Music"
+        MediaCategory.FILE -> "File"
+    }
+}
+
 private fun compatibilityStatusLabel(job: CompatibilityJob): String {
     if (job.streamable && job.status != CompatibilityStatus.READY) {
-        return "Playback live | ${job.message}"
+        return "Ready to play • ${job.message}"
     }
     val prefix = when (job.status) {
-        CompatibilityStatus.IDLE -> "Compatibility idle"
-        CompatibilityStatus.QUEUED -> "Compatibility queued"
-        CompatibilityStatus.PREPARING -> "Compatibility preparing"
-        CompatibilityStatus.READY -> "Compatibility ready"
-        CompatibilityStatus.FAILED -> "Compatibility unavailable"
+        CompatibilityStatus.IDLE -> "Not prepared"
+        CompatibilityStatus.QUEUED -> "Queued"
+        CompatibilityStatus.PREPARING -> "Preparing"
+        CompatibilityStatus.READY -> "Ready"
+        CompatibilityStatus.FAILED -> "Unavailable"
     }
-    return "$prefix | ${job.message}"
+    return "$prefix • ${job.message}"
 }
 
 internal fun formatBytes(bytes: Long): String {
