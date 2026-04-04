@@ -330,10 +330,8 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghoststream.ap
                     onSavePreset = viewModel::saveCurrentAsPreset,
                     onApplyPreset = viewModel::applyPreset,
                     onDeletePreset = viewModel::deletePreset,
-                    onRefreshDiagnostics = {
-                        viewModel.refreshNetwork()
-                        viewModel.startNearbyDiscovery()
-                    },
+                    onRefreshConnection = viewModel::refreshNetwork,
+                    onRefreshNearby = viewModel::refreshNearbyDiscovery,
                     onOpenNearbyDevice = viewModel::openNearbyDevice,
                     onAddFiles = { navController.navigate(Routes.AddFiles) },
                     onAddFolder = { navController.navigate(Routes.AddFolder) },

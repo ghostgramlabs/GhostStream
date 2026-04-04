@@ -140,6 +140,11 @@ class NsdDiscoveryManager(
         _discoveryState.value = NearbyDiscoveryState()
     }
 
+    fun refresh() {
+        stop()
+        start()
+    }
+
     private fun resolveService(
         manager: NsdManager,
         serviceInfo: NsdServiceInfo,

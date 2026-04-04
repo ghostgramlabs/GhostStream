@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -94,7 +95,7 @@ fun ActiveSessionScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
             SessionHeroCard(
@@ -139,10 +140,7 @@ fun ActiveSessionScreen(
                     .fillMaxWidth()
                     .height(56.dp),
                 shape = RoundedCornerShape(18.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
+                colors = sessionPrimaryButtonColors(),
             ) {
                 Icon(Icons.Outlined.StopCircle, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
@@ -171,8 +169,8 @@ private fun SessionHeroCard(
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(
-            modifier = Modifier.padding(22.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -269,7 +267,7 @@ private fun SessionQrCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(248.dp)
+                        .size(228.dp)
                         .padding(18.dp),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -313,39 +311,58 @@ private fun SessionAccessPanel(
             modifier = Modifier.padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    text = "Share link",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.tertiary,
-                )
-                Text(
-                    text = displayUrl,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = "Open this on the same Wi-Fi or hotspot. If typing is hard, scan the QR code instead.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = "Share link",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text = displayUrl,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = "Open this on the same Wi-Fi or hotspot. If typing is hard, scan the QR code instead.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
 
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                SessionDetailChip(label = "Network", value = networkLabel(sessionState), showDot = true)
+                SessionDetailChip(
+                    label = "Network",
+                    value = networkLabel(sessionState),
+                    showDot = true,
+                    modifier = Modifier.widthIn(min = 132.dp),
+                )
                 SessionDetailChip(
                     label = "Access PIN",
                     value = if (sessionState.authEnabled) (sessionState.pin ?: "----") else "Off",
                     showDot = sessionState.authEnabled,
+                    modifier = Modifier.widthIn(min = 132.dp),
                 )
                 sessionState.advertisedName?.takeIf { it.isNotBlank() }?.let { nearby ->
-                    SessionDetailChip(label = "GhostStream app", value = nearby)
+                    SessionDetailChip(
+                        label = "Nearby name",
+                        value = nearby,
+                        modifier = Modifier.widthIn(min = 170.dp),
+                    )
                 }
             }
 
@@ -368,10 +385,7 @@ private fun SessionAccessPanel(
                 Button(
                     onClick = onCopyLink,
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ),
+                    colors = sessionPrimaryButtonColors(),
                 ) {
                     Icon(Icons.Outlined.ContentCopy, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
@@ -380,7 +394,7 @@ private fun SessionAccessPanel(
                 OutlinedButton(
                     onClick = onShareLink,
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                    colors = sessionSecondaryButtonColors(),
                 ) {
                     Icon(Icons.Outlined.Share, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
@@ -390,7 +404,7 @@ private fun SessionAccessPanel(
                     OutlinedButton(
                         onClick = onRegeneratePin,
                         shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                        colors = sessionSecondaryButtonColors(),
                     ) {
                         Text("New PIN")
                     }
@@ -495,7 +509,7 @@ private fun ConnectedDevicesCard(
                     OutlinedButton(
                         onClick = onDisconnectAll,
                         shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                        colors = sessionSecondaryButtonColors(),
                     ) {
                         Text("Disconnect all")
                     }
@@ -534,38 +548,67 @@ private fun ConnectedClientRow(
         color = MaterialTheme.colorScheme.surfaceVariant,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
-        Row(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = client.ipAddress,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = listOfNotNull(client.displayName, client.activity.name.replace('_', ' ')).joinToString(" | "),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            OutlinedButton(
-                onClick = { onBlockClient(client.ipAddress) },
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
-            ) {
-                Icon(Icons.Outlined.Block, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Block")
+            val stacked = maxWidth < 520.dp
+            if (stacked) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    ConnectedClientSummary(client = client)
+                    OutlinedButton(
+                        onClick = { onBlockClient(client.ipAddress) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = sessionSecondaryButtonColors(),
+                    ) {
+                        Icon(Icons.Outlined.Block, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Block this device")
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    ConnectedClientSummary(client = client, modifier = Modifier.weight(1f))
+                    Spacer(modifier = Modifier.width(12.dp))
+                    OutlinedButton(
+                        onClick = { onBlockClient(client.ipAddress) },
+                        shape = RoundedCornerShape(14.dp),
+                        colors = sessionSecondaryButtonColors(),
+                    ) {
+                        Icon(Icons.Outlined.Block, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Block")
+                    }
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun ConnectedClientSummary(
+    client: ConnectedClient,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = client.ipAddress,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = listOfNotNull(client.displayName, client.activity.name.replace('_', ' ')).joinToString(" | "),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
@@ -609,25 +652,48 @@ private fun BlockedClientRow(
         color = MaterialTheme.colorScheme.surfaceVariant,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
-        Row(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(blocked.ipAddress, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(blocked.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            OutlinedButton(
-                onClick = { onUnblockClient(blocked.ipAddress) },
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
-            ) {
-                Text("Unblock")
+            val stacked = maxWidth < 520.dp
+            if (stacked) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column {
+                        Text(blocked.ipAddress, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(blocked.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    OutlinedButton(
+                        onClick = { onUnblockClient(blocked.ipAddress) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = sessionSecondaryButtonColors(),
+                    ) {
+                        Text("Unblock device")
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(blocked.ipAddress, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(blocked.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    OutlinedButton(
+                        onClick = { onUnblockClient(blocked.ipAddress) },
+                        shape = RoundedCornerShape(14.dp),
+                        colors = sessionSecondaryButtonColors(),
+                    ) {
+                        Text("Unblock")
+                    }
+                }
             }
         }
     }
@@ -642,8 +708,11 @@ private fun SessionStatePill(sessionState: SessionState) {
     }
     Surface(
         shape = RoundedCornerShape(999.dp),
-        color = Color.Transparent,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        color = if (sessionState.isSharing || sessionState.networkAvailability.isReady) sessionAccentSurface() else Color.Transparent,
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            if (sessionState.isSharing || sessionState.networkAvailability.isReady) sessionAccentBorder() else MaterialTheme.colorScheme.outline,
+        ),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -676,32 +745,39 @@ private fun SessionDetailChip(
     label: String,
     value: String,
     showDot: Boolean = false,
+    modifier: Modifier = Modifier,
 ) {
     Surface(
+        modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        color = Color.Transparent,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        color = if (showDot) sessionAccentSurface() else Color.Transparent,
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            if (showDot) sessionAccentBorder() else MaterialTheme.colorScheme.outline,
+        ),
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            if (showDot) {
-                Box(
-                    modifier = Modifier
-                        .size(8.dp)
-                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(999.dp)),
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (showDot) {
+                    Box(
+                        modifier = Modifier
+                            .size(8.dp)
+                            .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(999.dp)),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Spacer(modifier = Modifier.width(8.dp))
             }
             Text(
-                text = "$label ",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.tertiary,
-            )
-            Text(
                 text = value,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -718,12 +794,12 @@ private fun SessionInfoRow(
         Text(
             text = title,
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.tertiary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
             text = value,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = MaterialTheme.colorScheme.onSurface,
         )
     }
 }
@@ -780,3 +856,25 @@ private fun formatElapsed(startedAtEpochMs: Long?): String {
         else -> "${secs}s"
     }
 }
+
+@Composable
+private fun sessionPrimaryButtonColors() = ButtonDefaults.buttonColors(
+    containerColor = MaterialTheme.colorScheme.primary,
+    contentColor = MaterialTheme.colorScheme.onPrimary,
+    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+    disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f),
+)
+
+@Composable
+private fun sessionSecondaryButtonColors() = ButtonDefaults.outlinedButtonColors(
+    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
+    contentColor = MaterialTheme.colorScheme.onSurface,
+    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.44f),
+    disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.46f),
+)
+
+@Composable
+private fun sessionAccentSurface() = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+
+@Composable
+private fun sessionAccentBorder() = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)

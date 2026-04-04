@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts.OpenDocumentTre
 import androidx.activity.result.contract.ActivityResultContracts.OpenMultipleDocuments
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -21,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.InsertDriveFile
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -36,8 +38,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ghoststream.core.model.SmartSelectionGroup
@@ -137,7 +137,7 @@ fun BatchSelectRoute(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(selectionBackdropBrush()),
+            .background(MaterialTheme.colorScheme.background),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
@@ -153,7 +153,11 @@ fun BatchSelectRoute(
                     Text("Quick one-tap groups based on your recent local media", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (hasMediaAccess) {
-                    OutlinedButton(onClick = onRefresh, shape = RoundedCornerShape(16.dp)) {
+                    OutlinedButton(
+                        onClick = onRefresh,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = selectionSecondaryButtonColors(),
+                    ) {
                         Text("Refresh")
                     }
                 }
@@ -168,6 +172,7 @@ fun BatchSelectRoute(
                         .fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(containerColor = selectionPanelColor()),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         Text("Media access needed", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -177,7 +182,11 @@ fun BatchSelectRoute(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Spacer(modifier = Modifier.height(14.dp))
-                        Button(onClick = onRequestAccess, shape = RoundedCornerShape(16.dp)) {
+                        Button(
+                            onClick = onRequestAccess,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = selectionPrimaryButtonColors(),
+                        ) {
                             Text("Grant Access")
                         }
                     }
@@ -198,6 +207,7 @@ fun BatchSelectRoute(
                         .fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(containerColor = selectionPanelColor()),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         Text("No smart groups found yet", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -207,7 +217,11 @@ fun BatchSelectRoute(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Spacer(modifier = Modifier.height(14.dp))
-                        OutlinedButton(onClick = onRefresh, shape = RoundedCornerShape(16.dp)) {
+                        OutlinedButton(
+                            onClick = onRefresh,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = selectionSecondaryButtonColors(),
+                        ) {
                             Text("Refresh smart groups")
                         }
                     }
@@ -221,6 +235,7 @@ fun BatchSelectRoute(
                         .fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(containerColor = selectionPanelColor()),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         Text(group.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -235,6 +250,7 @@ fun BatchSelectRoute(
                                 onBack()
                             },
                             shape = RoundedCornerShape(16.dp),
+                            colors = selectionPrimaryButtonColors(),
                         ) {
                             Text("Add Group")
                         }
@@ -262,7 +278,7 @@ private fun SelectionRouteScaffold(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(selectionBackdropBrush()),
+            .background(MaterialTheme.colorScheme.background),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
@@ -279,6 +295,7 @@ private fun SelectionRouteScaffold(
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = selectionPanelColor()),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             ) {
                 Column(
                     modifier = Modifier.padding(18.dp),
@@ -289,11 +306,19 @@ private fun SelectionRouteScaffold(
         }
         item {
             Row(modifier = Modifier.padding(horizontal = 20.dp)) {
-                OutlinedButton(onClick = onBack, shape = RoundedCornerShape(16.dp)) {
+                OutlinedButton(
+                    onClick = onBack,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = selectionSecondaryButtonColors(),
+                ) {
                     Text("Back")
                 }
                 Spacer(modifier = Modifier.width(12.dp))
-                OutlinedButton(onClick = onSecondary, shape = RoundedCornerShape(16.dp)) {
+                OutlinedButton(
+                    onClick = onSecondary,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = selectionSecondaryButtonColors(),
+                ) {
                     Text(secondaryLabel)
                 }
             }
@@ -305,6 +330,7 @@ private fun SelectionRouteScaffold(
                     .padding(horizontal = 20.dp)
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
+                colors = selectionPrimaryButtonColors(),
             ) {
                 Text(primaryLabel)
             }
@@ -322,12 +348,26 @@ private fun SelectionUriCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = selectionRaisedColor()),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(Icons.Outlined.InsertDriveFile, contentDescription = null)
+            Box(
+                modifier = Modifier
+                    .background(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                        shape = RoundedCornerShape(14.dp),
+                    )
+                    .padding(10.dp),
+            ) {
+                Icon(
+                    Icons.Outlined.InsertDriveFile,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
             Spacer(modifier = Modifier.width(12.dp))
             Column {
                 Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
@@ -339,19 +379,19 @@ private fun SelectionUriCard(
 }
 
 @Composable
-private fun selectionBackdropBrush(): Brush {
-    val colors = MaterialTheme.colorScheme
-    return Brush.verticalGradient(
-        listOf(
-            colors.background,
-            colors.surface.copy(alpha = 0.98f),
-            colors.surfaceVariant.copy(alpha = 0.86f),
-        ),
-    )
-}
+private fun selectionPanelColor() = MaterialTheme.colorScheme.surface
 
 @Composable
-private fun selectionPanelColor(): Color = MaterialTheme.colorScheme.surface
+private fun selectionRaisedColor() = MaterialTheme.colorScheme.surfaceVariant
 
 @Composable
-private fun selectionRaisedColor(): Color = MaterialTheme.colorScheme.surfaceVariant
+private fun selectionPrimaryButtonColors() = ButtonDefaults.buttonColors(
+    containerColor = MaterialTheme.colorScheme.primary,
+    contentColor = MaterialTheme.colorScheme.onPrimary,
+)
+
+@Composable
+private fun selectionSecondaryButtonColors() = ButtonDefaults.outlinedButtonColors(
+    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
+    contentColor = MaterialTheme.colorScheme.onSurface,
+)

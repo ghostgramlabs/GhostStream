@@ -361,6 +361,11 @@ class MainViewModel(
         container.nsdDiscoveryManager.stop()
     }
 
+    fun refreshNearbyDiscovery() {
+        container.debugLogRepository.log("MainViewModel", "refreshNearbyDiscovery")
+        container.nsdDiscoveryManager.refresh()
+    }
+
     fun openNearbyDevice(device: NearbyDevice) {
         viewModelScope.launch {
             connectingNearbyDeviceId.value = device.id

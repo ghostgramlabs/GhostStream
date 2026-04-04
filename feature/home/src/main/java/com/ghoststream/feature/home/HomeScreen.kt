@@ -5,6 +5,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -46,7 +47,6 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -84,7 +84,8 @@ fun HomeScreen(
     onSavePreset: (String) -> Unit,
     onApplyPreset: (String) -> Unit,
     onDeletePreset: (String) -> Unit,
-    onRefreshDiagnostics: () -> Unit,
+    onRefreshConnection: () -> Unit,
+    onRefreshNearby: () -> Unit,
     onOpenNearbyDevice: (NearbyDevice) -> Unit,
     onAddFiles: () -> Unit,
     onAddFolder: () -> Unit,
@@ -100,7 +101,7 @@ fun HomeScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        verticalArrangement = Arrangement.spacedBy(18.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
             TopBrandHeader(onOpenSettings = onOpenSettings)
@@ -131,7 +132,8 @@ fun HomeScreen(
                 connectionDiagnostics = connectionDiagnostics,
                 nearbyDiscoveryState = nearbyDiscoveryState,
                 connectingNearbyDeviceId = connectingNearbyDeviceId,
-                onRefreshDiagnostics = onRefreshDiagnostics,
+                onRefreshConnection = onRefreshConnection,
+                onRefreshNearby = onRefreshNearby,
                 onOpenNearbyDevice = onOpenNearbyDevice,
             )
         }
@@ -166,28 +168,44 @@ fun HomeScreen(
     if (showPresetDialog) {
         AlertDialog(
             onDismissRequest = { showPresetDialog = false },
-            title = { Text("Save current share") },
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            title = { Text("Save this share") },
             text = {
-                OutlinedTextField(
-                    value = presetName,
-                    onValueChange = { presetName = it },
-                    label = { Text("Saved share name") },
-                    singleLine = true,
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "Give this set of files a name so you can open it again later.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    OutlinedTextField(
+                        value = presetName,
+                        onValueChange = { presetName = it },
+                        label = { Text("Share name") },
+                        singleLine = true,
+                    )
+                }
             },
             confirmButton = {
-                TextButton(
+                Button(
                     onClick = {
                         onSavePreset(presetName)
                         showPresetDialog = false
                     },
                     enabled = presetName.isNotBlank(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ghostPrimaryButtonColors(),
                 ) {
-                    Text("Save share")
+                    Text("Save")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showPresetDialog = false }) {
+                OutlinedButton(
+                    onClick = { showPresetDialog = false },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ghostSecondaryButtonColors(),
+                ) {
                     Text("Cancel")
                 }
             },
@@ -222,8 +240,8 @@ private fun TopBrandHeader(
         Spacer(modifier = Modifier.width(12.dp))
         Surface(
             shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            color = ghostAccentSurface(),
+            border = BorderStroke(1.dp, ghostAccentBorder()),
             modifier = Modifier.clickable(onClick = onOpenSettings),
         ) {
             Box(
@@ -234,7 +252,7 @@ private fun TopBrandHeader(
                     Icons.Outlined.Settings,
                     contentDescription = "Settings",
                     modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.onSurface,
+                    tint = MaterialTheme.colorScheme.primary,
                 )
             }
         }
@@ -296,12 +314,7 @@ private fun SessionHeroCard(
                     .fillMaxWidth()
                     .height(58.dp),
                 shape = RoundedCornerShape(18.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-                    disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f),
-                ),
+                colors = ghostPrimaryButtonColors(),
             ) {
                 if (isStartingShare) {
                     CircularProgressIndicator(
@@ -417,7 +430,7 @@ private fun ActionTile(
     val pressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(targetValue = if (pressed) 0.97f else 1f, label = "actionTileScale")
     val containerColor by animateColorAsState(
-        targetValue = if (pressed) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.14f) else MaterialTheme.colorScheme.surfaceVariant,
+        targetValue = if (pressed) ghostAccentSurface() else MaterialTheme.colorScheme.surfaceVariant,
         label = "actionTileColor",
     )
     Card(
@@ -439,10 +452,11 @@ private fun ActionTile(
             Box(
                 modifier = Modifier
                     .size(36.dp)
-                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp)),
+                    .background(ghostAccentSurface(), RoundedCornerShape(12.dp))
+                    .border(BorderStroke(1.dp, ghostAccentBorder()), RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             }
             Spacer(modifier = Modifier.height(12.dp))
             Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -459,7 +473,8 @@ private fun SupportPanel(
     connectionDiagnostics: ConnectionDiagnostics,
     nearbyDiscoveryState: NearbyDiscoveryState,
     connectingNearbyDeviceId: String?,
-    onRefreshDiagnostics: () -> Unit,
+    onRefreshConnection: () -> Unit,
+    onRefreshNearby: () -> Unit,
     onOpenNearbyDevice: (NearbyDevice) -> Unit,
 ) {
     Card(
@@ -477,14 +492,20 @@ private fun SupportPanel(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Connection", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                    Text("Nearby & network", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "Make sure your local network is ready, then look for another GhostStream device if you want to open it in the app.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
                 OutlinedButton(
-                    onClick = onRefreshDiagnostics,
+                    onClick = onRefreshConnection,
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                    colors = ghostSecondaryButtonColors(),
                 ) {
-                    Text("Refresh")
+                    Text("Refresh status")
                 }
             }
 
@@ -510,9 +531,9 @@ private fun SupportPanel(
                         detail = "If the other device also has GhostStream, it can appear here. Everyone else can still scan the QR code or open the browser link.",
                     )
                     OutlinedButton(
-                        onClick = onRefreshDiagnostics,
+                        onClick = onRefreshNearby,
                         shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                        colors = ghostSecondaryButtonColors(),
                     ) {
                         Text("Refresh nearby")
                     }
@@ -526,9 +547,9 @@ private fun SupportPanel(
                     ) {
                         Text("Open in the GhostStream app", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         OutlinedButton(
-                            onClick = onRefreshDiagnostics,
+                            onClick = onRefreshNearby,
                             shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                            colors = ghostSecondaryButtonColors(),
                         ) {
                             Text("Refresh nearby")
                         }
@@ -538,7 +559,7 @@ private fun SupportPanel(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    nearbyDiscoveryState.devices.take(2).forEach { device ->
+                    nearbyDiscoveryState.devices.take(3).forEach { device ->
                         NearbyDeviceRow(
                             device = device,
                             isConnecting = connectingNearbyDeviceId == device.id,
@@ -568,7 +589,14 @@ private fun SupportRow(
                 .padding(horizontal = 14.dp, vertical = 13.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Box(
+                modifier = Modifier
+                    .background(ghostAccentSurface(), RoundedCornerShape(12.dp))
+                    .border(BorderStroke(1.dp, ghostAccentBorder()), RoundedCornerShape(12.dp))
+                    .padding(10.dp),
+            ) {
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            }
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
@@ -591,46 +619,93 @@ private fun NearbyDeviceRow(
         color = MaterialTheme.colorScheme.surfaceVariant,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
-        Row(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 14.dp, vertical = 14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(device.serviceName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = device.friendlyUrl ?: "Ready to open in the GhostStream app",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+            val stacked = maxWidth < 460.dp
+            if (stacked) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    NearbyDeviceSummary(device = device)
+                    Button(
+                        onClick = onOpen,
+                        enabled = !isConnecting,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ghostPrimaryButtonColors(),
+                    ) {
+                        if (isConnecting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        } else {
+                            Icon(Icons.Outlined.OpenInBrowser, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Open nearby session")
+                        }
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    MinimalChip(label = "Available", showAccentDot = true)
-                    if (device.authRequired) {
-                        MinimalChip(label = "PIN needed")
+                    NearbyDeviceSummary(device = device, modifier = Modifier.weight(1f))
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Button(
+                        onClick = onOpen,
+                        enabled = !isConnecting,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ghostPrimaryButtonColors(),
+                    ) {
+                        if (isConnecting) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(18.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        } else {
+                            Icon(Icons.Outlined.OpenInBrowser, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Open")
+                        }
                     }
                 }
             }
-            Spacer(modifier = Modifier.width(12.dp))
-            OutlinedButton(
-                onClick = onOpen,
-                shape = RoundedCornerShape(16.dp),
-                enabled = !isConnecting,
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
-            ) {
-                if (isConnecting) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                } else {
-                    Icon(Icons.Outlined.OpenInBrowser, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Open in app")
-                }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun NearbyDeviceSummary(
+    device: NearbyDevice,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier) {
+        Text(
+            text = device.serviceName,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = device.friendlyUrl ?: "Ready to open in GhostStream",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            MinimalChip(label = "Available", showAccentDot = true)
+            if (device.authRequired) {
+                MinimalChip(label = "PIN needed")
             }
         }
     }
@@ -671,15 +746,15 @@ private fun SharePresetsCard(
                     onClick = onSavePreset,
                     enabled = canSavePreset,
                     shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                    colors = ghostSecondaryButtonColors(),
                 ) {
-                    Text("Save current share")
+                    Text("Save this share")
                 }
             }
 
             if (presets.isEmpty()) {
                 Text(
-                    text = "No saved shares yet.",
+                    text = "Nothing saved yet.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -723,7 +798,7 @@ private fun SharePresetRow(
                             onClick = onApply,
                             shape = RoundedCornerShape(16.dp),
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                            colors = ghostSecondaryButtonColors(),
                         ) {
                             Text("Open")
                         }
@@ -731,7 +806,7 @@ private fun SharePresetRow(
                             onClick = onDelete,
                             shape = RoundedCornerShape(16.dp),
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                            colors = ghostSecondaryButtonColors(),
                         ) {
                             Text("Delete")
                         }
@@ -741,14 +816,14 @@ private fun SharePresetRow(
                         OutlinedButton(
                             onClick = onApply,
                             shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                            colors = ghostSecondaryButtonColors(),
                         ) {
                             Text("Open")
                         }
                         OutlinedButton(
                             onClick = onDelete,
                             shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                            colors = ghostSecondaryButtonColors(),
                         ) {
                             Text("Delete")
                         }
@@ -861,6 +936,28 @@ private fun HeroStat(label: String, value: String) {
         }
     }
 }
+
+@Composable
+private fun ghostPrimaryButtonColors() = ButtonDefaults.buttonColors(
+    containerColor = MaterialTheme.colorScheme.primary,
+    contentColor = MaterialTheme.colorScheme.onPrimary,
+    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+    disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f),
+)
+
+@Composable
+private fun ghostSecondaryButtonColors() = ButtonDefaults.outlinedButtonColors(
+    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
+    contentColor = MaterialTheme.colorScheme.onSurface,
+    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.44f),
+    disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.46f),
+)
+
+@Composable
+private fun ghostAccentSurface() = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+
+@Composable
+private fun ghostAccentBorder() = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
 
 private fun heroMessage(
     sessionState: SessionState,

@@ -1,5 +1,6 @@
 package com.ghoststream.feature.settings
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -60,7 +61,7 @@ fun SettingsScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(ghostBackdropBrush()),
+            .background(MaterialTheme.colorScheme.background),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
@@ -175,13 +176,14 @@ fun HelpScreen(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(ghostBackdropBrush())
+            .background(MaterialTheme.colorScheme.background)
             .padding(24.dp),
     ) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(28.dp),
             colors = CardDefaults.cardColors(containerColor = ghostPanelColor()),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         ) {
             Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Text("About GhostStream", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
@@ -201,6 +203,7 @@ private fun SettingsGroup(title: String, content: @Composable () -> Unit) {
             .fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = ghostPanelColor()),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(modifier = Modifier.padding(vertical = 10.dp)) {
             Text(
@@ -292,18 +295,6 @@ private fun ThemeMode.label(): String = when (this) {
     ThemeMode.SYSTEM -> "Default to system"
     ThemeMode.DARK -> "Dark"
     ThemeMode.LIGHT -> "Light"
-}
-
-@Composable
-private fun ghostBackdropBrush(): androidx.compose.ui.graphics.Brush {
-    val colors = MaterialTheme.colorScheme
-    return androidx.compose.ui.graphics.Brush.verticalGradient(
-        listOf(
-            colors.background,
-            colors.surface.copy(alpha = 0.98f),
-            colors.surfaceVariant.copy(alpha = 0.86f),
-        ),
-    )
 }
 
 @Composable

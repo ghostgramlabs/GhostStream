@@ -13,14 +13,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ghoststream.core.model.SmartSelectionGroup
@@ -35,7 +34,7 @@ fun BatchSelectScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(selectionBackdropBrush()),
+            .background(MaterialTheme.colorScheme.background),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
@@ -60,6 +59,7 @@ fun BatchSelectScreen(
                         .fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(containerColor = selectionPanelColor()),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
                         Text(group.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -74,6 +74,10 @@ fun BatchSelectScreen(
                                 onBack()
                             },
                             shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                            ),
                         ) {
                             Text("Add Group")
                         }
@@ -87,16 +91,4 @@ fun BatchSelectScreen(
 }
 
 @Composable
-private fun selectionBackdropBrush(): Brush {
-    val colors = MaterialTheme.colorScheme
-    return Brush.verticalGradient(
-        listOf(
-            colors.background,
-            colors.surface.copy(alpha = 0.98f),
-            colors.surfaceVariant.copy(alpha = 0.86f),
-        ),
-    )
-}
-
-@Composable
-private fun selectionPanelColor(): Color = MaterialTheme.colorScheme.surface
+private fun selectionPanelColor() = MaterialTheme.colorScheme.surface

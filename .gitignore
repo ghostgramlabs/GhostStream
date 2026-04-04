@@ -1,4 +1,5 @@
 .gradle/
+.gradle-user/
 .gradle-user-home/
 .gradle-home/
 .android-home/
@@ -23,3 +24,4 @@ captures/
 Thumbs.db
 Desktop.ini
 _github_check/
+_release_build/

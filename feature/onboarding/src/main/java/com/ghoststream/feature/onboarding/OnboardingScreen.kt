@@ -2,6 +2,7 @@ package com.ghoststream.feature.onboarding
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.outlined.Collections
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.QrCode2
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -33,8 +35,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -75,7 +75,7 @@ fun OnboardingScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(ghostBackdropBrush())
+            .background(MaterialTheme.colorScheme.background)
             .padding(24.dp),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -96,12 +96,13 @@ fun OnboardingScreen(
             ) { page ->
                 Card(
                     modifier = Modifier
-                    .fillMaxSize()
-                    .padding(vertical = 12.dp),
+                        .fillMaxSize()
+                        .padding(vertical = 12.dp),
                     shape = RoundedCornerShape(32.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = ghostPanelColor(),
                     ),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 ) {
                     Column(
                         modifier = Modifier
@@ -113,6 +114,7 @@ fun OnboardingScreen(
                             modifier = Modifier.size(72.dp),
                             shape = CircleShape,
                             color = ghostAccentSurface(),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, ghostAccentBorder()),
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
@@ -171,6 +173,10 @@ fun OnboardingScreen(
                     .padding(top = 24.dp)
                     .height(56.dp),
                 shape = RoundedCornerShape(18.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
             ) {
                 Text(if (pagerState.currentPage == pages.lastIndex) "Get Started" else "Next")
             }
@@ -185,22 +191,13 @@ private data class OnboardingCard(
 )
 
 @Composable
-private fun ghostBackdropBrush(): Brush {
-    val colors = MaterialTheme.colorScheme
-    return Brush.verticalGradient(
-        listOf(
-            colors.background,
-            colors.surface.copy(alpha = 0.98f),
-            colors.surfaceVariant.copy(alpha = 0.86f),
-        ),
-    )
-}
+private fun ghostPanelColor() = MaterialTheme.colorScheme.surface
 
 @Composable
-private fun ghostPanelColor(): Color = MaterialTheme.colorScheme.surface
+private fun ghostAccentSurface() = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
 
 @Composable
-private fun ghostAccentSurface(): Color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.58f)
+private fun ghostAccentBorder() = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
 
 @Composable
-private fun ghostMutedSurface(): Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.78f)
+private fun ghostMutedSurface() = MaterialTheme.colorScheme.surfaceVariant

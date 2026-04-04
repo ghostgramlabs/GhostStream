@@ -3,6 +3,7 @@ package com.ghoststream.feature.library
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,14 +39,15 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -91,6 +93,16 @@ fun SharedLibraryScreen(
     var showPresetDialog by rememberSaveable { mutableStateOf(false) }
     var presetName by rememberSaveable { mutableStateOf("") }
     val selectedItemIds = remember { mutableStateListOf<String>() }
+
+    LaunchedEffect(libraryState.items, libraryState.folders) {
+        val validIds = libraryState.items.mapTo(mutableSetOf()) { it.id }
+        selectedItemIds.removeAll { it !in validIds }
+        if (libraryState.items.isEmpty() && libraryState.folders.isEmpty()) {
+            selectionMode = false
+            selectedItemIds.clear()
+            showPresetDialog = false
+        }
+    }
 
     val categories = listOf("All", "Videos", "Photos", "Music", "Files")
     val filteredItems = libraryState.items
@@ -221,17 +233,27 @@ fun SharedLibraryScreen(
     if (showPresetDialog) {
         AlertDialog(
             onDismissRequest = { showPresetDialog = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             title = { Text("Save selected files") },
             text = {
-                OutlinedTextField(
-                    value = presetName,
-                    onValueChange = { presetName = it },
-                    label = { Text("Saved share name") },
-                    singleLine = true,
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "Save these files together so you can bring them back with one tap later.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    OutlinedTextField(
+                        value = presetName,
+                        onValueChange = { presetName = it },
+                        label = { Text("Share name") },
+                        singleLine = true,
+                    )
+                }
             },
             confirmButton = {
-                TextButton(
+                Button(
                     onClick = {
                         onSavePresetSelection(presetName, selectedItemIds.toList())
                         showPresetDialog = false
@@ -239,12 +261,20 @@ fun SharedLibraryScreen(
                         selectedItemIds.clear()
                     },
                     enabled = presetName.isNotBlank() && selectedItemIds.isNotEmpty(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = libraryPrimaryButtonColors(),
                 ) {
-                    Text("Save share")
+                    Text("Save")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showPresetDialog = false }) { Text("Cancel") }
+                OutlinedButton(
+                    onClick = { showPresetDialog = false },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = librarySecondaryButtonColors(),
+                ) {
+                    Text("Cancel")
+                }
             },
         )
     }
@@ -464,6 +494,18 @@ private fun LibraryControlsCard(
                             selected = selectedCategory == category,
                             onClick = { onSelectCategory(category) },
                             label = { Text(category) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = libraryAccentSurface(),
+                                selectedLabelColor = MaterialTheme.colorScheme.onSurface,
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.62f),
+                                labelColor = MaterialTheme.colorScheme.onSurface,
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                enabled = true,
+                                selected = selectedCategory == category,
+                                borderColor = MaterialTheme.colorScheme.outline,
+                                selectedBorderColor = libraryAccentBorder(),
+                            ),
                         )
                     }
                 }
@@ -478,7 +520,7 @@ private fun LibraryControlsCard(
                     OutlinedButton(
                         onClick = onSortExpand,
                         shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                        colors = librarySecondaryButtonColors(),
                     ) {
                         Text("Sort: $sortOption")
                     }
@@ -493,24 +535,24 @@ private fun LibraryControlsCard(
                     OutlinedButton(
                         onClick = onOpenAddFiles,
                         shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                        colors = librarySecondaryButtonColors(),
                     ) { Text("Add files") }
                     OutlinedButton(
                         onClick = onOpenAddFolder,
                         shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                        colors = librarySecondaryButtonColors(),
                     ) { Text("Add folder") }
                     OutlinedButton(
                         onClick = onOpenBatchSelect,
                         shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                        colors = librarySecondaryButtonColors(),
                     ) { Text("Smart Picks") }
 
                     if (selectionMode) {
                         OutlinedButton(
                             onClick = onCancelSelectionMode,
                             shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                            colors = librarySecondaryButtonColors(),
                         ) {
                             Text("Stop choosing")
                         }
@@ -518,10 +560,7 @@ private fun LibraryControlsCard(
                             onClick = onSaveSelection,
                             enabled = selectedCount > 0,
                             shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary,
-                            ),
+                            colors = libraryPrimaryButtonColors(),
                         ) {
                             Text("Save selected files")
                         }
@@ -529,7 +568,7 @@ private fun LibraryControlsCard(
                         OutlinedButton(
                             onClick = onEnterSelectionMode,
                             shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                            colors = librarySecondaryButtonColors(),
                         ) {
                             Text("Choose files to save")
                         }
@@ -584,10 +623,11 @@ private fun FolderRow(
                 Box(
                     modifier = Modifier
                         .size(48.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp)),
+                        .background(libraryAccentSurface(), RoundedCornerShape(16.dp))
+                        .border(BorderStroke(1.dp, libraryAccentBorder()), RoundedCornerShape(16.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Outlined.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(Icons.Outlined.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
@@ -604,7 +644,7 @@ private fun FolderRow(
             OutlinedButton(
                 onClick = { onRemoveFolder(folder.id) },
                 shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                colors = librarySecondaryButtonColors(),
             ) {
                 Text("Remove")
             }
@@ -632,14 +672,14 @@ private fun LibraryItemRow(
         shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.14f)
+                libraryAccentSurface()
             } else {
                 MaterialTheme.colorScheme.surface
             },
         ),
         border = BorderStroke(
             1.dp,
-            if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.55f) else MaterialTheme.colorScheme.outline,
+            if (isSelected) libraryAccentBorder() else MaterialTheme.colorScheme.outline,
         ),
     ) {
         BoxWithConstraints {
@@ -733,7 +773,7 @@ private fun LibraryItemRow(
                         OutlinedButton(
                             onClick = { onToggleSelected(item.id) },
                             shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                            colors = librarySecondaryButtonColors(),
                         ) {
                             Text(if (isSelected) "Selected" else "Select this file")
                         }
@@ -741,7 +781,7 @@ private fun LibraryItemRow(
                         OutlinedButton(
                             onClick = { onRemoveItem(item.id) },
                             shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                            colors = librarySecondaryButtonColors(),
                         ) {
                             Icon(Icons.Outlined.Delete, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
@@ -757,7 +797,7 @@ private fun LibraryItemRow(
                                 onClick = {},
                                 enabled = false,
                                 shape = RoundedCornerShape(16.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                                colors = librarySecondaryButtonColors(),
                             ) {
                                 Text(if (compactActions) "Preparing" else "Preparing for browser")
                             }
@@ -766,7 +806,7 @@ private fun LibraryItemRow(
                                 onClick = {},
                                 enabled = false,
                                 shape = RoundedCornerShape(16.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                                colors = librarySecondaryButtonColors(),
                             ) {
                                 Text(if (compactActions) "Ready" else "Ready for browser")
                             }
@@ -775,10 +815,7 @@ private fun LibraryItemRow(
                                 onClick = { onPrepareItem(item.id) },
                                 enabled = item.isAvailable,
                                 shape = RoundedCornerShape(16.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                                ),
+                                colors = libraryPrimaryButtonColors(),
                             ) {
                                 Text(
                                     if (compatibilityJob?.status == CompatibilityStatus.FAILED) {
@@ -808,13 +845,15 @@ private fun LibraryItemVisual(
             contentDescription = null,
             modifier = Modifier
                 .size(84.dp)
-                .background(MaterialTheme.colorScheme.surfaceVariant, shape),
+                .background(MaterialTheme.colorScheme.surfaceVariant, shape)
+                .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outline), shape),
         )
     } else {
         Box(
             modifier = Modifier
                 .size(72.dp)
-                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(18.dp)),
+                .background(libraryAccentSurface(), RoundedCornerShape(18.dp))
+                .border(BorderStroke(1.dp, libraryAccentBorder()), RoundedCornerShape(18.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -825,7 +864,7 @@ private fun LibraryItemVisual(
                     MediaCategory.FILE -> Icons.Outlined.InsertDriveFile
                 },
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(32.dp),
             )
         }
@@ -839,10 +878,10 @@ private fun ItemPill(
 ) {
     Surface(
         shape = RoundedCornerShape(999.dp),
-        color = if (accent) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent,
+        color = if (accent) libraryAccentSurface() else Color.Transparent,
         border = BorderStroke(
             1.dp,
-            if (accent) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f) else MaterialTheme.colorScheme.outline,
+            if (accent) libraryAccentBorder() else MaterialTheme.colorScheme.outline,
         ),
     ) {
         Text(
@@ -876,6 +915,28 @@ private fun compatibilityStatusLabel(job: CompatibilityJob): String {
     }
     return "$prefix | ${job.message}"
 }
+
+@Composable
+private fun libraryPrimaryButtonColors() = ButtonDefaults.buttonColors(
+    containerColor = MaterialTheme.colorScheme.primary,
+    contentColor = MaterialTheme.colorScheme.onPrimary,
+    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+    disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f),
+)
+
+@Composable
+private fun librarySecondaryButtonColors() = ButtonDefaults.outlinedButtonColors(
+    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
+    contentColor = MaterialTheme.colorScheme.onSurface,
+    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.44f),
+    disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.46f),
+)
+
+@Composable
+private fun libraryAccentSurface() = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+
+@Composable
+private fun libraryAccentBorder() = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
 
 internal fun formatBytes(bytes: Long): String {
     if (bytes <= 0L) return "0 B"

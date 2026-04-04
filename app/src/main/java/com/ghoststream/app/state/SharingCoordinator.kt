@@ -162,6 +162,7 @@ class SharingCoordinator(
         }
         if (settings.ghostMode) {
             mediaAnalyzer.clearTemporaryCache()
+            storageRepository.clearSelection()
         }
         sessionManager.stopSession(
             message = message,
