@@ -183,7 +183,7 @@ private fun SessionHeroCard(
                     SessionStatePill(sessionState = sessionState)
                     Spacer(modifier = Modifier.height(14.dp))
                     Text(
-                        text = if (sessionState.isSharing) "Sharing is live" else "Preparing your share",
+                        text = if (sessionState.isSharing) "Your share is live" else "Preparing your share",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -191,7 +191,7 @@ private fun SessionHeroCard(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = if (sessionState.isSharing) {
-                            "Scan the code or open the link on another device."
+                            "People nearby can scan this QR code or open the link below in any browser."
                         } else {
                             sessionState.message
                         },
@@ -252,13 +252,13 @@ private fun SessionQrCard(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text(
-                text = "Scan to open",
+                text = "Scan to open in a browser",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = "Works in any browser on the same Wi-Fi or hotspot.",
+                text = "Best for phones, tablets, laptops, and TVs on the same Wi-Fi or hotspot.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -315,7 +315,7 @@ private fun SessionAccessPanel(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    text = "Open link",
+                    text = "Share link",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.tertiary,
                 )
@@ -327,6 +327,11 @@ private fun SessionAccessPanel(
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
                 )
+                Text(
+                    text = "Open this on the same Wi-Fi or hotspot. If typing is hard, scan the QR code instead.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
 
             FlowRow(
@@ -335,18 +340,25 @@ private fun SessionAccessPanel(
             ) {
                 SessionDetailChip(label = "Network", value = networkLabel(sessionState), showDot = true)
                 SessionDetailChip(
-                    label = "PIN",
+                    label = "Access PIN",
                     value = if (sessionState.authEnabled) (sessionState.pin ?: "----") else "Off",
                     showDot = sessionState.authEnabled,
                 )
                 sessionState.advertisedName?.takeIf { it.isNotBlank() }?.let { nearby ->
-                    SessionDetailChip(label = "Nearby", value = nearby)
+                    SessionDetailChip(label = "GhostStream app", value = nearby)
                 }
             }
 
-            SessionInfoRow(title = "Status", value = if (sessionState.isSharing) "Waiting for devices" else "Preparing browser access")
+            SessionInfoRow(
+                title = "What happens now",
+                value = when {
+                    !sessionState.isSharing -> "GhostStream is getting the session ready."
+                    sessionState.connectedClients.isEmpty() -> "Waiting for the first device to open the link or scan the QR code."
+                    else -> "${sessionState.connectedClients.size} device${if (sessionState.connectedClients.size == 1) "" else "s"} connected right now."
+                },
+            )
             sessionState.hostname?.takeIf { it.isNotBlank() }?.let { host ->
-                SessionInfoRow(title = "Host name", value = host)
+                SessionInfoRow(title = "Friendly local name", value = host)
             }
 
             FlowRow(
@@ -365,13 +377,21 @@ private fun SessionAccessPanel(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Copy link")
                 }
-                OutlinedButton(onClick = onShareLink, shape = RoundedCornerShape(16.dp)) {
+                OutlinedButton(
+                    onClick = onShareLink,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                ) {
                     Icon(Icons.Outlined.Share, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Share")
                 }
                 if (sessionState.authEnabled) {
-                    OutlinedButton(onClick = onRegeneratePin, shape = RoundedCornerShape(16.dp)) {
+                    OutlinedButton(
+                        onClick = onRegeneratePin,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                    ) {
                         Text("New PIN")
                     }
                 }
@@ -472,7 +492,11 @@ private fun ConnectedDevicesCard(
                     )
                 }
                 if (sessionState.connectedClients.size > 1) {
-                    OutlinedButton(onClick = onDisconnectAll, shape = RoundedCornerShape(14.dp)) {
+                    OutlinedButton(
+                        onClick = onDisconnectAll,
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                    ) {
                         Text("Disconnect all")
                     }
                 }
@@ -485,7 +509,7 @@ private fun ConnectedDevicesCard(
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 ) {
                     Text(
-                        text = "No devices connected yet.",
+                    text = "No devices connected yet. The first device will appear here after it opens the link or scans the QR code.",
                         modifier = Modifier.padding(16.dp),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -526,13 +550,17 @@ private fun ConnectedClientRow(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = listOfNotNull(client.displayName, client.activity.name.replace('_', ' ')).joinToString(" • "),
+                    text = listOfNotNull(client.displayName, client.activity.name.replace('_', ' ')).joinToString(" | "),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Spacer(modifier = Modifier.width(12.dp))
-            OutlinedButton(onClick = { onBlockClient(client.ipAddress) }, shape = RoundedCornerShape(14.dp)) {
+            OutlinedButton(
+                onClick = { onBlockClient(client.ipAddress) },
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+            ) {
                 Icon(Icons.Outlined.Block, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Block")
@@ -594,7 +622,11 @@ private fun BlockedClientRow(
                 Text(blocked.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Spacer(modifier = Modifier.width(12.dp))
-            OutlinedButton(onClick = { onUnblockClient(blocked.ipAddress) }, shape = RoundedCornerShape(14.dp)) {
+            OutlinedButton(
+                onClick = { onUnblockClient(blocked.ipAddress) },
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+            ) {
                 Text("Unblock")
             }
         }

@@ -221,12 +221,12 @@ fun SharedLibraryScreen(
     if (showPresetDialog) {
         AlertDialog(
             onDismissRequest = { showPresetDialog = false },
-            title = { Text("Save collection") },
+            title = { Text("Save selected files") },
             text = {
                 OutlinedTextField(
                     value = presetName,
                     onValueChange = { presetName = it },
-                    label = { Text("Collection name") },
+                    label = { Text("Saved share name") },
                     singleLine = true,
                 )
             },
@@ -240,7 +240,7 @@ fun SharedLibraryScreen(
                     },
                     enabled = presetName.isNotBlank() && selectedItemIds.isNotEmpty(),
                 ) {
-                    Text("Save")
+                    Text("Save share")
                 }
             },
             dismissButton = {
@@ -274,7 +274,7 @@ private fun LibraryHeader(
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = "Review what nearby devices can browse, stream, or download.",
+                text = "These are the files people can open from your share link.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -400,6 +400,26 @@ private fun LibraryControlsCard(
             modifier = Modifier.padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            if (!selectionMode) {
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text("Save only the files you want", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Tap Choose files to save, then select items below and save them as one reusable share.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+
             if (selectionMode) {
                 Surface(
                     shape = RoundedCornerShape(18.dp),
@@ -410,12 +430,12 @@ private fun LibraryControlsCard(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        Text("Building a collection", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text("Choose files for a saved share", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         Text(
                             text = if (selectedCount == 0) {
-                                "Choose the files you want, then save them together."
+                                "Tap Select on the files below. When you are done, save the selected files together."
                             } else {
-                                "$selectedCount file${if (selectedCount == 1) "" else "s"} selected."
+                                "$selectedCount file${if (selectedCount == 1) "" else "s"} selected. You can keep choosing more before saving."
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -450,12 +470,16 @@ private fun LibraryControlsCard(
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                SectionHeader(title = "Actions", subtitle = "Add content or save a collection")
+                SectionHeader(title = "Actions", subtitle = "Add content or save a smaller share")
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    OutlinedButton(onClick = onSortExpand, shape = RoundedCornerShape(16.dp)) {
+                    OutlinedButton(
+                        onClick = onSortExpand,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                    ) {
                         Text("Sort: $sortOption")
                     }
                     DropdownMenu(expanded = sortMenuExpanded, onDismissRequest = onSortDismiss) {
@@ -466,13 +490,29 @@ private fun LibraryControlsCard(
                             )
                         }
                     }
-                    OutlinedButton(onClick = onOpenAddFiles, shape = RoundedCornerShape(16.dp)) { Text("Add files") }
-                    OutlinedButton(onClick = onOpenAddFolder, shape = RoundedCornerShape(16.dp)) { Text("Add folder") }
-                    OutlinedButton(onClick = onOpenBatchSelect, shape = RoundedCornerShape(16.dp)) { Text("Smart Picks") }
+                    OutlinedButton(
+                        onClick = onOpenAddFiles,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                    ) { Text("Add files") }
+                    OutlinedButton(
+                        onClick = onOpenAddFolder,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                    ) { Text("Add folder") }
+                    OutlinedButton(
+                        onClick = onOpenBatchSelect,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                    ) { Text("Smart Picks") }
 
                     if (selectionMode) {
-                        OutlinedButton(onClick = onCancelSelectionMode, shape = RoundedCornerShape(16.dp)) {
-                            Text("Cancel")
+                        OutlinedButton(
+                            onClick = onCancelSelectionMode,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                        ) {
+                            Text("Stop choosing")
                         }
                         Button(
                             onClick = onSaveSelection,
@@ -483,11 +523,15 @@ private fun LibraryControlsCard(
                                 contentColor = MaterialTheme.colorScheme.onPrimary,
                             ),
                         ) {
-                            Text("Save collection")
+                            Text("Save selected files")
                         }
                     } else {
-                        OutlinedButton(onClick = onEnterSelectionMode, shape = RoundedCornerShape(16.dp)) {
-                            Text("New collection")
+                        OutlinedButton(
+                            onClick = onEnterSelectionMode,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                        ) {
+                            Text("Choose files to save")
                         }
                     }
                 }
@@ -543,21 +587,25 @@ private fun FolderRow(
                         .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(16.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Outlined.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Outlined.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(folder.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        "${folder.fileCount} files • ${formatBytes(folder.totalSizeBytes)}",
+                        "${folder.fileCount} files | ${formatBytes(folder.totalSizeBytes)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
             Spacer(modifier = Modifier.width(12.dp))
-            OutlinedButton(onClick = { onRemoveFolder(folder.id) }, shape = RoundedCornerShape(14.dp)) {
+            OutlinedButton(
+                onClick = { onRemoveFolder(folder.id) },
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+            ) {
                 Text("Remove")
             }
         }
@@ -622,7 +670,7 @@ private fun LibraryItemRow(
                                 item.durationMs?.let(::formatDuration),
                                 formatBytes(item.sizeBytes),
                                 if (!item.isAvailable) "Unavailable" else null,
-                            ).joinToString(" • "),
+                            ).joinToString(" | "),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -661,10 +709,10 @@ private fun LibraryItemRow(
                                 Text(
                                     text = compatibilityStatusLabel(job),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = when (job.status) {
-                                        CompatibilityStatus.FAILED -> MaterialTheme.colorScheme.error
-                                        CompatibilityStatus.READY -> MaterialTheme.colorScheme.primary
-                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = if (job.status == CompatibilityStatus.READY) {
+                                        MaterialTheme.colorScheme.onSurface
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
                                     },
                                 )
                             }
@@ -682,11 +730,19 @@ private fun LibraryItemRow(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     if (selectionMode) {
-                        OutlinedButton(onClick = { onToggleSelected(item.id) }, shape = RoundedCornerShape(16.dp)) {
-                            Text(if (isSelected) "Selected" else "Select")
+                        OutlinedButton(
+                            onClick = { onToggleSelected(item.id) },
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                        ) {
+                            Text(if (isSelected) "Selected" else "Select this file")
                         }
                     } else {
-                        OutlinedButton(onClick = { onRemoveItem(item.id) }, shape = RoundedCornerShape(16.dp)) {
+                        OutlinedButton(
+                            onClick = { onRemoveItem(item.id) },
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                        ) {
                             Icon(Icons.Outlined.Delete, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Remove")
@@ -697,11 +753,21 @@ private fun LibraryItemRow(
                         when (compatibilityJob?.status) {
                             CompatibilityStatus.QUEUED,
                             CompatibilityStatus.PREPARING,
-                            -> OutlinedButton(onClick = {}, enabled = false, shape = RoundedCornerShape(16.dp)) {
+                            -> OutlinedButton(
+                                onClick = {},
+                                enabled = false,
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                            ) {
                                 Text(if (compactActions) "Preparing" else "Preparing for browser")
                             }
 
-                            CompatibilityStatus.READY -> OutlinedButton(onClick = {}, enabled = false, shape = RoundedCornerShape(16.dp)) {
+                            CompatibilityStatus.READY -> OutlinedButton(
+                                onClick = {},
+                                enabled = false,
+                                shape = RoundedCornerShape(16.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                            ) {
                                 Text(if (compactActions) "Ready" else "Ready for browser")
                             }
 
@@ -759,7 +825,7 @@ private fun LibraryItemVisual(
                     MediaCategory.FILE -> Icons.Outlined.InsertDriveFile
                 },
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(32.dp),
             )
         }
@@ -799,7 +865,7 @@ private fun itemTypeLabel(category: MediaCategory): String {
 
 private fun compatibilityStatusLabel(job: CompatibilityJob): String {
     if (job.streamable && job.status != CompatibilityStatus.READY) {
-        return "Ready to play • ${job.message}"
+        return "Ready to play | ${job.message}"
     }
     val prefix = when (job.status) {
         CompatibilityStatus.IDLE -> "Not prepared"
@@ -808,7 +874,7 @@ private fun compatibilityStatusLabel(job: CompatibilityJob): String {
         CompatibilityStatus.READY -> "Ready"
         CompatibilityStatus.FAILED -> "Unavailable"
     }
-    return "$prefix • ${job.message}"
+    return "$prefix | ${job.message}"
 }
 
 internal fun formatBytes(bytes: Long): String {

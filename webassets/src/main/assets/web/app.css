@@ -6,23 +6,11 @@
   --text: #0f172a;
   --text-secondary: #475569;
   --muted: #94a3b8;
-  --accent: #6ee7b7;
-  --accent-pressed: #34d399;
+  --accent: #7dd3fc;
+  --accent-pressed: #38bdf8;
   --accent-ink: #0f172a;
   --border: rgba(15, 23, 42, 0.08);
-  --plyr-color-main: #6ee7b7;
-  --plyr-font-family: "SF Pro Display", "Segoe UI Variable Display", "Aptos", system-ui, sans-serif;
-  --plyr-control-radius: 14px;
-  --plyr-video-control-background: #ffffff;
-  --plyr-video-controls-background: #ffffff;
-  --plyr-video-control-color-hover: #0f172a;
-  --plyr-audio-control-color-hover: #0f172a;
-  --plyr-range-fill-background: #6ee7b7;
-  --plyr-tooltip-background: #0f172a;
-  --plyr-tooltip-color: #f8fafc;
-  --plyr-menu-background: #ffffff;
-  --plyr-menu-color: #0f172a;
-  --plyr-menu-item-arrow-color: #34d399;
+  --plyr-color-main: #7dd3fc;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -34,20 +22,10 @@
     --text: #e5e7eb;
     --text-secondary: #9ca3af;
     --muted: #6b7280;
-    --accent: #6ee7b7;
-    --accent-pressed: #34d399;
+    --accent: #7dd3fc;
+    --accent-pressed: #38bdf8;
     --accent-ink: #0f172a;
     --border: rgba(255, 255, 255, 0.05);
-    --plyr-video-control-background: #111827;
-    --plyr-video-controls-background: #111827;
-    --plyr-video-control-color-hover: #0f172a;
-    --plyr-audio-control-color-hover: #0f172a;
-    --plyr-range-fill-background: #6ee7b7;
-    --plyr-tooltip-background: #111827;
-    --plyr-tooltip-color: #e5e7eb;
-    --plyr-menu-background: #111827;
-    --plyr-menu-color: #e5e7eb;
-    --plyr-menu-item-arrow-color: #34d399;
   }
 }
 
@@ -59,20 +37,10 @@ body.gs-theme-light {
   --text: #0f172a;
   --text-secondary: #475569;
   --muted: #94a3b8;
-  --accent: #6ee7b7;
-  --accent-pressed: #34d399;
+  --accent: #7dd3fc;
+  --accent-pressed: #38bdf8;
   --accent-ink: #0f172a;
   --border: rgba(15, 23, 42, 0.08);
-  --plyr-video-control-background: #ffffff;
-  --plyr-video-controls-background: #ffffff;
-  --plyr-video-control-color-hover: #0f172a;
-  --plyr-audio-control-color-hover: #0f172a;
-  --plyr-range-fill-background: #6ee7b7;
-  --plyr-tooltip-background: #0f172a;
-  --plyr-tooltip-color: #f8fafc;
-  --plyr-menu-background: #ffffff;
-  --plyr-menu-color: #0f172a;
-  --plyr-menu-item-arrow-color: #34d399;
 }
 
 body.gs-theme-dark {
@@ -83,20 +51,10 @@ body.gs-theme-dark {
   --text: #e5e7eb;
   --text-secondary: #9ca3af;
   --muted: #6b7280;
-  --accent: #6ee7b7;
-  --accent-pressed: #34d399;
+  --accent: #7dd3fc;
+  --accent-pressed: #38bdf8;
   --accent-ink: #0f172a;
   --border: rgba(255, 255, 255, 0.05);
-  --plyr-video-control-background: #111827;
-  --plyr-video-controls-background: #111827;
-  --plyr-video-control-color-hover: #0f172a;
-  --plyr-audio-control-color-hover: #0f172a;
-  --plyr-range-fill-background: #6ee7b7;
-  --plyr-tooltip-background: #111827;
-  --plyr-tooltip-color: #e5e7eb;
-  --plyr-menu-background: #111827;
-  --plyr-menu-color: #e5e7eb;
-  --plyr-menu-item-arrow-color: #34d399;
 }
 
 *,
@@ -691,7 +649,7 @@ input {
 }
 
 .gs-video-wrap .plyr,
-.gs-video-wrap video,
+.gs-video-wrap video.gs-native-video,
 .gs-preview {
   width: 100%;
   border-radius: 20px;
@@ -701,6 +659,12 @@ input {
 
 .gs-video-wrap .plyr {
   overflow: hidden;
+}
+
+.gs-video-wrap .plyr video {
+  border: 0;
+  border-radius: 0;
+  background: var(--bg);
 }
 
 .gs-video-wrap video.gs-native-video {
@@ -713,21 +677,27 @@ input {
   background: var(--bg);
 }
 
-.gs-video-wrap .plyr--video .plyr__controls,
-.gs-video-wrap .plyr--audio .plyr__controls {
-  background: var(--surface);
-  color: var(--text);
+.gs-video-wrap .plyr:fullscreen,
+.gs-video-wrap .plyr--fullscreen-fallback {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #000 !important;
 }
 
-.gs-video-wrap .plyr--video .plyr__control--overlaid {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  color: var(--text);
+.gs-video-wrap .plyr:fullscreen .plyr__video-wrapper,
+.gs-video-wrap .plyr--fullscreen-fallback .plyr__video-wrapper,
+.gs-video-wrap .plyr:fullscreen video,
+.gs-video-wrap .plyr--fullscreen-fallback video {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #000 !important;
 }
 
-.gs-video-wrap .plyr--video .plyr__control--overlaid:hover {
-  background: var(--accent);
-  color: var(--accent-ink);
+.gs-video-wrap .plyr:fullscreen .plyr__controls,
+.gs-video-wrap .plyr--fullscreen-fallback .plyr__controls {
+  padding-left: 16px;
+  padding-right: 16px;
+  padding-bottom: 16px;
 }
 
 .gs-preview,

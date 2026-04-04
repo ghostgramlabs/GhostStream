@@ -504,41 +504,6 @@ function hydrateVideoPlayer(item, options = {}) {
   if (!useNativePlayer && typeof window.Plyr === "function") {
     state.plyr = new window.Plyr(video, {
       iconUrl: "/plyr.svg",
-      controls: [
-        "play-large",
-        "rewind",
-        "play",
-        "fast-forward",
-        "progress",
-        "current-time",
-        "duration",
-        "mute",
-        "volume",
-        "captions",
-        "settings",
-        "pip",
-        "airplay",
-        "fullscreen",
-      ],
-      settings: ["captions", "speed"],
-      captions: {
-        active: Boolean(item.subtitleUrl),
-        update: true,
-      },
-      keyboard: {
-        focused: true,
-        global: false,
-      },
-      fullscreen: {
-        enabled: true,
-        iosNative: true,
-      },
-      storage: {
-        enabled: false,
-      },
-      clickToPlay: true,
-      hideControls: false,
-      ratio: "16:9",
     });
     state.plyrItemId = item.id;
   }

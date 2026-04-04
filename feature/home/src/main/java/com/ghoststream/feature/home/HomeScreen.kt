@@ -166,12 +166,12 @@ fun HomeScreen(
     if (showPresetDialog) {
         AlertDialog(
             onDismissRequest = { showPresetDialog = false },
-            title = { Text("Save collection") },
+            title = { Text("Save current share") },
             text = {
                 OutlinedTextField(
                     value = presetName,
                     onValueChange = { presetName = it },
-                    label = { Text("Collection name") },
+                    label = { Text("Saved share name") },
                     singleLine = true,
                 )
             },
@@ -183,7 +183,7 @@ fun HomeScreen(
                     },
                     enabled = presetName.isNotBlank(),
                 ) {
-                    Text("Save")
+                    Text("Save share")
                 }
             },
             dismissButton = {
@@ -214,7 +214,7 @@ private fun TopBrandHeader(
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "Share files on your local network",
+                text = "Private sharing on your Wi-Fi or hotspot",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.tertiary,
             )
@@ -230,7 +230,12 @@ private fun TopBrandHeader(
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Outlined.Settings, contentDescription = "Settings", modifier = Modifier.size(18.dp))
+                Icon(
+                    Icons.Outlined.Settings,
+                    contentDescription = "Settings",
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
             }
         }
     }
@@ -437,7 +442,7 @@ private fun ActionTile(
                     .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Spacer(modifier = Modifier.height(12.dp))
             Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
@@ -474,7 +479,11 @@ private fun SupportPanel(
                 Column(modifier = Modifier.weight(1f)) {
                     Text("Connection", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                 }
-                OutlinedButton(onClick = onRefreshDiagnostics, shape = RoundedCornerShape(16.dp)) {
+                OutlinedButton(
+                    onClick = onRefreshDiagnostics,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                ) {
                     Text("Refresh")
                 }
             }
@@ -497,12 +506,13 @@ private fun SupportPanel(
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     SupportRow(
                         icon = Icons.Outlined.OpenInBrowser,
-                        title = "Nearby app optional",
-                        detail = "QR and link work in any browser. The GhostStream app is just a shortcut.",
+                        title = "GhostStream app is optional",
+                        detail = "If the other device also has GhostStream, it can appear here. Everyone else can still scan the QR code or open the browser link.",
                     )
                     OutlinedButton(
                         onClick = onRefreshDiagnostics,
                         shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
                     ) {
                         Text("Refresh nearby")
                     }
@@ -514,16 +524,17 @@ private fun SupportPanel(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Nearby GhostStream devices", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text("Open in the GhostStream app", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         OutlinedButton(
                             onClick = onRefreshDiagnostics,
                             shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
                         ) {
                             Text("Refresh nearby")
                         }
                     }
                     Text(
-                        "Only useful when the other device also has GhostStream.",
+                        "This is only for devices with GhostStream installed. The browser link and QR code still work for everyone else.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -557,7 +568,7 @@ private fun SupportRow(
                 .padding(horizontal = 14.dp, vertical = 13.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
@@ -591,7 +602,7 @@ private fun NearbyDeviceRow(
                 Text(device.serviceName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = device.friendlyUrl ?: "Ready on this network",
+                    text = device.friendlyUrl ?: "Ready to open in the GhostStream app",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -602,18 +613,23 @@ private fun NearbyDeviceRow(
                 ) {
                     MinimalChip(label = "Available", showAccentDot = true)
                     if (device.authRequired) {
-                        MinimalChip(label = "PIN")
+                        MinimalChip(label = "PIN needed")
                     }
                 }
             }
             Spacer(modifier = Modifier.width(12.dp))
-            OutlinedButton(onClick = onOpen, shape = RoundedCornerShape(16.dp), enabled = !isConnecting) {
+            OutlinedButton(
+                onClick = onOpen,
+                shape = RoundedCornerShape(16.dp),
+                enabled = !isConnecting,
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+            ) {
                 if (isConnecting) {
                     CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                 } else {
                     Icon(Icons.Outlined.OpenInBrowser, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Open")
+                    Text("Open in app")
                 }
             }
         }
@@ -643,10 +659,10 @@ private fun SharePresetsCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Collections", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                    Text("Saved shares", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        "Save a set of files so you can use it again later.",
+                        "Reuse the same group of files later. To save only a few files, open Shared library and choose them there.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -655,14 +671,15 @@ private fun SharePresetsCard(
                     onClick = onSavePreset,
                     enabled = canSavePreset,
                     shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
                 ) {
-                    Text("Save setup")
+                    Text("Save current share")
                 }
             }
 
             if (presets.isEmpty()) {
                 Text(
-                    text = "No collections yet.",
+                    text = "No saved shares yet.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -702,19 +719,37 @@ private fun SharePresetRow(
                 val stacked = maxWidth < 280.dp
                 if (stacked) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        OutlinedButton(onClick = onApply, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
-                            Text("Use")
+                        OutlinedButton(
+                            onClick = onApply,
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                        ) {
+                            Text("Open")
                         }
-                        OutlinedButton(onClick = onDelete, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+                        OutlinedButton(
+                            onClick = onDelete,
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                        ) {
                             Text("Delete")
                         }
                     }
                 } else {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        OutlinedButton(onClick = onApply, shape = RoundedCornerShape(16.dp)) {
-                            Text("Use")
+                        OutlinedButton(
+                            onClick = onApply,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                        ) {
+                            Text("Open")
                         }
-                        OutlinedButton(onClick = onDelete, shape = RoundedCornerShape(16.dp)) {
+                        OutlinedButton(
+                            onClick = onDelete,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
+                        ) {
                             Text("Delete")
                         }
                     }

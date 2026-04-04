@@ -167,10 +167,10 @@ class MainViewModel(
         viewModelScope.launch {
             container.sharePresetStore.saveCurrentSelection(name, container.storageRepository.libraryState.value)
                 .onSuccess { preset ->
-                    _events.emit(AppEvent.ShowMessage("Saved \"${preset.name}\" to Collections."))
+                    _events.emit(AppEvent.ShowMessage("Saved share \"${preset.name}\"."))
                 }
                 .onFailure {
-                    _events.emit(AppEvent.ShowMessage(it.message ?: "Unable to save this collection right now."))
+                    _events.emit(AppEvent.ShowMessage(it.message ?: "Unable to save this share right now."))
                 }
         }
     }
@@ -182,9 +182,9 @@ class MainViewModel(
                 selectedItemIds = itemIds,
                 libraryState = container.storageRepository.libraryState.value,
             ).onSuccess { preset ->
-                _events.emit(AppEvent.ShowMessage("Saved collection \"${preset.name}\"."))
+                _events.emit(AppEvent.ShowMessage("Saved share \"${preset.name}\"."))
             }.onFailure {
-                _events.emit(AppEvent.ShowMessage(it.message ?: "Unable to save this collection right now."))
+                _events.emit(AppEvent.ShowMessage(it.message ?: "Unable to save this share right now."))
             }
         }
     }
@@ -193,10 +193,10 @@ class MainViewModel(
         viewModelScope.launch {
             container.sharePresetStore.applyPreset(presetId, container.storageRepository)
                 .onSuccess { presetState ->
-                    _events.emit(AppEvent.ShowMessage("Collection ready with ${presetState.summary.totalItems} items."))
+                    _events.emit(AppEvent.ShowMessage("Saved share ready with ${presetState.summary.totalItems} items."))
                 }
                 .onFailure {
-                    _events.emit(AppEvent.ShowMessage(it.message ?: "Unable to open that collection right now."))
+                    _events.emit(AppEvent.ShowMessage(it.message ?: "Unable to open that saved share right now."))
                 }
         }
     }
@@ -204,7 +204,7 @@ class MainViewModel(
     fun deletePreset(presetId: String) {
         viewModelScope.launch {
             container.sharePresetStore.deletePreset(presetId)
-            _events.emit(AppEvent.ShowMessage("Collection removed."))
+            _events.emit(AppEvent.ShowMessage("Saved share removed."))
         }
     }
 
