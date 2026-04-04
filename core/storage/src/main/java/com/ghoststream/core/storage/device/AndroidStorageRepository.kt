@@ -1,9 +1,12 @@
 package com.ghoststream.core.storage.device
 
 import android.content.ContentResolver
+import android.content.ContentUris
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
+import android.os.Build
+import android.os.Bundle
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import androidx.core.net.toUri
@@ -152,6 +155,7 @@ class AndroidStorageRepository(
                 mimePrefix = "image/",
                 selection = "${MediaStore.MediaColumns.DATE_ADDED} >= ?",
                 args = arrayOf((nowSeconds - daySeconds).toString()),
+                sortColumn = MediaStore.MediaColumns.DATE_ADDED,
             )?.let(::add)
 
             queryMediaStoreGroup(
@@ -162,6 +166,7 @@ class AndroidStorageRepository(
                 mimePrefix = "image/",
                 selection = "${MediaStore.MediaColumns.DATE_ADDED} >= ?",
                 args = arrayOf((nowSeconds - 7 * daySeconds).toString()),
+                sortColumn = MediaStore.MediaColumns.DATE_ADDED,
             )?.let(::add)
 
             queryMediaStoreGroup(
@@ -172,6 +177,7 @@ class AndroidStorageRepository(
                 mimePrefix = "video/",
                 selection = "${MediaStore.MediaColumns.DATE_ADDED} >= ?",
                 args = arrayOf((nowSeconds - 7 * daySeconds).toString()),
+                sortColumn = MediaStore.MediaColumns.DATE_ADDED,
             )?.let(::add)
 
             queryMediaStoreGroup(
@@ -182,6 +188,7 @@ class AndroidStorageRepository(
                 mimePrefix = null,
                 selection = "${MediaStore.MediaColumns.SIZE} >= ?",
                 args = arrayOf((150L * 1024L * 1024L).toString()),
+                sortColumn = MediaStore.MediaColumns.SIZE,
             )?.let(::add)
 
             queryMediaStoreGroup(
@@ -192,6 +199,7 @@ class AndroidStorageRepository(
                 mimePrefix = null,
                 selection = "${MediaStore.MediaColumns.DATE_ADDED} >= ?",
                 args = arrayOf((nowSeconds - 3 * daySeconds).toString()),
+                sortColumn = MediaStore.MediaColumns.DATE_ADDED,
             )?.let(::add)
         }.filter { it.itemCount > 0 }
     }
@@ -333,20 +341,16 @@ class AndroidStorageRepository(
         mimePrefix: String?,
         selection: String,
         args: Array<String>,
+        sortColumn: String,
     ): SmartSelectionGroup? {
         return runCatching {
             val uris = mutableListOf<String>()
             var totalBytes = 0L
-            context.contentResolver.query(
-                collection,
-                arrayOf(
-                    MediaStore.MediaColumns._ID,
-                    MediaStore.MediaColumns.SIZE,
-                    MediaStore.MediaColumns.MIME_TYPE,
-                ),
-                selection,
-                args,
-                "${MediaStore.MediaColumns.DATE_ADDED} DESC LIMIT 60",
+            querySmartGroupCursor(
+                collection = collection,
+                selection = selection,
+                args = args,
+                sortColumn = sortColumn,
             )?.use { cursor ->
                 val idIndex = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
                 val sizeIndex = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.SIZE)
@@ -354,20 +358,58 @@ class AndroidStorageRepository(
                 while (cursor.moveToNext()) {
                     val itemMime = cursor.getString(mimeIndex)
                     if (mimePrefix != null && itemMime?.startsWith(mimePrefix) != true) continue
-                    val contentUri = Uri.withAppendedPath(collection, cursor.getLong(idIndex).toString())
+                    val contentUri = ContentUris.withAppendedId(collection, cursor.getLong(idIndex))
                     uris += contentUri.toString()
                     totalBytes += cursor.getLong(sizeIndex)
                 }
             }
-            SmartSelectionGroup(
-                id = id,
-                title = title,
-                description = description,
-                itemCount = uris.size,
-                totalSizeBytes = totalBytes,
-                uris = uris,
-            )
+            if (uris.isEmpty()) {
+                null
+            } else {
+                SmartSelectionGroup(
+                    id = id,
+                    title = title,
+                    description = description,
+                    itemCount = uris.size,
+                    totalSizeBytes = totalBytes,
+                    uris = uris,
+                )
+            }
         }.getOrNull()
+    }
+
+    private fun querySmartGroupCursor(
+        collection: Uri,
+        selection: String,
+        args: Array<String>,
+        sortColumn: String,
+    ): Cursor? {
+        val projection = arrayOf(
+            MediaStore.MediaColumns._ID,
+            MediaStore.MediaColumns.SIZE,
+            MediaStore.MediaColumns.MIME_TYPE,
+        )
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val queryArgs = Bundle().apply {
+                putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
+                putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, args)
+                putStringArray(ContentResolver.QUERY_ARG_SORT_COLUMNS, arrayOf(sortColumn))
+                putInt(
+                    ContentResolver.QUERY_ARG_SORT_DIRECTION,
+                    ContentResolver.QUERY_SORT_DIRECTION_DESCENDING,
+                )
+                putInt(ContentResolver.QUERY_ARG_LIMIT, 60)
+            }
+            context.contentResolver.query(collection, projection, queryArgs, null)
+        } else {
+            context.contentResolver.query(
+                collection,
+                projection,
+                selection,
+                args,
+                "$sortColumn DESC",
+            )
+        }
     }
 
     private fun isUriAvailable(uri: Uri): Boolean {

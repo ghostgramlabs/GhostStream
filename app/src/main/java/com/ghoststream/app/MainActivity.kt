@@ -11,6 +11,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
@@ -99,6 +100,7 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
     val clipboardManager = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
     var pendingStartService by remember { mutableStateOf(false) }
+    var pendingBatchSelectNavigation by remember { mutableStateOf(false) }
     var launchHandled by remember { mutableStateOf(false) }
     var lastSessionMessage by remember { mutableStateOf<String?>(null) }
     val startForegroundSharingService = remember(context, viewModel) {
@@ -122,6 +124,41 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
             }
         }
         pendingStartService = false
+    }
+    val batchMediaPermissionLauncher = rememberLauncherForActivityResult(RequestMultiplePermissions()) { _ ->
+        val hasAccess = hasBatchSelectionMediaAccess(context)
+        if (hasAccess) {
+            viewModel.loadSmartGroups()
+            if (pendingBatchSelectNavigation) {
+                navController.navigate(Routes.BatchSelect) {
+                    launchSingleTop = true
+                }
+            }
+        } else {
+            scope.launch {
+                snackbarHostState.showSnackbar("Allow Photos, Videos, or Music access to use Smart Picks. You can still add files manually anytime.")
+            }
+        }
+        pendingBatchSelectNavigation = false
+    }
+    val openBatchSelect = {
+        if (hasBatchSelectionMediaAccess(context)) {
+            viewModel.loadSmartGroups()
+            navController.navigate(Routes.BatchSelect) {
+                launchSingleTop = true
+            }
+        } else {
+            pendingBatchSelectNavigation = true
+            batchMediaPermissionLauncher.launch(requiredBatchSelectionPermissions())
+        }
+    }
+    val requestBatchSelectAccess = {
+        if (hasBatchSelectionMediaAccess(context)) {
+            viewModel.loadSmartGroups()
+        } else {
+            pendingBatchSelectNavigation = false
+            batchMediaPermissionLauncher.launch(requiredBatchSelectionPermissions())
+        }
     }
 
     LaunchedEffect(uiState.isReady, uiState.settings.onboardingCompleted) {
@@ -253,17 +290,23 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
                     libraryState = uiState.libraryState,
                     sessionState = uiState.sessionState,
                     recentSessions = uiState.recentSessions,
+                    sharePresets = uiState.sharePresets,
+                    connectionDiagnostics = uiState.connectionDiagnostics,
                     nearbyDiscoveryState = uiState.nearbyDiscoveryState,
                     connectingNearbyDeviceId = uiState.connectingNearbyDeviceId,
                     isStartingShare = uiState.isStartingShare,
                     onStartSharing = viewModel::requestStartSharing,
+                    onSavePreset = viewModel::saveCurrentAsPreset,
+                    onApplyPreset = viewModel::applyPreset,
+                    onDeletePreset = viewModel::deletePreset,
+                    onRefreshDiagnostics = {
+                        viewModel.refreshNetwork()
+                        viewModel.startNearbyDiscovery()
+                    },
                     onOpenNearbyDevice = viewModel::openNearbyDevice,
                     onAddFiles = { navController.navigate(Routes.AddFiles) },
                     onAddFolder = { navController.navigate(Routes.AddFolder) },
-                    onBatchSelect = {
-                        viewModel.loadSmartGroups()
-                        navController.navigate(Routes.BatchSelect)
-                    },
+                    onBatchSelect = openBatchSelect,
                     onOpenLibrary = { navController.navigate(Routes.Library) },
                     onOpenSettings = { navController.navigate(Routes.Settings) },
                     modifier = Modifier.padding(innerPadding),
@@ -273,14 +316,13 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
                 SharedLibraryScreen(
                     libraryState = uiState.libraryState,
                     compatibilityJobs = uiState.compatibilityJobs,
+                    onPrepareItem = viewModel::requestPrepareItem,
+                    onSavePresetSelection = viewModel::saveSelectedItemsAsPreset,
                     onRemoveItem = viewModel::removeItem,
                     onRemoveFolder = viewModel::removeFolder,
                     onOpenAddFiles = { navController.navigate(Routes.AddFiles) },
                     onOpenAddFolder = { navController.navigate(Routes.AddFolder) },
-                    onOpenBatchSelect = {
-                        viewModel.loadSmartGroups()
-                        navController.navigate(Routes.BatchSelect)
-                    },
+                    onOpenBatchSelect = openBatchSelect,
                     modifier = Modifier.padding(innerPadding),
                 )
             }
@@ -299,9 +341,19 @@ private fun GhostStreamApp(viewModel: MainViewModel) {
                 )
             }
             composable(Routes.BatchSelect) {
+                val hasMediaAccess = hasBatchSelectionMediaAccess(context)
+                LaunchedEffect(hasMediaAccess) {
+                    if (hasMediaAccess) {
+                        viewModel.loadSmartGroups()
+                    }
+                }
                 BatchSelectRoute(
                     groups = uiState.smartGroups,
+                    isLoading = uiState.smartGroupsLoading,
+                    hasMediaAccess = hasMediaAccess,
                     onBack = { navController.popBackStack() },
+                    onRequestAccess = requestBatchSelectAccess,
+                    onRefresh = viewModel::loadSmartGroups,
                     onAddGroup = viewModel::addSmartSelection,
                     modifier = Modifier.padding(innerPadding),
                 )
@@ -427,9 +479,9 @@ private fun SplashRoute() {
                 modifier = Modifier.size(88.dp),
             )
             Spacer(modifier = Modifier.height(18.dp))
-            Text("GhostStream", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
+            Text("GhostStream: Share & Stream", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(6.dp))
-            Text("File Transfer & Stream", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Private local media hub", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -458,4 +510,33 @@ private object Routes {
     const val Session = "session"
     const val Settings = "settings"
     const val Help = "help"
+}
+
+private fun requiredBatchSelectionPermissions(): Array<String> {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        buildList {
+            add(Manifest.permission.READ_MEDIA_IMAGES)
+            add(Manifest.permission.READ_MEDIA_VIDEO)
+            add(Manifest.permission.READ_MEDIA_AUDIO)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                add(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
+            }
+        }.toTypedArray()
+    } else {
+        arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+    }
+}
+
+private fun hasBatchSelectionMediaAccess(context: android.content.Context): Boolean {
+    val granted = requiredBatchSelectionPermissions().any { permission ->
+        ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED
+    }
+    if (granted) {
+        return true
+    }
+    return Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+        ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED,
+        ) == PackageManager.PERMISSION_GRANTED
 }

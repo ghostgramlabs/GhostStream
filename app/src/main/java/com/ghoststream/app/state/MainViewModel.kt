@@ -10,8 +10,10 @@ import com.ghoststream.core.model.LibraryState
 import com.ghoststream.core.model.NearbyDevice
 import com.ghoststream.core.model.NearbyDiscoveryState
 import com.ghoststream.core.model.SessionState
+import com.ghoststream.core.model.SharePreset
 import com.ghoststream.core.model.SmartSelectionGroup
 import com.ghoststream.core.model.RecentSession
+import com.ghoststream.core.model.buildConnectionDiagnostics
 import com.ghoststream.core.media.CompatibilityJob
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -43,6 +45,7 @@ class MainViewModel(
         container.storageRepository.libraryState,
         container.sessionManager.sessionState,
         container.sessionManager.recentSessions,
+        container.sharePresetStore.presets,
         smartGroups,
         smartGroupsLoading,
         container.compatibilityPipeline.jobs,
@@ -55,22 +58,29 @@ class MainViewModel(
         val library = values[1] as LibraryState
         val session = values[2] as SessionState
         val recent = values[3] as List<RecentSession>
-        val groups = values[4] as List<SmartSelectionGroup>
-        val loading = values[5] as Boolean
-        val compatibilityJobs = values[6] as Map<String, CompatibilityJob>
-        val nearbyDiscoveryState = values[7] as NearbyDiscoveryState
-        val pendingShare = values[8] as Boolean
-        val isStartingShare = values[9] as Boolean
-        val connectingNearbyId = values[10] as String?
+        val presets = values[4] as List<SharePreset>
+        val groups = values[5] as List<SmartSelectionGroup>
+        val loading = values[6] as Boolean
+        val compatibilityJobs = values[7] as Map<String, CompatibilityJob>
+        val nearbyDiscoveryState = values[8] as NearbyDiscoveryState
+        val pendingShare = values[9] as Boolean
+        val isStartingShare = values[10] as Boolean
+        val connectingNearbyId = values[11] as String?
         MainUiState(
             isReady = true,
             settings = settings,
             libraryState = library,
             sessionState = session,
             recentSessions = recent,
+            sharePresets = presets,
             smartGroups = groups,
             smartGroupsLoading = loading,
             compatibilityJobs = compatibilityJobs,
+            connectionDiagnostics = buildConnectionDiagnostics(
+                libraryState = library,
+                sessionState = session,
+                nearbyDiscoveryState = nearbyDiscoveryState,
+            ),
             nearbyDiscoveryState = nearbyDiscoveryState,
             pendingShareAfterNetworkReady = pendingShare,
             isStartingShare = isStartingShare,
@@ -103,8 +113,18 @@ class MainViewModel(
 
     fun loadSmartGroups() {
         viewModelScope.launch {
+            if (smartGroupsLoading.value) return@launch
             smartGroupsLoading.value = true
-            smartGroups.value = container.storageRepository.loadSmartSelectionGroups()
+            container.debugLogRepository.log("MainViewModel", "loadSmartGroups started")
+            runCatching {
+                container.storageRepository.loadSmartSelectionGroups()
+            }.onSuccess { groups ->
+                smartGroups.value = groups
+                container.debugLogRepository.log("MainViewModel", "loadSmartGroups completed count=${groups.size}")
+            }.onFailure { error ->
+                smartGroups.value = emptyList()
+                container.debugLogRepository.log("MainViewModel", "loadSmartGroups failed", error)
+            }
             smartGroupsLoading.value = false
         }
     }
@@ -139,6 +159,51 @@ class MainViewModel(
     fun removeFolder(folderId: String) {
         viewModelScope.launch {
             container.storageRepository.removeFolder(folderId)
+        }
+    }
+
+    fun saveCurrentAsPreset(name: String) {
+        viewModelScope.launch {
+            container.sharePresetStore.saveCurrentSelection(name, container.storageRepository.libraryState.value)
+                .onSuccess { preset ->
+                    _events.emit(AppEvent.ShowMessage("Saved \"${preset.name}\" to Saved Shares."))
+                }
+                .onFailure {
+                    _events.emit(AppEvent.ShowMessage(it.message ?: "Unable to save this to Saved Shares right now."))
+                }
+        }
+    }
+
+    fun saveSelectedItemsAsPreset(name: String, itemIds: Collection<String>) {
+        viewModelScope.launch {
+            container.sharePresetStore.saveSelectedItems(
+                name = name,
+                selectedItemIds = itemIds,
+                libraryState = container.storageRepository.libraryState.value,
+            ).onSuccess { preset ->
+                _events.emit(AppEvent.ShowMessage("Saved selected files as \"${preset.name}\"."))
+            }.onFailure {
+                _events.emit(AppEvent.ShowMessage(it.message ?: "Unable to save those files right now."))
+            }
+        }
+    }
+
+    fun applyPreset(presetId: String) {
+        viewModelScope.launch {
+            container.sharePresetStore.applyPreset(presetId, container.storageRepository)
+                .onSuccess { presetState ->
+                    _events.emit(AppEvent.ShowMessage("Opened saved share with ${presetState.summary.totalItems} items."))
+                }
+                .onFailure {
+                    _events.emit(AppEvent.ShowMessage(it.message ?: "Unable to load that saved share right now."))
+                }
+        }
+    }
+
+    fun deletePreset(presetId: String) {
+        viewModelScope.launch {
+            container.sharePresetStore.deletePreset(presetId)
+            _events.emit(AppEvent.ShowMessage("Saved share removed."))
         }
     }
 
@@ -299,6 +364,18 @@ class MainViewModel(
             )
             _events.emit(AppEvent.OpenExternalUrl(device.launchUrl))
             connectingNearbyDeviceId.value = null
+        }
+    }
+
+    fun requestPrepareItem(itemId: String) {
+        viewModelScope.launch {
+            val item = container.storageRepository.findItemById(itemId)
+            if (item == null) {
+                _events.emit(AppEvent.ShowMessage("This file is no longer available on your device."))
+                return@launch
+            }
+            container.compatibilityPipeline.requestPreparation(item)
+            _events.emit(AppEvent.ShowMessage("Preparing ${item.displayName} for smoother browser playback."))
         }
     }
 

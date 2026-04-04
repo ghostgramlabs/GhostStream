@@ -188,7 +188,7 @@ class KtorGhostStreamServer(
                 }
                 call.respond(
                     BrowserBootstrap(
-                        title = "GhostStream",
+                        title = "GhostStream: Share & Stream",
                         subtitle = "Stream & share files offline",
                         authEnabled = state.authEnabled,
                         sessionUrl = buildSessionAccessUrl(
@@ -464,7 +464,7 @@ class KtorGhostStreamServer(
             return
         }
         val html = assetLoader.readText("web/index.html")
-            .replace("__SESSION_TITLE__", "GhostStream")
+            .replace("__SESSION_TITLE__", "GhostStream: Share & Stream")
             .replace("__SESSION_SUBTITLE__", "Stream & share files offline")
         respondText(html, ContentType.Text.Html)
     }

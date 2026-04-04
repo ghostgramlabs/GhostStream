@@ -77,13 +77,12 @@ fun SettingsScreen(
 
         item {
             SettingsGroup(title = "Sharing") {
-                SettingsToggleRow("Keep screen awake", "Prevents the host screen from locking while you monitor a live session.", settings.keepScreenAwake, onToggleKeepScreenAwake)
-                SettingsToggleRow("Haptic on connect", "Vibrate when a nearby browser connects for the first time.", settings.hapticOnDeviceConnect, onToggleHaptics)
-                SettingsToggleRow("Show transfer speed", "Display live throughput on the sharing screen.", settings.showTransferSpeed, onToggleTransferSpeed)
-                SettingsToggleRow("Show recent sessions", "Keep a lightweight local history of finished shares.", settings.showRecentSessions, onToggleRecentSessions)
-                ManualPortRow(currentPort = settings.preferredPort.toString(), onPortChanged = onPreferredPortChanged)
+                SettingsToggleRow("Keep screen awake", "Keep the host screen on while you watch a live session.", settings.keepScreenAwake, onToggleKeepScreenAwake)
+                SettingsToggleRow("Vibrate when someone connects", "Adds a small haptic when a nearby browser connects for the first time.", settings.hapticOnDeviceConnect, onToggleHaptics)
+                SettingsToggleRow("Show transfer speed", "Show live sharing speed on the session screen.", settings.showTransferSpeed, onToggleTransferSpeed)
+                SettingsToggleRow("Show recent shares", "Keep a lightweight local history of finished shares.", settings.showRecentSessions, onToggleRecentSessions)
                 SettingsChoiceRow(
-                    title = "Auto-stop after inactivity",
+                    title = "Auto-stop when idle",
                     value = when (settings.autoStop) {
                         AutoStopOption.NEVER -> "Never"
                         AutoStopOption.MINUTES_15 -> "15 min"
@@ -105,24 +104,30 @@ fun SettingsScreen(
 
         item {
             SettingsGroup(title = "Security") {
-                SettingsToggleRow("Require session PIN", "Browsers must enter a session code before opening your library.", settings.requireSessionPin, onToggleRequirePin)
+                SettingsToggleRow("Lock with PIN", "Browsers must enter a code before opening your library.", settings.requireSessionPin, onToggleRequirePin)
                 if (settings.requireSessionPin) {
-                    SettingsToggleRow("Auto-generate PIN", "Create a new random PIN for each share session.", settings.autoGeneratePin, onToggleAutoGeneratePin)
+                    SettingsToggleRow("Use a new PIN each time", "Create a fresh random PIN for each share session.", settings.autoGeneratePin, onToggleAutoGeneratePin)
                     if (!settings.autoGeneratePin) {
                         ManualPinRow(currentPin = settings.manualPin, onPinChanged = onManualPinChanged)
                     }
                 }
-                SettingsToggleRow("Clear auth on stop", "Expire every browser session as soon as sharing ends.", settings.clearAuthOnStop, onToggleClearAuthOnStop)
-                SettingsToggleRow("Ghost Mode", "Wipe temporary playback assets, auth tokens, and session traces on stop.", settings.ghostMode, onToggleGhostMode)
             }
         }
 
         item {
-            SettingsGroup(title = "Browser UI") {
-                SettingsToggleRow("Force dark theme", "Keep the receiver browser experience in the GhostStream dark look.", settings.forceDarkBrowserTheme, onToggleDarkBrowserTheme)
+            SettingsGroup(title = "Browser Look") {
+                SettingsToggleRow("Use dark browser theme", "Keep the receiver browser experience in the GhostStream dark look.", settings.forceDarkBrowserTheme, onToggleDarkBrowserTheme)
                 SettingsToggleRow("Show thumbnails", "Generate quick visual previews for photos and videos.", settings.showThumbnails, onToggleShowThumbnails)
-                SettingsToggleRow("Larger TV-friendly cards", "Use bigger spacing and cards for TV browsers and distance viewing.", settings.largeTvCards, onToggleLargeTvCards)
-                SettingsToggleRow("Prominent download buttons", "Keep file download actions visible alongside playback actions.", settings.prominentDownloadButton, onToggleProminentDownloads)
+                SettingsToggleRow("Larger TV layout", "Use bigger spacing and cards for TV browsers and distance viewing.", settings.largeTvCards, onToggleLargeTvCards)
+                SettingsToggleRow("Show download buttons clearly", "Keep file download actions easy to spot beside playback.", settings.prominentDownloadButton, onToggleProminentDownloads)
+            }
+        }
+
+        item {
+            SettingsGroup(title = "Advanced") {
+                SettingsToggleRow("Sign browsers out when sharing ends", "End every browser session as soon as sharing stops.", settings.clearAuthOnStop, onToggleClearAuthOnStop)
+                SettingsToggleRow("Erase temporary playback files", "Remove temporary prepared playback files when sharing stops.", settings.ghostMode, onToggleGhostMode)
+                ManualPortRow(currentPort = settings.preferredPort.toString(), onPortChanged = onPreferredPortChanged)
             }
         }
 
@@ -174,8 +179,8 @@ fun HelpScreen(modifier: Modifier = Modifier) {
             colors = CardDefaults.cardColors(containerColor = Color(0xFF101826)),
         ) {
             Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text("About GhostStream", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-                Text("GhostStream turns your phone into a private local media server for nearby devices.", style = MaterialTheme.typography.bodyLarge)
+                Text("About GhostStream: Share & Stream", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+                Text("GhostStream: Share & Stream turns your phone into a private local media server for nearby devices.", style = MaterialTheme.typography.bodyLarge)
                 Text("It does not create cloud accounts, remote internet links, or screen mirroring sessions.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("Some formats may need compatibility preparation before smooth browser playback. The original file download stays available.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("Nearby and offline only. The receiver only needs a browser.", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -234,7 +239,7 @@ private fun ManualPinRow(currentPin: String, onPinChanged: (String) -> Unit) {
         modifier = Modifier
             .padding(horizontal = 18.dp, vertical = 8.dp)
             .fillMaxWidth(),
-        label = { Text("Custom PIN") },
+        label = { Text("Your PIN") },
         placeholder = { Text("Enter 4-6 digit PIN") },
         shape = RoundedCornerShape(14.dp),
         singleLine = true,
@@ -252,11 +257,11 @@ private fun ManualPortRow(currentPort: String, onPortChanged: (String) -> Unit) 
         modifier = Modifier
             .padding(horizontal = 18.dp, vertical = 8.dp)
             .fillMaxWidth(),
-        label = { Text("Session port") },
+        label = { Text("Preferred sharing port") },
         placeholder = { Text("43183") },
         supportingText = {
             Text(
-                text = "GhostStream will try to reuse this local port for each sharing session.",
+                text = "GhostStream will try to reuse this local port for each sharing session. Most people can leave this alone.",
                 style = MaterialTheme.typography.bodySmall,
             )
         },

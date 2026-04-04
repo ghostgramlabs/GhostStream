@@ -3,10 +3,12 @@ package com.ghoststream.app.state
 import android.net.Uri
 import com.ghoststream.core.media.CompatibilityJob
 import com.ghoststream.core.model.AppSettings
+import com.ghoststream.core.model.ConnectionDiagnostics
 import com.ghoststream.core.model.LibraryState
 import com.ghoststream.core.model.NearbyDiscoveryState
 import com.ghoststream.core.model.RecentSession
 import com.ghoststream.core.model.SessionState
+import com.ghoststream.core.model.SharePreset
 import com.ghoststream.core.model.SmartSelectionGroup
 
 data class MainUiState(
@@ -15,9 +17,11 @@ data class MainUiState(
     val libraryState: LibraryState = LibraryState(),
     val sessionState: SessionState = SessionState(),
     val recentSessions: List<RecentSession> = emptyList(),
+    val sharePresets: List<SharePreset> = emptyList(),
     val smartGroups: List<SmartSelectionGroup> = emptyList(),
     val smartGroupsLoading: Boolean = false,
     val compatibilityJobs: Map<String, CompatibilityJob> = emptyMap(),
+    val connectionDiagnostics: ConnectionDiagnostics = ConnectionDiagnostics(summary = "", checks = emptyList()),
     val nearbyDiscoveryState: NearbyDiscoveryState = NearbyDiscoveryState(),
     val pendingShareAfterNetworkReady: Boolean = false,
     val isStartingShare: Boolean = false,

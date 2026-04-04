@@ -3,6 +3,7 @@ package com.ghoststream.feature.library
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -26,6 +27,7 @@ import androidx.compose.material.icons.outlined.Movie
 import androidx.compose.material.icons.outlined.MusicNote
 import androidx.compose.material.icons.outlined.Photo
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -35,9 +37,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -63,6 +68,8 @@ import kotlin.math.roundToInt
 fun SharedLibraryScreen(
     libraryState: LibraryState,
     compatibilityJobs: Map<String, CompatibilityJob>,
+    onPrepareItem: (String) -> Unit,
+    onSavePresetSelection: (String, Collection<String>) -> Unit,
     onRemoveItem: (String) -> Unit,
     onRemoveFolder: (String) -> Unit,
     onOpenAddFiles: () -> Unit,
@@ -74,6 +81,10 @@ fun SharedLibraryScreen(
     var selectedCategory by rememberSaveable { mutableStateOf("All") }
     var sortOption by rememberSaveable { mutableStateOf("Newest") }
     var sortMenuExpanded by remember { mutableStateOf(false) }
+    var selectionMode by rememberSaveable { mutableStateOf(false) }
+    var showPresetDialog by rememberSaveable { mutableStateOf(false) }
+    var presetName by rememberSaveable { mutableStateOf("") }
+    val selectedItemIds = remember { mutableStateListOf<String>() }
 
     val categories = listOf("All", "Videos", "Photos", "Music", "Files")
     val filteredItems = libraryState.items
@@ -109,7 +120,7 @@ fun SharedLibraryScreen(
             Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
                 Text("Shared Library", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.SemiBold)
                 Spacer(modifier = Modifier.height(6.dp))
-                Text("Curate everything available to nearby browsers.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Curate what nearby browsers can see, and save exact file picks as saved shares.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
@@ -122,6 +133,28 @@ fun SharedLibraryScreen(
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF121823)),
             ) {
                 Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    if (selectionMode) {
+                        Surface(
+                            shape = RoundedCornerShape(18.dp),
+                            color = Color(0xFF171E26),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
+                        ) {
+                            Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+                                Text(
+                                    "Saved-share selection",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    "Choose the exact files you want, then save that smaller collection as a saved share.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+
                     OutlinedTextField(
                         value = query,
                         onValueChange = { query = it },
@@ -163,7 +196,59 @@ fun SharedLibraryScreen(
                         }
                         OutlinedButton(onClick = onOpenAddFiles, shape = RoundedCornerShape(16.dp)) { Text("Add files") }
                         OutlinedButton(onClick = onOpenAddFolder, shape = RoundedCornerShape(16.dp)) { Text("Add folder") }
-                        OutlinedButton(onClick = onOpenBatchSelect, shape = RoundedCornerShape(16.dp)) { Text("Batch select") }
+                        OutlinedButton(onClick = onOpenBatchSelect, shape = RoundedCornerShape(16.dp)) { Text("Smart Picks") }
+                        if (selectionMode) {
+                            OutlinedButton(
+                                onClick = {
+                                    selectionMode = false
+                                    selectedItemIds.clear()
+                                },
+                                shape = RoundedCornerShape(16.dp),
+                            ) {
+                                Text("Cancel")
+                            }
+                            OutlinedButton(
+                                onClick = {
+                                    presetName = if (selectedItemIds.size == 1) "Single pick" else "Selected picks"
+                                    showPresetDialog = true
+                                },
+                                enabled = selectedItemIds.isNotEmpty(),
+                                shape = RoundedCornerShape(16.dp),
+                            ) {
+                                Text("Save ${selectedItemIds.size} files")
+                            }
+                        } else {
+                            OutlinedButton(
+                                onClick = {
+                                    selectionMode = true
+                                    selectedItemIds.clear()
+                                },
+                                shape = RoundedCornerShape(16.dp),
+                            ) {
+                                Text("Pick files for saved share")
+                            }
+                        }
+                    }
+
+                    if (libraryState.items.any { it.category == MediaCategory.VIDEO && it.playbackDecision.mode != PlaybackMode.DIRECT }) {
+                        Surface(
+                            shape = RoundedCornerShape(18.dp),
+                            color = Color(0xFF171E26),
+                        ) {
+                            Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
+                                Text(
+                                    "Browser prep keeps the original file",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    "Prepare creates a temporary browser-ready copy for streaming. Downloads still use your original file.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -173,7 +258,7 @@ fun SharedLibraryScreen(
             item {
                 LibraryEmptyState(
                     title = "No files added yet",
-                    description = "Pick files, add a folder, or use batch select to build your offline library.",
+                    description = "Pick files, add a folder, or use Smart Picks to build your offline library.",
                 )
             }
         } else {
@@ -200,6 +285,16 @@ fun SharedLibraryScreen(
                     LibraryItemRow(
                         item = item,
                         compatibilityJob = compatibilityJobs[item.id],
+                        selectionMode = selectionMode,
+                        isSelected = item.id in selectedItemIds,
+                        onToggleSelected = { itemId ->
+                            if (itemId in selectedItemIds) {
+                                selectedItemIds.remove(itemId)
+                            } else {
+                                selectedItemIds.add(itemId)
+                            }
+                        },
+                        onPrepareItem = onPrepareItem,
                         onRemoveItem = onRemoveItem,
                     )
                 }
@@ -207,6 +302,39 @@ fun SharedLibraryScreen(
         }
 
         item { Spacer(modifier = Modifier.height(18.dp)) }
+    }
+
+    if (showPresetDialog) {
+        AlertDialog(
+            onDismissRequest = { showPresetDialog = false },
+            title = { Text("Save Selected Files") },
+            text = {
+                OutlinedTextField(
+                    value = presetName,
+                    onValueChange = { presetName = it },
+                    label = { Text("Saved share name") },
+                    singleLine = true,
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onSavePresetSelection(presetName, selectedItemIds.toList())
+                        showPresetDialog = false
+                        selectionMode = false
+                        selectedItemIds.clear()
+                    },
+                    enabled = presetName.isNotBlank() && selectedItemIds.isNotEmpty(),
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPresetDialog = false }) {
+                    Text("Cancel")
+                }
+            },
+        )
     }
 }
 
@@ -257,18 +385,31 @@ private fun FolderRow(folder: SharedFolder, onRemoveFolder: (String) -> Unit) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun LibraryItemRow(
     item: SharedItem,
     compatibilityJob: CompatibilityJob?,
+    selectionMode: Boolean,
+    isSelected: Boolean,
+    onToggleSelected: (String) -> Unit,
+    onPrepareItem: (String) -> Unit,
     onRemoveItem: (String) -> Unit,
 ) {
     Card(
         modifier = Modifier
             .padding(horizontal = 20.dp)
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .clickable(enabled = selectionMode) { onToggleSelected(item.id) },
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF121823)),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) Color(0xFF182821) else Color(0xFF121823),
+        ),
+        border = if (isSelected) {
+            BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.65f))
+        } else {
+            null
+        },
     ) {
         Row(
             modifier = Modifier.padding(14.dp),
@@ -308,30 +449,93 @@ private fun LibraryItemRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall,
                 )
-                item.playbackDecision.compatibilityLabel?.let { label ->
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(label, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodySmall)
+                FlowRow(
+                    modifier = Modifier.padding(top = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    item.playbackDecision.compatibilityLabel?.let { label ->
+                        AssistChip(onClick = {}, label = { Text(label) })
+                    }
+                    if (item.playbackDecision.mode == PlaybackMode.DIRECT && item.category == MediaCategory.VIDEO) {
+                        AssistChip(onClick = {}, label = { Text("Direct Play") })
+                    }
+                    if (item.subtitleMatch != null) {
+                        AssistChip(onClick = {}, label = { Text("Subtitle") })
+                    }
+                    if (!item.isAvailable) {
+                        AssistChip(onClick = {}, label = { Text("Unavailable") })
+                    }
                 }
                 compatibilityJob
                     ?.takeIf { item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT }
                     ?.let { job ->
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = compatibilityStatusLabel(job),
-                            color = when (job.status) {
-                                CompatibilityStatus.FAILED -> MaterialTheme.colorScheme.error
-                                CompatibilityStatus.READY -> MaterialTheme.colorScheme.primary
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                        )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = compatibilityStatusLabel(job),
+                        color = when (job.status) {
+                            CompatibilityStatus.FAILED -> MaterialTheme.colorScheme.error
+                            CompatibilityStatus.READY -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+                if (item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Creates a temporary browser-ready copy. The original file stays unchanged for downloads.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    when (compatibilityJob?.status) {
+                        CompatibilityStatus.QUEUED,
+                        CompatibilityStatus.PREPARING,
+                        -> OutlinedButton(
+                            onClick = {},
+                            enabled = false,
+                            shape = RoundedCornerShape(16.dp),
+                        ) {
+                            Text("Preparing browser copy")
+                        }
+
+                        CompatibilityStatus.READY -> OutlinedButton(
+                            onClick = {},
+                            enabled = false,
+                            shape = RoundedCornerShape(16.dp),
+                        ) {
+                            Text("Browser copy ready")
+                        }
+
+                        else -> OutlinedButton(
+                            onClick = { onPrepareItem(item.id) },
+                            enabled = item.isAvailable,
+                            shape = RoundedCornerShape(16.dp),
+                        ) {
+                            Text(
+                                if (compatibilityJob?.status == CompatibilityStatus.FAILED) {
+                                    "Retry browser prep"
+                                } else {
+                                    "Prepare browser copy"
+                                },
+                            )
+                        }
                     }
+                }
             }
-            Icon(
-                Icons.Outlined.Delete,
-                contentDescription = "Remove item",
-                modifier = Modifier.clickable { onRemoveItem(item.id) },
-            )
+            if (selectionMode) {
+                AssistChip(
+                    onClick = { onToggleSelected(item.id) },
+                    label = { Text(if (isSelected) "Selected" else "Select") },
+                )
+            } else {
+                Icon(
+                    Icons.Outlined.Delete,
+                    contentDescription = "Remove item",
+                    modifier = Modifier.clickable { onRemoveItem(item.id) },
+                )
+            }
         }
     }
 }

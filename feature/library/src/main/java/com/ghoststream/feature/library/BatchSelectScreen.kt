@@ -42,7 +42,7 @@ fun BatchSelectScreen(
     ) {
         item {
             Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
-                Text("Batch Select", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.SemiBold)
+                Text("Smart Picks", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.SemiBold)
                 Text("Smart one-tap groups based on your recent local media", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }

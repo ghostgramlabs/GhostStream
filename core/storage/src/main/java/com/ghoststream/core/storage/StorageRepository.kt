@@ -20,4 +20,3 @@ interface StorageRepository {
     suspend fun loadSmartSelectionGroups(): List<SmartSelectionGroup>
     fun findItemById(itemId: String): SharedItem?
 }
-

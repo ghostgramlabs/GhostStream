@@ -126,7 +126,11 @@ fun AddFolderRoute(
 @Composable
 fun BatchSelectRoute(
     groups: List<SmartSelectionGroup>,
+    isLoading: Boolean,
+    hasMediaAccess: Boolean,
     onBack: () -> Unit,
+    onRequestAccess: () -> Unit,
+    onRefresh: () -> Unit,
     onAddGroup: (List<Uri>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -139,18 +143,77 @@ fun BatchSelectRoute(
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
-            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
-                Text("Batch Select", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.SemiBold)
-                Text("Smart one-tap groups based on your recent local media", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 20.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Smart Picks", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.SemiBold)
+                    Text("Quick one-tap groups based on your recent local media", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                if (hasMediaAccess) {
+                    OutlinedButton(onClick = onRefresh, shape = RoundedCornerShape(16.dp)) {
+                        Text("Refresh")
+                    }
+                }
             }
         }
 
-        if (groups.isEmpty()) {
+        if (!hasMediaAccess) {
+            item {
+                Card(
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp)
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0E1522)),
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        Text("Media access needed", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "Smart Picks builds quick groups from your recent local photos, videos, and music. Allow media access to turn these on.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Button(onClick = onRequestAccess, shape = RoundedCornerShape(16.dp)) {
+                            Text("Grant Access")
+                        }
+                    }
+                }
+            }
+        } else if (isLoading) {
             item {
                 LibraryEmptyState(
-                    title = "No smart groups available right now",
-                    description = "Grant media access if needed, or add files manually from the picker.",
+                    title = "Looking for smart groups",
+                    description = "GhostStream is scanning lightweight media metadata on this device.",
                 )
+            }
+        } else if (groups.isEmpty()) {
+            item {
+                Card(
+                    modifier = Modifier
+                        .padding(horizontal = 20.dp)
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF0E1522)),
+                ) {
+                    Column(modifier = Modifier.padding(18.dp)) {
+                        Text("No smart groups found yet", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "Try Refresh if you recently granted media access. If your device has very little recent media, add files or a folder manually instead.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(modifier = Modifier.height(14.dp))
+                        OutlinedButton(onClick = onRefresh, shape = RoundedCornerShape(16.dp)) {
+                            Text("Refresh smart groups")
+                        }
+                    }
+                }
             }
         } else {
             items(groups, key = { it.id }) { group ->
