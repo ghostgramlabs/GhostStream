@@ -184,7 +184,7 @@ function compatibilityHeadline(item, streamLive = item.streamReady) {
 
 function compatibilityBody(item, streamLive = item.streamReady) {
   if (item.compatibilityStatus === "FAILED") {
-    return "Try again in a moment, or download the original file if this browser still cannot open it.";
+    return "This file's codec is not supported by the Android server for streaming. Please download.";
   }
   if (!streamLive) {
     return "This browser needs a moment to open the video. Keep this page open.";

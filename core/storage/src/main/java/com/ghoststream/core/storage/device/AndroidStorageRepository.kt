@@ -436,7 +436,7 @@ class AndroidStorageRepository(
             mime.startsWith("video/") -> MediaCategory.VIDEO
             mime.startsWith("image/") -> MediaCategory.PHOTO
             mime.startsWith("audio/") -> MediaCategory.MUSIC
-            displayName.endsWith(".mp4", ignoreCase = true) -> MediaCategory.VIDEO
+            displayName.endsWith(".mp4", ignoreCase = true) || displayName.endsWith(".avi", ignoreCase = true) || displayName.endsWith(".mkv", ignoreCase = true) || displayName.endsWith(".mov", ignoreCase = true) || displayName.endsWith(".flv", ignoreCase = true) || displayName.endsWith(".wmv", ignoreCase = true) || displayName.endsWith(".webm", ignoreCase = true) || displayName.endsWith(".ts", ignoreCase = true) -> MediaCategory.VIDEO
             displayName.endsWith(".jpg", ignoreCase = true) || displayName.endsWith(".png", ignoreCase = true) -> MediaCategory.PHOTO
             displayName.endsWith(".mp3", ignoreCase = true) || displayName.endsWith(".wav", ignoreCase = true) -> MediaCategory.MUSIC
             else -> MediaCategory.FILE

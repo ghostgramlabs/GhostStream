@@ -26,6 +26,7 @@ dependencies {
     implementation(project(":core:model"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.media3.common)
+    implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.muxer)
     implementation(libs.androidx.media3.transformer)
     implementation(libs.kotlinx.coroutines.android)

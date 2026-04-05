@@ -182,6 +182,11 @@ class AndroidMediaAnalyzer(
             mimeType == "image/png" || lowerCaseName.endsWith(".png") -> "image/png"
             mimeType == "image/webp" || lowerCaseName.endsWith(".webp") -> "image/webp"
             mimeType == "application/pdf" || lowerCaseName.endsWith(".pdf") -> "application/pdf"
+            mimeType == "video/x-msvideo" || lowerCaseName.endsWith(".avi") -> "video/x-msvideo"
+            mimeType == "video/webm" || lowerCaseName.endsWith(".webm") -> "video/webm"
+            mimeType == "video/x-ms-wmv" || lowerCaseName.endsWith(".wmv") -> "video/x-ms-wmv"
+            mimeType == "video/x-flv" || lowerCaseName.endsWith(".flv") -> "video/x-flv"
+            mimeType == "video/mp2t" || lowerCaseName.endsWith(".ts") -> "video/mp2t"
             else -> mimeType
         }
     }
@@ -195,6 +200,11 @@ class AndroidMediaAnalyzer(
             normalizedMimeType == "audio/mp4" || lowerCaseName.endsWith(".m4a") -> MediaContainer.AAC_AUDIO
             normalizedMimeType?.startsWith("image/") == true -> MediaContainer.IMAGE
             normalizedMimeType == "application/pdf" || lowerCaseName.endsWith(".pdf") -> MediaContainer.PDF
+            normalizedMimeType == "video/x-msvideo" || lowerCaseName.endsWith(".avi") -> MediaContainer.AVI
+            normalizedMimeType == "video/webm" || lowerCaseName.endsWith(".webm") -> MediaContainer.WEBM
+            normalizedMimeType == "video/x-ms-wmv" || lowerCaseName.endsWith(".wmv") -> MediaContainer.WMV
+            normalizedMimeType == "video/x-flv" || lowerCaseName.endsWith(".flv") -> MediaContainer.FLV
+            normalizedMimeType == "video/mp2t" || lowerCaseName.endsWith(".ts") -> MediaContainer.TS
             else -> MediaContainer.OTHER
         }
     }
@@ -210,6 +220,8 @@ class AndroidMediaAnalyzer(
             normalizedMimeType == "image/jpeg" ||
             normalizedMimeType == "image/png" ||
             normalizedMimeType == "image/webp" ||
+            normalizedMimeType == "video/webm" ||
+            lowerCaseName.endsWith(".webm") ||
             normalizedMimeType == "application/pdf" ||
             lowerCaseName.endsWith(".pdf")
     }

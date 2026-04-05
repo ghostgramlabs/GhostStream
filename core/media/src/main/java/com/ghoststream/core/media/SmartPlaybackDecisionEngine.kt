@@ -14,7 +14,12 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
             inspection.normalizedMimeType?.startsWith("video/") == true ||
             inspection.container == MediaContainer.MP4 ||
             inspection.container == MediaContainer.MATROSKA ||
-            inspection.container == MediaContainer.QUICKTIME
+            inspection.container == MediaContainer.QUICKTIME ||
+            inspection.container == MediaContainer.AVI ||
+            inspection.container == MediaContainer.FLV ||
+            inspection.container == MediaContainer.WMV ||
+            inspection.container == MediaContainer.WEBM ||
+            inspection.container == MediaContainer.TS
         val browserVideoCompatible = inspection.videoTrackMimeType == null || inspection.videoTrackMimeType == "video/avc"
         val browserAudioCompatible = inspection.audioTrackMimeType == null ||
             inspection.audioTrackMimeType == "audio/mp4a-latm" ||
