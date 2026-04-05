@@ -157,7 +157,7 @@ function shouldUseManagedHlsPlayback(item) {
 }
 
 function shouldUseNativeVideoPlayer(item) {
-  return isMobileBrowser() || item.playbackMode !== "DIRECT";
+  return isMobileBrowser() || shouldUseNativeHlsPlayback(item);
 }
 
 function shouldStartCompatibilityPlayback(item, job = null) {
