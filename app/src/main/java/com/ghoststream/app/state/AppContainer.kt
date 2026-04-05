@@ -70,6 +70,7 @@ class AppContainer(
             compatibilityPipeline = compatibilityPipeline,
             networkInspector = networkInspector,
             debugLogSink = debugLogRepository,
+            debugBrowserTracingEnabled = BuildConfig.DEBUG,
         )
     }
     val sharingCoordinator: SharingCoordinator by lazy {

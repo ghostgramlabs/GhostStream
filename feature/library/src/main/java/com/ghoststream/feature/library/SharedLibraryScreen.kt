@@ -285,6 +285,7 @@ fun SharedLibraryScreen(
 private fun LibraryHeader(
     libraryState: LibraryState,
 ) {
+    val hasVideos = libraryState.items.any { it.category == MediaCategory.VIDEO }
     Card(
         modifier = Modifier
             .padding(horizontal = 20.dp)
@@ -308,6 +309,13 @@ private fun LibraryHeader(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (hasVideos) {
+                Text(
+                    text = "Subtitles only appear when the matching .srt or .vtt file is added to this shared library too.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),

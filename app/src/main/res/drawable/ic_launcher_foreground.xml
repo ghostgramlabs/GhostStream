@@ -1,20 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp"
-    android:height="108dp"
-    android:viewportWidth="108"
-    android:viewportHeight="108">
-    <path
-        android:fillColor="#8AE3FF"
-        android:pathData="M54,12c-15.5,0 -28,12.5 -28,28v18.5c0,20.7 16.8,37.5 37.5,37.5S101,79.2 101,58.5V40c0,-15.5 -12.5,-28 -28,-28H54z" />
-    <path
-        android:fillColor="#0A0E15"
-        android:pathData="M54,30c-13.3,0 -24,10.7 -24,24v4c0,16.6 13.4,30 30,30s30,-13.4 30,-30v-4c0,-13.3 -10.7,-24 -24,-24H54z" />
-    <path
-        android:fillColor="#8AE3FF"
-        android:pathData="M38,58c0,-8.8 7.2,-16 16,-16h0c8.8,0 16,7.2 16,16v0c0,8.8 -7.2,16 -16,16h0c-8.8,0 -16,-7.2 -16,-16z" />
-    <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M50,51l14,8 -14,8z" />
-</vector>
-
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/directserve_logo_fixed"
+    android:inset="6dp" />

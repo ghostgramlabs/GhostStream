@@ -71,6 +71,7 @@ class KtorGhostStreamServer(
     private val assetLoader: WebAssetLoader = WebAssetLoader(context),
     private val json: Json = Json { ignoreUnknownKeys = true },
     private val debugLogSink: DebugLogSink = NoOpDebugLogSink,
+    private val debugBrowserTracingEnabled: Boolean = false,
 ) : GhostStreamServer {
 
     private var engine: ApplicationEngine? = null
@@ -169,6 +170,13 @@ class KtorGhostStreamServer(
                 )
             }
 
+            get("/hls.min.js") {
+                call.respondBytes(
+                    bytes = assetLoader.readBytes("web/hls.min.js"),
+                    contentType = ContentType.Application.JavaScript,
+                )
+            }
+
             get("/plyr.svg") {
                 call.respondBytes(
                     bytes = assetLoader.readBytes("web/plyr.svg"),
@@ -210,6 +218,7 @@ class KtorGhostStreamServer(
                         showThumbnails = settings.showThumbnails,
                         largeCards = settings.largeTvCards,
                         prominentDownloadButton = settings.prominentDownloadButton,
+                        debugTracing = debugBrowserTracingEnabled,
                     ),
                 )
             }
@@ -251,6 +260,10 @@ class KtorGhostStreamServer(
                     call.respond(HttpStatusCode.NotFound, ErrorPayload("This file is no longer available on your device."))
                     return@get
                 }
+                debugLogSink.log(
+                    "WebItem",
+                    "details id=${item.id} name=${item.displayName} mode=${item.playbackDecision.mode} category=${item.category} mime=${item.mimeType} available=${item.isAvailable}",
+                )
                 call.respond(
                     BrowserItemDetails.from(
                         item = item,
@@ -258,6 +271,7 @@ class KtorGhostStreamServer(
                             item = item,
                             triggerPreparation = item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT,
                         ),
+                        streamReady = compatibilityStreamReady(item),
                     ),
                 )
             }
@@ -268,7 +282,18 @@ class KtorGhostStreamServer(
                     call.respond(HttpStatusCode.NotFound, ErrorPayload("This file is no longer available on your device."))
                     return@get
                 }
-                call.respond(CompatibilityStatusPayload.from(compatibilitySnapshotFor(item, triggerPreparation = false)))
+                val job = compatibilitySnapshotFor(item, triggerPreparation = false)
+                val ready = compatibilityStreamReady(item)
+                debugLogSink.log(
+                    "WebCompat",
+                    "poll id=${item.id} mode=${item.playbackDecision.mode} status=${job.status} ready=$ready complete=${job.status == CompatibilityStatus.READY || job.preparedAsset?.isComplete == true} progress=${job.progressPercent} asset=${job.preparedAsset?.filePath}",
+                )
+                call.respond(
+                    CompatibilityStatusPayload.from(
+                        job = job,
+                        ready = ready,
+                    ),
+                )
             }
 
             post("/api/compat/{id}/prepare") {
@@ -277,7 +302,36 @@ class KtorGhostStreamServer(
                     call.respond(HttpStatusCode.NotFound, ErrorPayload("This file is no longer available on your device."))
                     return@post
                 }
-                call.respond(CompatibilityStatusPayload.from(compatibilitySnapshotFor(item, triggerPreparation = true)))
+                val job = compatibilitySnapshotFor(item, triggerPreparation = true)
+                val ready = compatibilityStreamReady(item)
+                debugLogSink.log(
+                    "WebCompat",
+                    "prepare id=${item.id} mode=${item.playbackDecision.mode} status=${job.status} ready=$ready complete=${job.status == CompatibilityStatus.READY || job.preparedAsset?.isComplete == true} progress=${job.progressPercent} asset=${job.preparedAsset?.filePath}",
+                )
+                call.respond(
+                    CompatibilityStatusPayload.from(
+                        job = job,
+                        ready = ready,
+                    ),
+                )
+            }
+
+            post("/api/debug/browser") {
+                if (!debugBrowserTracingEnabled) {
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload("Debug tracing unavailable"))
+                    return@post
+                }
+                if (!call.authorizeBrowserCall()) return@post
+                val payload = call.receiveNullable<BrowserDebugPayload>()
+                if (payload == null) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorPayload("Missing debug payload"))
+                    return@post
+                }
+                debugLogSink.log(
+                    "WebTrace",
+                    "host=${call.remoteHost()} route=${payload.route} event=${payload.event} details=${payload.details.orEmpty()} ua=${call.request.header(HttpHeaders.UserAgent).orEmpty()}",
+                )
+                call.respond(AuthResult(success = true))
             }
 
             post("/auth/login") {
@@ -311,17 +365,21 @@ class KtorGhostStreamServer(
                 if (!call.authorizeBrowserCall()) return@get
                 val settings = settingsRepository.settings.first()
                 if (!settings.showThumbnails) {
+                    debugLogSink.log("WebThumb", "blocked id=${call.parameters["id"]} reason=disabled")
                     call.respond(HttpStatusCode.NotFound, ErrorPayload("Preview unavailable"))
                     return@get
                 }
                 val item = resolveItem(call.parameters["id"]) ?: run {
+                    debugLogSink.log("WebThumb", "missing id=${call.parameters["id"]}")
                     call.respond(HttpStatusCode.NotFound, ErrorPayload("Preview unavailable"))
                     return@get
                 }
                 val bytes = mediaAnalyzer.loadThumbnailBytes(item) ?: run {
+                    debugLogSink.log("WebThumb", "empty id=${item.id} name=${item.displayName} category=${item.category}")
                     call.respond(HttpStatusCode.NotFound, ErrorPayload("Preview unavailable"))
                     return@get
                 }
+                debugLogSink.log("WebThumb", "served id=${item.id} bytes=${bytes.size} category=${item.category}")
                 sessionManager.observeClient(call.remoteHost(), call.request.header(HttpHeaders.UserAgent), ClientActivity.BROWSING)
                 call.respondBytes(bytes, ContentType.Image.JPEG)
             }
@@ -363,13 +421,19 @@ class KtorGhostStreamServer(
                     file = source.file,
                     requireFirstSegment = true,
                 ) ?: run {
+                    debugLogSink.log("WebHls", "playlist pending id=${source.item.id}")
                     call.respond(HttpStatusCode.Accepted, ErrorPayload("Preparing the HLS stream for iPhone playback."))
                     return@get
                 }
                 if (index.segments.isEmpty()) {
+                    debugLogSink.log("WebHls", "playlist empty id=${source.item.id} init=${index.initSegmentLength} file=${index.fileLength}")
                     call.respond(HttpStatusCode.Accepted, ErrorPayload("Preparing the HLS stream for iPhone playback."))
                     return@get
                 }
+                debugLogSink.log(
+                    "WebHls",
+                    "playlist served id=${source.item.id} segments=${index.segments.size} init=${index.initSegmentLength} complete=${source.job.preparedAsset?.isComplete == true || source.job.status == CompatibilityStatus.READY}",
+                )
                 sessionManager.observeClient(
                     call.remoteHost(),
                     call.request.header(HttpHeaders.UserAgent),
@@ -394,13 +458,16 @@ class KtorGhostStreamServer(
                     file = source.file,
                     requireFirstSegment = false,
                 ) ?: run {
+                    debugLogSink.log("WebHls", "init pending id=${source.item.id}")
                     call.respond(HttpStatusCode.Accepted, ErrorPayload("Preparing the HLS stream for iPhone playback."))
                     return@get
                 }
                 if (index.initSegmentLength <= 0L) {
+                    debugLogSink.log("WebHls", "init empty id=${source.item.id}")
                     call.respond(HttpStatusCode.Accepted, ErrorPayload("Preparing the HLS stream for iPhone playback."))
                     return@get
                 }
+                debugLogSink.log("WebHls", "init served id=${source.item.id} bytes=${index.initSegmentLength}")
                 call.streamFileSlice(
                     file = source.file,
                     mimeType = "video/mp4",
@@ -422,16 +489,19 @@ class KtorGhostStreamServer(
                     requireFirstSegment = true,
                     requiredSegmentIndex = segmentIndex,
                 ) ?: run {
+                    debugLogSink.log("WebHls", "segment pending id=${source.item.id} index=$segmentIndex")
                     call.respond(HttpStatusCode.Accepted, ErrorPayload("Preparing the next HLS segment."))
                     return@get
                 }
                 val segment = index.segments.getOrNull(segmentIndex) ?: run {
                     val completed = source.job.preparedAsset?.isComplete == true || source.job.status == CompatibilityStatus.READY
+                    debugLogSink.log("WebHls", "segment missing id=${source.item.id} index=$segmentIndex available=${index.segments.size} complete=$completed")
                     val status = if (completed) HttpStatusCode.NotFound else HttpStatusCode.Accepted
                     val message = if (completed) "That video segment is no longer available." else "Preparing the next HLS segment."
                     call.respond(status, ErrorPayload(message))
                     return@get
                 }
+                debugLogSink.log("WebHls", "segment served id=${source.item.id} index=$segmentIndex bytes=${segment.length}")
                 call.streamFileSlice(
                     file = source.file,
                     mimeType = "video/mp4",
@@ -807,6 +877,21 @@ class KtorGhostStreamServer(
         }
     }
 
+    private fun compatibilityStreamReady(item: SharedItem): Boolean {
+        val job = compatibilityPipeline.currentJob(item.id) ?: return item.playbackDecision.mode == PlaybackMode.DIRECT
+        if (item.playbackDecision.mode == PlaybackMode.DIRECT) return true
+        if (!job.canServePlayback) return false
+
+        val preparedAsset = job.preparedAsset ?: return false
+        if (preparedAsset.isComplete || job.status == CompatibilityStatus.READY) return true
+        if (item.category != MediaCategory.VIDEO || !preparedAsset.isFragmentedMp4) return job.canServePlayback
+
+        val file = File(preparedAsset.filePath)
+        if (!file.exists()) return false
+        val index = FragmentedMp4HlsIndexer.read(file, fragmentDurationSeconds = HLS_SEGMENT_DURATION_SECONDS)
+        return index?.initSegmentLength?.let { it > 0L } == true && index.segments.isNotEmpty()
+    }
+
     private suspend fun io.ktor.server.application.ApplicationCall.streamFileSlice(
         file: File,
         mimeType: String,
@@ -1100,6 +1185,13 @@ class KtorGhostStreamServer(
     )
 
     @Serializable
+    private data class BrowserDebugPayload(
+        val event: String,
+        val route: String,
+        val details: String? = null,
+    )
+
+    @Serializable
     private data class ErrorPayload(
         val message: String,
     )
@@ -1117,6 +1209,7 @@ class KtorGhostStreamServer(
         val showThumbnails: Boolean,
         val largeCards: Boolean,
         val prominentDownloadButton: Boolean,
+        val debugTracing: Boolean,
     )
 
     @Serializable
@@ -1191,7 +1284,11 @@ class KtorGhostStreamServer(
         val streamReady: Boolean = true,
     ) {
         companion object {
-            fun from(item: SharedItem, compatibilityJob: CompatibilityJob): BrowserItemDetails = BrowserItemDetails(
+            fun from(
+                item: SharedItem,
+                compatibilityJob: CompatibilityJob,
+                streamReady: Boolean,
+            ): BrowserItemDetails = BrowserItemDetails(
                 id = item.id,
                 title = item.displayName,
                 mimeType = item.mimeType,
@@ -1213,7 +1310,7 @@ class KtorGhostStreamServer(
                 compatibilityMessage = compatibilityJob.message.takeIf { item.playbackDecision.mode != PlaybackMode.DIRECT },
                 compatibilityProgressPercent = compatibilityJob.progressPercent,
                 compatibilityComplete = compatibilityJob.status == CompatibilityStatus.READY || compatibilityJob.preparedAsset?.isComplete == true,
-                streamReady = item.playbackDecision.mode == PlaybackMode.DIRECT || compatibilityJob.canServePlayback,
+                streamReady = streamReady,
             )
         }
     }
@@ -1228,12 +1325,12 @@ class KtorGhostStreamServer(
         val complete: Boolean,
     ) {
         companion object {
-            fun from(job: CompatibilityJob): CompatibilityStatusPayload = CompatibilityStatusPayload(
+            fun from(job: CompatibilityJob, ready: Boolean): CompatibilityStatusPayload = CompatibilityStatusPayload(
                 itemId = job.itemId,
                 status = job.status,
                 message = job.message,
                 progressPercent = job.progressPercent,
-                ready = job.canServePlayback,
+                ready = ready,
                 complete = job.status == CompatibilityStatus.READY || job.preparedAsset?.isComplete == true,
             )
         }

@@ -4,6 +4,7 @@ const sessionSubtitle = app.dataset.subtitle || "Local-only streaming";
 
 const state = {
   bootstrap: null,
+  debugTracing: false,
   query: "",
   selected: new Set(),
   selectMode: false,
@@ -11,6 +12,8 @@ const state = {
   nowPlaying: null,
   plyr: null,
   plyrItemId: null,
+  hls: null,
+  hlsItemId: null,
   musicPlayers: [],
   searchTimer: null,
   compatPollToken: 0,
@@ -34,9 +37,17 @@ document.addEventListener("click", (event) => {
   navigate(link.getAttribute("href"));
 });
 
+document.addEventListener("error", (event) => {
+  const target = event.target;
+  if (target instanceof HTMLImageElement && target.classList.contains("gs-card-img")) {
+    debugTrace("thumbnail_error", `src=${target.currentSrc || target.src} route=${location.pathname}`);
+  }
+}, true);
+
 async function boot() {
   cancelCompatPolling();
   destroyPlyr();
+  destroyHls();
   destroyMusicPlayers();
   const path = location.pathname;
   if (path === "/login") {
@@ -47,6 +58,7 @@ async function boot() {
   try {
     state.bootstrap = await api("/api/bootstrap");
     applyBootstrapUi();
+    debugTrace("bootstrap_loaded", `route=${path} auth=${state.bootstrap?.authEnabled} theme=${state.bootstrap?.themeMode}`);
     if (path.startsWith("/player/video/")) {
       renderVideoPlayer(path.split("/").pop());
       return;
@@ -67,6 +79,7 @@ async function boot() {
 
 function applyBootstrapUi() {
   const bootstrap = state.bootstrap;
+  state.debugTracing = Boolean(bootstrap?.debugTracing);
   const themeMode = bootstrap?.themeMode || "SYSTEM";
   document.documentElement.style.colorScheme =
     themeMode === "DARK" ? "dark" : themeMode === "LIGHT" ? "light" : "";
@@ -74,6 +87,23 @@ function applyBootstrapUi() {
   document.body.classList.toggle("gs-theme-light", themeMode === "LIGHT");
   document.body.classList.toggle("gs-large-cards", Boolean(bootstrap?.largeCards));
   document.body.classList.toggle("gs-prominent-downloads", Boolean(bootstrap?.prominentDownloadButton));
+}
+
+function debugTrace(event, details = "") {
+  if (!state.debugTracing) return;
+  fetch("/api/debug/browser", {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    keepalive: true,
+    body: JSON.stringify({
+      event,
+      route: location.pathname,
+      details,
+    }),
+  }).catch(() => {});
 }
 
 function navigate(path, replace = false) {
@@ -98,7 +128,26 @@ function isAppleMobileReceiver() {
 }
 
 function shouldUseHlsPlayback(item) {
+  return shouldUseNativeHlsPlayback(item) || shouldUseManagedHlsPlayback(item);
+}
+
+function shouldUseNativeHlsPlayback(item) {
   return Boolean(item.hlsUrl && item.playbackMode !== "DIRECT" && isAppleMobileReceiver());
+}
+
+function canUseManagedHls(item) {
+  return Boolean(
+    item.hlsUrl &&
+    item.playbackMode !== "DIRECT" &&
+    !isAppleMobileReceiver() &&
+    typeof window.Hls !== "undefined" &&
+    typeof window.Hls.isSupported === "function" &&
+    window.Hls.isSupported()
+  );
+}
+
+function shouldUseManagedHlsPlayback(item) {
+  return canUseManagedHls(item);
 }
 
 function shouldUseNativeVideoPlayer(item) {
@@ -116,25 +165,41 @@ function shouldStartCompatibilityPlayback(item, job = null) {
 
 function compatibilityHeadline(item, streamLive = item.streamReady) {
   if (item.compatibilityStatus === "FAILED") {
-    return "Playback preparation failed";
+    return "This video could not be opened";
   }
   if (!streamLive) {
-    return "Preparing browser playback";
+    return "Opening video...";
   }
   if (item.compatibilityComplete || item.compatibilityStatus === "READY") {
-    return "Compatibility playback is ready";
+    return "Video is ready";
   }
-  return "Streaming while finishing conversion";
+  return "Starting playback...";
 }
 
 function compatibilityBody(item, streamLive = item.streamReady) {
-  if (!streamLive && item.compatibilityMessage) {
-    return item.compatibilityMessage;
+  if (item.compatibilityStatus === "FAILED") {
+    return "Try again in a moment, or download the original file if this browser still cannot open it.";
   }
-  if (streamLive) {
-    return item.compatibilityMessage || "DirectServe is finishing the compatible stream in the background.";
+  if (!streamLive) {
+    return "This browser needs a moment to open the video. Keep this page open.";
   }
-  return item.compatibilityMessage || "DirectServe is preparing a compatible stream for this browser.";
+  if (item.compatibilityComplete || item.compatibilityStatus === "READY") {
+    return "Playback is ready on this device.";
+  }
+  return "The video is starting now. If it pauses, wait a moment or try again.";
+}
+
+function compatibilityBadgeLabel(item, streamLive = item.streamReady) {
+  if (item.compatibilityStatus === "FAILED") {
+    return "Try again";
+  }
+  if (!streamLive) {
+    return "Opening";
+  }
+  if (item.compatibilityComplete || item.compatibilityStatus === "READY") {
+    return "Ready";
+  }
+  return "Playing";
 }
 
 async function api(url, options = {}) {
@@ -160,6 +225,7 @@ async function api(url, options = {}) {
 
 function shell(content, options = {}) {
   destroyPlyr();
+  destroyHls();
   destroyMusicPlayers();
   if (options.resetNowPlaying !== false) {
     state.nowPlaying = null;
@@ -411,8 +477,15 @@ function downloadItems(items) {
 
 async function renderVideoPlayer(id) {
   const item = await api(`/api/item/${id}`);
+  debugTrace(
+    "video_item_loaded",
+    `id=${item.id} mode=${item.playbackMode} mime=${item.mimeType || ""} hls=${Boolean(item.hlsUrl)} streamReady=${item.streamReady}`,
+  );
   const shouldMountReadyPlayer = shouldStartCompatibilityPlayback(item);
   const playbackItem = shouldMountReadyPlayer ? { ...item, streamReady: true } : { ...item, streamReady: false };
+  const playerBadges = [
+    playbackItem.subtitleUrl ? '<span class="gs-badge">Subtitles available</span>' : "",
+  ].filter(Boolean).join("");
   shell(`
     <section class="gs-section">
       <div class="gs-player">
@@ -426,20 +499,16 @@ async function renderVideoPlayer(id) {
             <a class="gs-btn gs-btn-download" href="${item.downloadUrl}">Download original</a>
           </div>
         </div>
-        <div class="gs-badges">
-          ${playbackItem.compatibility ? `<span class="gs-badge">${esc(playbackItem.compatibility)}</span>` : ""}
-          ${playbackItem.subtitleUrl ? '<span class="gs-badge">Subtitles available</span>' : ""}
-          <span class="gs-badge">${esc(playbackItem.playbackMode)}</span>
-        </div>
+        ${playerBadges ? `<div class="gs-badges">${playerBadges}</div>` : ""}
         <div id="playerStage">${renderVideoStage(playbackItem)}</div>
         ${playbackItem.playbackMode !== "DIRECT" ? `
           <div class="gs-compat-inline${playbackItem.streamReady ? " is-visible" : ""}" id="compatInline">
-            <span class="gs-badge" data-compat-badge>${esc(playbackItem.compatibilityStatus || (playbackItem.streamReady ? "STREAM LIVE" : "PREPARING"))}</span>
+            <span class="gs-badge" data-compat-badge>${compatibilityBadgeLabel(playbackItem)}</span>
             <div class="gs-compat-inline-copy">
               <strong data-compat-title>${compatibilityHeadline(playbackItem)}</strong>
               <p class="gs-meta" data-compat-message>${esc(compatibilityBody(playbackItem))}</p>
             </div>
-            <span class="gs-meta" data-compat-progress>${playbackItem.compatibilityProgressPercent != null ? `${playbackItem.compatibilityProgressPercent}%` : "Preparing"}</span>
+            <span class="gs-meta" data-compat-progress>${playbackItem.compatibilityProgressPercent != null ? `${playbackItem.compatibilityProgressPercent}%` : (playbackItem.streamReady ? "Playing" : "Opening")}</span>
           </div>
         ` : ""}
       </div>
@@ -462,10 +531,10 @@ function renderVideoStage(item) {
     ? videoMarkup(item)
     : `
       <div class="gs-compat-card" id="compatStageCard">
-        <span class="gs-badge" data-compat-badge>${esc(item.compatibilityStatus || "PREPARING")}</span>
+        <span class="gs-badge" data-compat-badge>${compatibilityBadgeLabel(item, false)}</span>
         <h3 data-compat-title>${compatibilityHeadline(item, false)}</h3>
         <p data-compat-message>${esc(compatibilityBody(item, false))}</p>
-        <p class="gs-meta" data-compat-progress>${item.compatibilityProgressPercent != null ? `${item.compatibilityProgressPercent}%` : "Preparing"}</p>
+        <p class="gs-meta" data-compat-progress>${item.compatibilityProgressPercent != null ? `${item.compatibilityProgressPercent}%` : "Opening"}</p>
       </div>
     `;
 }
@@ -473,17 +542,18 @@ function renderVideoStage(item) {
 function videoMarkup(item) {
   const nativeClass = shouldUseNativeVideoPlayer(item) ? " gs-native-video" : "";
   const preload = shouldUseNativeVideoPlayer(item) ? "metadata" : "auto";
-  const sourceUrl = shouldUseHlsPlayback(item) ? item.hlsUrl : item.streamUrl;
+  const sourceUrl = shouldUseNativeHlsPlayback(item) ? item.hlsUrl : item.streamUrl;
+  const sourceAttribute = sourceUrl ? ` src="${sourceUrl}"` : "";
   return `
     <div class="gs-video-wrap">
-      <video id="vPlayer" class="gs-plyr-target${nativeClass}" controls playsinline webkit-playsinline="true" x-webkit-airplay="allow" preload="${preload}" src="${sourceUrl}">
+      <video id="vPlayer" class="gs-plyr-target${nativeClass}" controls playsinline webkit-playsinline="true" x-webkit-airplay="allow" preload="${preload}"${sourceAttribute}>
         ${item.subtitleUrl ? `<track kind="subtitles" src="${item.subtitleUrl}" srclang="en" label="Subtitle" default>` : ""}
       </video>
       <div class="gs-video-error" id="vError">
-        <strong>Playback needs attention</strong>
+        <strong>Video needs attention</strong>
         <p id="vErrorText">This browser could not start the video.</p>
         <div class="gs-toolbar-actions">
-          <button class="gs-btn gs-btn-accent gs-btn-sm" id="retryVideoBtn">Retry</button>
+          <button class="gs-btn gs-btn-accent gs-btn-sm" id="retryVideoBtn">Try again</button>
           <a class="gs-btn gs-btn-download gs-btn-sm" href="${item.downloadUrl}">Download original</a>
         </div>
       </div>
@@ -495,17 +565,69 @@ function hydrateVideoPlayer(item, options = {}) {
   const video = document.getElementById("vPlayer");
   if (!video || video.dataset.bound === "true") return;
   destroyPlyr();
+  destroyHls();
   video.dataset.bound = "true";
   const useNativePlayer = shouldUseNativeVideoPlayer(item);
+  const useManagedHls = shouldUseManagedHlsPlayback(item);
+  const managedHlsAvailable = canUseManagedHls(item);
   const errorCard = document.getElementById("vError");
   const errorText = document.getElementById("vErrorText");
   let autoRetryUsed = false;
+  let managedHlsFallbackUsed = false;
+  debugTrace(
+    "player_hydrate",
+    `id=${item.id} mode=${item.playbackMode} nativePlayer=${useNativePlayer} managedHls=${useManagedHls} nativeHls=${shouldUseNativeHlsPlayback(item)} managedHlsAvailable=${managedHlsAvailable}`,
+  );
 
   if (!useNativePlayer && typeof window.Plyr === "function") {
     state.plyr = new window.Plyr(video, {
       iconUrl: "/plyr.svg",
     });
     state.plyrItemId = item.id;
+  }
+
+  const startManagedHls = () => {
+    if (!managedHlsAvailable) return false;
+    debugTrace("hls_start", `id=${item.id} url=${item.hlsUrl}`);
+    destroyHls();
+    video.removeAttribute("src");
+    video.load();
+    const hls = new window.Hls({
+      enableWorker: true,
+      backBufferLength: 90,
+      lowLatencyMode: false,
+      maxBufferLength: 30,
+    });
+    state.hls = hls;
+    state.hlsItemId = item.id;
+    hls.attachMedia(video);
+    hls.on(window.Hls.Events.MEDIA_ATTACHED, () => {
+      debugTrace("hls_media_attached", `id=${item.id}`);
+      hls.loadSource(item.hlsUrl);
+    });
+    hls.on(window.Hls.Events.MANIFEST_PARSED, () => {
+      debugTrace("hls_manifest_parsed", `id=${item.id}`);
+      if (options.autoplay) {
+        video.play().catch(() => {});
+      }
+    });
+    hls.on(window.Hls.Events.ERROR, (_, data) => {
+      debugTrace("hls_error", `id=${item.id} fatal=${Boolean(data?.fatal)} type=${data?.type || ""} details=${data?.details || ""}`);
+      if (!data?.fatal) return;
+      if (data.type === window.Hls.ErrorTypes.MEDIA_ERROR) {
+        hls.recoverMediaError();
+        return;
+      }
+      if (errorCard) errorCard.classList.add("is-visible");
+      if (errorText) {
+        errorText.textContent = "This video is still getting ready. Try again in a moment.";
+      }
+    });
+    return true;
+  };
+
+  if (useManagedHls) {
+    startManagedHls();
   }
 
   const clearVideoError = () => {
@@ -515,14 +637,36 @@ function hydrateVideoPlayer(item, options = {}) {
   video.addEventListener("loadedmetadata", clearVideoError);
   video.addEventListener("canplay", clearVideoError);
   video.addEventListener("playing", clearVideoError);
+  video.addEventListener("loadedmetadata", () => {
+    debugTrace("video_loadedmetadata", `id=${item.id} readyState=${video.readyState} currentSrc=${video.currentSrc}`);
+  });
+  video.addEventListener("canplay", () => {
+    debugTrace("video_canplay", `id=${item.id} readyState=${video.readyState}`);
+  });
+  video.addEventListener("playing", () => {
+    debugTrace("video_playing", `id=${item.id} currentTime=${video.currentTime.toFixed(2)}`);
+  });
   video.addEventListener("error", () => {
+    debugTrace(
+      "video_error",
+      `id=${item.id} mode=${item.playbackMode} code=${video.error?.code || ""} readyState=${video.readyState} currentSrc=${video.currentSrc}`,
+    );
+    if (item.playbackMode !== "DIRECT" && managedHlsAvailable && !managedHlsFallbackUsed && !state.hls) {
+      managedHlsFallbackUsed = true;
+      debugTrace("video_error_hls_fallback", `id=${item.id}`);
+      clearVideoError();
+      if (startManagedHls() && options.autoplay) {
+        setTimeout(() => {
+          video.play().catch(() => {});
+        }, 200);
+      }
+      return;
+    }
     if (errorCard) errorCard.classList.add("is-visible");
     if (errorText) {
       errorText.textContent = item.playbackMode === "DIRECT"
-        ? "This browser could not start the original stream. Try downloading the original file."
-        : (shouldUseHlsPlayback(item)
-            ? "DirectServe is opening the HLS playback path for this device. Retry in a moment."
-            : "The compatibility stream is still warming up. Retry in a moment.");
+        ? "This browser could not start the video. Try again or download the original file."
+        : "This video is still opening. Try again in a moment.";
     }
     if (item.playbackMode !== "DIRECT" && !autoRetryUsed) {
       autoRetryUsed = true;
@@ -534,10 +678,20 @@ function hydrateVideoPlayer(item, options = {}) {
     }
   });
   document.getElementById("retryVideoBtn")?.addEventListener("click", () => {
+    debugTrace("video_retry_clicked", `id=${item.id} mode=${item.playbackMode} hasHls=${Boolean(state.hls && state.hlsItemId === item.id)}`);
     clearVideoError();
     if (state.plyr && state.plyrItemId === item.id) {
       state.plyr.restart();
       state.plyr.play().catch(() => {});
+    } else if (state.hls && state.hlsItemId === item.id) {
+      video.play().catch(() => {});
+    } else if (item.playbackMode !== "DIRECT" && managedHlsAvailable) {
+      managedHlsFallbackUsed = true;
+      if (startManagedHls()) {
+        setTimeout(() => {
+          video.play().catch(() => {});
+        }, 200);
+      }
     } else {
       video.load();
       video.play().catch(() => {});
@@ -553,6 +707,23 @@ function hydrateVideoPlayer(item, options = {}) {
       }
     }, 180);
   }
+
+  if (item.playbackMode !== "DIRECT" && managedHlsAvailable && !useManagedHls) {
+    setTimeout(() => {
+      if (location.pathname !== `/player/video/${item.id}`) return;
+      if (managedHlsFallbackUsed || state.hls) return;
+      const hasPlayableState = video.readyState >= 2 || !video.paused;
+      if (hasPlayableState) return;
+      managedHlsFallbackUsed = true;
+      debugTrace("video_delayed_hls_fallback", `id=${item.id}`);
+      clearVideoError();
+      if (startManagedHls() && options.autoplay) {
+        setTimeout(() => {
+          video.play().catch(() => {});
+        }, 200);
+      }
+    }, 2500);
+  }
 }
 
 function updateCompatElements(job, streamLive) {
@@ -565,10 +736,14 @@ function updateCompatElements(job, streamLive) {
     }, streamLive);
   });
   document.querySelectorAll("[data-compat-progress]").forEach((element) => {
-    element.textContent = job.progressPercent != null ? `${job.progressPercent}%` : (streamLive ? "Streaming" : "Preparing");
+    element.textContent = job.progressPercent != null ? `${job.progressPercent}%` : (streamLive ? "Playing" : "Opening");
   });
   document.querySelectorAll("[data-compat-badge]").forEach((element) => {
-    element.textContent = job.status || (streamLive ? "STREAM LIVE" : "PREPARING");
+    element.textContent = compatibilityBadgeLabel({
+      compatibilityStatus: job.status,
+      compatibilityComplete: job.complete,
+      streamReady: streamLive,
+    }, streamLive);
   });
   document.querySelectorAll("[data-compat-title]").forEach((element) => {
     element.textContent = compatibilityHeadline({
@@ -688,6 +863,7 @@ function card(item, selectable = false) {
         : item.title.toLowerCase().endsWith(".pdf")
           ? `<a class="${actionBtnClass}" data-link href="/photo/${item.id}">Preview</a>`
           : "";
+  const showSlowStartHint = item.category === "video" && item.playbackMode !== "DIRECT";
 
   return `
     <article class="gs-card${selectable && state.selectMode ? " gs-card-selectable" : ""}${state.selected.has(item.id) ? " is-selected" : ""}" data-select-card="${selectable ? item.id : ""}">
@@ -698,11 +874,10 @@ function card(item, selectable = false) {
       <div class="gs-card-body">
         <div class="gs-card-topline">
           <span class="gs-card-type">${esc(item.category)}</span>
-          ${item.compatibilityLabel ? `<span class="gs-card-tag">${esc(item.compatibilityLabel)}</span>` : ""}
         </div>
         <div class="gs-card-title">${esc(item.title)}</div>
         <div class="gs-meta">${fmtBytes(item.sizeBytes)}${item.durationMs ? ` | ${fmtDur(item.durationMs)}` : ""}</div>
-        ${item.compatibilityLabel ? `<div class="gs-card-caption">Browser playback is prepared when needed.</div>` : ""}
+        ${showSlowStartHint ? `<div class="gs-card-caption">This video may take a little longer to open on some devices.</div>` : ""}
         ${item.category === "music" ? `
           <div class="gs-music-row">
             <audio class="gs-audio-player" preload="none" src="${item.streamUrl}">
@@ -797,7 +972,9 @@ async function pollCompat(id, item) {
   cancelCompatPolling();
   const route = `/player/video/${id}`;
   const token = ++state.compatPollToken;
+  let lastTraceKey = "";
   try {
+    debugTrace("compat_prepare_request", `id=${id}`);
     await api(`/api/compat/${id}/prepare`, { method: "POST" });
   } catch (_) {}
 
@@ -811,6 +988,14 @@ async function pollCompat(id, item) {
       const job = await api(`/api/compat/${id}`);
       if (token !== state.compatPollToken || location.pathname !== route) return;
       const canStartPlayback = shouldStartCompatibilityPlayback(item, job);
+      const traceKey = `${job.status}|${job.progressPercent ?? ""}|${canStartPlayback}|${job.complete}`;
+      if (traceKey !== lastTraceKey) {
+        lastTraceKey = traceKey;
+        debugTrace(
+          "compat_status",
+          `id=${id} status=${job.status} progress=${job.progressPercent ?? ""} ready=${canStartPlayback} complete=${job.complete}`,
+        );
+      }
       const nextItem = {
         ...item,
         streamReady: canStartPlayback,
@@ -856,6 +1041,16 @@ function destroyPlyr() {
   }
   state.plyr = null;
   state.plyrItemId = null;
+}
+
+function destroyHls() {
+  if (state.hls) {
+    try {
+      state.hls.destroy();
+    } catch (_) {}
+  }
+  state.hls = null;
+  state.hlsItemId = null;
 }
 
 function destroyMusicPlayers() {

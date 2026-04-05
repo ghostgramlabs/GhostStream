@@ -2,6 +2,7 @@ package com.ghoststream.core.media
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
@@ -86,28 +87,25 @@ class AndroidMediaAnalyzer(
         }
 
         return withContext(Dispatchers.IO) {
+            val uri = Uri.parse(item.uri)
             val bitmap = when {
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
                     (item.category == MediaCategory.VIDEO || item.category == MediaCategory.PHOTO) -> {
                     runCatching {
                         context.contentResolver.loadThumbnail(
-                            Uri.parse(item.uri),
+                            uri,
                             Size(maxSizePx, maxSizePx),
                             null,
                         )
                     }.getOrNull()
                 }
 
-                else -> runCatching {
-                    val retriever = MediaMetadataRetriever()
-                    try {
-                        retriever.setDataSource(context, Uri.parse(item.uri))
-                        retriever.frameAtTime
-                    } finally {
-                        retriever.release()
-                    }
-                }.getOrNull()
-            } ?: return@withContext null
+                else -> null
+            } ?: fallbackThumbnailBitmap(
+                item = item,
+                uri = uri,
+                maxSizePx = maxSizePx,
+            ) ?: return@withContext null
 
             bitmap.toJpegBytes()?.also { bytes ->
                 runCatching { cacheFile.writeBytes(bytes) }
@@ -126,6 +124,52 @@ class AndroidMediaAnalyzer(
     private fun Bitmap.toJpegBytes(): ByteArray? {
         return ByteArrayOutputStream().use { output ->
             if (compress(Bitmap.CompressFormat.JPEG, 82, output)) output.toByteArray() else null
+        }
+    }
+
+    private fun fallbackThumbnailBitmap(
+        item: SharedItem,
+        uri: Uri,
+        maxSizePx: Int,
+    ): Bitmap? {
+        return when (item.category) {
+            MediaCategory.VIDEO -> runCatching {
+                val retriever = MediaMetadataRetriever()
+                try {
+                    retriever.setDataSource(context, uri)
+                    retriever.frameAtTime
+                } finally {
+                    retriever.release()
+                }
+            }.getOrNull()
+
+            MediaCategory.PHOTO -> decodePhotoThumbnail(uri, maxSizePx)
+            else -> null
+        }
+    }
+
+    private fun decodePhotoThumbnail(uri: Uri, maxSizePx: Int): Bitmap? {
+        val bounds = BitmapFactory.Options().apply {
+            inJustDecodeBounds = true
+        }
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            BitmapFactory.decodeStream(input, null, bounds)
+        } ?: return null
+
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+
+        val largestSide = maxOf(bounds.outWidth, bounds.outHeight)
+        val sampleSize = generateSequence(1) { it * 2 }
+            .takeWhile { largestSide / it > maxSizePx }
+            .lastOrNull()
+            ?: 1
+
+        val options = BitmapFactory.Options().apply {
+            inSampleSize = sampleSize
+            inPreferredConfig = Bitmap.Config.ARGB_8888
+        }
+        return context.contentResolver.openInputStream(uri)?.use { input ->
+            BitmapFactory.decodeStream(input, null, options)
         }
     }
 
