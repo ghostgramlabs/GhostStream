@@ -147,6 +147,12 @@ function canUseManagedHls(item) {
 }
 
 function shouldUseManagedHlsPlayback(item) {
+  // TRANSCODE mode produces H.264/AAC fMP4 via Media3's InAppMuxer.
+  // Chrome's MSE rejects those fMP4 segments with bufferAppendError due to
+  // codec signaling issues in the init segment. Progressive MP4 streaming
+  // via item.streamUrl works correctly with native byte-range seeking.
+  // HLS (managed or native) is still used for REMUX and for Apple devices.
+  if (item.playbackMode === "TRANSCODE") return false;
   return canUseManagedHls(item);
 }
 
@@ -600,6 +606,17 @@ function hydrateVideoPlayer(item, options = {}) {
     });
     state.hls = hls;
     state.hlsItemId = item.id;
+    let mediaRecoveryAttempts = 0;
+    let bufferAppendErrors = 0;
+    const MAX_MEDIA_RECOVERIES = 2;
+    const MAX_BUFFER_APPEND_ERRORS = 3;
+
+    const showHlsError = (message) => {
+      if (errorCard) errorCard.classList.add("is-visible");
+      if (errorText) errorText.textContent = message || "This video is still getting ready. Try again in a moment.";
+      destroyHls();
+    };
+
     hls.attachMedia(video);
     hls.on(window.Hls.Events.MEDIA_ATTACHED, () => {
       debugTrace("hls_media_attached", `id=${item.id}`);
@@ -613,15 +630,33 @@ function hydrateVideoPlayer(item, options = {}) {
     });
     hls.on(window.Hls.Events.ERROR, (_, data) => {
       debugTrace("hls_error", `id=${item.id} fatal=${Boolean(data?.fatal)} type=${data?.type || ""} details=${data?.details || ""}`);
-      if (!data?.fatal) return;
-      if (data.type === window.Hls.ErrorTypes.MEDIA_ERROR) {
-        hls.recoverMediaError();
+
+      // Track non-fatal buffer append errors — these signal MSE codec incompatibility.
+      // hls.js will eventually escalate them to fatal, but the cycle of recoverMediaError()
+      // → MEDIA_ATTACHED → loadSource() → segment 0 → bufferAppendError creates an
+      // infinite loop. Break out early if too many occur before any progress.
+      if (!data?.fatal) {
+        const detail = data?.details || "";
+        if (detail === "bufferAppendError" || detail === "bufferAppendingError") {
+          bufferAppendErrors += 1;
+          if (bufferAppendErrors >= MAX_BUFFER_APPEND_ERRORS) {
+            debugTrace("hls_error", `id=${item.id} fatal=true type=bufferAppend_threshold details=exceeded`);
+            showHlsError("This browser could not decode the video stream. Try downloading the original file.");
+          }
+        }
         return;
       }
-      if (errorCard) errorCard.classList.add("is-visible");
-      if (errorText) {
-        errorText.textContent = "This video is still getting ready. Try again in a moment.";
+
+      if (data.type === window.Hls.ErrorTypes.MEDIA_ERROR) {
+        mediaRecoveryAttempts += 1;
+        if (mediaRecoveryAttempts <= MAX_MEDIA_RECOVERIES) {
+          hls.recoverMediaError();
+        } else {
+          showHlsError("This video is still getting ready. Try again in a moment.");
+        }
+        return;
       }
+      showHlsError("This video is still getting ready. Try again in a moment.");
     });
     return true;
   };
