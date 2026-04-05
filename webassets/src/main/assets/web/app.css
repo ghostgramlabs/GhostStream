@@ -705,6 +705,15 @@ iframe.gs-preview {
   min-height: 70vh;
 }
 
+.gs-no-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: var(--muted);
+  background: var(--card);
+}
+
 .gs-video-error {
   position: absolute;
   inset: 0;

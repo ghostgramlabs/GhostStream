@@ -11,9 +11,18 @@ enum class AutoStopOption(val minutes: Int?) {
 }
 
 @Serializable
+enum class ThemeMode {
+    SYSTEM,
+    DARK,
+    LIGHT,
+}
+
+@Serializable
 data class AppSettings(
     val onboardingCompleted: Boolean = false,
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val autoStop: AutoStopOption = AutoStopOption.NEVER,
+    val preferredPort: Int = 43183,
     val keepScreenAwake: Boolean = true,
     val hapticOnDeviceConnect: Boolean = true,
     val showTransferSpeed: Boolean = true,
@@ -23,7 +32,6 @@ data class AppSettings(
     val manualPin: String = "2468",
     val clearAuthOnStop: Boolean = true,
     val ghostMode: Boolean = true,
-    val forceDarkBrowserTheme: Boolean = true,
     val showThumbnails: Boolean = true,
     val largeTvCards: Boolean = false,
     val prominentDownloadButton: Boolean = true,
@@ -37,4 +45,3 @@ data class RecentSession(
     val totalBytesSent: Long,
     val networkType: NetworkType,
 )
-

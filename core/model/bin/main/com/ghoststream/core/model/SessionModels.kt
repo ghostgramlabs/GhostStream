@@ -46,6 +46,7 @@ data class TransferStats(
     val activeDownloads: Int = 0,
     val completedDownloads: Int = 0,
     val startedAtEpochMs: Long? = null,
+    val lastActivityEpochMs: Long? = null,
 )
 
 @Serializable
@@ -63,6 +64,7 @@ data class SessionState(
     val startedAtEpochMs: Long? = null,
     val serverPort: Int? = null,
     val sessionUrl: String? = null,
+    val advertisedName: String? = null,
     val networkAvailability: NetworkAvailability = NetworkAvailability(
         type = NetworkType.NONE,
         isReady = false,
@@ -79,4 +81,3 @@ data class SessionState(
     val message: String = "Not sharing",
     val errorMessage: String? = null,
 )
-
