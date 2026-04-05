@@ -1,8 +1,8 @@
-package com.ghoststream.app.state
+package com.ghostgramlabs.directserve.state
 
 import android.app.Application
-import com.ghoststream.app.BuildConfig
-import com.ghoststream.app.debug.DebugLogRepository
+import com.ghostgramlabs.directserve.BuildConfig
+import com.ghostgramlabs.directserve.debug.DebugLogRepository
 import com.ghoststream.core.media.AndroidMediaAnalyzer
 import com.ghoststream.core.media.CompatibilityPipeline
 import com.ghoststream.core.media.MediaAnalyzer

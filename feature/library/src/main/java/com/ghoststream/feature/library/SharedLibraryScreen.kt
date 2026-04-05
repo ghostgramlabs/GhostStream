@@ -588,7 +588,7 @@ private fun LibraryControlsCard(
                     ) {
                         Text("Browser prep keeps the original", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                         Text(
-                            "GhostStream may make a temporary browser copy for playback. Downloads still use the original file.",
+                            "DirectServe may make a temporary browser copy for playback. Downloads still use the original file.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

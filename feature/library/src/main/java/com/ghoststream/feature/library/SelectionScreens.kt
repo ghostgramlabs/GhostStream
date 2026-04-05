@@ -100,7 +100,7 @@ fun AddFolderScreen(
     SelectionScreenScaffold(
         modifier = modifier,
         title = "Add Folder",
-        subtitle = "Choose a folder so GhostStream can scan its contents for sharing.",
+        subtitle = "Choose a folder so DirectServe can scan its contents for sharing.",
         primaryLabel = "Add Folder",
         onPrimary = {
             selectedTreeUri?.let(onAddFolder)
@@ -113,7 +113,7 @@ fun AddFolderScreen(
         if (selectedTreeUri == null) {
             LibraryEmptyState(
                 title = "No folder selected",
-                description = "GhostStream can keep a lightweight link to folders you choose with Android's document picker.",
+                description = "DirectServe can keep a lightweight link to folders you choose with Android's document picker.",
             )
         } else {
             SelectionUriRow(uri = selectedTreeUri!!, title = "Selected folder")

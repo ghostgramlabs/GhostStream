@@ -59,5 +59,5 @@ internal fun buildAdvertisedServiceName(deviceLabel: String): String {
         .trim()
         .take(24)
         .ifBlank { "Android" }
-    return "GhostStream $cleaned"
+    return "DirectServe $cleaned"
 }

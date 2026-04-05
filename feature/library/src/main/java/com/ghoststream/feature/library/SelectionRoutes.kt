@@ -102,7 +102,7 @@ fun AddFolderRoute(
     SelectionRouteScaffold(
         modifier = modifier,
         title = "Add Folder",
-        subtitle = "Choose a folder so GhostStream can scan its contents for sharing.",
+        subtitle = "Choose a folder so DirectServe can scan its contents for sharing.",
         primaryLabel = "Add Folder",
         onPrimary = {
             selectedTreeUri?.let(onAddFolder)
@@ -115,7 +115,7 @@ fun AddFolderRoute(
         if (selectedTreeUri == null) {
             LibraryEmptyState(
                 title = "No folder selected",
-                description = "GhostStream can keep a lightweight link to folders you choose with Android's document picker.",
+                description = "DirectServe can keep a lightweight link to folders you choose with Android's document picker.",
             )
         } else {
             SelectionUriCard(uri = selectedTreeUri!!, title = "Selected folder")
@@ -196,7 +196,7 @@ fun BatchSelectRoute(
             item {
                 LibraryEmptyState(
                     title = "Looking for smart groups",
-                    description = "GhostStream is scanning lightweight media metadata on this device.",
+                    description = "DirectServe is scanning lightweight media metadata on this device.",
                 )
             }
         } else if (groups.isEmpty()) {

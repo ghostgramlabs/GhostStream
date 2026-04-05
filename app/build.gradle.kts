@@ -15,7 +15,7 @@ val keystoreProperties = Properties().apply {
 }
 
 android {
-    namespace = "com.ghoststream.app"
+    namespace = "com.ghostgramlabs.directserve"
     compileSdk = 35
     val releaseKeystorePath = keystoreProperties.getProperty("storeFile") ?: "ghoststream-release.jks"
     val releaseKeystoreFile = rootProject.file(releaseKeystorePath)
@@ -25,7 +25,7 @@ android {
         !keystoreProperties.getProperty("keyPassword").isNullOrBlank()
 
     defaultConfig {
-        applicationId = "com.ghoststream.app"
+        applicationId = "com.ghostgramlabs.directserve"
         minSdk = 26
         targetSdk = 35
         versionCode = 1

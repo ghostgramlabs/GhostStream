@@ -71,7 +71,7 @@ class AndroidNetworkInspector(
                     type = NetworkType.WIFI,
                     localAddress = localAddress,
                     isReady = true,
-                    helperText = "GhostStream found a Wi-Fi address on this device. Nearby devices on the same network should be able to open the link.",
+                    helperText = "DirectServe found a Wi-Fi address on this device. Nearby devices on the same network should be able to open the link.",
                 )
             }
 
@@ -89,7 +89,7 @@ class AndroidNetworkInspector(
                     type = NetworkType.NONE,
                     localAddress = null,
                     isReady = false,
-                    helperText = "Mobile data alone won't create a local GhostStream session. Use the same Wi-Fi or turn on your hotspot.",
+                    helperText = "Mobile data alone won't create a local DirectServe session. Use the same Wi-Fi or turn on your hotspot.",
                 )
             }
 
@@ -98,7 +98,7 @@ class AndroidNetworkInspector(
                     type = if (activeNetwork != null) NetworkType.LOCAL else NetworkType.HOTSPOT,
                     localAddress = localAddress,
                     isReady = true,
-                    helperText = "GhostStream found a usable local address on this device. Nearby devices on the same Wi-Fi or hotspot should be able to connect.",
+                    helperText = "DirectServe found a usable local address on this device. Nearby devices on the same Wi-Fi or hotspot should be able to connect.",
                 )
             }
 

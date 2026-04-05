@@ -1,4 +1,4 @@
-package com.ghoststream.app.state
+package com.ghostgramlabs.directserve.state
 
 import android.content.Context
 import android.net.Uri

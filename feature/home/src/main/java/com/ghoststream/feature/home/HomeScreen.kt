@@ -226,7 +226,7 @@ private fun TopBrandHeader(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "GhostStream",
+                text = "DirectServe",
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -495,7 +495,7 @@ private fun SupportPanel(
                     Text("Nearby & network", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        "Make sure your local network is ready, then look for another GhostStream device if you want to open it in the app.",
+                        "Make sure your local network is ready, then look for another DirectServe device if you want to open it in the app.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -527,8 +527,8 @@ private fun SupportPanel(
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     SupportRow(
                         icon = Icons.Outlined.OpenInBrowser,
-                        title = "GhostStream app is optional",
-                        detail = "If the other device also has GhostStream, it can appear here. Everyone else can still scan the QR code or open the browser link.",
+                        title = "DirectServe app is optional",
+                        detail = "If the other device also has DirectServe, it can appear here. Everyone else can still scan the QR code or open the browser link.",
                     )
                     OutlinedButton(
                         onClick = onRefreshNearby,
@@ -545,7 +545,7 @@ private fun SupportPanel(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Open in the GhostStream app", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text("Open in the DirectServe app", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         OutlinedButton(
                             onClick = onRefreshNearby,
                             shape = RoundedCornerShape(16.dp),
@@ -555,7 +555,7 @@ private fun SupportPanel(
                         }
                     }
                     Text(
-                        "This is only for devices with GhostStream installed. The browser link and QR code still work for everyone else.",
+                        "This is only for devices with DirectServe installed. The browser link and QR code still work for everyone else.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -694,7 +694,7 @@ private fun NearbyDeviceSummary(
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = device.friendlyUrl ?: "Ready to open in GhostStream",
+            text = device.friendlyUrl ?: "Ready to open in DirectServe",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

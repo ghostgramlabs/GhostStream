@@ -1,4 +1,4 @@
-package com.ghoststream.app.state
+package com.ghostgramlabs.directserve.state
 
 import com.ghoststream.core.media.CompatibilityPipeline
 import com.ghoststream.core.media.MediaAnalyzer

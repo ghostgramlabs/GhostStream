@@ -67,7 +67,7 @@ fun SettingsScreen(
         item {
             Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
                 Text("Settings", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.SemiBold)
-                Text("Choose how GhostStream feels and behaves.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Choose how DirectServe feels and behaves.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
@@ -186,8 +186,8 @@ fun HelpScreen(modifier: Modifier = Modifier) {
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         ) {
             Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text("About GhostStream", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-                Text("GhostStream lets nearby devices stream or download from your phone in a browser.", style = MaterialTheme.typography.bodyLarge)
+                Text("About DirectServe", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+                Text("DirectServe lets nearby devices stream or download from your phone in a browser.", style = MaterialTheme.typography.bodyLarge)
                 Text("No cloud. No account. No internet required.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("Some videos may need a temporary browser-ready copy for smoother playback. The original file stays available to download.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }

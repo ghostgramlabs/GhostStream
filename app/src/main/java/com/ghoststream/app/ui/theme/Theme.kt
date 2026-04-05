@@ -1,4 +1,4 @@
-package com.ghoststream.app.ui.theme
+package com.ghostgramlabs.directserve.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme

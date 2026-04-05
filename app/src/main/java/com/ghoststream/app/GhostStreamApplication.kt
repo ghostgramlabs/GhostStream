@@ -1,7 +1,7 @@
-package com.ghoststream.app
+package com.ghostgramlabs.directserve
 
 import android.app.Application
-import com.ghoststream.app.state.AppContainer
+import com.ghostgramlabs.directserve.state.AppContainer
 
 class GhostStreamApplication : Application() {
     lateinit var container: AppContainer
@@ -12,4 +12,3 @@ class GhostStreamApplication : Application() {
         container = AppContainer(this)
     }
 }
-

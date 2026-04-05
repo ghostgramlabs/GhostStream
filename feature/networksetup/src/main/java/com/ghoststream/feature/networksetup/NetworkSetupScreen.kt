@@ -74,7 +74,7 @@ fun NetworkSetupScreen(
                     fontWeight = FontWeight.SemiBold,
                 )
                 Text(
-                    text = "GhostStream works when both devices are on the same Wi-Fi or your phone hotspot.",
+                    text = "DirectServe works when both devices are on the same Wi-Fi or your phone hotspot.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

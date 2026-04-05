@@ -46,7 +46,7 @@ class NsdDiscoveryManager(
         }
         _discoveryState.value = NearbyDiscoveryState(
             isDiscovering = true,
-            helperText = "Looking for nearby GhostStream devices on this network...",
+            helperText = "Looking for nearby DirectServe devices on this network...",
         )
 
         val listener = object : NsdManager.DiscoveryListener {
@@ -75,9 +75,9 @@ class NsdDiscoveryManager(
                     current.copy(
                         isDiscovering = true,
                         helperText = if (current.devices.isEmpty()) {
-                            "Looking for nearby GhostStream devices on this network..."
+                            "Looking for nearby DirectServe devices on this network..."
                         } else {
-                            "Nearby GhostStream devices are ready to open."
+                            "Nearby DirectServe devices are ready to open."
                         },
                         lastError = null,
                     )
@@ -213,9 +213,9 @@ class NsdDiscoveryManager(
             isDiscovering = discoveryListener != null,
             devices = devices,
             helperText = if (devices.isEmpty()) {
-                "Open GhostStream on another device on the same Wi-Fi or hotspot to see it here."
+                "Open DirectServe on another device on the same Wi-Fi or hotspot to see it here."
             } else {
-                "Tap a nearby GhostStream session to open it in your browser."
+                "Tap a nearby DirectServe session to open it in your browser."
             },
         )
     }

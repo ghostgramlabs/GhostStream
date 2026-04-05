@@ -1,5 +1,5 @@
 const app = document.getElementById("app");
-const sessionTitle = app.dataset.title || "GhostStream";
+const sessionTitle = app.dataset.title || "DirectServe";
 const sessionSubtitle = app.dataset.subtitle || "Local-only streaming";
 
 const state = {
@@ -61,7 +61,7 @@ async function boot() {
       navigate("/login", true);
       return;
     }
-    renderError(error.message || "Unable to load GhostStream.");
+    renderError(error.message || "Unable to load DirectServe.");
   }
 }
 
@@ -132,9 +132,9 @@ function compatibilityBody(item, streamLive = item.streamReady) {
     return item.compatibilityMessage;
   }
   if (streamLive) {
-    return item.compatibilityMessage || "GhostStream is finishing the compatible stream in the background.";
+    return item.compatibilityMessage || "DirectServe is finishing the compatible stream in the background.";
   }
-  return item.compatibilityMessage || "GhostStream is preparing a compatible stream for this browser.";
+  return item.compatibilityMessage || "DirectServe is preparing a compatible stream for this browser.";
 }
 
 async function api(url, options = {}) {
@@ -521,7 +521,7 @@ function hydrateVideoPlayer(item, options = {}) {
       errorText.textContent = item.playbackMode === "DIRECT"
         ? "This browser could not start the original stream. Try downloading the original file."
         : (shouldUseHlsPlayback(item)
-            ? "GhostStream is opening the HLS playback path for this device. Retry in a moment."
+            ? "DirectServe is opening the HLS playback path for this device. Retry in a moment."
             : "The compatibility stream is still warming up. Retry in a moment.");
     }
     if (item.playbackMode !== "DIRECT" && !autoRetryUsed) {

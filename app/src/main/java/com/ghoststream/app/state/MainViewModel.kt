@@ -1,4 +1,4 @@
-package com.ghoststream.app.state
+package com.ghostgramlabs.directserve.state
 
 import android.net.Uri
 import androidx.lifecycle.ViewModel

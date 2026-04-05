@@ -1,4 +1,4 @@
-package com.ghoststream.app.debug
+package com.ghostgramlabs.directserve.debug
 
 import android.content.ContentUris
 import android.content.ContentValues
@@ -9,7 +9,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import androidx.core.content.FileProvider
-import com.ghoststream.app.BuildConfig
+import com.ghostgramlabs.directserve.BuildConfig
 import com.ghoststream.core.model.DebugLogSink
 import java.io.File
 import java.text.SimpleDateFormat
@@ -95,9 +95,9 @@ class DebugLogRepository(
 
     fun locationDescription(): String {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            "Downloads/GhostStream/$FILE_NAME"
+            "Downloads/DirectServe/$FILE_NAME"
         } else {
-            "GhostStream app downloads/$FILE_NAME"
+            "DirectServe app downloads/$FILE_NAME"
         }
     }
 
@@ -121,7 +121,7 @@ class DebugLogRepository(
     private fun ensureLegacyLogFile(): File {
         val directory = appContext.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
             ?: File(appContext.filesDir, "debug-downloads")
-        return File(File(directory, "GhostStream"), FILE_NAME)
+        return File(File(directory, "DirectServe"), FILE_NAME)
     }
 
     private fun ensureModernLogUri(): Uri? {
@@ -151,9 +151,9 @@ class DebugLogRepository(
     }
 
     private companion object {
-        const val LOG_TAG = "GhostStreamDebug"
-        const val FILE_NAME = "ghoststream-debug.log"
-        val RELATIVE_PATH = "${Environment.DIRECTORY_DOWNLOADS}/GhostStream/"
+        const val LOG_TAG = "DirectServeDebug"
+        const val FILE_NAME = "directserve-debug.log"
+        val RELATIVE_PATH = "${Environment.DIRECTORY_DOWNLOADS}/DirectServe/"
         val dateFormatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
     }
 }

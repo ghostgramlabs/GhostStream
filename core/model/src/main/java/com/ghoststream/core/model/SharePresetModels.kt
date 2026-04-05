@@ -94,14 +94,14 @@ fun buildConnectionDiagnostics(
                 sessionState.isSharing -> DiagnosticCheck(
                     id = "browser",
                     title = "Browser link preparing",
-                    detail = "GhostStream is still preparing the local browser link.",
+                    detail = "DirectServe is still preparing the local browser link.",
                     level = DiagnosticLevel.WARNING,
                 )
 
                 else -> DiagnosticCheck(
                     id = "browser",
                     title = "Browser path available",
-                    detail = "When you start sharing, GhostStream will still use the same QR and browser flow.",
+                    detail = "When you start sharing, DirectServe will still use the same QR and browser flow.",
                     level = DiagnosticLevel.INFO,
                 )
             },
@@ -144,14 +144,14 @@ fun buildConnectionDiagnostics(
                 nearbyDiscoveryState.devices.isNotEmpty() -> DiagnosticCheck(
                     id = "nearby",
                     title = "Nearby app discovery live",
-                    detail = "${nearbyDiscoveryState.devices.size} GhostStream device(s) found on this network.",
+                    detail = "${nearbyDiscoveryState.devices.size} DirectServe device(s) found on this network.",
                     level = DiagnosticLevel.GOOD,
                 )
 
                 else -> DiagnosticCheck(
                     id = "nearby",
                     title = "Nearby app discovery scanning",
-                    detail = "Optional: nearby GhostStream devices will appear here when found.",
+                    detail = "Optional: nearby DirectServe devices will appear here when found.",
                     level = DiagnosticLevel.INFO,
                 )
             },

@@ -1,4 +1,4 @@
-package com.ghoststream.app.service
+package com.ghostgramlabs.directserve.service
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -13,10 +13,10 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
-import com.ghoststream.app.GhostStreamApplication
-import com.ghoststream.app.MainActivity
-import com.ghoststream.app.R
-import com.ghoststream.app.state.ShareStartResult
+import com.ghostgramlabs.directserve.GhostStreamApplication
+import com.ghostgramlabs.directserve.MainActivity
+import com.ghostgramlabs.directserve.R
+import com.ghostgramlabs.directserve.state.ShareStartResult
 import com.ghoststream.core.model.AppSettings
 import com.ghoststream.core.model.AutoStopOption
 import com.ghoststream.core.model.SessionState
@@ -93,7 +93,7 @@ class GhostStreamForegroundService : Service() {
                         startupInProgress = false
                         serviceScope.launch {
                             container.sharingCoordinator.stopSharing(
-                                "GhostStream couldn't start background sharing on this device.",
+                                "DirectServe couldn't start background sharing on this device.",
                             )
                             stopSelf()
                         }
@@ -232,8 +232,8 @@ class GhostStreamForegroundService : Service() {
     companion object {
         private const val CHANNEL_ID = "ghoststream_sharing"
         private const val NOTIFICATION_ID = 404
-        private const val ACTION_START = "com.ghoststream.app.action.START_SHARING"
-        private const val ACTION_STOP = "com.ghoststream.app.action.STOP_SHARING"
+        private const val ACTION_START = "com.ghostgramlabs.directserve.action.START_SHARING"
+        private const val ACTION_STOP = "com.ghostgramlabs.directserve.action.STOP_SHARING"
 
         fun start(context: Context) {
             val intent = Intent(context, GhostStreamForegroundService::class.java).setAction(ACTION_START)

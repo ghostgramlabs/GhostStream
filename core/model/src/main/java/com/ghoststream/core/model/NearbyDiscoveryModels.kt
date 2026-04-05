@@ -17,6 +17,6 @@ data class NearbyDevice(
 data class NearbyDiscoveryState(
     val isDiscovering: Boolean = false,
     val devices: List<NearbyDevice> = emptyList(),
-    val helperText: String = "Nearby GhostStream devices on the same Wi-Fi or hotspot will appear here. This is optional.",
+    val helperText: String = "Nearby DirectServe devices on the same Wi-Fi or hotspot will appear here. This is optional.",
     val lastError: String? = null,
 )

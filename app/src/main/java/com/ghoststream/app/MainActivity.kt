@@ -1,4 +1,4 @@
-package com.ghoststream.app
+package com.ghostgramlabs.directserve
 
 import android.Manifest
 import android.content.ClipData
@@ -56,10 +56,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.ghoststream.app.service.GhostStreamForegroundService
-import com.ghoststream.app.state.AppEvent
-import com.ghoststream.app.state.MainViewModel
-import com.ghoststream.app.ui.theme.GhostStreamTheme
+import com.ghostgramlabs.directserve.service.GhostStreamForegroundService
+import com.ghostgramlabs.directserve.state.AppEvent
+import com.ghostgramlabs.directserve.state.MainViewModel
+import com.ghostgramlabs.directserve.ui.theme.GhostStreamTheme
 import com.ghoststream.core.model.resolvedAccessUrl
 import com.ghoststream.core.model.ThemeMode
 import com.ghoststream.feature.home.HomeScreen
@@ -99,7 +99,7 @@ private fun GhostStreamRoot(viewModel: MainViewModel) {
 }
 
 @Composable
-private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghoststream.app.state.MainUiState) {
+private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.directserve.state.MainUiState) {
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -116,7 +116,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghoststream.ap
                 GhostStreamForegroundService.start(context)
             }.onFailure {
                 viewModel.onServiceStartFailure(
-                    "Sharing started, but background protection could not start. Keep GhostStream open while you use it.",
+                    "Sharing started, but background protection could not start. Keep DirectServe open while you use it.",
                 )
             }
         }
@@ -235,13 +235,13 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghoststream.ap
                     }
                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
-                        putExtra(Intent.EXTRA_SUBJECT, "GhostStream debug log")
+                        putExtra(Intent.EXTRA_SUBJECT, "DirectServe debug log")
                         putExtra(
                             Intent.EXTRA_TEXT,
-                            "GhostStream debug log attached. This file is generated only in debug builds to diagnose local server startup issues.",
+                            "DirectServe debug log attached. This file is generated only in debug builds to diagnose local server startup issues.",
                         )
                         putExtra(Intent.EXTRA_STREAM, event.uri)
-                        clipData = ClipData.newRawUri("GhostStream debug log", event.uri)
+                        clipData = ClipData.newRawUri("DirectServe debug log", event.uri)
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         selector = emailSelector
                     }
@@ -428,7 +428,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghoststream.ap
                         } else {
                             viewModel.refreshNetwork()
                             scope.launch {
-                                snackbarHostState.showSnackbar("GhostStream is still preparing your local link.")
+                                snackbarHostState.showSnackbar("DirectServe is still preparing your local link.")
                             }
                         }
                     },
@@ -439,7 +439,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghoststream.ap
                                 type = "text/plain"
                                 putExtra(Intent.EXTRA_TEXT, url)
                             }
-                            context.startActivity(Intent.createChooser(intent, "Share GhostStream link"))
+                            context.startActivity(Intent.createChooser(intent, "Share DirectServe link"))
                         } else {
                             viewModel.refreshNetwork()
                             scope.launch {
@@ -515,7 +515,7 @@ private fun SplashRoute() {
                 modifier = Modifier.size(88.dp),
             )
             Spacer(modifier = Modifier.height(18.dp))
-            Text("GhostStream", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
+            Text("DirectServe", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(6.dp))
             Text("Private local sharing", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }

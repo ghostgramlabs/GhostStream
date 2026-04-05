@@ -369,7 +369,7 @@ private fun SessionAccessPanel(
             SessionInfoRow(
                 title = "What happens now",
                 value = when {
-                    !sessionState.isSharing -> "GhostStream is getting the session ready."
+                    !sessionState.isSharing -> "DirectServe is getting the session ready."
                     sessionState.connectedClients.isEmpty() -> "Waiting for the first device to open the link or scan the QR code."
                     else -> "${sessionState.connectedClients.size} device${if (sessionState.connectedClients.size == 1) "" else "s"} connected right now."
                 },
