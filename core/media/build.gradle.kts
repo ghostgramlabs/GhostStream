@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.ghoststream.core.media"
+    namespace = "com.ghostgramlabs.directserve.core.media"
     compileSdk = 35
 
     defaultConfig {

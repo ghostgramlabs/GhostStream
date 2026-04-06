@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.ghoststream.core.history"
+    namespace = "com.ghostgramlabs.directserve.core.history"
     compileSdk = 35
 
     defaultConfig {

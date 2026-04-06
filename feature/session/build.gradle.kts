@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.ghoststream.feature.session"
+    namespace = "com.ghostgramlabs.directserve.feature.session"
     compileSdk = 35
 
     defaultConfig {

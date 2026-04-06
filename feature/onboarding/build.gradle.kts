@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.ghoststream.feature.onboarding"
+    namespace = "com.ghostgramlabs.directserve.feature.onboarding"
     compileSdk = 35
 
     defaultConfig {

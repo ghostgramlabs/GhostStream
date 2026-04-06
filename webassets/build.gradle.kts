@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.ghoststream.webassets"
+    namespace = "com.ghostgramlabs.directserve.webassets"
     compileSdk = 35
 
     defaultConfig {

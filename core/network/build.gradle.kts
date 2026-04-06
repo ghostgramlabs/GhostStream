@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.ghoststream.core.network"
+    namespace = "com.ghostgramlabs.directserve.core.network"
     compileSdk = 35
 
     defaultConfig {
