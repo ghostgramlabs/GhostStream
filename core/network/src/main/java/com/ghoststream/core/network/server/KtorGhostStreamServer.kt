@@ -197,6 +197,8 @@ class KtorGhostStreamServer(
                         showThumbnails = settings.showThumbnails,
                     )
                 }
+                val clientIp = call.request.origin.remoteHost
+                val deviceName = DeviceNameGenerator.generateName(clientIp)
                 call.respond(
                     BrowserBootstrap(
                         title = "DirectServe",
@@ -222,6 +224,8 @@ class KtorGhostStreamServer(
                         debugTracing = debugBrowserTracingEnabled,
                         requireSessionPassword = settings.requireSessionPassword,
                         preventDownload = settings.preventDownload,
+                        deviceName = deviceName,
+                        deviceIp = clientIp,
                     ),
                 )
             }
@@ -1323,6 +1327,8 @@ class KtorGhostStreamServer(
         val debugTracing: Boolean,
         val requireSessionPassword: Boolean,
         val preventDownload: Boolean,
+        val deviceName: String,
+        val deviceIp: String,
     )
 
     @Serializable

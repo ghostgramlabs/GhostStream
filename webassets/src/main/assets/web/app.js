@@ -417,6 +417,10 @@ function shell(content, options = {}) {
           <span class="gs-inline-note-label">Session</span>
           <span>${esc(bootstrap?.subtitle || sessionSubtitle)}</span>
         </div>
+        <div class="gs-inline-note">
+          <span class="gs-inline-note-label">Device</span>
+          <span>${bootstrap?.deviceName ? `${esc(bootstrap.deviceName)} • ${esc(bootstrap.deviceIp)}` : "Unknown"}</span>
+        </div>
         ${sessionLink}
       </div>
       <main class="gs-main">${content}</main>

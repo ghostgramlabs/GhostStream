@@ -357,6 +357,12 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onOpenLibrary = { navController.navigate(Routes.Library) },
                     onOpenSettings = { navController.navigate(Routes.Settings) },
                     onOpenHistory = viewModel::navigateToHistory,
+                    onSaveDeviceNickname = { ipAddress, nickname ->
+                        viewModel.updateSettings { current ->
+                            current.copy(deviceNicknames = current.deviceNicknames + (ipAddress to nickname))
+                        }
+                    },
+                    deviceNicknames = uiState.settings.deviceNicknames,
                     onResolveUploadRequest = viewModel::resolveUploadRequest,
                     modifier = Modifier.padding(innerPadding),
                 )

@@ -39,6 +39,13 @@ data class BlockedClient(
 )
 
 @Serializable
+data class DeviceNickname(
+    val ipAddress: String,
+    val nickname: String,
+    val lastSeenEpochMs: Long,
+)
+
+@Serializable
 data class TransferStats(
     val totalBytesSent: Long = 0,
     val currentBytesPerSecond: Long = 0,

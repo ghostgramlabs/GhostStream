@@ -43,6 +43,7 @@ data class AppSettings(
     val sessionPassword: String = "",
     val requireDeviceApproval: Boolean = false,
     val preventDownload: Boolean = false,
+    val deviceNicknames: Map<String, String> = emptyMap(), // ipAddress -> nickname
 )
 
 @Serializable

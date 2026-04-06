@@ -29,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AddBox
 import androidx.compose.material.icons.outlined.Collections
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.NetworkCheck
 import androidx.compose.material.icons.outlined.OpenInBrowser
@@ -43,11 +44,13 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,6 +65,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ghoststream.core.model.ConnectionDiagnostics
+import com.ghoststream.core.model.DeviceNameGenerator
 import com.ghoststream.core.model.LibraryState
 import com.ghoststream.core.model.NearbyDevice
 import com.ghoststream.core.model.NearbyDiscoveryState
@@ -95,6 +99,8 @@ fun HomeScreen(
     onOpenLibrary: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenHistory: () -> Unit,
+    onSaveDeviceNickname: (String, String) -> Unit,
+    deviceNicknames: Map<String, String> = emptyMap(),
     onResolveUploadRequest: (String, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -122,6 +128,16 @@ fun HomeScreen(
                 isStartingShare = isStartingShare,
                 onStartSharing = onStartSharing,
             )
+        }
+
+        if (sessionState.isSharing && sessionState.connectedClients.isNotEmpty()) {
+            item {
+                ConnectedDevicesCard(
+                    connectedClients = sessionState.connectedClients,
+                    deviceNicknames = deviceNicknames,
+                    onSaveDeviceNickname = onSaveDeviceNickname,
+                )
+            }
         }
 
         item {
@@ -424,6 +440,99 @@ private fun SummaryStrip(libraryState: LibraryState) {
         HeroStat(label = "Files", value = libraryState.summary.totalItems.toString())
         HeroStat(label = "Media", value = (libraryState.summary.videos + libraryState.summary.photos + libraryState.summary.music).toString())
         HeroStat(label = "Size", value = formatBytes(libraryState.summary.totalBytes))
+    }
+}
+
+@Composable
+private fun ConnectedDevicesCard(
+    connectedClients: List<com.ghoststream.core.model.ConnectedClient>,
+    deviceNicknames: Map<String, String>,
+    onSaveDeviceNickname: (String, String) -> Unit,
+) {
+    var editingClientId by remember { mutableStateOf<String?>(null) }
+    var editNickname by remember { mutableStateOf("") }
+
+    Card(
+        modifier = Modifier
+            .padding(horizontal = 20.dp)
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text("Connected devices", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            Spacer(modifier = Modifier.height(12.dp))
+
+            connectedClients.forEach { client ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    val generatedName = DeviceNameGenerator.generateName(client.ipAddress)
+                    val customName = deviceNicknames[client.ipAddress]
+                    val displayName = customName ?: generatedName
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(displayName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                        Text(client.ipAddress, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    IconButton(
+                        onClick = { 
+                            editingClientId = client.id
+                            editNickname = customName ?: ""
+                        },
+                        modifier = Modifier.size(36.dp),
+                    ) {
+                        Icon(Icons.Outlined.Edit, contentDescription = "Edit nickname", modifier = Modifier.size(18.dp))
+                    }
+                }
+            }
+        }
+    }
+
+    // Nickname edit dialog
+    if (editingClientId != null) {
+        val editingClient = connectedClients.find { it.id == editingClientId }
+        val defaultName = if (editingClient != null) DeviceNameGenerator.generateName(editingClient.ipAddress) else ""
+        
+        AlertDialog(
+            onDismissRequest = { editingClientId = null },
+            title = { Text("Rename device") },
+            text = {
+                Column {
+                    Text("Device: $defaultName • ${editingClient?.ipAddress}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = editNickname,
+                        onValueChange = { editNickname = it },
+                        label = { Text("Custom name (optional)") },
+                        placeholder = { Text(defaultName) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val clientIp = connectedClients.find { it.id == editingClientId }?.ipAddress
+                        if (clientIp != null) {
+                            onSaveDeviceNickname(clientIp, editNickname)
+                        }
+                        editingClientId = null
+                    }
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { editingClientId = null }) {
+                    Text("Cancel")
+                }
+            },
+        )
     }
 }
 
