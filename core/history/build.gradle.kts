@@ -2,10 +2,11 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
 }
 
 android {
-    namespace = "com.ghoststream.core.storage"
+    namespace = "com.ghoststream.core.history"
     compileSdk = 35
 
     defaultConfig {
@@ -24,11 +25,9 @@ android {
 
 dependencies {
     implementation(project(":core:model"))
-    implementation(project(":core:history"))
-    implementation(project(":core:media"))
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.datastore.preferences)
-    implementation(libs.androidx.documentfile)
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
     implementation(libs.kotlinx.coroutines.android)
-    implementation(libs.kotlinx.serialization.json)
 }

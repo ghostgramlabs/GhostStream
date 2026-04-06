@@ -8,17 +8,8 @@ import com.ghoststream.core.media.CompatibilityStatus
 import com.ghoststream.core.media.MediaAnalyzer
 import com.ghoststream.core.media.PlaybackResolution
 import com.ghoststream.core.media.PlaybackSource
-import com.ghoststream.core.model.ClientActivity
-import com.ghoststream.core.model.DebugLogSink
-import com.ghoststream.core.model.MediaCategory
-import com.ghoststream.core.model.NoOpDebugLogSink
-import com.ghoststream.core.model.PlaybackMode
-import com.ghoststream.core.model.SharedItem
-import com.ghoststream.core.model.ThemeMode
-import com.ghoststream.core.model.buildSessionAccessUrl
-import com.ghoststream.core.network.AndroidNetworkInspector
-import com.ghoststream.core.network.assets.WebAssetLoader
-import com.ghoststream.core.session.SessionManager
+import com.ghoststream.core.history.HistoryRepository
+import com.ghoststream.core.model.*
 import com.ghoststream.core.settings.SettingsRepository
 import com.ghoststream.core.storage.StorageRepository
 import io.ktor.http.ContentDisposition
@@ -38,12 +29,18 @@ import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.origin
 import io.ktor.server.request.header
 import io.ktor.server.request.receiveNullable
+import io.ktor.server.request.receiveMultipart
 import io.ktor.server.request.path
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondOutputStream
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.response.respondText
+import io.ktor.http.content.PartData
+import io.ktor.http.content.forEachPart
+import io.ktor.http.content.streamProvider
+import com.ghoststream.core.model.UploadRequest
+import java.util.UUID
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
@@ -68,6 +65,7 @@ class KtorGhostStreamServer(
     private val mediaAnalyzer: MediaAnalyzer,
     private val compatibilityPipeline: CompatibilityPipeline,
     private val networkInspector: AndroidNetworkInspector,
+    private val historyRepository: HistoryRepository,
     private val assetLoader: WebAssetLoader = WebAssetLoader(context),
     private val json: Json = Json { ignoreUnknownKeys = true },
     private val debugLogSink: DebugLogSink = NoOpDebugLogSink,
@@ -530,6 +528,76 @@ class KtorGhostStreamServer(
                 }
                 call.respondText(text = convertToWebVtt(text), contentType = ContentType.parse("text/vtt"))
             }
+
+            post("/api/upload/request") {
+                if (!call.authorizeBrowserCall()) return@post
+                val payload = call.receiveNullable<UploadRequestPayload>() ?: run {
+                    call.respond(HttpStatusCode.BadRequest, ErrorPayload("Invalid upload request."))
+                    return@post
+                }
+                val requestId = UUID.randomUUID().toString()
+                val request = UploadRequest(
+                    id = requestId,
+                    fileName = payload.fileName,
+                    fileCount = payload.fileCount,
+                    sizeBytes = payload.sizeBytes,
+                    requesterIp = call.remoteHost(),
+                    requestedAtEpochMs = System.currentTimeMillis(),
+                )
+                
+                val settings = settingsRepository.settings.first()
+                if (settings.requireUploadApproval) {
+                    sessionManager.submitUploadRequest(request)
+                    val accepted = sessionManager.waitForUploadResolution(requestId)
+                    if (!accepted) {
+                        call.respond(HttpStatusCode.Forbidden, ErrorPayload("The host declined your file transfer."))
+                        return@post
+                    }
+                }
+                
+                call.respond(UploadRequestResponse(requestId = requestId, accepted = true))
+            }
+
+            post("/api/upload/execute/{id}") {
+                if (!call.authorizeBrowserCall()) return@post
+                val requestId = call.parameters["id"] ?: return@post
+                
+                val multipart = call.receiveMultipart()
+                val uploadedUris = mutableListOf<Uri>()
+                
+                multipart.forEachPart { part ->
+                    if (part is PartData.FileItem) {
+                        val fileName = part.originalFileName ?: "uploaded_file"
+                        val mimeType = part.contentType?.toString() ?: "application/octet-stream"
+                        
+                        part.streamProvider().use { input ->
+                            storageRepository.saveUploadedFile(
+                                fileName = fileName,
+                                mimeType = mimeType,
+                                content = input,
+                                peer = call.remoteHost(),
+                            )?.let { uri ->
+                                uploadedUris.add(uri)
+                            }
+                        }
+                    }
+                    part.dispose()
+                }
+
+                if (uploadedUris.isNotEmpty()) {
+                    storageRepository.addFiles(uploadedUris)
+                    call.respond(AuthResult(success = true))
+                } else {
+                    call.respond(HttpStatusCode.InternalServerError, ErrorPayload("No files were successfully saved."))
+                }
+            }
+
+            post("/api/upload/cancel/{id}") {
+                if (!call.authorizeBrowserCall()) return@post
+                val requestId = call.parameters["id"] ?: return@post
+                sessionManager.resolveUploadRequest(requestId, accepted = false)
+                call.respond(AuthResult(success = true))
+            }
         }
     }
 
@@ -652,6 +720,22 @@ class KtorGhostStreamServer(
             val callerHost = remoteHost()
 
             sessionManager.onTransferStarted(callerHost, activity, asAttachment)
+
+            // Log outgoing transfer to history if it's a full download or start of a stream
+            if (asAttachment || range == null || range.first == 0L) {
+                historyRepository.addRecord(
+                    TransferRecord(
+                        id = UUID.randomUUID().toString(),
+                        name = item.displayName,
+                        direction = TransferDirection.SENT,
+                        sizeBytes = totalLength,
+                        timestampMs = System.currentTimeMillis(),
+                        peer = callerHost,
+                        category = item.category,
+                    )
+                )
+            }
+
             try {
                 respond(object : OutgoingContent.WriteChannelContent() {
                     override val status: HttpStatusCode = if (range != null) HttpStatusCode.PartialContent else HttpStatusCode.OK
@@ -1194,6 +1278,20 @@ class KtorGhostStreamServer(
     @Serializable
     private data class ErrorPayload(
         val message: String,
+    )
+
+    @Serializable
+    private data class UploadRequestPayload(
+        val fileName: String,
+        val fileCount: Int,
+        val sizeBytes: Long,
+    )
+    
+
+    @Serializable
+    private data class UploadRequestResponse(
+        val requestId: String,
+        val accepted: Boolean,
     )
 
     @Serializable

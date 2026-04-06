@@ -10,6 +10,7 @@ import com.ghoststream.core.model.RecentSession
 import com.ghoststream.core.model.SessionState
 import com.ghoststream.core.model.SharePreset
 import com.ghoststream.core.model.SmartSelectionGroup
+import com.ghoststream.core.model.TransferRecord
 
 data class MainUiState(
     val isReady: Boolean = false,
@@ -26,6 +27,8 @@ data class MainUiState(
     val pendingShareAfterNetworkReady: Boolean = false,
     val isStartingShare: Boolean = false,
     val connectingNearbyDeviceId: String? = null,
+    val pendingUploadRequest: com.ghoststream.core.model.UploadRequest? = null,
+    val transferHistory: List<TransferRecord> = emptyList(),
 )
 
 sealed interface AppEvent {
@@ -37,4 +40,6 @@ sealed interface AppEvent {
     data object StopSharingService : AppEvent
     data class ShareDebugLog(val uri: Uri) : AppEvent
     data class OpenExternalUrl(val url: String) : AppEvent
+    data object NavigateHistory : AppEvent
+    data class OpenFile(val fileUri: String) : AppEvent
 }

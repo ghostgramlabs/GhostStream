@@ -63,6 +63,15 @@ class GhostStreamForegroundService : Service() {
                 scheduleAutoStop(settings, sessionState)
             }
         }
+        serviceScope.launch {
+            container.sessionManager.pendingUploadRequest.collectLatest { request ->
+                if (request != null) {
+                    showUploadRequestNotification(request)
+                } else {
+                    cancelUploadRequestNotification()
+                }
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -74,6 +83,24 @@ class GhostStreamForegroundService : Service() {
                     container.sharingCoordinator.stopSharing()
                     stopForeground(STOP_FOREGROUND_REMOVE)
                     stopSelf()
+                }
+            }
+
+            ACTION_ACCEPT_UPLOAD -> {
+                val requestId = intent.getStringExtra(EXTRA_REQUEST_ID)
+                if (requestId != null) {
+                    serviceScope.launch {
+                        container.sessionManager.resolveUploadRequest(requestId, true)
+                    }
+                }
+            }
+
+            ACTION_DECLINE_UPLOAD -> {
+                val requestId = intent.getStringExtra(EXTRA_REQUEST_ID)
+                if (requestId != null) {
+                    serviceScope.launch {
+                        container.sessionManager.resolveUploadRequest(requestId, false)
+                    }
                 }
             }
 
@@ -177,6 +204,62 @@ class GhostStreamForegroundService : Service() {
         stopSelf()
     }
 
+    private fun showUploadRequestNotification(request: com.ghoststream.core.model.UploadRequest) {
+        val acceptIntent = PendingIntent.getService(
+            this,
+            201,
+            Intent(this, GhostStreamForegroundService::class.java)
+                .setAction(ACTION_ACCEPT_UPLOAD)
+                .putExtra(EXTRA_REQUEST_ID, request.id),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val declineIntent = PendingIntent.getService(
+            this,
+            202,
+            Intent(this, GhostStreamForegroundService::class.java)
+                .setAction(ACTION_DECLINE_UPLOAD)
+                .putExtra(EXTRA_REQUEST_ID, request.id),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val fileText = if (request.fileCount > 1) "${request.fileCount} files" else request.fileName
+        val notification = NotificationCompat.Builder(this, REQUEST_CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle("Incoming Transfer")
+            .setContentText("$fileText (${formatBytes(request.sizeBytes)}) from ${request.requesterIp}")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_EVENT)
+            .setAutoCancel(true)
+            .setOngoing(true)
+            .setVibrate(longArrayOf(0, 500, 200, 500))
+            .addAction(0, "Accept", acceptIntent)
+            .addAction(0, "Decline", declineIntent)
+            .build()
+
+        NotificationManagerCompat.from(this).notify(REQUEST_NOTIFICATION_ID, notification)
+    }
+
+    private fun cancelUploadRequestNotification() {
+        NotificationManagerCompat.from(this).cancel(REQUEST_NOTIFICATION_ID)
+    }
+
+    private fun formatBytes(bytes: Long): String {
+        if (bytes <= 0L) return "0 B"
+        val units = listOf("B", "KB", "MB", "GB", "TB")
+        var value = bytes.toDouble()
+        var unitIndex = 0
+        while (value >= 1024 && unitIndex < units.lastIndex) {
+            value /= 1024
+            unitIndex++
+        }
+        return if (value >= 100 || unitIndex == 0) {
+            "${value.toInt()} ${units[unitIndex]}"
+        } else {
+            String.format("%.1f %s", value, units[unitIndex])
+        }
+    }
+
     private fun buildNotification(state: SessionState): android.app.Notification {
         val openAppIntent = PendingIntent.getActivity(
             this,
@@ -227,13 +310,28 @@ class GhostStreamForegroundService : Service() {
             description = getString(R.string.notification_channel_description)
         }
         manager.createNotificationChannel(channel)
+
+        val requestChannel = NotificationChannel(
+            REQUEST_CHANNEL_ID,
+            "Transfer Requests",
+            NotificationManager.IMPORTANCE_HIGH,
+        ).apply {
+            description = "Notifications for incoming file transfers from PCs"
+            enableVibration(true)
+        }
+        manager.createNotificationChannel(requestChannel)
     }
 
     companion object {
         private const val CHANNEL_ID = "ghoststream_sharing"
+        private const val REQUEST_CHANNEL_ID = "ghoststream_requests"
         private const val NOTIFICATION_ID = 404
+        private const val REQUEST_NOTIFICATION_ID = 405
         private const val ACTION_START = "com.ghostgramlabs.directserve.action.START_SHARING"
         private const val ACTION_STOP = "com.ghostgramlabs.directserve.action.STOP_SHARING"
+        private const val ACTION_ACCEPT_UPLOAD = "com.ghostgramlabs.directserve.action.ACCEPT_UPLOAD"
+        private const val ACTION_DECLINE_UPLOAD = "com.ghostgramlabs.directserve.action.DECLINE_UPLOAD"
+        private const val EXTRA_REQUEST_ID = "request_id"
 
         fun start(context: Context) {
             val intent = Intent(context, GhostStreamForegroundService::class.java).setAction(ACTION_START)

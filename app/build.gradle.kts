@@ -28,8 +28,8 @@ android {
         applicationId = "com.ghostgramlabs.directserve"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 7
+        versionName = "1.0.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -95,6 +95,8 @@ dependencies {
     implementation(project(":feature:settings"))
     implementation(project(":feature:onboarding"))
     implementation(project(":feature:networksetup"))
+    implementation(project(":feature:history"))
+    implementation(project(":core:history"))
     implementation(project(":webassets"))
 
     implementation(libs.androidx.appcompat)

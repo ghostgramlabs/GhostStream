@@ -35,6 +35,7 @@ data class AppSettings(
     val showThumbnails: Boolean = true,
     val largeTvCards: Boolean = false,
     val prominentDownloadButton: Boolean = true,
+    val requireUploadApproval: Boolean = true,
 )
 
 @Serializable

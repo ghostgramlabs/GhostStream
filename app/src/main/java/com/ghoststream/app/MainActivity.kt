@@ -72,6 +72,7 @@ import com.ghoststream.feature.onboarding.OnboardingScreen
 import com.ghoststream.feature.session.ActiveSessionScreen
 import com.ghoststream.feature.settings.HelpScreen
 import com.ghoststream.feature.settings.SettingsScreen
+import com.ghoststream.feature.history.HistoryScreen
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -266,6 +267,22 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                         }
                     }
                 }
+                is AppEvent.NavigateHistory -> navController.navigate(Routes.History)
+                is AppEvent.OpenFile -> {
+                    runCatching {
+                        val uri = android.net.Uri.parse(event.fileUri)
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(uri, context.contentResolver.getType(uri) ?: "*/*")
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        context.startActivity(intent)
+                    }.onFailure {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("No app found to open this file.")
+                        }
+                    }
+                }
             }
         }
     }
@@ -316,6 +333,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     connectionDiagnostics = uiState.connectionDiagnostics,
                     nearbyDiscoveryState = uiState.nearbyDiscoveryState,
                     connectingNearbyDeviceId = uiState.connectingNearbyDeviceId,
+                    pendingUploadRequest = uiState.pendingUploadRequest,
                     isStartingShare = uiState.isStartingShare,
                     onStartSharing = {
                         if (uiState.sessionState.isSharing) {
@@ -338,6 +356,8 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onBatchSelect = openBatchSelect,
                     onOpenLibrary = { navController.navigate(Routes.Library) },
                     onOpenSettings = { navController.navigate(Routes.Settings) },
+                    onOpenHistory = viewModel::navigateToHistory,
+                    onResolveUploadRequest = viewModel::resolveUploadRequest,
                     modifier = Modifier.padding(innerPadding),
                 )
             }
@@ -473,6 +493,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onToggleShowThumbnails = { viewModel.updateSettings { current -> current.copy(showThumbnails = it) } },
                     onToggleLargeTvCards = { viewModel.updateSettings { current -> current.copy(largeTvCards = it) } },
                     onToggleProminentDownloads = { viewModel.updateSettings { current -> current.copy(prominentDownloadButton = it) } },
+                    onToggleRequireUploadApproval = { viewModel.updateSettings { current -> current.copy(requireUploadApproval = it) } },
                     onAutoStopSelected = viewModel::updateAutoStop,
                     onPreferredPortChanged = { port ->
                         viewModel.updateSettings { current ->
@@ -489,7 +510,26 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     debugLogLocation = viewModel.debugLogLocationDescription(),
                     onShareDebugLog = viewModel::shareDebugLog,
                     onClearDebugLog = viewModel::clearDebugLog,
+                    onClearDebugLog = viewModel::clearDebugLog,
                     modifier = Modifier.padding(innerPadding),
+                )
+            }
+            composable(Routes.History) {
+                HistoryScreen(
+                    history = uiState.transferHistory,
+                    onBack = { navController.popBackStack() },
+                    onDeleteRecord = viewModel::deleteHistoryRecord,
+                    onOpenFile = { fileUri ->
+                        viewModel.viewModelScope.launch {
+                            viewModel.events.let { 
+                                // Actually, I'll just emit from ViewModel or handle it directly here
+                            }
+                        }
+                        // Easier to just handle direct navigation/opening in ViewModel if needed
+                        // But since I added AppEvent.OpenFile, I'll just use it via a new method in ViewModel
+                        viewModel.openReceivedFile(fileUri)
+                    },
+                    modifier = Modifier.padding(innerPadding)
                 )
             }
             composable(Routes.Help) {

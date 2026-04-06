@@ -27,6 +27,7 @@ const routes = {
   "/photos": () => renderLibrary("photos", "Photos"),
   "/music": () => renderLibrary("music", "Music"),
   "/files": () => renderLibrary("files", "Files"),
+  "/upload": renderUpload,
 };
 
 window.addEventListener("popstate", () => boot());
@@ -43,6 +44,149 @@ document.addEventListener("error", (event) => {
     debugTrace("thumbnail_error", `src=${target.currentSrc || target.src} route=${location.pathname}`);
   }
 }, true);
+
+// Drag and Drop Logic
+let dragCounter = 0;
+window.addEventListener("dragenter", (e) => {
+  e.preventDefault();
+  dragCounter++;
+  if (dragCounter === 1) {
+    document.body.classList.add("gs-dragging");
+  }
+});
+window.addEventListener("dragover", (e) => {
+  e.preventDefault();
+});
+window.addEventListener("dragleave", (e) => {
+  e.preventDefault();
+  dragCounter--;
+  if (dragCounter === 0) {
+    document.body.classList.remove("gs-dragging");
+  }
+});
+window.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dragCounter = 0;
+  document.body.classList.remove("gs-dragging");
+  const files = e.dataTransfer.files;
+  if (files && files.length > 0) {
+    if (location.pathname !== "/upload") {
+      // Auto-navigate to upload tab when dropping elsewhere
+      navigate("/upload");
+      setTimeout(() => handleFilesUpload(Array.from(files)), 100);
+    } else {
+      handleFilesUpload(Array.from(files));
+    }
+  }
+});
+
+let currentUploadXhr = null;
+
+async function handleFilesUpload(files) {
+  if (!files || files.length === 0) return;
+  const overlay = document.getElementById("uploadOverlay");
+  const title = document.getElementById("uploadTitle");
+  const progress = document.getElementById("uploadProgress");
+  const status = document.getElementById("uploadStatus");
+  const cancelBtn = document.getElementById("cancelUploadBtn");
+
+  const showOverlay = (show) => overlay?.classList.toggle("is-visible", show);
+  const setProgress = (percent) => {
+    if (progress) progress.style.width = `${percent}%`;
+  };
+
+  const totalSize = files.reduce((acc, f) => acc + f.size, 0);
+  const fileCount = files.length;
+  const mainFileName = fileCount === 1 ? files[0].name : `${fileCount} files`;
+
+  showOverlay(true);
+  title.textContent = "Requesting permission";
+  status.innerHTML = `<span class="gs-upload-waiting-dots">Waiting for DirectServe</span>`;
+  setProgress(0);
+
+  let requestId = null;
+
+  cancelBtn.onclick = async () => {
+    if (currentUploadXhr) {
+      currentUploadXhr.abort();
+      currentUploadXhr = null;
+    }
+    if (requestId) {
+      try {
+        await api("/api/upload/cancel/" + requestId, { method: "POST" });
+      } catch (e) {}
+    }
+    showOverlay(false);
+  };
+
+  try {
+    const response = await api("/api/upload/request", {
+      method: "POST",
+      body: JSON.stringify({
+        fileName: mainFileName,
+        fileCount: fileCount,
+        sizeBytes: totalSize,
+      }),
+    });
+
+    requestId = response.requestId;
+
+    if (!response.accepted) {
+      throw new Error("Transfers were not approved by the device owner.");
+    }
+
+    title.textContent = fileCount === 1 ? `Sending ${files[0].name}` : `Sending ${fileCount} files`;
+    status.textContent = "0%";
+    
+    currentUploadXhr = new XMLHttpRequest();
+    currentUploadXhr.open("POST", "/api/upload/execute/" + requestId);
+    
+    currentUploadXhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const percent = Math.round((e.loaded / e.total) * 100);
+        setProgress(percent);
+        status.textContent = `${percent}% (${fmtBytes(e.loaded)} / ${fmtBytes(e.total)})`;
+      }
+    };
+
+    const uploadPromise = new Promise((resolve, reject) => {
+      currentUploadXhr.onload = () => {
+        if (currentUploadXhr.status >= 200 && currentUploadXhr.status < 300) {
+          resolve();
+        } else {
+          reject(new Error("Upload failed (" + currentUploadXhr.status + ")"));
+        }
+      };
+      currentUploadXhr.onerror = () => reject(new Error("Network error during transfer."));
+      currentUploadXhr.onabort = () => reject(new Error("Transfer cancelled."));
+    });
+
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
+    currentUploadXhr.send(formData);
+
+    await uploadPromise;
+    
+    title.textContent = "Success!";
+    status.textContent = fileCount === 1 ? "File is ready on DirectServe." : "Files are ready on DirectServe.";
+    setProgress(100);
+    
+    setTimeout(() => {
+      showOverlay(false);
+      const path = location.pathname;
+      if (path === "/" || path === "/videos" || path === "/photos" || path === "/music" || path === "/files") {
+        boot();
+      }
+    }, 1500);
+
+  } catch (error) {
+    title.textContent = "Transfer failed";
+    status.textContent = error.message || "Request declined or failed.";
+    setTimeout(() => showOverlay(false), 3000);
+  }
+}
 
 async function boot() {
   cancelCompatPolling();
@@ -261,6 +405,7 @@ function shell(content, options = {}) {
           <a class="gs-tab${path === "/photos" ? " on" : ""}" data-link href="/photos">Photos</a>
           <a class="gs-tab${path === "/music" ? " on" : ""}" data-link href="/music">Music</a>
           <a class="gs-tab${path === "/files" ? " on" : ""}" data-link href="/files">Files</a>
+          <a class="gs-tab${path === "/upload" ? " on" : ""}" data-link href="/upload">Drop Zone</a>
         </div>
         <div class="gs-nav-meta">
           <span class="gs-status-pill">${securityLabel}</span>
@@ -276,6 +421,30 @@ function shell(content, options = {}) {
       </div>
       <main class="gs-main">${content}</main>
       <div class="gs-now${state.nowPlaying ? " is-visible" : ""}" id="nowPlayingBar"></div>
+      
+      <div class="gs-drop-indicator" id="dropIndicator">
+        <div class="gs-drop-indicator-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <h2>Drop files to send</h2>
+        <p>Your files will be sent directly to the host device.</p>
+      </div>
+
+      <div class="gs-upload-overlay" id="uploadOverlay">
+        <div class="gs-upload-card">
+          <div class="gs-upload-header">
+            <div class="gs-logo-mark"></div>
+            <h3 class="gs-upload-title" id="uploadTitle">Preparing transfer</h3>
+          </div>
+          <div class="gs-upload-progress-container">
+            <div class="gs-upload-progress-fill" id="uploadProgress"></div>
+          </div>
+          <div class="gs-upload-status" id="uploadStatus">Connecting...</div>
+          <div class="gs-upload-actions" id="uploadActions">
+            <button class="gs-btn gs-btn-sm" id="cancelUploadBtn">Cancel</button>
+          </div>
+        </div>
+      </div>
     </div>`;
 
   document.getElementById("logoutBtn")?.addEventListener("click", async () => {
@@ -1198,3 +1367,83 @@ function esc(value) {
 }
 
 boot();
+async function renderUpload() {
+  const bootstrap = state.bootstrap;
+  const content = `
+    <div class="gs-section">
+      <div class="gs-section-head">
+        <div>
+          <h2>Drop Zone</h2>
+          <div class="gs-section-meta">Send files directly to this device over the network.</div>
+        </div>
+      </div>
+      
+      <div class="gs-upload-zone" id="uploadZone">
+        <div class="gs-upload-zone-inner">
+          <div class="gs-upload-zone-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <h3>Select files to send</h3>
+          <p class="gs-desktop-only">Drag and drop here, or tap the button below</p>
+          <p class="gs-mobile-only">Tap the button to select files from your library</p>
+          
+          <div class="gs-upload-zone-actions" style="margin-top: 16px">
+            <button class="gs-btn gs-btn-accent gs-btn-block" style="padding: 18px 24px; font-size: 1.1rem; border-radius: 20px" id="browseBtn">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Browse Files
+            </button>
+            <input type="file" id="fileInput" style="display: none" multiple>
+          </div>
+        </div>
+      </div>
+
+      <div class="gs-section" style="margin-top: 40px">
+        <div class="gs-category-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))">
+          <div class="gs-category-card">
+            <div class="gs-category-kicker">Target Device</div>
+            <strong>${esc(bootstrap?.title || sessionTitle)}</strong>
+            <div class="gs-category-meta" style="font-family: monospace; word-break: break-all; margin-top: 8px">
+              ${esc(bootstrap?.sessionUrl || "Local connection")}
+            </div>
+            <div class="gs-category-meta" style="margin-top: 4px; font-size: 0.82rem">
+              Status: Connected and ready for transfers
+            </div>
+          </div>
+          <div class="gs-category-card">
+            <div class="gs-category-kicker">How it works</div>
+            <strong>Secure Approval</strong>
+            <div class="gs-category-meta">When you send a file, a notification will appear on the phone. The device owner must <strong>Accept</strong> for the transfer to begin.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  shell(content);
+
+  const zone = document.getElementById("uploadZone");
+  const fileInput = document.getElementById("fileInput");
+  const browseBtn = document.getElementById("browseBtn");
+
+  browseBtn?.addEventListener("click", () => fileInput?.click());
+  fileInput?.addEventListener("change", (e) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      handleFilesUpload(Array.from(files));
+    }
+  });
+
+  zone?.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    zone.classList.add("is-active");
+  });
+  zone?.addEventListener("dragleave", () => zone.classList.remove("is-active"));
+  zone?.addEventListener("drop", (e) => {
+    e.preventDefault();
+    zone.classList.remove("is-active");
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handleFilesUpload(Array.from(files));
+    }
+  });
+}

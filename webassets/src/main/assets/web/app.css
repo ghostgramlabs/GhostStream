@@ -149,10 +149,11 @@ input {
 }
 
 .gs-logo-mark {
-  width: 10px;
-  height: 10px;
+  width: 14px;
+  height: 14px;
   border-radius: 999px;
   background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
 }
 
 .gs-nav-links,
@@ -804,6 +805,218 @@ iframe.gs-preview {
 
 .gs-now.is-visible {
   transform: translateX(-50%) translateY(0);
+}
+
+/* Drop Zone & Upload UI */
+.gs-drop-indicator {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  border: 6px solid var(--accent);
+  background: rgba(125, 211, 252, 0.1);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  color: var(--text);
+  pointer-events: none;
+  animation: gs-fade-in 140ms ease;
+  text-align: center;
+}
+
+body.gs-dragging .gs-drop-indicator {
+  display: flex;
+}
+
+.gs-upload-zone {
+  margin-top: 16px;
+  padding: 4px;
+  border-radius: 32px;
+  background: var(--card);
+  border: 2px dashed var(--border);
+  transition: border-color 200ms ease, background 200ms ease;
+}
+
+.gs-upload-zone.is-active {
+  border-color: var(--accent);
+  background: rgba(125, 211, 252, 0.05);
+}
+
+.gs-upload-zone-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 24px;
+  text-align: center;
+}
+
+.gs-upload-zone-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  margin-bottom: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.gs-upload-zone h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.gs-upload-zone p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.gs-upload-zone-actions {
+  margin-top: 12px;
+}
+
+@media (max-width: 600px) {
+  .gs-upload-zone-inner {
+    padding: 40px 16px;
+  }
+  
+  .gs-upload-zone h3 {
+    font-size: 1.2rem;
+  }
+  
+  .gs-upload-zone p {
+    display: none; /* Hide drag text on mobile since it's not applicable */
+  }
+
+  .gs-nav-links {
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  
+  .gs-nav-links::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.gs-desktop-only {
+  display: block;
+}
+.gs-mobile-only {
+  display: none;
+}
+
+@media (max-width: 600px) {
+  .gs-desktop-only {
+    display: none;
+  }
+  .gs-mobile-only {
+    display: block;
+  }
+  
+  .gs-btn-block {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+.gs-upload-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 24px;
+}
+
+.gs-upload-overlay.is-visible {
+  display: flex;
+}
+
+.gs-upload-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 28px;
+  border-radius: 28px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: gs-pop-in 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes gs-pop-in {
+  from { opacity: 0; transform: scale(0.9) translateY(12px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.gs-upload-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.gs-upload-title {
+  flex: 1;
+  font-weight: 600;
+  font-size: 1.15rem;
+  margin: 0;
+  color: var(--text);
+}
+
+.gs-upload-progress-container {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--card);
+  overflow: hidden;
+}
+
+.gs-upload-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+  transition: width 0.3s ease-out;
+}
+
+.gs-upload-status {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+}
+
+.gs-upload-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.gs-upload-waiting-dots::after {
+  content: "...";
+  display: inline-block;
+  width: 1.25em;
+  text-align: left;
+  animation: gs-dots 1.5s infinite;
+}
+
+@keyframes gs-dots {
+  0% { content: "."; }
+  33% { content: ".."; }
+  66% { content: "..."; }
 }
 
 .gs-now-label {

@@ -30,6 +30,8 @@ include(
     ":feature:settings",
     ":feature:onboarding",
     ":feature:networksetup",
+    ":feature:history",
+    ":core:history",
     ":webassets",
 )
 

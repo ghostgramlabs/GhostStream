@@ -46,6 +46,7 @@ fun SettingsScreen(
     onToggleShowThumbnails: (Boolean) -> Unit,
     onToggleLargeTvCards: (Boolean) -> Unit,
     onToggleProminentDownloads: (Boolean) -> Unit,
+    onToggleRequireUploadApproval: (Boolean) -> Unit,
     onAutoStopSelected: (AutoStopOption) -> Unit,
     onPreferredPortChanged: (String) -> Unit,
     onManualPinChanged: (String) -> Unit,
@@ -119,6 +120,7 @@ fun SettingsScreen(
                         ManualPinRow(currentPin = settings.manualPin, onPinChanged = onManualPinChanged)
                     }
                 }
+                SettingsToggleRow("Approve file uploads", "Ask you before browsers can upload files to this device.", settings.requireUploadApproval, onToggleRequireUploadApproval)
             }
         }
 

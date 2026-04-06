@@ -33,8 +33,8 @@ import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.NetworkCheck
 import androidx.compose.material.icons.outlined.OpenInBrowser
 import androidx.compose.material.icons.outlined.PlayArrow
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.VideoLibrary
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -79,6 +79,7 @@ fun HomeScreen(
     connectionDiagnostics: ConnectionDiagnostics,
     nearbyDiscoveryState: NearbyDiscoveryState,
     connectingNearbyDeviceId: String?,
+    pendingUploadRequest: com.ghoststream.core.model.UploadRequest?,
     isStartingShare: Boolean,
     onStartSharing: () -> Unit,
     onSavePreset: (String) -> Unit,
@@ -92,6 +93,8 @@ fun HomeScreen(
     onBatchSelect: () -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenHistory: () -> Unit,
+    onResolveUploadRequest: (String, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showPresetDialog by rememberSaveable { mutableStateOf(false) }
@@ -104,7 +107,10 @@ fun HomeScreen(
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
-            TopBrandHeader(onOpenSettings = onOpenSettings)
+            TopBrandHeader(
+                onOpenSettings = onOpenSettings,
+                onOpenHistory = onOpenHistory
+            )
         }
 
         item {
@@ -211,11 +217,61 @@ fun HomeScreen(
             },
         )
     }
+
+    pendingUploadRequest?.let { request ->
+        AlertDialog(
+            onDismissRequest = { onResolveUploadRequest(request.id, false) },
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            icon = { Icon(Icons.Outlined.Collections, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+            title = { Text("File transfer request") },
+            text = {
+                val fileText = if (request.fileCount > 1) "${request.fileCount} files" else "a file"
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        "Someone at ${request.requesterIp} wants to send you $fileText:",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    if (request.fileCount == 1) {
+                        Text(
+                            request.fileName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    Text(
+                        "Total Size: ${formatBytes(request.sizeBytes)}",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { onResolveUploadRequest(request.id, true) },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ghostPrimaryButtonColors(),
+                ) {
+                    Text("Accept")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { onResolveUploadRequest(request.id, false) },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ghostSecondaryButtonColors(),
+                ) {
+                    Text("Decline")
+                }
+            },
+        )
+    }
 }
 
-@Composable
 private fun TopBrandHeader(
     onOpenSettings: () -> Unit,
+    onOpenHistory: () -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -237,7 +293,27 @@ private fun TopBrandHeader(
                 color = MaterialTheme.colorScheme.tertiary,
             )
         }
-        Spacer(modifier = Modifier.width(12.dp))
+        }
+        Spacer(modifier = Modifier.width(10.dp))
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = ghostAccentSurface(),
+            border = BorderStroke(1.dp, ghostAccentBorder()),
+            modifier = Modifier.clickable(onClick = onOpenHistory),
+        ) {
+            Box(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Outlined.History,
+                    contentDescription = "Transfer History",
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
+        }
+        Spacer(modifier = Modifier.width(10.dp))
         Surface(
             shape = RoundedCornerShape(16.dp),
             color = ghostAccentSurface(),
@@ -291,7 +367,7 @@ private fun SessionHeroCard(
 
             Spacer(modifier = Modifier.height(18.dp))
             Text(
-                text = if (sessionState.isSharing) "Sharing is live" else "Ready to share",
+                text = if (sessionState.isSharing) "Session is live" else "Ready to connect",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -327,7 +403,7 @@ private fun SessionHeroCard(
                 } else {
                     Icon(Icons.Outlined.PlayArrow, contentDescription = null)
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text(if (sessionState.isSharing) "Open session" else "Start sharing", style = MaterialTheme.typography.titleMedium)
+                    Text(if (sessionState.isSharing) "Open session" else "Start Session", style = MaterialTheme.typography.titleMedium)
                 }
             }
 
@@ -545,7 +621,13 @@ private fun SupportPanel(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Open in the DirectServe app", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Open in the DirectServe app",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
                         OutlinedButton(
                             onClick = onRefreshNearby,
                             shape = RoundedCornerShape(16.dp),
@@ -965,11 +1047,11 @@ private fun heroMessage(
     diagnostics: ConnectionDiagnostics,
 ): String {
     return when {
-        sessionState.isSharing -> "Open the link or scan the QR code on another device."
-        libraryState.summary.totalItems == 0 -> "Add files or a folder to get started."
+        sessionState.isSharing -> "Your session is live. Sharing and receiving is ready."
+        libraryState.summary.totalItems == 0 -> "Start a session to send or receive files over Wi-Fi or hotspot."
         diagnostics.actionCount > 0 -> "Connect both devices to the same Wi-Fi or hotspot."
         diagnostics.warningCount > 0 -> "Everything is almost ready."
-        else -> "Your files stay on this phone."
+        else -> "Ready for wireless sending and receiving."
     }
 }
 

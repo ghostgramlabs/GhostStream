@@ -54,6 +54,8 @@ class MainViewModel(
         pendingShareAfterNetworkReady,
         startSharingInProgress,
         connectingNearbyDeviceId,
+        container.sessionManager.pendingUploadRequest,
+        container.historyRepository.allHistory,
     ) { values ->
         val settings = values[0] as AppSettings
         val library = values[1] as LibraryState
@@ -67,6 +69,8 @@ class MainViewModel(
         val pendingShare = values[9] as Boolean
         val isStartingShare = values[10] as Boolean
         val connectingNearbyId = values[11] as String?
+        val pendingUpload = values[12] as com.ghoststream.core.model.UploadRequest?
+        val history = values[13] as List<com.ghoststream.core.model.TransferRecord>
         MainUiState(
             isReady = true,
             settings = settings,
@@ -86,6 +90,8 @@ class MainViewModel(
             pendingShareAfterNetworkReady = pendingShare,
             isStartingShare = isStartingShare,
             connectingNearbyDeviceId = connectingNearbyId,
+            pendingUploadRequest = pendingUpload,
+            transferHistory = history,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -222,12 +228,9 @@ class MainViewModel(
             try {
                 when (val result = withContext(Dispatchers.IO) { container.sharingCoordinator.preflight() }) {
                     SharePreflightResult.NoContent -> {
-                        container.debugLogRepository.log("MainViewModel", "preflight result: no content")
+                        container.debugLogRepository.log("MainViewModel", "preflight result: no content (allowing for receiving)")
                         pendingShareAfterNetworkReady.value = false
-                        startSharingInProgress.value = false
-                        _events.emit(
-                            AppEvent.ShowMessage("Add some content first to start sharing."),
-                        )
+                        startSharingAfterReadyCheck()
                     }
 
                     is SharePreflightResult.NeedsNetwork -> {
@@ -322,6 +325,28 @@ class MainViewModel(
 
     fun disconnectAll() {
         container.sessionManager.disconnectAllClients()
+    }
+
+    fun resolveUploadRequest(requestId: String, accepted: Boolean) {
+        container.sessionManager.resolveUploadRequest(requestId, accepted)
+    }
+
+    fun navigateToHistory() {
+        viewModelScope.launch {
+            _events.emit(AppEvent.NavigateHistory)
+        }
+    }
+
+    fun openReceivedFile(fileUri: String) {
+        viewModelScope.launch {
+            _events.emit(AppEvent.OpenFile(fileUri))
+        }
+    }
+
+    fun deleteHistoryRecord(id: String) {
+        viewModelScope.launch {
+            container.historyRepository.deleteRecord(id)
+        }
     }
 
     fun debugLogLocationDescription(): String = container.debugLogRepository.locationDescription()

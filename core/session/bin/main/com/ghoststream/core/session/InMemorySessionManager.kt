@@ -12,7 +12,9 @@ import com.ghoststream.core.model.SessionState
 import com.ghoststream.core.model.SharedFolder
 import com.ghoststream.core.model.SharedItem
 import com.ghoststream.core.model.TransferStats
+import com.ghoststream.core.model.UploadRequest
 import java.util.UUID
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,6 +27,9 @@ class InMemorySessionManager(
     private val _sessionState = MutableStateFlow(SessionState())
     private val _recentSessions = MutableStateFlow<List<RecentSession>>(emptyList())
     private val authTokens = linkedMapOf<String, String>()
+
+    private val _pendingUploadRequest = MutableStateFlow<UploadRequest?>(null)
+    private val uploadResolutions = mutableMapOf<String, CompletableDeferred<Boolean>>()
 
     private var speedWindowStartedAt = 0L
     private var speedWindowBytes = 0L
@@ -297,5 +302,34 @@ class InMemorySessionManager(
             )
         }
         authTokens.clear()
+    }
+
+    override val pendingUploadRequest: StateFlow<UploadRequest?> = _pendingUploadRequest.asStateFlow()
+
+    override suspend fun submitUploadRequest(request: UploadRequest) {
+        synchronized(stateLock) {
+            _pendingUploadRequest.value = request
+            uploadResolutions[request.id] = CompletableDeferred()
+        }
+    }
+
+    override fun resolveUploadRequest(requestId: String, accepted: Boolean) {
+        synchronized(stateLock) {
+            if (_pendingUploadRequest.value?.id == requestId) {
+                _pendingUploadRequest.value = null
+            }
+            uploadResolutions[requestId]?.complete(accepted)
+        }
+    }
+
+    override suspend fun waitForUploadResolution(requestId: String): Boolean {
+        val deferred = synchronized(stateLock) {
+            uploadResolutions[requestId]
+        } ?: return false
+        val accepted = deferred.await()
+        synchronized(stateLock) {
+            uploadResolutions.remove(requestId)
+        }
+        return accepted
     }
 }

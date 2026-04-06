@@ -141,7 +141,14 @@ class NsdDiscoveryManager(
     }
 
     fun refresh() {
+        debugLogSink.log("NsdDiscovery", "refresh requested")
         stop()
+        // A tiny pause can help NsdManager settle before a restart on some Android versions.
+        // For simplicity in a synchronous call, we just ensure everything is cleared first.
+        synchronized(stateLock) {
+            devicesByService.clear()
+            resolvingServices.clear()
+        }
         start()
     }
 

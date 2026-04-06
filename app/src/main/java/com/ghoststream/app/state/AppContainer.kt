@@ -14,6 +14,8 @@ import com.ghoststream.core.network.discovery.FriendlyUrlManager
 import com.ghoststream.core.network.discovery.NsdAdvertiser
 import com.ghoststream.core.network.discovery.NsdDiscoveryManager
 import com.ghoststream.core.network.discovery.SessionEndpointResolver
+import com.ghoststream.core.history.HistoryRepository
+import com.ghoststream.core.history.RoomHistoryRepository
 import com.ghoststream.core.network.server.GhostStreamServer
 import com.ghoststream.core.network.server.KtorGhostStreamServer
 import com.ghoststream.core.session.InMemorySessionManager
@@ -29,6 +31,7 @@ class AppContainer(
     private val appContext = application.applicationContext
 
     val debugLogRepository: DebugLogRepository by lazy { DebugLogRepository(appContext, enabled = BuildConfig.DEBUG) }
+    val historyRepository: HistoryRepository by lazy { RoomHistoryRepository(appContext) }
     val settingsRepository: SettingsRepository by lazy { DataStoreSettingsRepository(appContext) }
     val sharePresetStore: SharePresetStore by lazy { SharePresetStore(appContext) }
     val mediaAnalyzer: MediaAnalyzer by lazy { AndroidMediaAnalyzer(appContext) }
@@ -39,7 +42,13 @@ class AppContainer(
             worker = Media3FragmentedMp4CompatibilityWorker(appContext),
         )
     }
-    val storageRepository: StorageRepository by lazy { AndroidStorageRepository(appContext, mediaAnalyzer) }
+    val storageRepository: StorageRepository by lazy {
+        AndroidStorageRepository(
+            context = appContext,
+            mediaAnalyzer = mediaAnalyzer,
+            historyRepository = historyRepository,
+        )
+    }
     val sessionManager: SessionManager by lazy { InMemorySessionManager(debugLogRepository) }
     val networkInspector: AndroidNetworkInspector by lazy { AndroidNetworkInspector(appContext, debugLogRepository) }
     private val friendlyUrlManager: FriendlyUrlManager by lazy { FriendlyUrlManager() }
@@ -69,6 +78,7 @@ class AppContainer(
             mediaAnalyzer = mediaAnalyzer,
             compatibilityPipeline = compatibilityPipeline,
             networkInspector = networkInspector,
+            historyRepository = historyRepository,
             debugLogSink = debugLogRepository,
             debugBrowserTracingEnabled = BuildConfig.DEBUG,
         )

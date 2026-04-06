@@ -29,6 +29,7 @@ dependencies {
     implementation(project(":core:settings"))
     implementation(project(":core:storage"))
     implementation(project(":core:session"))
+    implementation(project(":core:history"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)

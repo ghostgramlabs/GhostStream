@@ -19,12 +19,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.documentfile.provider.DocumentFile
 import com.ghoststream.core.media.MediaAnalyzer
-import com.ghoststream.core.model.LibraryState
-import com.ghoststream.core.model.LibrarySummary
-import com.ghoststream.core.model.MediaCategory
-import com.ghoststream.core.model.SharedFolder
-import com.ghoststream.core.model.SharedItem
-import com.ghoststream.core.model.SmartSelectionGroup
+import com.ghoststream.core.history.HistoryRepository
+import com.ghoststream.core.model.*
 import com.ghoststream.core.storage.StorageRepository
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -48,6 +44,7 @@ import kotlinx.serialization.json.Json
 class AndroidStorageRepository(
     private val context: Context,
     private val mediaAnalyzer: MediaAnalyzer,
+    private val historyRepository: HistoryRepository,
     private val json: Json = Json { ignoreUnknownKeys = true },
 ) : StorageRepository {
 
@@ -206,6 +203,66 @@ class AndroidStorageRepository(
 
     override fun findItemById(itemId: String): SharedItem? {
         return _libraryState.value.items.firstOrNull { it.id == itemId }
+    }
+
+    override suspend fun saveUploadedFile(
+        fileName: String,
+        mimeType: String,
+        content: java.io.InputStream,
+        peer: String,
+    ): Uri? = withContext(Dispatchers.IO) {
+        val resolver = context.contentResolver
+        var finalUri: Uri? = null
+        var bytesWritten = 0L
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val contentValues = android.content.ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
+            }
+            val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+            val uri = resolver.insert(collection, contentValues) ?: return@withContext null
+            finalUri = runCatching {
+                resolver.openOutputStream(uri)?.use { output ->
+                    bytesWritten = content.copyTo(output)
+                }
+                val updatedValues = android.content.ContentValues().apply {
+                    put(MediaStore.MediaColumns.IS_PENDING, 0)
+                }
+                resolver.update(uri, updatedValues, null, null)
+                uri
+            }.onFailure {
+                resolver.delete(uri, null, null)
+            }.getOrNull()
+        } else {
+            val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+            downloadsDir.mkdirs()
+            val file = java.io.File(downloadsDir, fileName)
+            finalUri = runCatching {
+                java.io.FileOutputStream(file).use { output ->
+                    bytesWritten = content.copyTo(output)
+                }
+                android.media.MediaScannerConnection.scanFile(context, arrayOf(file.absolutePath), arrayOf(mimeType), null)
+                Uri.fromFile(file)
+            }.getOrNull()
+        }
+
+        if (finalUri != null) {
+            historyRepository.addRecord(
+                TransferRecord(
+                    id = UUID.randomUUID().toString(),
+                    name = fileName,
+                    direction = TransferDirection.RECEIVED,
+                    sizeBytes = bytesWritten,
+                    timestampMs = System.currentTimeMillis(),
+                    peer = peer,
+                    category = determineCategory(mimeType, fileName),
+                    fileUri = finalUri.toString(),
+                )
+            )
+        }
+        finalUri
     }
 
     private fun buildSingleItemSync(uri: Uri, sourceFolderId: String?): SharedItem? {

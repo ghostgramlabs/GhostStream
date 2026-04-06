@@ -8,6 +8,7 @@ import com.ghoststream.core.model.RecentSession
 import com.ghoststream.core.model.SessionState
 import com.ghoststream.core.model.SharedFolder
 import com.ghoststream.core.model.SharedItem
+import com.ghoststream.core.model.UploadRequest
 import kotlinx.coroutines.flow.StateFlow
 
 interface SessionManager {
@@ -65,5 +66,10 @@ interface SessionManager {
     fun isPinValid(pin: String): Boolean
     fun regeneratePin(): String
     fun disconnectAllClients()
+
+    val pendingUploadRequest: StateFlow<UploadRequest?>
+    suspend fun submitUploadRequest(request: UploadRequest)
+    fun resolveUploadRequest(requestId: String, accepted: Boolean)
+    suspend fun waitForUploadResolution(requestId: String): Boolean
 }
 
