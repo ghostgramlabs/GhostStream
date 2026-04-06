@@ -1019,6 +1019,7 @@ function renderLogin(errorMessage = "") {
           <span class="gs-logo-mark"></span>
           <span>${esc(bootstrap?.title || sessionTitle)}</span>
         </div>
+        ${bootstrap?.subtitle ? `<span class="gs-subtitle">${esc(bootstrap.subtitle)}</span>` : ""}
         <span class="gs-eyebrow">PIN protected session</span>
         <h1>Enter access PIN${requiresPassword ? " & Password" : ""}</h1>
         <p class="gs-meta">Use the PIN shown on the host phone to unlock this local session.${requiresPassword ? " A password is also required." : ""}</p>
