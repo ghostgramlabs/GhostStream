@@ -36,6 +36,12 @@ data class AppSettings(
     val largeTvCards: Boolean = false,
     val prominentDownloadButton: Boolean = true,
     val requireUploadApproval: Boolean = true,
+    val notifyOnDeviceConnect: Boolean = true,
+    val notifyOnFileDownload: Boolean = true,
+    val notifyOnUploadRequest: Boolean = true,
+    val requireSessionPassword: Boolean = false,
+    val sessionPassword: String = "",
+    val requireDeviceApproval: Boolean = false,
 )
 
 @Serializable

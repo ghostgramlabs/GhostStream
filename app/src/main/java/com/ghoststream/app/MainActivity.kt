@@ -494,6 +494,12 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onToggleLargeTvCards = { viewModel.updateSettings { current -> current.copy(largeTvCards = it) } },
                     onToggleProminentDownloads = { viewModel.updateSettings { current -> current.copy(prominentDownloadButton = it) } },
                     onToggleRequireUploadApproval = { viewModel.updateSettings { current -> current.copy(requireUploadApproval = it) } },
+                    onToggleNotifyOnDeviceConnect = { viewModel.updateSettings { current -> current.copy(notifyOnDeviceConnect = it) } },
+                    onToggleNotifyOnFileDownload = { viewModel.updateSettings { current -> current.copy(notifyOnFileDownload = it) } },
+                    onToggleNotifyOnUploadRequest = { viewModel.updateSettings { current -> current.copy(notifyOnUploadRequest = it) } },
+                    onToggleRequireSessionPassword = { viewModel.updateSettings { current -> current.copy(requireSessionPassword = it) } },
+                    onSessionPasswordChanged = { password -> viewModel.updateSettings { current -> current.copy(sessionPassword = password) } },
+                    onToggleRequireDeviceApproval = { viewModel.updateSettings { current -> current.copy(requireDeviceApproval = it) } },
                     onAutoStopSelected = viewModel::updateAutoStop,
                     onPreferredPortChanged = { port ->
                         viewModel.updateSettings { current ->

@@ -47,6 +47,12 @@ fun SettingsScreen(
     onToggleLargeTvCards: (Boolean) -> Unit,
     onToggleProminentDownloads: (Boolean) -> Unit,
     onToggleRequireUploadApproval: (Boolean) -> Unit,
+    onToggleNotifyOnDeviceConnect: (Boolean) -> Unit,
+    onToggleNotifyOnFileDownload: (Boolean) -> Unit,
+    onToggleNotifyOnUploadRequest: (Boolean) -> Unit,
+    onToggleRequireSessionPassword: (Boolean) -> Unit,
+    onSessionPasswordChanged: (String) -> Unit,
+    onToggleRequireDeviceApproval: (Boolean) -> Unit,
     onAutoStopSelected: (AutoStopOption) -> Unit,
     onPreferredPortChanged: (String) -> Unit,
     onManualPinChanged: (String) -> Unit,
@@ -112,6 +118,14 @@ fun SettingsScreen(
         }
 
         item {
+            SettingsGroup(title = "Notifications") {
+                SettingsToggleRow("Connection alerts", "Alert when someone connects to your session.", settings.notifyOnDeviceConnect, onToggleNotifyOnDeviceConnect)
+                SettingsToggleRow("Download alerts", "Alert when someone downloads a file.", settings.notifyOnFileDownload, onToggleNotifyOnFileDownload)
+                SettingsToggleRow("Upload requests", "Alert when someone requests to upload.", settings.notifyOnUploadRequest, onToggleNotifyOnUploadRequest)
+            }
+        }
+
+        item {
             SettingsGroup(title = "Privacy") {
                 SettingsToggleRow("Use PIN", "Ask browsers for a code before opening the session.", settings.requireSessionPin, onToggleRequirePin)
                 if (settings.requireSessionPin) {
@@ -121,6 +135,11 @@ fun SettingsScreen(
                     }
                 }
                 SettingsToggleRow("Approve file uploads", "Ask you before browsers can upload files to this device.", settings.requireUploadApproval, onToggleRequireUploadApproval)
+                SettingsToggleRow("Approve per device", "Approve once per device, not per upload.", settings.requireDeviceApproval, onToggleRequireDeviceApproval)
+                SettingsToggleRow("Additional password", "Use a password in addition to PIN for extra security.", settings.requireSessionPassword, onToggleRequireSessionPassword)
+                if (settings.requireSessionPassword) {
+                    SessionPasswordRow(currentPassword = settings.sessionPassword, onPasswordChanged = onSessionPasswordChanged)
+                }
             }
         }
 
@@ -235,6 +254,24 @@ private fun SettingsToggleRow(title: String, description: String, checked: Boole
         }
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
+}
+
+@Composable
+private fun SessionPasswordRow(currentPassword: String, onPasswordChanged: (String) -> Unit) {
+    OutlinedTextField(
+        value = currentPassword,
+        onValueChange = { newValue ->
+            val cleaned = newValue.take(32)
+            onPasswordChanged(cleaned)
+        },
+        modifier = Modifier
+            .padding(horizontal = 18.dp, vertical = 8.dp)
+            .fillMaxWidth(),
+        label = { Text("Session Password") },
+        placeholder = { Text("8-32 characters") },
+        shape = RoundedCornerShape(14.dp),
+        singleLine = true,
+    )
 }
 
 @Composable
