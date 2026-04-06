@@ -1011,6 +1011,7 @@ async function renderPhotoViewer(id) {
 
 function renderLogin(errorMessage = "") {
   const bootstrap = state.bootstrap;
+  const requiresPassword = bootstrap?.requireSessionPassword;
   app.innerHTML = `
     <div class="gs-center">
       <div class="gs-login">
@@ -1019,10 +1020,11 @@ function renderLogin(errorMessage = "") {
           <span>${esc(bootstrap?.title || sessionTitle)}</span>
         </div>
         <span class="gs-eyebrow">PIN protected session</span>
-        <h1>Enter access PIN</h1>
-        <p class="gs-meta">Use the PIN shown on the host phone to unlock this local session.</p>
+        <h1>Enter access PIN${requiresPassword ? " & Password" : ""}</h1>
+        <p class="gs-meta">Use the PIN shown on the host phone to unlock this local session.${requiresPassword ? " A password is also required." : ""}</p>
         <form id="loginForm">
           <input id="pinInput" class="gs-pin" inputmode="numeric" maxlength="6" placeholder="Enter PIN" autofocus>
+          ${requiresPassword ? `<input id="passwordInput" class="gs-password" type="password" placeholder="Enter Password" maxlength="32">` : ""}
           ${errorMessage ? `<p class="gs-error-text">${esc(errorMessage)}</p>` : ""}
           <button class="gs-btn gs-btn-accent gs-btn-block" type="submit">Continue</button>
         </form>
@@ -1032,9 +1034,13 @@ function renderLogin(errorMessage = "") {
   document.getElementById("loginForm")?.addEventListener("submit", async (event) => {
     event.preventDefault();
     try {
+      const loginData = { pin: document.getElementById("pinInput").value.trim() };
+      if (requiresPassword) {
+        loginData.password = document.getElementById("passwordInput").value;
+      }
       await api("/auth/login", {
         method: "POST",
-        body: JSON.stringify({ pin: document.getElementById("pinInput").value.trim() }),
+        body: JSON.stringify(loginData),
       });
       navigate("/", true);
     } catch (error) {
