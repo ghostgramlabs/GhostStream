@@ -93,6 +93,26 @@ body.gs-large-cards .gs-card-img {
   aspect-ratio: 16 / 11;
 }
 
+/* Large cards on TV screens */
+@media (min-width: 1600px) {
+  body.gs-large-cards .gs-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+  }
+
+  body.gs-large-cards .gs-card-body {
+    padding: 24px;
+  }
+
+  body.gs-large-cards .gs-card-title {
+    font-size: 1.4rem;
+  }
+
+  body.gs-large-cards .gs-card-img {
+    aspect-ratio: 16 / 9;
+  }
+}
+
 body.gs-prominent-downloads .gs-btn-download {
   background: var(--accent);
   color: var(--accent-ink);
@@ -1172,5 +1192,224 @@ input:focus-visible {
   .gs-now {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+/* TV Screen Optimization (55"+ screens, 1600px+) */
+@media (min-width: 1600px) {
+  body {
+    font-size: 1.1rem;
+  }
+
+  .gs-main {
+    max-width: 1600px;
+    padding: 32px 24px 120px;
+  }
+
+  /* Buttons: Larger for remote control */
+  .gs-btn {
+    min-height: 56px;
+    padding: 14px 24px;
+    font-size: 1.15rem;
+  }
+
+  .gs-btn-sm {
+    min-height: 48px;
+    padding: 12px 20px;
+    font-size: 1rem;
+  }
+
+  /* Better focus states for remote navigation */
+  .gs-btn:focus-visible {
+    outline: 4px solid var(--accent);
+    outline-offset: 4px;
+  }
+
+  /* Card grids: Larger cards for TV viewing */
+  .gs-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+
+  .gs-card {
+    border-radius: 20px;
+  }
+
+  .gs-card-img {
+    aspect-ratio: 16 / 9;
+    border-radius: 18px 18px 0 0;
+  }
+
+  .gs-card-body {
+    padding: 20px;
+  }
+
+  .gs-card-title {
+    font-size: 1.2rem;
+    margin-bottom: 6px;
+  }
+
+  .gs-card-meta {
+    font-size: 0.95rem;
+  }
+
+  /* Category grid: Larger cards */
+  .gs-category-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+  }
+
+  .gs-category-card {
+    padding: 24px;
+    border-radius: 20px;
+  }
+
+  .gs-category-card strong {
+    font-size: 1.4rem;
+  }
+
+  .gs-category-kicker {
+    font-size: 0.95rem;
+  }
+
+  .gs-category-meta {
+    font-size: 1rem;
+  }
+
+  /* Hero section larger text */
+  .gs-hero {
+    gap: 40px;
+  }
+
+  .gs-hero-copy h1 {
+    font-size: 2.8rem;
+  }
+
+  .gs-hero-copy p {
+    font-size: 1.2rem;
+  }
+
+  .gs-hero-stat {
+    gap: 8px;
+  }
+
+  .gs-hero-stat strong {
+    font-size: 1.6rem;
+  }
+
+  /* Form inputs: Larger touch targets */
+  .gs-search,
+  .gs-pin,
+  .gs-password {
+    padding: 16px 20px;
+    font-size: 1.1rem;
+    border-radius: 20px;
+  }
+
+  .gs-search {
+    max-width: 500px;
+  }
+
+  /* Login: Bigger layout */
+  .gs-login {
+    width: min(600px, 100%);
+    padding: 40px;
+  }
+
+  .gs-login h1 {
+    font-size: 2.4rem;
+    margin-bottom: 16px;
+  }
+
+  .gs-eyebrow {
+    font-size: 1.05rem;
+  }
+
+  /* Upload zone: Larger for easy interaction */
+  .gs-upload-zone-inner {
+    padding: 80px 32px;
+    gap: 20px;
+  }
+
+  .gs-upload-zone h3 {
+    font-size: 1.8rem;
+  }
+
+  .gs-upload-zone p {
+    font-size: 1.15rem;
+  }
+
+  .gs-upload-zone-icon {
+    width: 96px;
+    height: 96px;
+  }
+
+  /* Navigation: Larger touch targets */
+  .gs-nav {
+    padding: 16px 20px;
+    gap: 20px;
+  }
+
+  .gs-nav-links a {
+    padding: 12px 20px;
+    font-size: 1.1rem;
+  }
+
+  /* Toolbar and controls */
+  .gs-toolbar {
+    gap: 16px;
+  }
+
+  .gs-select-bar {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  /* Better spacing for large screens */
+  .gs-section {
+    padding: 32px;
+  }
+
+  .gs-section-head {
+    margin-bottom: 24px;
+  }
+
+  .gs-section-head h2 {
+    font-size: 1.6rem;
+    margin-bottom: 8px;
+  }
+
+  .gs-section-meta {
+    font-size: 1.05rem;
+  }
+
+  /* Now playing bar: Larger for visibility */
+  .gs-now {
+    padding: 16px 20px;
+    gap: 16px;
+  }
+
+  /* Player controls: Larger */
+  .gs-player-top {
+    gap: 16px;
+  }
+
+  .gs-player-btn {
+    min-height: 52px;
+    width: 52px;
+  }
+
+  /* Status indicators */
+  .gs-status-pill {
+    padding: 8px 16px;
+    font-size: 1rem;
+  }
+
+  /* Enhanced focus for keyboard/remote navigation */
+  button:focus-visible,
+  input:focus-visible,
+  a:focus-visible {
+    outline: 4px solid var(--accent);
+    outline-offset: 3px;
   }
 }
