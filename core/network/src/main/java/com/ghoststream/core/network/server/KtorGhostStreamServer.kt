@@ -10,6 +10,9 @@ import com.ghoststream.core.media.PlaybackResolution
 import com.ghoststream.core.media.PlaybackSource
 import com.ghoststream.core.history.HistoryRepository
 import com.ghoststream.core.model.*
+import com.ghoststream.core.network.AndroidNetworkInspector
+import com.ghoststream.core.network.assets.WebAssetLoader
+import com.ghoststream.core.session.SessionManager
 import com.ghoststream.core.settings.SettingsRepository
 import com.ghoststream.core.storage.StorageRepository
 import io.ktor.http.ContentDisposition

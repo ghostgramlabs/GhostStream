@@ -14,7 +14,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "GhostStream"
+rootProject.name = "DirectServe"
 
 include(
     ":app",

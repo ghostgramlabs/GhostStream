@@ -7,6 +7,8 @@ import com.ghoststream.core.model.SharedItem
 import java.io.File
 import java.nio.file.Files
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -14,14 +16,16 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class QueuedCompatibilityPipelineTest {
     @Test
     fun `preparation success resolves to cached playback source`() = runTest {
         val cache = FakePlaybackCache()
+        val testScope = CoroutineScope(coroutineContext)
         val pipeline = QueuedCompatibilityPipeline(
             cache = cache,
             worker = SuccessfulWorker(),
-            scope = backgroundScope,
+            scope = testScope,
         )
         val item = transcodeItem()
 
@@ -40,6 +44,7 @@ class QueuedCompatibilityPipelineTest {
     @Test
     fun `preparation failure surfaces failed status`() = runTest {
         val cache = FakePlaybackCache()
+        val testScope = CoroutineScope(coroutineContext)
         val pipeline = QueuedCompatibilityPipeline(
             cache = cache,
             worker = object : CompatibilityWorker {
@@ -51,7 +56,7 @@ class QueuedCompatibilityPipelineTest {
                     return CompatibilityWorkerResult.Failure("Compatibility conversion failed.")
                 }
             },
-            scope = backgroundScope,
+            scope = testScope,
         )
         val item = transcodeItem(id = "video-2")
 
@@ -65,6 +70,7 @@ class QueuedCompatibilityPipelineTest {
     @Test
     fun `fragmented output can become streamable before completion`() = runTest {
         val cache = FakePlaybackCache()
+        val testScope = CoroutineScope(coroutineContext)
         val releaseCompletion = CompletableDeferred<Unit>()
         val pipeline = QueuedCompatibilityPipeline(
             cache = cache,
@@ -106,12 +112,12 @@ class QueuedCompatibilityPipelineTest {
                     )
                 }
             },
-            scope = backgroundScope,
+            scope = testScope,
         )
         val item = transcodeItem(id = "video-3")
 
         pipeline.requestPreparation(item)
-        runCurrent()
+        advanceUntilIdle()
 
         val inFlightJob = pipeline.currentJob(item.id) ?: error("Expected compatibility job")
         assertEquals(CompatibilityStatus.PREPARING, inFlightJob.status)

@@ -35,6 +35,7 @@ import androidx.compose.material.icons.outlined.OpenInBrowser
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.VideoLibrary
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -269,6 +270,7 @@ fun HomeScreen(
     }
 }
 
+@Composable
 private fun TopBrandHeader(
     onOpenSettings: () -> Unit,
     onOpenHistory: () -> Unit,
@@ -292,7 +294,6 @@ private fun TopBrandHeader(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.tertiary,
             )
-        }
         }
         Spacer(modifier = Modifier.width(10.dp))
         Surface(

@@ -510,7 +510,6 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     debugLogLocation = viewModel.debugLogLocationDescription(),
                     onShareDebugLog = viewModel::shareDebugLog,
                     onClearDebugLog = viewModel::clearDebugLog,
-                    onClearDebugLog = viewModel::clearDebugLog,
                     modifier = Modifier.padding(innerPadding),
                 )
             }
@@ -519,17 +518,8 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     history = uiState.transferHistory,
                     onBack = { navController.popBackStack() },
                     onDeleteRecord = viewModel::deleteHistoryRecord,
-                    onOpenFile = { fileUri ->
-                        viewModel.viewModelScope.launch {
-                            viewModel.events.let { 
-                                // Actually, I'll just emit from ViewModel or handle it directly here
-                            }
-                        }
-                        // Easier to just handle direct navigation/opening in ViewModel if needed
-                        // But since I added AppEvent.OpenFile, I'll just use it via a new method in ViewModel
-                        viewModel.openReceivedFile(fileUri)
-                    },
-                    modifier = Modifier.padding(innerPadding)
+                    onOpenFile = viewModel::openReceivedFile,
+                    modifier = Modifier.padding(innerPadding),
                 )
             }
             composable(Routes.Help) {
@@ -585,6 +575,7 @@ private object Routes {
     const val NetworkSetup = "network_setup"
     const val Session = "session"
     const val Settings = "settings"
+    const val History = "history"
     const val Help = "help"
 }
 
