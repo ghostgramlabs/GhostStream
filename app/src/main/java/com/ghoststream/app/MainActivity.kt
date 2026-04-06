@@ -493,6 +493,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onToggleShowThumbnails = { viewModel.updateSettings { current -> current.copy(showThumbnails = it) } },
                     onToggleLargeTvCards = { viewModel.updateSettings { current -> current.copy(largeTvCards = it) } },
                     onToggleProminentDownloads = { viewModel.updateSettings { current -> current.copy(prominentDownloadButton = it) } },
+                    onTogglePreventDownload = { viewModel.updateSettings { current -> current.copy(preventDownload = it) } },
                     onToggleRequireUploadApproval = { viewModel.updateSettings { current -> current.copy(requireUploadApproval = it) } },
                     onToggleNotifyOnDeviceConnect = { viewModel.updateSettings { current -> current.copy(notifyOnDeviceConnect = it) } },
                     onToggleNotifyOnFileDownload = { viewModel.updateSettings { current -> current.copy(notifyOnFileDownload = it) } },

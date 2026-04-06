@@ -486,7 +486,7 @@ function renderHome() {
         </div>
         <div class="gs-hero-actions">
           <a class="gs-btn gs-btn-accent" data-link href="/videos">Browse videos</a>
-          <button class="gs-btn gs-btn-download" id="downloadAllBtn">Download all files</button>
+          <button class="gs-btn gs-btn-download" id="downloadAllBtn"${bootstrap?.preventDownload ? ' disabled title="Downloads are disabled"' : ''}>Download all files</button>
         </div>
       </div>
     </section>
@@ -530,7 +530,7 @@ async function renderLibrary(category, title) {
           <input class="gs-search" id="libSearch" placeholder="Search by file name" value="${esc(state.query)}">
           <div class="gs-toolbar-actions">
             <button class="gs-btn" id="selectBtn">${state.selectMode ? "Selection on" : "Select files"}</button>
-            <button class="gs-btn gs-btn-download" id="downloadAllBtn">Download all</button>
+            <button class="gs-btn gs-btn-download" id="downloadAllBtn"${state.bootstrap?.preventDownload ? ' disabled title="Downloads are disabled"' : ''}>Download all</button>
           </div>
         </div>
         <div class="gs-select-bar${state.selectMode ? " is-visible" : ""}" id="selectBar">
@@ -637,6 +637,10 @@ function updateSelectionUi() {
 
 function downloadItems(items) {
   if (!items.length) return;
+  if (state.bootstrap?.preventDownload) {
+    alert("Downloads are disabled by the device owner.");
+    return;
+  }
   items.forEach((item, index) => {
     setTimeout(() => {
       const anchor = document.createElement("a");
@@ -1100,7 +1104,9 @@ function card(item, selectable = false) {
         ` : ""}
         <div class="gs-card-actions">
           ${action}
-          <a class="${downloadBtnClass}" href="${item.downloadUrl}">Download</a>
+          ${state.bootstrap?.preventDownload
+            ? `<button class="${downloadBtnClass}" disabled title="Downloads are disabled">Download</button>`
+            : `<a class="${downloadBtnClass}" href="${item.downloadUrl}">Download</a>`}
         </div>
       </div>
     </article>`;

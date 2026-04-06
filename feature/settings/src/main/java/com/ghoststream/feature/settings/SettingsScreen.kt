@@ -46,6 +46,7 @@ fun SettingsScreen(
     onToggleShowThumbnails: (Boolean) -> Unit,
     onToggleLargeTvCards: (Boolean) -> Unit,
     onToggleProminentDownloads: (Boolean) -> Unit,
+    onTogglePreventDownload: (Boolean) -> Unit,
     onToggleRequireUploadApproval: (Boolean) -> Unit,
     onToggleNotifyOnDeviceConnect: (Boolean) -> Unit,
     onToggleNotifyOnFileDownload: (Boolean) -> Unit,
@@ -155,6 +156,7 @@ fun SettingsScreen(
             SettingsGroup(title = "Advanced") {
                 SettingsToggleRow("Sign out on stop", "End browser access when sharing stops.", settings.clearAuthOnStop, onToggleClearAuthOnStop)
                 SettingsToggleRow("Clear temporary files", "Remove prepared playback files when sharing stops.", settings.ghostMode, onToggleGhostMode)
+                SettingsToggleRow("Prevent downloads", "Disable download button in browser access.", settings.preventDownload, onTogglePreventDownload)
                 ManualPortRow(currentPort = settings.preferredPort.toString(), onPortChanged = onPreferredPortChanged)
             }
         }

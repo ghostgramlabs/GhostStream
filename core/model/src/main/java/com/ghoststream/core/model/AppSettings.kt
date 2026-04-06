@@ -42,6 +42,7 @@ data class AppSettings(
     val requireSessionPassword: Boolean = false,
     val sessionPassword: String = "",
     val requireDeviceApproval: Boolean = false,
+    val preventDownload: Boolean = false,
 )
 
 @Serializable

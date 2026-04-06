@@ -221,6 +221,7 @@ class KtorGhostStreamServer(
                         prominentDownloadButton = settings.prominentDownloadButton,
                         debugTracing = debugBrowserTracingEnabled,
                         requireSessionPassword = settings.requireSessionPassword,
+                        preventDownload = settings.preventDownload,
                     ),
                 )
             }
@@ -1321,6 +1322,7 @@ class KtorGhostStreamServer(
         val prominentDownloadButton: Boolean,
         val debugTracing: Boolean,
         val requireSessionPassword: Boolean,
+        val preventDownload: Boolean,
     )
 
     @Serializable

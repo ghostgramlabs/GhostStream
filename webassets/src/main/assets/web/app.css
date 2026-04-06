@@ -298,6 +298,17 @@ input {
   transform: scale(0.98);
 }
 
+.gs-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.gs-btn:disabled:hover {
+  background: inherit;
+  border-color: inherit;
+}
+
 .gs-btn-sm {
   min-height: 36px;
   padding: 8px 12px;
