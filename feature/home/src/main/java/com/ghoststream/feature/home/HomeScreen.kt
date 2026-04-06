@@ -879,14 +879,15 @@ private fun NearbyDeviceSummary(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
+        val generatedName = DeviceNameGenerator.generateName(device.address)
         Text(
-            text = device.serviceName,
+            text = "$generatedName • ${device.address}",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = device.friendlyUrl ?: "Ready to open in DirectServe",
+            text = device.serviceName,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
