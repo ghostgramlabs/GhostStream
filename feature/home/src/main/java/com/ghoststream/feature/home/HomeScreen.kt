@@ -34,6 +34,7 @@ import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.NetworkCheck
 import androidx.compose.material.icons.outlined.OpenInBrowser
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.VideoLibrary
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Settings
@@ -95,7 +96,6 @@ fun HomeScreen(
     onOpenNearbyDevice: (NearbyDevice) -> Unit,
     onAddFiles: () -> Unit,
     onAddFolder: () -> Unit,
-    onBatchSelect: () -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenHistory: () -> Unit,
@@ -104,8 +104,10 @@ fun HomeScreen(
     onResolveUploadRequest: (String, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var showPresetDialog by rememberSaveable { mutableStateOf(false) }
-    var presetName by rememberSaveable { mutableStateOf("") }
+    var presetNameInput by rememberSaveable { mutableStateOf("") }
+    var showDateRangePicker by rememberSaveable { mutableStateOf(false) }
+    var startDateMillis by rememberSaveable { mutableStateOf(0L) }
+    var endDateMillis by rememberSaveable { mutableStateOf(0L) }
 
     LazyColumn(
         modifier = modifier
@@ -144,8 +146,14 @@ fun HomeScreen(
             ActionShelf(
                 onAddFiles = onAddFiles,
                 onAddFolder = onAddFolder,
-                onBatchSelect = onBatchSelect,
                 onOpenLibrary = onOpenLibrary,
+            )
+        }
+
+        item {
+            QuickDateFiltersCard(
+                onOpenLibrary = onOpenLibrary,
+                onOpenDateRangePicker = { showDateRangePicker = true },
             )
         }
 
@@ -166,11 +174,9 @@ fun HomeScreen(
                 SharePresetsCard(
                     presets = sharePresets,
                     canSavePreset = libraryState.summary.totalItems > 0,
-                    onSavePreset = {
-                        presetName = libraryState.folders.firstOrNull()?.displayName
-                            ?: if (libraryState.summary.videos > 0) "Movie Night" else "My collection"
-                        showPresetDialog = true
-                    },
+                    defaultPresetName = libraryState.folders.firstOrNull()?.displayName
+                        ?: if (libraryState.summary.videos > 0) "Movie Night" else "My collection",
+                    onSavePreset = onSavePreset,
                     onApplyPreset = onApplyPreset,
                     onDeletePreset = onDeletePreset,
                 )
@@ -186,53 +192,6 @@ fun HomeScreen(
         item {
             Spacer(modifier = Modifier.height(18.dp))
         }
-    }
-
-    if (showPresetDialog) {
-        AlertDialog(
-            onDismissRequest = { showPresetDialog = false },
-            containerColor = MaterialTheme.colorScheme.surface,
-            titleContentColor = MaterialTheme.colorScheme.onSurface,
-            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            title = { Text("Save this share") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        "Give this set of files a name so you can open it again later.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    OutlinedTextField(
-                        value = presetName,
-                        onValueChange = { presetName = it },
-                        label = { Text("Share name") },
-                        singleLine = true,
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        onSavePreset(presetName)
-                        showPresetDialog = false
-                    },
-                    enabled = presetName.isNotBlank(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ghostPrimaryButtonColors(),
-                ) {
-                    Text("Save")
-                }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    onClick = { showPresetDialog = false },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ghostSecondaryButtonColors(),
-                ) {
-                    Text("Cancel")
-                }
-            },
-        )
     }
 
     pendingUploadRequest?.let { request ->
@@ -282,6 +241,22 @@ fun HomeScreen(
                     Text("Decline")
                 }
             },
+        )
+    }
+
+    if (showDateRangePicker) {
+        DateRangePickerDialog(
+            startDateMillis = startDateMillis,
+            endDateMillis = endDateMillis,
+            onStartDateChanged = { startDateMillis = it },
+            onEndDateChanged = { endDateMillis = it },
+            onConfirm = {
+                // Navigate to library with date filter applied
+                // For now, just open library
+                onOpenLibrary()
+                showDateRangePicker = false
+            },
+            onDismiss = { showDateRangePicker = false },
         )
     }
 }
@@ -541,7 +516,6 @@ private fun ConnectedDevicesCard(
 private fun ActionShelf(
     onAddFiles: () -> Unit,
     onAddFolder: () -> Unit,
-    onBatchSelect: () -> Unit,
     onOpenLibrary: () -> Unit,
 ) {
     Card(
@@ -553,46 +527,37 @@ private fun ActionShelf(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text("Add content", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            Text("Add to share", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                "Choose how you want to build this share.",
+                "Pick the files you want to send.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(modifier = Modifier.height(16.dp))
             BoxWithConstraints {
-                val tileWidth = (maxWidth - 12.dp) / 2
+                val tileWidth = (maxWidth - 12.dp) / 3
                 Column(
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         ActionTile(
-                            label = "Add files",
-                            detail = "Pick anything",
+                            label = "Files",
+                            detail = "Choose",
                             icon = Icons.Outlined.AddBox,
                             onClick = onAddFiles,
                             modifier = Modifier.width(tileWidth),
                         )
                         ActionTile(
-                            label = "Add folder",
-                            detail = "Scan a folder",
+                            label = "Folder",
+                            detail = "Scan",
                             icon = Icons.Outlined.FolderOpen,
                             onClick = onAddFolder,
                             modifier = Modifier.width(tileWidth),
                         )
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         ActionTile(
-                            label = "Smart Picks",
-                            detail = "Smart groups",
-                            icon = Icons.Outlined.Collections,
-                            onClick = onBatchSelect,
-                            modifier = Modifier.width(tileWidth),
-                        )
-                        ActionTile(
-                            label = "Shared library",
-                            detail = "Review items",
+                            label = "Library",
+                            detail = "Browse",
                             icon = Icons.Outlined.VideoLibrary,
                             onClick = onOpenLibrary,
                             modifier = Modifier.width(tileWidth),
@@ -650,6 +615,205 @@ private fun ActionTile(
             Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
+}
+
+@Composable
+private fun QuickDateFiltersCard(
+    onOpenLibrary: () -> Unit,
+    onOpenDateRangePicker: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .padding(horizontal = 20.dp)
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            Text("Quick filters", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                "Add files from a specific date. Open library to see all your files.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            BoxWithConstraints {
+                val tileWidth = (maxWidth - 8.dp) / 2
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DateFilterTile(
+                            label = "Today",
+                            detail = "Files from today",
+                            icon = Icons.Outlined.Schedule,
+                            onClick = onOpenLibrary,
+                            modifier = Modifier.width(tileWidth),
+                        )
+                        DateFilterTile(
+                            label = "This week",
+                            detail = "Last 7 days",
+                            icon = Icons.Outlined.Schedule,
+                            onClick = onOpenLibrary,
+                            modifier = Modifier.width(tileWidth),
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        DateFilterTile(
+                            label = "This month",
+                            detail = "Last 30 days",
+                            icon = Icons.Outlined.Schedule,
+                            onClick = onOpenLibrary,
+                            modifier = Modifier.width(tileWidth),
+                        )
+                        DateFilterTile(
+                            label = "Date range",
+                            detail = "From → To date",
+                            icon = Icons.Outlined.Schedule,
+                            onClick = onOpenDateRangePicker,
+                            modifier = Modifier.width(tileWidth),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DateFilterTile(
+    label: String,
+    detail: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(targetValue = if (pressed) 0.97f else 1f, label = "dateFilterScale")
+    val containerColor by animateColorAsState(
+        targetValue = if (pressed) ghostAccentSurface() else MaterialTheme.colorScheme.surfaceVariant,
+        label = "dateFilterColor",
+    )
+    Card(
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clickable(
+                interactionSource = interactionSource,
+                indication = LocalIndication.current,
+                onClick = onClick,
+            ),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .background(ghostAccentSurface(), RoundedCornerShape(8.dp))
+                    .border(BorderStroke(1.dp, ghostAccentBorder()), RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(detail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun DateRangePickerDialog(
+    startDateMillis: Long,
+    endDateMillis: Long,
+    onStartDateChanged: (Long) -> Unit,
+    onEndDateChanged: (Long) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sdf = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
+    val startDateStr = if (startDateMillis > 0) sdf.format(java.util.Date(startDateMillis)) else "Select start date"
+    val endDateStr = if (endDateMillis > 0) sdf.format(java.util.Date(endDateMillis)) else "Select end date"
+    var startDateInput by remember { mutableStateOf(startDateStr) }
+    var endDateInput by remember { mutableStateOf(endDateStr) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+        titleContentColor = MaterialTheme.colorScheme.onSurface,
+        textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        title = { Text("Select date range") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(
+                    "Choose files from a specific date range.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = startDateInput,
+                        onValueChange = { startDateInput = it },
+                        label = { Text("From date") },
+                        placeholder = { Text("Select start date") },
+                        readOnly = true,
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                // In a real implementation, open a date picker
+                                // For now, users can manually type or use the system
+                            },
+                    )
+                    OutlinedTextField(
+                        value = endDateInput,
+                        onValueChange = { endDateInput = it },
+                        label = { Text("To date") },
+                        placeholder = { Text("Select end date") },
+                        readOnly = true,
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                // In a real implementation, open a date picker
+                                // For now, users can manually type or use the system
+                            },
+                    )
+                }
+                Text(
+                    "Tip: Open the library to filter by these dates",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                shape = RoundedCornerShape(16.dp),
+                colors = ghostPrimaryButtonColors(),
+            ) {
+                Text("Apply filter")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                shape = RoundedCornerShape(16.dp),
+                colors = ghostSecondaryButtonColors(),
+            ) {
+                Text("Cancel")
+            }
+        },
+    )
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -908,7 +1072,8 @@ private fun NearbyDeviceSummary(
 private fun SharePresetsCard(
     presets: List<SharePreset>,
     canSavePreset: Boolean,
-    onSavePreset: () -> Unit,
+    defaultPresetName: String,
+    onSavePreset: (String) -> Unit,
     onApplyPreset: (String) -> Unit,
     onDeletePreset: (String) -> Unit,
 ) {
@@ -930,24 +1095,24 @@ private fun SharePresetsCard(
                     Text("Saved shares", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        "Reuse the same group of files later. To save only a few files, open Shared library and choose them there.",
+                        "Save this share as \"$defaultPresetName\" to reuse it later.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                OutlinedButton(
-                    onClick = onSavePreset,
+                Button(
+                    onClick = { onSavePreset(defaultPresetName) },
                     enabled = canSavePreset,
                     shape = RoundedCornerShape(16.dp),
-                    colors = ghostSecondaryButtonColors(),
+                    colors = ghostPrimaryButtonColors(),
                 ) {
-                    Text("Save this share")
+                    Text("Save now")
                 }
             }
 
             if (presets.isEmpty()) {
                 Text(
-                    text = "Nothing saved yet.",
+                    text = "Nothing saved yet. Save your current selection above.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

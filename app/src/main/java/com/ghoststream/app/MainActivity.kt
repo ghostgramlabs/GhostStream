@@ -353,7 +353,6 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onOpenNearbyDevice = viewModel::openNearbyDevice,
                     onAddFiles = { navController.navigate(Routes.AddFiles) },
                     onAddFolder = { navController.navigate(Routes.AddFolder) },
-                    onBatchSelect = openBatchSelect,
                     onOpenLibrary = { navController.navigate(Routes.Library) },
                     onOpenSettings = { navController.navigate(Routes.Settings) },
                     onOpenHistory = viewModel::navigateToHistory,
