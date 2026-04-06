@@ -455,7 +455,8 @@ input {
 }
 
 .gs-search,
-.gs-pin {
+.gs-pin,
+.gs-password {
   width: 100%;
   padding: 12px 16px;
   border-radius: 16px;
@@ -469,12 +470,14 @@ input {
 }
 
 .gs-search::placeholder,
-.gs-pin::placeholder {
+.gs-pin::placeholder,
+.gs-password::placeholder {
   color: var(--muted);
 }
 
 .gs-search:focus,
-.gs-pin:focus {
+.gs-pin:focus,
+.gs-password:focus {
   outline: none;
   border-color: var(--accent);
   background: var(--surface);
@@ -1048,8 +1051,23 @@ body.gs-dragging .gs-drop-indicator {
 }
 
 .gs-error-text {
-  color: var(--text-secondary);
+  color: #f87171;
   margin-top: 12px;
+  font-weight: 500;
+}
+
+@media (prefers-color-scheme: dark) {
+  .gs-error-text {
+    color: #fca5a5;
+  }
+}
+
+body.gs-theme-light .gs-error-text {
+  color: #f87171;
+}
+
+body.gs-theme-dark .gs-error-text {
+  color: #fca5a5;
 }
 
 .gs-empty {
@@ -1060,6 +1078,14 @@ body.gs-dragging .gs-drop-indicator {
   text-align: center;
   color: var(--text-secondary);
   background: var(--surface);
+}
+
+.gs-subtitle {
+  display: block;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  margin-bottom: 12px;
 }
 
 .gs-skeleton {

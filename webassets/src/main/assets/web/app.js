@@ -132,7 +132,7 @@ async function handleFilesUpload(files) {
     requestId = response.requestId;
 
     if (!response.accepted) {
-      throw new Error("Transfers were not approved by the device owner.");
+      throw new Error("Upload transfer was denied by the device owner.");
     }
 
     title.textContent = fileCount === 1 ? `Sending ${files[0].name}` : `Sending ${fileCount} files`;
@@ -157,7 +157,7 @@ async function handleFilesUpload(files) {
           reject(new Error("Upload failed (" + currentUploadXhr.status + ")"));
         }
       };
-      currentUploadXhr.onerror = () => reject(new Error("Network error during transfer."));
+      currentUploadXhr.onerror = () => reject(new Error("Network error - please check your connection."));
       currentUploadXhr.onabort = () => reject(new Error("Transfer cancelled."));
     });
 
@@ -183,7 +183,7 @@ async function handleFilesUpload(files) {
 
   } catch (error) {
     title.textContent = "Transfer failed";
-    status.textContent = error.message || "Request declined or failed.";
+    status.textContent = error.message || "Upload request was denied or failed.";
     setTimeout(() => showOverlay(false), 3000);
   }
 }
@@ -426,8 +426,8 @@ function shell(content, options = {}) {
         <div class="gs-drop-indicator-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         </div>
-        <h2>Drop files to send</h2>
-        <p>Your files will be sent directly to the host device.</p>
+        <h2>Drop files to upload</h2>
+        <p>Upload files to the host device.</p>
       </div>
 
       <div class="gs-upload-overlay" id="uploadOverlay">
@@ -556,7 +556,7 @@ async function renderLibrary(category, title) {
   const grid = document.getElementById("grid");
   grid.innerHTML = state.libraryItems.length
     ? state.libraryItems.map((item) => card(item, true)).join("")
-    : '<div class="gs-empty">No matching files were found in this section.</div>';
+    : '<div class="gs-empty">No files found in this section.</div>';
 
   attachMusicPlayers();
   bindSelectableCards();
@@ -1022,7 +1022,7 @@ function renderLogin(errorMessage = "") {
         ${bootstrap?.subtitle ? `<span class="gs-subtitle">${esc(bootstrap.subtitle)}</span>` : ""}
         <span class="gs-eyebrow">PIN protected session</span>
         <h1>Enter access PIN${requiresPassword ? " & Password" : ""}</h1>
-        <p class="gs-meta">Use the PIN shown on the host phone to unlock this local session.${requiresPassword ? " A password is also required." : ""}</p>
+        <p class="gs-meta">Enter the PIN shown on the host phone to unlock this session.${requiresPassword ? " A password is also required." : ""}</p>
         <form id="loginForm">
           <input id="pinInput" class="gs-pin" inputmode="numeric" maxlength="6" placeholder="Enter PIN" autofocus>
           ${requiresPassword ? `<input id="passwordInput" class="gs-password" type="password" placeholder="Enter Password" maxlength="32">` : ""}
@@ -1380,8 +1380,8 @@ async function renderUpload() {
     <div class="gs-section">
       <div class="gs-section-head">
         <div>
-          <h2>Drop Zone</h2>
-          <div class="gs-section-meta">Send files directly to this device over the network.</div>
+          <h2>Send to Device</h2>
+          <div class="gs-section-meta">Upload files to the host device over the network.</div>
         </div>
       </div>
       
