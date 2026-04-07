@@ -460,6 +460,7 @@ function shell(content, options = {}) {
 
 function renderHome() {
   const bootstrap = state.bootstrap;
+  const allowDownloads = !bootstrap?.preventDownload;
   const categories = [
     { key: "videos", label: "Videos", count: bootstrap.categories.videos, href: "/videos" },
     { key: "photos", label: "Photos", count: bootstrap.categories.photos, href: "/photos" },
@@ -473,7 +474,7 @@ function renderHome() {
       <div class="gs-hero-copy">
         <span class="gs-eyebrow">Private receiver view</span>
         <h1>Stream & share files offline</h1>
-        <p>${esc(sessionSubtitle)}. Browse, play, preview, or download ${total} shared items on the same local network.</p>
+        <p>${esc(sessionSubtitle)}. Browse, play, preview${allowDownloads ? ", or download" : ""} ${total} shared items on the same local network.</p>
       </div>
       <div class="gs-hero-side">
         <div class="gs-hero-summary">
@@ -490,7 +491,7 @@ function renderHome() {
         </div>
         <div class="gs-hero-actions">
           <a class="gs-btn gs-btn-accent" data-link href="/videos">Browse videos</a>
-          <button class="gs-btn gs-btn-download" id="downloadAllBtn"${bootstrap?.preventDownload ? ' disabled title="Downloads are disabled"' : ''}>Download all files</button>
+          ${allowDownloads ? '<button class="gs-btn gs-btn-download" id="downloadAllBtn">Download all files</button>' : ""}
         </div>
       </div>
     </section>
@@ -523,18 +524,19 @@ function renderHome() {
 }
 
 async function renderLibrary(category, title) {
+  const allowDownloads = !state.bootstrap?.preventDownload;
   shell(`
     <section class="gs-section">
       <div class="gs-section-head">
         <h2>${esc(title)}</h2>
-        <span class="gs-section-meta">Select files or download the whole shelf.</span>
+        <span class="gs-section-meta">${allowDownloads ? "Select files or download the whole shelf." : "Select files and browse this shelf."}</span>
       </div>
       <div class="gs-control-card">
         <div class="gs-toolbar">
           <input class="gs-search" id="libSearch" placeholder="Search by file name" value="${esc(state.query)}">
           <div class="gs-toolbar-actions">
             <button class="gs-btn" id="selectBtn">${state.selectMode ? "Selection on" : "Select files"}</button>
-            <button class="gs-btn gs-btn-download" id="downloadAllBtn"${state.bootstrap?.preventDownload ? ' disabled title="Downloads are disabled"' : ''}>Download all</button>
+            ${allowDownloads ? '<button class="gs-btn gs-btn-download" id="downloadAllBtn">Download all</button>' : ""}
           </div>
         </div>
         <div class="gs-select-bar${state.selectMode ? " is-visible" : ""}" id="selectBar">
@@ -542,7 +544,7 @@ async function renderLibrary(category, title) {
           <div class="gs-toolbar-actions">
             <button class="gs-btn gs-btn-sm" id="selectAllBtn">Select all</button>
             <button class="gs-btn gs-btn-sm" id="clearSelectBtn">Clear</button>
-            <button class="gs-btn gs-btn-accent gs-btn-sm" id="downloadSelectedBtn">Download selected</button>
+            ${allowDownloads ? '<button class="gs-btn gs-btn-accent gs-btn-sm" id="downloadSelectedBtn">Download selected</button>' : ""}
           </div>
         </div>
       </div>
@@ -660,6 +662,7 @@ function downloadItems(items) {
 
 async function renderVideoPlayer(id) {
   const item = await api(`/api/item/${id}`);
+  const allowDownloads = !state.bootstrap?.preventDownload;
   debugTrace(
     "video_item_loaded",
     `id=${item.id} mode=${item.playbackMode} mime=${item.mimeType || ""} hls=${Boolean(item.hlsUrl)} streamReady=${item.streamReady}`,
@@ -679,7 +682,7 @@ async function renderVideoPlayer(id) {
           </div>
           <div class="gs-toolbar-actions">
             <a class="gs-btn gs-btn-sm" data-link href="/videos">Back to videos</a>
-            <a class="gs-btn gs-btn-download" href="${item.downloadUrl}">Download original</a>
+            ${allowDownloads ? `<a class="gs-btn gs-btn-download" href="${item.downloadUrl}">Download original</a>` : ""}
           </div>
         </div>
         ${playerBadges ? `<div class="gs-badges">${playerBadges}</div>` : ""}
@@ -723,6 +726,7 @@ function renderVideoStage(item) {
 }
 
 function videoMarkup(item) {
+  const allowDownloads = !state.bootstrap?.preventDownload;
   const nativeClass = shouldUseNativeVideoPlayer(item) ? " gs-native-video" : "";
   const preload = shouldUseNativeVideoPlayer(item) ? "metadata" : "auto";
   const sourceUrl = shouldUseNativeHlsPlayback(item) ? item.hlsUrl : item.streamUrl;
@@ -737,7 +741,7 @@ function videoMarkup(item) {
         <p id="vErrorText">This browser could not start the video.</p>
         <div class="gs-toolbar-actions">
           <button class="gs-btn gs-btn-accent gs-btn-sm" id="retryVideoBtn">Try again</button>
-          <a class="gs-btn gs-btn-download gs-btn-sm" href="${item.downloadUrl}">Download original</a>
+          ${allowDownloads ? `<a class="gs-btn gs-btn-download gs-btn-sm" href="${item.downloadUrl}">Download original</a>` : ""}
         </div>
       </div>
     </div>
@@ -983,6 +987,7 @@ function ensureCompatiblePlayerMounted(item) {
 
 async function renderPhotoViewer(id) {
   const item = await api(`/api/item/${id}`);
+  const allowDownloads = !state.bootstrap?.preventDownload;
   let prev = null;
   let next = null;
   try {
@@ -1004,7 +1009,7 @@ async function renderPhotoViewer(id) {
             ${prev ? `<a class="gs-btn gs-btn-sm" data-link href="/photo/${prev}">Previous</a>` : ""}
             ${next ? `<a class="gs-btn gs-btn-sm" data-link href="/photo/${next}">Next</a>` : ""}
             <a class="gs-btn gs-btn-sm" data-link href="/photos">Gallery</a>
-            <a class="gs-btn gs-btn-download" href="${item.downloadUrl}">Download original</a>
+            ${allowDownloads ? `<a class="gs-btn gs-btn-download" href="${item.downloadUrl}">Download original</a>` : ""}
           </div>
         </div>
         ${(item.mimeType === "application/pdf" || String(item.title).toLowerCase().endsWith(".pdf"))
@@ -1019,7 +1024,6 @@ async function renderPhotoViewer(id) {
 
 function renderLogin(errorMessage = "") {
   const bootstrap = state.bootstrap;
-  const requiresPassword = bootstrap?.requireSessionPassword;
   app.innerHTML = `
     <div class="gs-center">
       <div class="gs-login">
@@ -1029,11 +1033,10 @@ function renderLogin(errorMessage = "") {
         </div>
         ${bootstrap?.subtitle ? `<span class="gs-subtitle">${esc(bootstrap.subtitle)}</span>` : ""}
         <span class="gs-eyebrow">PIN protected session</span>
-        <h1>Enter access PIN${requiresPassword ? " & Password" : ""}</h1>
-        <p class="gs-meta">Enter the PIN shown on the host phone to unlock this session.${requiresPassword ? " A password is also required." : ""}</p>
+        <h1>Enter access PIN</h1>
+        <p class="gs-meta">Enter the PIN shown on the host phone to unlock this session.</p>
         <form id="loginForm">
           <input id="pinInput" class="gs-pin" inputmode="numeric" maxlength="6" placeholder="Enter PIN" autofocus>
-          ${requiresPassword ? `<input id="passwordInput" class="gs-password" type="password" placeholder="Enter Password" maxlength="32">` : ""}
           ${errorMessage ? `<p class="gs-error-text">${esc(errorMessage)}</p>` : ""}
           <button class="gs-btn gs-btn-accent gs-btn-block" type="submit">Continue</button>
         </form>
@@ -1044,9 +1047,6 @@ function renderLogin(errorMessage = "") {
     event.preventDefault();
     try {
       const loginData = { pin: document.getElementById("pinInput").value.trim() };
-      if (requiresPassword) {
-        loginData.password = document.getElementById("passwordInput").value;
-      }
       await api("/auth/login", {
         method: "POST",
         body: JSON.stringify(loginData),
@@ -1069,6 +1069,7 @@ function renderError(message) {
 }
 
 function card(item, selectable = false) {
+  const allowDownloads = !state.bootstrap?.preventDownload;
   const actionBtnClass = state.bootstrap?.prominentDownloadButton
     ? "gs-btn gs-btn-sm"
     : "gs-btn gs-btn-accent gs-btn-sm";
@@ -1108,9 +1109,7 @@ function card(item, selectable = false) {
         ` : ""}
         <div class="gs-card-actions">
           ${action}
-          ${state.bootstrap?.preventDownload
-            ? `<button class="${downloadBtnClass}" disabled title="Downloads are disabled">Download</button>`
-            : `<a class="${downloadBtnClass}" href="${item.downloadUrl}">Download</a>`}
+          ${allowDownloads ? `<a class="${downloadBtnClass}" href="${item.downloadUrl}">Download</a>` : ""}
         </div>
       </div>
     </article>`;

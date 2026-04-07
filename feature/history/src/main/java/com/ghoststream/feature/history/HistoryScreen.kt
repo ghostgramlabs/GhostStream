@@ -88,7 +88,10 @@ private fun HistoryItem(
     onOpen: () -> Unit,
 ) {
     val dateStr = remember(record.timestampMs) {
-        SimpleDateFormat("MMM d, HH:mm", Locale.getDefault()).format(Date(record.timestampMs))
+        SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(record.timestampMs))
+    }
+    val timeStr = remember(record.timestampMs) {
+        SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(record.timestampMs))
     }
     
     Card(
@@ -120,12 +123,6 @@ private fun HistoryItem(
                     style = MaterialTheme.typography.labelMedium,
                     color = iconColor
                 )
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = dateStr,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
             
             Spacer(modifier = Modifier.height(8.dp))
@@ -139,11 +136,17 @@ private fun HistoryItem(
             )
             
             Text(
-                text = "${formatSize(record.sizeBytes)} • ${record.peer}",
+                text = "${formatSize(record.sizeBytes)} • ${formatHistoryPeer(record.peer)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             
+            Text(
+                text = "$dateStr at $timeStr",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
             if (record.direction == TransferDirection.RECEIVED && record.fileUri != null) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Row(

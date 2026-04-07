@@ -169,4 +169,48 @@ class SharingCoordinator(
             recordRecentSession = settings.showRecentSessions,
         )
     }
+
+    suspend fun updatePinProtection(enabled: Boolean) {
+        val settings = settingsRepository.settings.first()
+        val session = sessionManager.sessionState.value
+        if (!session.isSharing) return
+
+        val pin = when {
+            !enabled -> null
+            settings.autoGeneratePin -> Random.nextInt(1000, 9999).toString()
+            else -> settings.manualPin.filter(Char::isDigit).padEnd(4, '0').take(6)
+        }
+
+        sessionManager.updateSessionAuth(
+            authEnabled = enabled,
+            pin = pin,
+        )
+
+        val sessionId = session.sessionId
+        val serverPort = session.serverPort
+        if (sessionId != null && serverPort != null) {
+            val advertised = nsdAdvertiser.start(
+                AdvertisedSessionInfo(
+                    port = serverPort,
+                    sessionId = sessionId,
+                    authRequired = enabled,
+                    browserSupported = true,
+                    streamingSupported = session.selectedItems.any { item -> item.category != com.ghoststream.core.model.MediaCategory.FILE },
+                    deviceLabel = android.os.Build.MODEL ?: "Android",
+                ),
+            )
+            if (advertised != null) {
+                sessionManager.updateAdvertisedAccess(
+                    advertisedName = advertised.serviceName,
+                    hostname = advertised.hostname,
+                )
+                debugLogSink.log(
+                    "SharingCoordinator",
+                    "pin protection updated enabled=$enabled serviceName=${advertised.serviceName} hostname=${advertised.hostname}",
+                )
+            }
+        }
+
+        debugLogSink.log("SharingCoordinator", "updatePinProtection enabled=$enabled pinSet=${pin != null}")
+    }
 }

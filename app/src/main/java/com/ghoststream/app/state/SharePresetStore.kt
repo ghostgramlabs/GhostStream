@@ -125,7 +125,7 @@ class SharePresetStore(
                 .distinct()
                 .map(Uri::parse)
                 .forEach { treeUri ->
-                    storageRepository.addFolder(treeUri)
+                    storageRepository.addFolder(treeUri).getOrThrow()
                 }
 
             val fileUris = preset.itemUris

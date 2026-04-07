@@ -36,6 +36,7 @@ sealed interface AppEvent {
     data object NavigateNetworkSetup : AppEvent
     data object NavigateSession : AppEvent
     data object NavigateHome : AppEvent
+    data object NavigateLibrary : AppEvent
     data object StartSharingService : AppEvent
     data object StopSharingService : AppEvent
     data class ShareDebugLog(val uri: Uri) : AppEvent

@@ -218,6 +218,9 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                 AppEvent.NavigateHome -> navController.navigate(Routes.Home) {
                     popUpTo(Routes.Home) { inclusive = true }
                 }
+                AppEvent.NavigateLibrary -> navController.navigate(Routes.Library) {
+                    launchSingleTop = true
+                }
                 AppEvent.StartSharingService -> {
                     val needsNotificationPermission =
                         Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -356,12 +359,6 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onOpenLibrary = { navController.navigate(Routes.Library) },
                     onOpenSettings = { navController.navigate(Routes.Settings) },
                     onOpenHistory = viewModel::navigateToHistory,
-                    onSaveDeviceNickname = { ipAddress, nickname ->
-                        viewModel.updateSettings { current ->
-                            current.copy(deviceNicknames = current.deviceNicknames + (ipAddress to nickname))
-                        }
-                    },
-                    deviceNicknames = uiState.settings.deviceNicknames,
                     onResolveUploadRequest = viewModel::resolveUploadRequest,
                     modifier = Modifier.padding(innerPadding),
                 )
@@ -371,6 +368,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     libraryState = uiState.libraryState,
                     compatibilityJobs = uiState.compatibilityJobs,
                     showThumbnails = uiState.settings.showThumbnails,
+                    onBack = { navController.popBackStack() },
                     onPrepareItem = viewModel::requestPrepareItem,
                     onSavePresetSelection = viewModel::saveSelectedItemsAsPreset,
                     onRemoveItem = viewModel::removeItem,
@@ -425,6 +423,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                 }
                 NetworkSetupScreen(
                     networkAvailability = uiState.sessionState.networkAvailability,
+                    onBack = { navController.popBackStack() },
                     onOpenWifiSettings = { context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS)) },
                     onOpenHotspotSettings = {
                         context.startActivity(Intent("android.settings.TETHER_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -472,6 +471,8 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                             }
                         }
                     },
+                    onTogglePinProtection = viewModel::updateSessionPinProtection,
+                    onBack = { navController.popBackStack() },
                     onStopSharing = viewModel::requestStopSharing,
                     onBlockClient = viewModel::blockClient,
                     onUnblockClient = viewModel::unblockClient,
@@ -503,8 +504,6 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onToggleNotifyOnDeviceConnect = { viewModel.updateSettings { current -> current.copy(notifyOnDeviceConnect = it) } },
                     onToggleNotifyOnFileDownload = { viewModel.updateSettings { current -> current.copy(notifyOnFileDownload = it) } },
                     onToggleNotifyOnUploadRequest = { viewModel.updateSettings { current -> current.copy(notifyOnUploadRequest = it) } },
-                    onToggleRequireSessionPassword = { viewModel.updateSettings { current -> current.copy(requireSessionPassword = it) } },
-                    onSessionPasswordChanged = { password -> viewModel.updateSettings { current -> current.copy(sessionPassword = password) } },
                     onToggleRequireDeviceApproval = { viewModel.updateSettings { current -> current.copy(requireDeviceApproval = it) } },
                     onAutoStopSelected = viewModel::updateAutoStop,
                     onPreferredPortChanged = { port ->
@@ -515,6 +514,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                         }
                     },
                     onManualPinChanged = { pin -> viewModel.updateSettings { current -> current.copy(manualPin = pin) } },
+                    onBack = { navController.popBackStack() },
                     onOpenWifiSettings = { context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS)) },
                     onOpenHotspotSettings = { context.startActivity(Intent("android.settings.TETHER_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) },
                     onOpenHelp = { navController.navigate(Routes.Help) },
@@ -535,7 +535,10 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                 )
             }
             composable(Routes.Help) {
-                HelpScreen(modifier = Modifier.padding(innerPadding))
+                HelpScreen(
+                    onBack = { navController.popBackStack() },
+                    modifier = Modifier.padding(innerPadding),
+                )
             }
         }
     }

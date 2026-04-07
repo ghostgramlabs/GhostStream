@@ -74,6 +74,7 @@ import com.ghoststream.core.model.NetworkType
 import com.ghoststream.core.model.RecentSession
 import com.ghoststream.core.model.SharePreset
 import com.ghoststream.core.model.SessionState
+import com.ghoststream.core.model.deviceIdentity
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -99,16 +100,9 @@ fun HomeScreen(
     onOpenLibrary: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenHistory: () -> Unit,
-    onSaveDeviceNickname: (String, String) -> Unit,
-    deviceNicknames: Map<String, String> = emptyMap(),
     onResolveUploadRequest: (String, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var presetNameInput by rememberSaveable { mutableStateOf("") }
-    var showDateRangePicker by rememberSaveable { mutableStateOf(false) }
-    var startDateMillis by rememberSaveable { mutableStateOf(0L) }
-    var endDateMillis by rememberSaveable { mutableStateOf(0L) }
-
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -132,28 +126,11 @@ fun HomeScreen(
             )
         }
 
-        if (sessionState.isSharing && sessionState.connectedClients.isNotEmpty()) {
-            item {
-                ConnectedDevicesCard(
-                    connectedClients = sessionState.connectedClients,
-                    deviceNicknames = deviceNicknames,
-                    onSaveDeviceNickname = onSaveDeviceNickname,
-                )
-            }
-        }
-
         item {
             ActionShelf(
                 onAddFiles = onAddFiles,
                 onAddFolder = onAddFolder,
                 onOpenLibrary = onOpenLibrary,
-            )
-        }
-
-        item {
-            QuickDateFiltersCard(
-                onOpenLibrary = onOpenLibrary,
-                onOpenDateRangePicker = { showDateRangePicker = true },
             )
         }
 
@@ -195,6 +172,7 @@ fun HomeScreen(
     }
 
     pendingUploadRequest?.let { request ->
+        val requesterIdentity = deviceIdentity(request.requesterIp)
         AlertDialog(
             onDismissRequest = { onResolveUploadRequest(request.id, false) },
             containerColor = MaterialTheme.colorScheme.surface,
@@ -206,7 +184,7 @@ fun HomeScreen(
                 val fileText = if (request.fileCount > 1) "${request.fileCount} files" else "a file"
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        "Someone at ${request.requesterIp} wants to send you $fileText:",
+                        "${requesterIdentity.nameWithIp} wants to send you $fileText:",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     if (request.fileCount == 1) {
@@ -244,21 +222,6 @@ fun HomeScreen(
         )
     }
 
-    if (showDateRangePicker) {
-        DateRangePickerDialog(
-            startDateMillis = startDateMillis,
-            endDateMillis = endDateMillis,
-            onStartDateChanged = { startDateMillis = it },
-            onEndDateChanged = { endDateMillis = it },
-            onConfirm = {
-                // Navigate to library with date filter applied
-                // For now, just open library
-                onOpenLibrary()
-                showDateRangePicker = false
-            },
-            onDismiss = { showDateRangePicker = false },
-        )
-    }
 }
 
 @Composable
@@ -336,13 +299,21 @@ private fun SessionHeroCard(
     isStartingShare: Boolean,
     onStartSharing: () -> Unit,
 ) {
+    val heroContainerColor by animateColorAsState(
+        targetValue = if (sessionState.isSharing) ghostLiveSurface() else MaterialTheme.colorScheme.surfaceVariant,
+        label = "homeHeroContainer",
+    )
+    val heroBorderColor by animateColorAsState(
+        targetValue = if (sessionState.isSharing) ghostLiveBorder() else MaterialTheme.colorScheme.outline,
+        label = "homeHeroBorder",
+    )
     Card(
         modifier = Modifier
             .padding(horizontal = 20.dp)
             .fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        colors = CardDefaults.cardColors(containerColor = heroContainerColor),
+        border = BorderStroke(1.dp, heroBorderColor),
     ) {
         Column(
             modifier = Modifier
@@ -358,6 +329,32 @@ private fun SessionHeroCard(
             }
 
             Spacer(modifier = Modifier.height(18.dp))
+            if (sessionState.isSharing) {
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = ghostLiveSurface(),
+                    border = BorderStroke(1.dp, ghostLiveBorder()),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(10.dp)
+                                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(999.dp)),
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            text = "Session is actively live on your local network",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(18.dp))
+            }
             Text(
                 text = if (sessionState.isSharing) "Session is live" else "Ready to connect",
                 style = MaterialTheme.typography.headlineSmall,
@@ -447,12 +444,12 @@ private fun ConnectedDevicesCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    val generatedName = DeviceNameGenerator.generateName(client.ipAddress)
+                    val identity = deviceIdentity(client.ipAddress)
                     val customName = deviceNicknames[client.ipAddress]
-                    val displayName = customName ?: generatedName
+                    val displayName = customName ?: identity.generatedName
                     Column(modifier = Modifier.weight(1f)) {
                         Text(displayName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                        Text(client.ipAddress, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(identity.ipAddress, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     IconButton(
                         onClick = { 
@@ -471,7 +468,8 @@ private fun ConnectedDevicesCard(
     // Nickname edit dialog
     if (editingClientId != null) {
         val editingClient = connectedClients.find { it.id == editingClientId }
-        val defaultName = if (editingClient != null) DeviceNameGenerator.generateName(editingClient.ipAddress) else ""
+        val defaultName = if (editingClient != null) deviceIdentity(editingClient.ipAddress).generatedName else ""
+        val defaultIp = editingClient?.ipAddress.orEmpty()
         
         AlertDialog(
             onDismissRequest = { editingClientId = null },
@@ -1042,16 +1040,16 @@ private fun NearbyDeviceSummary(
     device: NearbyDevice,
     modifier: Modifier = Modifier,
 ) {
+    val identity = deviceIdentity(device.address)
     Column(modifier = modifier) {
-        val generatedName = DeviceNameGenerator.generateName(device.address)
         Text(
-            text = "$generatedName • ${device.address}",
+            text = identity.generatedName,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = device.serviceName,
+            text = listOfNotNull(identity.ipAddress, device.friendlyUrl).distinct().joinToString(" | "),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -1316,6 +1314,12 @@ private fun ghostAccentSurface() = MaterialTheme.colorScheme.primary.copy(alpha 
 
 @Composable
 private fun ghostAccentBorder() = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
+
+@Composable
+private fun ghostLiveSurface() = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+
+@Composable
+private fun ghostLiveBorder() = MaterialTheme.colorScheme.primary.copy(alpha = 0.42f)
 
 private fun heroMessage(
     sessionState: SessionState,

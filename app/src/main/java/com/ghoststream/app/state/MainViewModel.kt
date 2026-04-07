@@ -71,6 +71,7 @@ class MainViewModel(
         val connectingNearbyId = values[11] as String?
         val pendingUpload = values[12] as com.ghoststream.core.model.UploadRequest?
         val history = values[13] as List<com.ghoststream.core.model.TransferRecord>
+        val filteredNearbyDiscoveryState = nearbyDiscoveryState.filterCurrentSession(session)
         MainUiState(
             isReady = true,
             settings = settings,
@@ -84,9 +85,9 @@ class MainViewModel(
             connectionDiagnostics = buildConnectionDiagnostics(
                 libraryState = library,
                 sessionState = session,
-                nearbyDiscoveryState = nearbyDiscoveryState,
+                nearbyDiscoveryState = filteredNearbyDiscoveryState,
             ),
-            nearbyDiscoveryState = nearbyDiscoveryState,
+            nearbyDiscoveryState = filteredNearbyDiscoveryState,
             pendingShareAfterNetworkReady = pendingShare,
             isStartingShare = isStartingShare,
             connectingNearbyDeviceId = connectingNearbyId,
@@ -199,7 +200,9 @@ class MainViewModel(
         viewModelScope.launch {
             container.sharePresetStore.applyPreset(presetId, container.storageRepository)
                 .onSuccess { presetState ->
+                    container.sessionManager.refreshSelection(presetState.items, presetState.folders)
                     _events.emit(AppEvent.ShowMessage("Saved share ready with ${presetState.summary.totalItems} items."))
+                    _events.emit(AppEvent.NavigateLibrary)
                 }
                 .onFailure {
                     _events.emit(AppEvent.ShowMessage(it.message ?: "Unable to open that saved share right now."))
@@ -321,6 +324,19 @@ class MainViewModel(
 
     fun regeneratePin() {
         container.sessionManager.regeneratePin()
+    }
+
+    fun updateSessionPinProtection(enabled: Boolean) {
+        viewModelScope.launch {
+            val current = container.settingsRepository.settings.first()
+            container.settingsRepository.update { current.copy(requireSessionPin = enabled) }
+            container.sharingCoordinator.updatePinProtection(enabled)
+            _events.emit(
+                AppEvent.ShowMessage(
+                    if (enabled) "PIN protection turned on for this session." else "PIN protection turned off for this session."
+                )
+            )
+        }
     }
 
     fun disconnectAll() {
@@ -449,4 +465,30 @@ class MainViewModel(
             }
         }
     }
+}
+
+private fun NearbyDiscoveryState.filterCurrentSession(sessionState: SessionState): NearbyDiscoveryState {
+    val sessionHost = sessionState.sessionUrl?.let(Uri::parse)?.host?.lowercase()
+    val sessionAddress = sessionState.networkAvailability.localAddress?.lowercase()
+    val sessionHostname = sessionState.hostname?.lowercase()
+    val sessionPort = sessionState.serverPort
+    val sessionId = sessionState.sessionId
+
+    val filteredDevices = devices.filterNot { device ->
+        val sameSessionId = sessionId != null && device.sessionId == sessionId
+        val sameAddress = sessionAddress != null && device.address.lowercase() == sessionAddress
+        val sameHost = listOfNotNull(device.hostname?.lowercase(), device.friendlyUrl?.let(Uri::parse)?.host?.lowercase())
+            .any { it == sessionHost || it == sessionHostname }
+        val samePort = sessionPort != null && device.port == sessionPort
+        sameSessionId || (samePort && (sameAddress || sameHost))
+    }
+
+    return copy(
+        devices = filteredDevices,
+        helperText = when {
+            lastError != null -> helperText
+            filteredDevices.isNotEmpty() -> "Tap a nearby DirectServe session to open it in your browser."
+            else -> "Open DirectServe on another device on the same Wi-Fi or hotspot to see it here."
+        },
+    )
 }

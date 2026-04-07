@@ -6,18 +6,25 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -33,6 +40,7 @@ import com.ghoststream.core.model.AutoStopOption
 import com.ghoststream.core.model.RecentSession
 import com.ghoststream.core.model.ThemeMode
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SettingsScreen(
     settings: AppSettings,
@@ -54,12 +62,11 @@ fun SettingsScreen(
     onToggleNotifyOnDeviceConnect: (Boolean) -> Unit,
     onToggleNotifyOnFileDownload: (Boolean) -> Unit,
     onToggleNotifyOnUploadRequest: (Boolean) -> Unit,
-    onToggleRequireSessionPassword: (Boolean) -> Unit,
-    onSessionPasswordChanged: (String) -> Unit,
     onToggleRequireDeviceApproval: (Boolean) -> Unit,
     onAutoStopSelected: (AutoStopOption) -> Unit,
     onPreferredPortChanged: (String) -> Unit,
     onManualPinChanged: (String) -> Unit,
+    onBack: () -> Unit,
     onOpenWifiSettings: () -> Unit,
     onOpenHotspotSettings: () -> Unit,
     onOpenHelp: () -> Unit,
@@ -76,9 +83,18 @@ fun SettingsScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
-            Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
+            Row(
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+                Column {
                 Text("Settings", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.SemiBold)
                 Text("Choose how DirectServe feels and behaves.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
 
@@ -92,18 +108,17 @@ fun SettingsScreen(
                     Text("Theme", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                     Text("Choose your preferred appearance", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     Spacer(modifier = Modifier.height(12.dp))
-                    Row(
+                    FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         listOf(ThemeMode.SYSTEM, ThemeMode.DARK, ThemeMode.LIGHT).forEach { mode ->
                             val isSelected = settings.themeMode == mode
                             if (isSelected) {
                                 Button(
                                     onClick = { onThemeModeSelected(mode) },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(40.dp),
+                                    modifier = Modifier.height(40.dp),
                                     colors = ButtonDefaults.buttonColors(),
                                 ) {
                                     Text(mode.label(), style = MaterialTheme.typography.labelMedium)
@@ -111,9 +126,7 @@ fun SettingsScreen(
                             } else {
                                 OutlinedButton(
                                     onClick = { onThemeModeSelected(mode) },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .height(40.dp),
+                                    modifier = Modifier.height(40.dp),
                                 ) {
                                     Text(mode.label(), style = MaterialTheme.typography.labelMedium)
                                 }
@@ -166,10 +179,6 @@ fun SettingsScreen(
                 }
                 SettingsToggleRow("Approve file uploads", "Ask you before browsers can upload files to this device.", settings.requireUploadApproval, onToggleRequireUploadApproval)
                 SettingsToggleRow("Approve per device", "Approve once per device, not per upload.", settings.requireDeviceApproval, onToggleRequireDeviceApproval)
-                SettingsToggleRow("Additional password", "Use a password in addition to PIN for extra security.", settings.requireSessionPassword, onToggleRequireSessionPassword)
-                if (settings.requireSessionPassword) {
-                    SessionPasswordRow(currentPassword = settings.sessionPassword, onPasswordChanged = onSessionPasswordChanged)
-                }
             }
         }
 
@@ -224,24 +233,110 @@ fun SettingsScreen(
 }
 
 @Composable
-fun HelpScreen(modifier: Modifier = Modifier) {
+fun HelpScreen(
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .padding(24.dp),
     ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(28.dp),
-            colors = CardDefaults.cardColors(containerColor = ghostPanelColor()),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        ) {
-            Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text("About DirectServe", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-                Text("DirectServe lets nearby devices stream or download from your phone in a browser.", style = MaterialTheme.typography.bodyLarge)
-                Text("No cloud. No account. No internet required.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("Some videos may need a temporary browser-ready copy for smoother playback. The original file stays available to download.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Help", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            }
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(28.dp),
+                colors = CardDefaults.cardColors(containerColor = ghostPanelColor()),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            ) {
+                Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                    Text("About DirectServe", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+                    Text("DirectServe lets nearby devices open your shared files in a browser without needing cloud storage or an account.", style = MaterialTheme.typography.bodyLarge)
+                    Text("It is platform-independent for receivers, so any device with Wi-Fi or hotspot access and a browser can connect.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("No cloud. No account. No internet required.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            HelpSectionCard(
+                title = "What you can do",
+                lines = listOf(
+                    "Share videos, photos, music, documents, and folders from your phone.",
+                    "Open the session in a browser on Android phones, iPhone, iPad, Windows laptops, Mac, Linux, tablets, desktops, and many smart TVs.",
+                    "Any device with Wi-Fi or hotspot access and a browser can connect on the same local network.",
+                    "Keep one share open while several devices browse at the same time.",
+                ),
+            )
+            HelpSectionCard(
+                title = "Video playback",
+                lines = listOf(
+                    "Most videos can play directly in the browser.",
+                    "Some videos need a temporary browser-ready version for smoother playback on certain devices.",
+                    "The original file stays on your phone, and playback preparation does not replace your source file.",
+                ),
+            )
+            HelpSectionCard(
+                title = "Receiving files",
+                lines = listOf(
+                    "Other devices can send files to your phone through the web view when uploads are allowed.",
+                    "If upload approval is turned on, you will see a request before the files are accepted.",
+                    "Received files are saved on your device and can appear in your history.",
+                ),
+            )
+            HelpSectionCard(
+                title = "Multiple devices",
+                lines = listOf(
+                    "More than one device can connect to the same session.",
+                    "The live session screen shows connected devices, activity, and the generated device names with IP addresses.",
+                    "You can block devices, disconnect everyone, or protect the session with a PIN.",
+                ),
+            )
+            HelpSectionCard(
+                title = "Good to know",
+                lines = listOf(
+                    "Both devices should be on the same Wi-Fi network or your phone hotspot.",
+                    "Public Wi-Fi sometimes blocks local device-to-device traffic, so hotspot is often the best fallback.",
+                    "If downloads are disabled in Settings, the web UI hides download actions completely.",
+                ),
+            )
+            HelpSectionCard(
+                title = "Quick flow",
+                lines = listOf(
+                    "1. Add files or a folder.",
+                    "2. Start the session.",
+                    "3. Open the shown link or scan the QR code on another device.",
+                    "4. Browse, play, preview, or upload files depending on what the host allows.",
+                ),
+            )
+        }
+    }
+}
+
+@Composable
+private fun HelpSectionCard(
+    title: String,
+    lines: List<String>,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = ghostPanelColor()),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            lines.forEach { line ->
+                Text(
+                    text = line,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
@@ -285,24 +380,6 @@ private fun SettingsToggleRow(title: String, description: String, checked: Boole
         }
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
-}
-
-@Composable
-private fun SessionPasswordRow(currentPassword: String, onPasswordChanged: (String) -> Unit) {
-    OutlinedTextField(
-        value = currentPassword,
-        onValueChange = { newValue ->
-            val cleaned = newValue.take(32)
-            onPasswordChanged(cleaned)
-        },
-        modifier = Modifier
-            .padding(horizontal = 18.dp, vertical = 8.dp)
-            .fillMaxWidth(),
-        label = { Text("Session Password") },
-        placeholder = { Text("8-32 characters") },
-        shape = RoundedCornerShape(14.dp),
-        singleLine = true,
-    )
 }
 
 @Composable
@@ -362,7 +439,7 @@ private fun SettingsChoiceRow(title: String, value: String, onClick: () -> Unit)
 }
 
 private fun ThemeMode.label(): String = when (this) {
-    ThemeMode.SYSTEM -> "Default to system"
+    ThemeMode.SYSTEM -> "System"
     ThemeMode.DARK -> "Dark"
     ThemeMode.LIGHT -> "Light"
 }

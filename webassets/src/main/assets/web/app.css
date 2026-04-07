@@ -486,8 +486,7 @@ input {
 }
 
 .gs-search,
-.gs-pin,
-.gs-password {
+.gs-pin {
   width: 100%;
   padding: 12px 16px;
   border-radius: 16px;
@@ -501,14 +500,12 @@ input {
 }
 
 .gs-search::placeholder,
-.gs-pin::placeholder,
-.gs-password::placeholder {
+.gs-pin::placeholder {
   color: var(--muted);
 }
 
 .gs-search:focus,
-.gs-pin:focus,
-.gs-password:focus {
+.gs-pin:focus {
   outline: none;
   border-color: var(--accent);
   background: var(--surface);

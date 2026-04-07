@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.InsertDriveFile
@@ -41,6 +42,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -76,6 +78,7 @@ fun SharedLibraryScreen(
     libraryState: LibraryState,
     compatibilityJobs: Map<String, CompatibilityJob>,
     showThumbnails: Boolean,
+    onBack: () -> Unit,
     onPrepareItem: (String) -> Unit,
     onSavePresetSelection: (String, Collection<String>) -> Unit,
     onRemoveItem: (String) -> Unit,
@@ -131,6 +134,20 @@ fun SharedLibraryScreen(
         contentPadding = PaddingValues(vertical = 20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Library", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+            }
+        }
         item { LibraryHeader(libraryState = libraryState) }
         item {
             LibraryControlsCard(
@@ -438,47 +455,33 @@ private fun LibraryControlsCard(
             modifier = Modifier.padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            if (!selectionMode) {
-                Surface(
-                    shape = RoundedCornerShape(18.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            Surface(
+                shape = RoundedCornerShape(18.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    Column(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text("Save only the files you want", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        Text(
-                            "Tap Choose files to save, then select items below and save them as one reusable share.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
-
-            if (selectionMode) {
-                Surface(
-                    shape = RoundedCornerShape(18.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                ) {
-                    Column(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text("Choose files for a saved share", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                        Text(
-                            text = if (selectedCount == 0) {
-                                "Tap Select on the files below. When you are done, save the selected files together."
+                    Text(
+                        text = if (selectionMode) "Saving a smaller share" else "Manage this share",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = if (selectionMode) {
+                            if (selectedCount == 0) {
+                                "Step 1: select the files you want in the saved share."
                             } else {
-                                "$selectedCount file${if (selectedCount == 1) "" else "s"} selected. You can keep choosing more before saving."
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                                "Step 2: create the saved share from the $selectedCount selected file${if (selectedCount == 1) "" else "s"}."
+                            }
+                        } else {
+                            "Add files, search this share, or start selecting files for a reusable saved share."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
 
@@ -487,12 +490,12 @@ private fun LibraryControlsCard(
                 onValueChange = onQueryChange,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
-                label = { Text("Search files") },
+                label = { Text("Search this share") },
                 singleLine = true,
             )
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                SectionHeader(title = "Filter", subtitle = "Choose what you want to see")
+                SectionHeader(title = "Show", subtitle = "Filter the current share")
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -520,26 +523,11 @@ private fun LibraryControlsCard(
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                SectionHeader(title = "Actions", subtitle = "Add content or save a smaller share")
+                SectionHeader(title = "Add To Share", subtitle = "Bring in more content")
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    OutlinedButton(
-                        onClick = onSortExpand,
-                        shape = RoundedCornerShape(16.dp),
-                        colors = librarySecondaryButtonColors(),
-                    ) {
-                        Text("Sort: $sortOption")
-                    }
-                    DropdownMenu(expanded = sortMenuExpanded, onDismissRequest = onSortDismiss) {
-                        listOf("Newest", "Name", "Size").forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(option) },
-                                onClick = { onSortSelected(option) },
-                            )
-                        }
-                    }
                     OutlinedButton(
                         onClick = onOpenAddFiles,
                         shape = RoundedCornerShape(16.dp),
@@ -549,12 +537,36 @@ private fun LibraryControlsCard(
                         onClick = onOpenAddFolder,
                         shape = RoundedCornerShape(16.dp),
                         colors = librarySecondaryButtonColors(),
-                    ) { Text("Add folder") }
+                    ) { Text("Add whole folder") }
                     OutlinedButton(
                         onClick = onOpenBatchSelect,
                         shape = RoundedCornerShape(16.dp),
                         colors = librarySecondaryButtonColors(),
-                    ) { Text("Smart Picks") }
+                    ) { Text("Add from suggestions") }
+                }
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                SectionHeader(title = "Organize", subtitle = "Sort or save part of this share")
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = onSortExpand,
+                        shape = RoundedCornerShape(16.dp),
+                        colors = librarySecondaryButtonColors(),
+                    ) {
+                        Text("Sort files: $sortOption")
+                    }
+                    DropdownMenu(expanded = sortMenuExpanded, onDismissRequest = onSortDismiss) {
+                        listOf("Newest", "Name", "Size").forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = { onSortSelected(option) },
+                            )
+                        }
+                    }
 
                     if (selectionMode) {
                         OutlinedButton(
@@ -562,7 +574,7 @@ private fun LibraryControlsCard(
                             shape = RoundedCornerShape(16.dp),
                             colors = librarySecondaryButtonColors(),
                         ) {
-                            Text("Stop choosing")
+                            Text("Cancel selection")
                         }
                         Button(
                             onClick = onSaveSelection,
@@ -570,7 +582,7 @@ private fun LibraryControlsCard(
                             shape = RoundedCornerShape(16.dp),
                             colors = libraryPrimaryButtonColors(),
                         ) {
-                            Text("Save selected files")
+                            Text("Create saved share")
                         }
                     } else {
                         OutlinedButton(
@@ -578,7 +590,7 @@ private fun LibraryControlsCard(
                             shape = RoundedCornerShape(16.dp),
                             colors = librarySecondaryButtonColors(),
                         ) {
-                            Text("Choose files to save")
+                            Text("Start saved share selection")
                         }
                     }
                 }

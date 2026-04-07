@@ -18,8 +18,9 @@ import com.ghostgramlabs.directserve.MainActivity
 import com.ghostgramlabs.directserve.R
 import com.ghostgramlabs.directserve.state.ShareStartResult
 import com.ghoststream.core.model.AppSettings
-import com.ghoststream.core.model.AutoStopOption
+import com.ghoststream.core.model.ConnectedClient
 import com.ghoststream.core.model.SessionState
+import com.ghoststream.core.model.formatGeneratedNameWithIp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -35,6 +36,7 @@ class GhostStreamForegroundService : Service() {
     private val container by lazy { (application as GhostStreamApplication).container }
     private var startupInProgress = false
     private var autoStopJob: Job? = null
+    private var lastConnectedClientIds: Set<String>? = null
     private val debugLogRepository by lazy { container.debugLogRepository }
 
     override fun onCreate() {
@@ -44,8 +46,18 @@ class GhostStreamForegroundService : Service() {
         serviceScope.launch {
             container.sessionManager.sessionState.collectLatest { state ->
                 runCatching {
+                    val previousClientIds = lastConnectedClientIds
+                    val newClients = if (previousClientIds == null) {
+                        emptyList()
+                    } else {
+                        state.connectedClients.filterNot { it.id in previousClientIds }
+                    }
                     NotificationManagerCompat.from(this@GhostStreamForegroundService)
                         .notify(NOTIFICATION_ID, buildNotification(state))
+                    if (state.isSharing && newClients.isNotEmpty()) {
+                        showDeviceConnectionNotification(newClients, state.connectedClients.size)
+                    }
+                    lastConnectedClientIds = state.connectedClients.mapTo(linkedSetOf()) { it.id }
                     debugLogRepository.log(
                         "ForegroundService",
                         "notification updated isSharing=${state.isSharing} url=${state.sessionUrl} port=${state.serverPort}",
@@ -161,6 +173,7 @@ class GhostStreamForegroundService : Service() {
     override fun onDestroy() {
         debugLogRepository.log("ForegroundService", "onDestroy")
         autoStopJob?.cancel()
+        lastConnectedClientIds = null
         serviceScope.cancel()
         super.onDestroy()
     }
@@ -227,7 +240,7 @@ class GhostStreamForegroundService : Service() {
         val notification = NotificationCompat.Builder(this, REQUEST_CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle("Incoming Transfer")
-            .setContentText("$fileText (${formatBytes(request.sizeBytes)}) from ${request.requesterIp}")
+            .setContentText("$fileText (${formatBytes(request.sizeBytes)}) from ${formatGeneratedNameWithIp(request.requesterIp)}")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_EVENT)
             .setAutoCancel(true)
@@ -242,6 +255,43 @@ class GhostStreamForegroundService : Service() {
 
     private fun cancelUploadRequestNotification() {
         NotificationManagerCompat.from(this).cancel(REQUEST_NOTIFICATION_ID)
+    }
+
+    private fun showDeviceConnectionNotification(
+        clients: List<ConnectedClient>,
+        totalConnectedCount: Int,
+    ) {
+        val openAppIntent = PendingIntent.getActivity(
+            this,
+            102,
+            Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            },
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val title = if (clients.size == 1) {
+            "New device connected"
+        } else {
+            "${clients.size} new devices connected"
+        }
+        val clientNames = clients.joinToString(", ") { formatGeneratedNameWithIp(it.ipAddress) }
+        val detail = if (clients.size == 1) {
+            "$clientNames joined your DirectServe session."
+        } else {
+            "$clientNames joined. $totalConnectedCount devices are connected now."
+        }
+        val notification = NotificationCompat.Builder(this, CONNECTION_CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(title)
+            .setContentText(detail)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(detail))
+            .setContentIntent(openAppIntent)
+            .setAutoCancel(true)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+
+        NotificationManagerCompat.from(this).notify(CONNECTION_NOTIFICATION_ID, notification)
     }
 
     private fun formatBytes(bytes: Long): String {
@@ -277,8 +327,11 @@ class GhostStreamForegroundService : Service() {
         )
 
         val contentText = if (state.isSharing) {
-            val count = state.connectedClients.size
-            if (count == 0) "Waiting for devices..." else "$count devices connected"
+            when (state.connectedClients.size) {
+                0 -> "Waiting for devices..."
+                1 -> "${formatGeneratedNameWithIp(state.connectedClients.first().ipAddress)} connected"
+                else -> "${state.connectedClients.size} devices connected"
+            }
         } else {
             "Preparing browser access..."
         }
@@ -320,13 +373,25 @@ class GhostStreamForegroundService : Service() {
             enableVibration(true)
         }
         manager.createNotificationChannel(requestChannel)
+
+        val connectionChannel = NotificationChannel(
+            CONNECTION_CHANNEL_ID,
+            "Device Connections",
+            NotificationManager.IMPORTANCE_HIGH,
+        ).apply {
+            description = "Notifications when a new device joins your DirectServe session"
+            enableVibration(true)
+        }
+        manager.createNotificationChannel(connectionChannel)
     }
 
     companion object {
         private const val CHANNEL_ID = "ghoststream_sharing"
         private const val REQUEST_CHANNEL_ID = "ghoststream_requests"
+        private const val CONNECTION_CHANNEL_ID = "ghoststream_connections"
         private const val NOTIFICATION_ID = 404
         private const val REQUEST_NOTIFICATION_ID = 405
+        private const val CONNECTION_NOTIFICATION_ID = 406
         private const val ACTION_START = "com.ghostgramlabs.directserve.action.START_SHARING"
         private const val ACTION_STOP = "com.ghostgramlabs.directserve.action.STOP_SHARING"
         private const val ACTION_ACCEPT_UPLOAD = "com.ghostgramlabs.directserve.action.ACCEPT_UPLOAD"

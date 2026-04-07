@@ -37,6 +37,10 @@ interface SessionManager {
         advertisedName: String?,
         hostname: String?,
     )
+    fun updateSessionAuth(
+        authEnabled: Boolean,
+        pin: String?,
+    )
 
     suspend fun stopSession(
         message: String = "Sharing stopped",

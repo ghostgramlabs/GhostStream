@@ -104,6 +104,23 @@ class InMemorySessionManager(
         }
     }
 
+    override fun updateSessionAuth(
+        authEnabled: Boolean,
+        pin: String?,
+    ) {
+        authTokens.clear()
+        _sessionState.update { current ->
+            if (!current.isSharing) {
+                current
+            } else {
+                current.copy(
+                    authEnabled = authEnabled,
+                    pin = pin,
+                )
+            }
+        }
+    }
+
     override suspend fun stopSession(message: String, recordRecentSession: Boolean) {
         debugLogSink.log("SessionManager", "stopSession begin message=$message recordRecentSession=$recordRecentSession")
         synchronized(stateLock) {

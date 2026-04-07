@@ -39,8 +39,6 @@ data class AppSettings(
     val notifyOnDeviceConnect: Boolean = true,
     val notifyOnFileDownload: Boolean = true,
     val notifyOnUploadRequest: Boolean = true,
-    val requireSessionPassword: Boolean = false,
-    val sessionPassword: String = "",
     val requireDeviceApproval: Boolean = false,
     val preventDownload: Boolean = false,
     val deviceNicknames: Map<String, String> = emptyMap(), // ipAddress -> nickname

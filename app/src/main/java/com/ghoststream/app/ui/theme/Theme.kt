@@ -1,5 +1,6 @@
 package com.ghostgramlabs.directserve.ui.theme
 
+import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
@@ -7,17 +8,21 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import com.ghoststream.core.model.ThemeMode
 
 private val GhostStreamDarkColorScheme = darkColorScheme(
-    primary = GhostAccent,
-    onPrimary = GhostAccentForeground,
-    primaryContainer = GhostAccentPressed,
-    onPrimaryContainer = GhostAccentForeground,
+    primary = GhostDarkAccent,
+    onPrimary = GhostDarkAccentForeground,
+    primaryContainer = GhostDarkAccentPressed,
+    onPrimaryContainer = GhostDarkAccentForeground,
     secondary = GhostDarkTextSecondary,
     onSecondary = GhostDarkBackground,
     secondaryContainer = GhostDarkCard,
@@ -34,18 +39,18 @@ private val GhostStreamDarkColorScheme = darkColorScheme(
     onSurfaceVariant = GhostDarkTextSecondary,
     outline = GhostDarkBorder,
     outlineVariant = GhostDarkBorder,
-    surfaceTint = GhostAccent,
-    error = GhostAccentPressed,
-    onError = GhostAccentForeground,
+    surfaceTint = GhostDarkAccent,
+    error = GhostDarkAccentPressed,
+    onError = GhostDarkAccentForeground,
     errorContainer = GhostDarkCard,
     onErrorContainer = GhostDarkTextPrimary,
 )
 
 private val GhostStreamLightColorScheme = lightColorScheme(
-    primary = GhostAccent,
-    onPrimary = GhostAccentForeground,
-    primaryContainer = GhostAccentPressed,
-    onPrimaryContainer = GhostAccentForeground,
+    primary = GhostLightAccent,
+    onPrimary = GhostLightAccentForeground,
+    primaryContainer = GhostLightAccentPressed,
+    onPrimaryContainer = GhostLightAccentForeground,
     secondary = GhostLightTextSecondary,
     onSecondary = GhostLightBackground,
     secondaryContainer = GhostLightCard,
@@ -62,9 +67,9 @@ private val GhostStreamLightColorScheme = lightColorScheme(
     onSurfaceVariant = GhostLightTextSecondary,
     outline = GhostLightBorder,
     outlineVariant = GhostLightBorder,
-    surfaceTint = GhostAccent,
-    error = GhostAccentPressed,
-    onError = GhostAccentForeground,
+    surfaceTint = GhostLightAccent,
+    error = GhostLightAccentPressed,
+    onError = GhostLightAccentForeground,
     errorContainer = GhostLightCard,
     onErrorContainer = GhostLightTextPrimary,
 )
@@ -148,8 +153,21 @@ fun GhostStreamTheme(
         ThemeMode.DARK -> true
         ThemeMode.LIGHT -> false
     }
+    val colorScheme = if (useDarkTheme) GhostStreamDarkColorScheme else GhostStreamLightColorScheme
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as? Activity)?.window ?: return@SideEffect
+            window.statusBarColor = colorScheme.background.toArgb()
+            window.navigationBarColor = colorScheme.background.toArgb()
+            WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = !useDarkTheme
+                isAppearanceLightNavigationBars = !useDarkTheme
+            }
+        }
+    }
     MaterialTheme(
-        colorScheme = if (useDarkTheme) GhostStreamDarkColorScheme else GhostStreamLightColorScheme,
+        colorScheme = colorScheme,
         typography = GhostStreamTypography,
         content = content,
     )

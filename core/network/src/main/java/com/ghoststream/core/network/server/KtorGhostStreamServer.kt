@@ -222,7 +222,6 @@ class KtorGhostStreamServer(
                         largeCards = settings.largeTvCards,
                         prominentDownloadButton = settings.prominentDownloadButton,
                         debugTracing = debugBrowserTracingEnabled,
-                        requireSessionPassword = settings.requireSessionPassword,
                         preventDownload = settings.preventDownload,
                         deviceName = deviceName,
                         deviceIp = clientIp,
@@ -344,16 +343,9 @@ class KtorGhostStreamServer(
             post("/auth/login") {
                 val payload = call.receiveNullable<LoginPayload>()
                 val enteredPin = payload?.pin.orEmpty()
-                val enteredPassword = payload?.password.orEmpty()
                 val ipAddress = call.remoteHost()
                 if (!sessionManager.isPinValid(enteredPin)) {
                     call.respond(HttpStatusCode.Unauthorized, ErrorPayload("That PIN didn't match. Please try again."))
-                    return@post
-                }
-
-                val settings = settingsRepository.settings.first()
-                if (settings.requireSessionPassword && enteredPassword != settings.sessionPassword) {
-                    call.respond(HttpStatusCode.Unauthorized, ErrorPayload("That password didn't match. Please try again."))
                     return@post
                 }
 
@@ -1277,7 +1269,6 @@ class KtorGhostStreamServer(
     @Serializable
     private data class LoginPayload(
         val pin: String,
-        val password: String? = null,
     )
 
     @Serializable
@@ -1325,7 +1316,6 @@ class KtorGhostStreamServer(
         val largeCards: Boolean,
         val prominentDownloadButton: Boolean,
         val debugTracing: Boolean,
-        val requireSessionPassword: Boolean,
         val preventDownload: Boolean,
         val deviceName: String,
         val deviceIp: String,
