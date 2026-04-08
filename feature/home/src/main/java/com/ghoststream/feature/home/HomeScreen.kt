@@ -299,6 +299,9 @@ private fun SessionHeroCard(
     isStartingShare: Boolean,
     onStartSharing: () -> Unit,
 ) {
+    val canStartSession = sessionState.networkAvailability.isWifiOrHotspotReady
+    var showNoNetworkDialog by rememberSaveable { mutableStateOf(false) }
+    
     val heroContainerColor by animateColorAsState(
         targetValue = if (sessionState.isSharing) ghostLiveSurface() else MaterialTheme.colorScheme.surfaceVariant,
         label = "homeHeroContainer",
@@ -307,6 +310,27 @@ private fun SessionHeroCard(
         targetValue = if (sessionState.isSharing) ghostLiveBorder() else MaterialTheme.colorScheme.outline,
         label = "homeHeroBorder",
     )
+    
+    // Show error dialog if no network
+    if (showNoNetworkDialog) {
+        AlertDialog(
+            onDismissRequest = { showNoNetworkDialog = false },
+            icon = { Icon(Icons.Outlined.NetworkCheck, contentDescription = null) },
+            title = { Text("Network Connection Required") },
+            text = { 
+                Text(
+                    "Please connect to Wi-Fi or turn on your hotspot to start a session.\n\n" +
+                    "Mobile data alone cannot create a local session. Make sure both devices are on the same Wi-Fi network."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showNoNetworkDialog = false }) {
+                    Text("Dismiss")
+                }
+            },
+        )
+    }
+    
     Card(
         modifier = Modifier
             .padding(horizontal = 20.dp)
@@ -373,7 +397,13 @@ private fun SessionHeroCard(
 
             Spacer(modifier = Modifier.height(22.dp))
             Button(
-                onClick = onStartSharing,
+                onClick = {
+                    if (sessionState.isSharing || canStartSession) {
+                        onStartSharing()
+                    } else {
+                        showNoNetworkDialog = true
+                    }
+                },
                 enabled = !isStartingShare,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -394,6 +424,14 @@ private fun SessionHeroCard(
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(if (sessionState.isSharing) "Open session" else "Start Session", style = MaterialTheme.typography.titleMedium)
                 }
+            }
+            if (!sessionState.isSharing && !canStartSession) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "No Wi-Fi or hotspot detected",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
             }
 
             Spacer(modifier = Modifier.height(18.dp))
@@ -1041,15 +1079,18 @@ private fun NearbyDeviceSummary(
     modifier: Modifier = Modifier,
 ) {
     val identity = deviceIdentity(device.address)
+    val title = device.deviceLabel?.takeIf { it.isNotBlank() } ?: identity.nameWithIp
     Column(modifier = modifier) {
         Text(
-            text = identity.generatedName,
+            text = title,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = listOfNotNull(identity.ipAddress, device.friendlyUrl).distinct().joinToString(" | "),
+            text = listOfNotNull(device.friendlyUrl, identity.ipAddress)
+                .distinct()
+                .joinToString(" | "),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -1269,12 +1310,12 @@ private fun MinimalChip(
 private fun StatusChip(sessionState: SessionState) {
     val label = when {
         sessionState.isSharing -> "Sharing"
-        sessionState.networkAvailability.isReady -> "Ready"
+        sessionState.networkAvailability.isWifiOrHotspotReady -> "Ready"
         else -> "Setup needed"
     }
     MinimalChip(
         label = label,
-        showAccentDot = sessionState.isSharing || sessionState.networkAvailability.isReady,
+        showAccentDot = sessionState.isSharing || sessionState.networkAvailability.isWifiOrHotspotReady,
     )
 }
 

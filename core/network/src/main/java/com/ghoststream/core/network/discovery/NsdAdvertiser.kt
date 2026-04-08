@@ -33,6 +33,7 @@ class NsdAdvertiser(
                             authRequired = session.authRequired,
                             browserSupported = session.browserSupported,
                             streamingSupported = session.streamingSupported,
+                            deviceLabel = session.deviceLabel,
                         ),
                     )
                 }

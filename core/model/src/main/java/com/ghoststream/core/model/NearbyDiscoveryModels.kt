@@ -3,6 +3,7 @@ package com.ghoststream.core.model
 data class NearbyDevice(
     val id: String,
     val serviceName: String,
+    val deviceLabel: String? = null,
     val friendlyUrl: String? = null,
     val launchUrl: String,
     val hostname: String? = null,

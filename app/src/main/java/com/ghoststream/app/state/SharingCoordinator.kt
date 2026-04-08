@@ -3,6 +3,7 @@ package com.ghostgramlabs.directserve.state
 import com.ghoststream.core.media.CompatibilityPipeline
 import com.ghoststream.core.media.MediaAnalyzer
 import com.ghoststream.core.model.DebugLogSink
+import com.ghoststream.core.model.formatGeneratedNameWithIp
 import com.ghoststream.core.model.buildSessionAccessUrl
 import com.ghoststream.core.model.NetworkAvailability
 import com.ghoststream.core.model.NoOpDebugLogSink
@@ -56,7 +57,7 @@ class SharingCoordinator(
                 "SharingCoordinator",
                 "preflight network ready=${network.isReady} type=${network.type} localAddress=${network.localAddress} helper=${network.helperText}",
             )
-            if (!network.isReady) {
+            if (!network.isWifiOrHotspotReady) {
                 SharePreflightResult.NeedsNetwork(network)
             } else {
                 SharePreflightResult.Ready
@@ -85,11 +86,19 @@ class SharingCoordinator(
         val settings = settingsRepository.settings.first()
         val library = storageRepository.libraryState.value
         val existingNetwork = sessionManager.sessionState.value.networkAvailability
-        val network = if (assumePreflightReady && existingNetwork.isReady) {
+        val network = if (assumePreflightReady && existingNetwork.isWifiOrHotspotReady) {
             existingNetwork
         } else {
             withContext(Dispatchers.IO) { networkInspector.inspect() }
         }
+        if (!network.isWifiOrHotspotReady) {
+            debugLogSink.log(
+                "SharingCoordinator",
+                "beginSharing blocked network type=${network.type} ready=${network.isReady} localAddress=${network.localAddress}",
+            )
+            return ShareStartResult.Failure("Connect this device to Wi-Fi or turn on your hotspot before starting a session.")
+        }
+        val nearbyDeviceLabel = formatGeneratedNameWithIp(network.localAddress!!)
 
         return runCatching {
             debugLogSink.log("SharingCoordinator", "starting embedded server")
@@ -130,12 +139,12 @@ class SharingCoordinator(
                         authRequired = settings.requireSessionPin,
                         browserSupported = true,
                         streamingSupported = library.items.any { item -> item.category != com.ghoststream.core.model.MediaCategory.FILE },
-                        deviceLabel = android.os.Build.MODEL ?: "Android",
+                        deviceLabel = nearbyDeviceLabel,
                     ),
                 )
                 if (advertised != null) {
                     sessionManager.updateAdvertisedAccess(
-                        advertisedName = advertised.serviceName,
+                        advertisedName = nearbyDeviceLabel,
                         hostname = advertised.hostname,
                     )
                     debugLogSink.log(
@@ -196,12 +205,12 @@ class SharingCoordinator(
                     authRequired = enabled,
                     browserSupported = true,
                     streamingSupported = session.selectedItems.any { item -> item.category != com.ghoststream.core.model.MediaCategory.FILE },
-                    deviceLabel = android.os.Build.MODEL ?: "Android",
+                    deviceLabel = session.advertisedName ?: session.networkAvailability.localAddress?.let(::formatGeneratedNameWithIp) ?: "Android",
                 ),
             )
             if (advertised != null) {
                 sessionManager.updateAdvertisedAccess(
-                    advertisedName = advertised.serviceName,
+                    advertisedName = session.advertisedName ?: session.networkAvailability.localAddress?.let(::formatGeneratedNameWithIp),
                     hostname = advertised.hostname,
                 )
                 debugLogSink.log(

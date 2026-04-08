@@ -62,7 +62,12 @@ data class NetworkAvailability(
     val localAddress: String? = null,
     val isReady: Boolean,
     val helperText: String,
-)
+) {
+    val isWifiOrHotspotReady: Boolean
+        get() = isReady &&
+            !localAddress.isNullOrBlank() &&
+            (type == NetworkType.WIFI || type == NetworkType.HOTSPOT)
+}
 
 @Serializable
 data class SessionState(

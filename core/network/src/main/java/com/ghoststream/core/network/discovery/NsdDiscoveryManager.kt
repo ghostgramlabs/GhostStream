@@ -189,6 +189,7 @@ class NsdDiscoveryManager(
                     val device = NearbyDevice(
                         id = metadata?.sessionId ?: "$serviceName:$address:${resolved.port}",
                         serviceName = serviceName,
+                        deviceLabel = metadata?.deviceLabel,
                         friendlyUrl = endpoint.displayUrl ?: buildFriendlyDisplayUrl(hostname, resolved.port),
                         launchUrl = endpoint.launchUrl,
                         hostname = endpoint.hostname,

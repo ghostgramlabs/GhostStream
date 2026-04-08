@@ -25,6 +25,7 @@ internal data class DiscoveryMetadata(
     val authRequired: Boolean,
     val browserSupported: Boolean,
     val streamingSupported: Boolean,
+    val deviceLabel: String? = null,
 )
 
 internal object DiscoveryMetadataCodec {
@@ -37,6 +38,9 @@ internal object DiscoveryMetadataCodec {
         serviceInfo.setAttribute("pin", if (metadata.authRequired) "1" else "0")
         serviceInfo.setAttribute("br", if (metadata.browserSupported) "1" else "0")
         serviceInfo.setAttribute("str", if (metadata.streamingSupported) "1" else "0")
+        metadata.deviceLabel?.takeIf { it.isNotBlank() }?.let { label ->
+            serviceInfo.setAttribute("label", label)
+        }
     }
 
     fun decode(attributes: Map<String, ByteArray>): DiscoveryMetadata? {
@@ -48,6 +52,7 @@ internal object DiscoveryMetadataCodec {
             authRequired = attributes["pin"]?.decodeToString() == "1",
             browserSupported = attributes["br"]?.decodeToString() != "0",
             streamingSupported = attributes["str"]?.decodeToString() != "0",
+            deviceLabel = attributes["label"]?.decodeToString()?.trim()?.takeIf { it.isNotBlank() },
         )
     }
 }

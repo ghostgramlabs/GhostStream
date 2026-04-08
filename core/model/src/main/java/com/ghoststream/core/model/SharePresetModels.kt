@@ -65,10 +65,10 @@ fun buildConnectionDiagnostics(
         )
 
         add(
-            if (sessionState.networkAvailability.isReady && sessionState.networkAvailability.localAddress != null) {
+            if (sessionState.networkAvailability.isWifiOrHotspotReady) {
                 DiagnosticCheck(
                     id = "network",
-                    title = "Local network ready",
+                    title = "Wi-Fi or hotspot ready",
                     detail = sessionState.networkAvailability.helperText,
                     level = DiagnosticLevel.GOOD,
                 )
