@@ -190,11 +190,13 @@ class KtorGhostStreamServer(
                 val settings = settingsRepository.settings.first()
                 val state = sessionManager.sessionState.value
                 val recentCards = mutableListOf<BrowserItemCard>()
+                val allowDownloads = !settings.preventDownload
                 for (item in state.selectedItems.take(8)) {
                     recentCards += BrowserItemCard.from(
                         item = item,
                         compatibilityJob = compatibilitySnapshotFor(item, triggerPreparation = false),
                         showThumbnails = settings.showThumbnails,
+                        allowDownloads = allowDownloads,
                     )
                 }
                 val clientIp = call.request.origin.remoteHost
@@ -250,11 +252,13 @@ class KtorGhostStreamServer(
                     }
                     .sortedByDescending { it.dateAddedEpochMs }
                 val cards = mutableListOf<BrowserItemCard>()
+                val allowDownloads = !settings.preventDownload
                 for (item in items) {
                     cards += BrowserItemCard.from(
                         item = item,
                         compatibilityJob = compatibilitySnapshotFor(item, triggerPreparation = false),
                         showThumbnails = settings.showThumbnails,
+                        allowDownloads = allowDownloads,
                     )
                 }
                 call.respond(cards)
@@ -262,6 +266,7 @@ class KtorGhostStreamServer(
 
             get("/api/item/{id}") {
                 if (!call.authorizeBrowserCall()) return@get
+                val settings = settingsRepository.settings.first()
                 val item = resolveItem(call.parameters["id"]) ?: run {
                     call.respond(HttpStatusCode.NotFound, ErrorPayload("This file is no longer available on your device."))
                     return@get
@@ -278,6 +283,7 @@ class KtorGhostStreamServer(
                             triggerPreparation = item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT,
                         ),
                         streamReady = compatibilityStreamReady(item),
+                        allowDownloads = !settings.preventDownload,
                     ),
                 )
             }
@@ -392,6 +398,11 @@ class KtorGhostStreamServer(
 
             get("/download/{id}") {
                 if (!call.authorizeBrowserCall()) return@get
+                val settings = settingsRepository.settings.first()
+                if (settings.preventDownload) {
+                    call.respond(HttpStatusCode.Forbidden, ErrorPayload("Downloads are disabled for this session."))
+                    return@get
+                }
                 call.streamItem(
                     itemId = call.parameters["id"],
                     asAttachment = true,
@@ -1338,7 +1349,7 @@ class KtorGhostStreamServer(
         val durationMs: Long?,
         val thumbnailUrl: String?,
         val streamUrl: String,
-        val downloadUrl: String,
+        val downloadUrl: String?,
         val subtitleUrl: String?,
         val compatibilityLabel: String?,
         val compatibilityStatus: CompatibilityStatus? = null,
@@ -1348,6 +1359,7 @@ class KtorGhostStreamServer(
                 item: SharedItem,
                 compatibilityJob: CompatibilityJob,
                 showThumbnails: Boolean,
+                allowDownloads: Boolean,
             ): BrowserItemCard = BrowserItemCard(
                 id = item.id,
                 title = item.displayName,
@@ -1363,7 +1375,7 @@ class KtorGhostStreamServer(
                     null
                 },
                 streamUrl = "/stream/${item.id}",
-                downloadUrl = "/download/${item.id}",
+                downloadUrl = if (allowDownloads) "/download/${item.id}" else null,
                 subtitleUrl = item.subtitleMatch?.let { "/subtitle/${item.id}" },
                 compatibilityLabel = item.playbackDecision.compatibilityLabel,
                 compatibilityStatus = compatibilityJob.status.takeIf { item.playbackDecision.mode != PlaybackMode.DIRECT },
@@ -1379,7 +1391,7 @@ class KtorGhostStreamServer(
         val category: String,
         val streamUrl: String,
         val hlsUrl: String? = null,
-        val downloadUrl: String,
+        val downloadUrl: String?,
         val subtitleUrl: String?,
         val durationMs: Long?,
         val sizeBytes: Long,
@@ -1397,6 +1409,7 @@ class KtorGhostStreamServer(
                 item: SharedItem,
                 compatibilityJob: CompatibilityJob,
                 streamReady: Boolean,
+                allowDownloads: Boolean,
             ): BrowserItemDetails = BrowserItemDetails(
                 id = item.id,
                 title = item.displayName,
@@ -1408,7 +1421,7 @@ class KtorGhostStreamServer(
                 } else {
                     null
                 },
-                downloadUrl = "/download/${item.id}",
+                downloadUrl = if (allowDownloads) "/download/${item.id}" else null,
                 subtitleUrl = item.subtitleMatch?.let { "/subtitle/${item.id}" },
                 durationMs = item.durationMs,
                 sizeBytes = item.sizeBytes,

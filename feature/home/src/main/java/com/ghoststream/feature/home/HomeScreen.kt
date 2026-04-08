@@ -380,20 +380,36 @@ private fun SessionHeroCard(
                 Spacer(modifier = Modifier.height(18.dp))
             }
             Text(
-                text = if (sessionState.isSharing) "Session is live" else "Ready to connect",
+                text = if (sessionState.isSharing) {
+                    "Session is live"
+                } else {
+                    "Watch directly and share files on any nearby device"
+                },
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold,
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = heroMessage(
-                    sessionState = sessionState,
-                    libraryState = libraryState,
-                    diagnostics = connectionDiagnostics,
-                ),
+                text = if (sessionState.isSharing) {
+                    heroMessage(
+                        sessionState = sessionState,
+                        libraryState = libraryState,
+                        diagnostics = connectionDiagnostics,
+                    )
+                } else {
+                    "Watch videos instantly on TV, laptop, iPhone, iPad, Mac, Windows, Android, or any browser-enabled device"
+                },
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            if (!sessionState.isSharing) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Share files, watch directly, and send files back on the same Wi-Fi or hotspot. No internet required.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
 
             Spacer(modifier = Modifier.height(22.dp))
             Button(
@@ -430,7 +446,7 @@ private fun SessionHeroCard(
                 Text(
                     text = "No Wi-Fi or hotspot detected",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
 

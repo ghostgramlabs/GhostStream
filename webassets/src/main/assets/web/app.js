@@ -647,7 +647,7 @@ function downloadItems(items) {
     alert("Downloads are disabled by the device owner.");
     return;
   }
-  items.forEach((item, index) => {
+  items.filter((item) => item.downloadUrl).forEach((item, index) => {
     setTimeout(() => {
       const anchor = document.createElement("a");
       anchor.href = item.downloadUrl;
@@ -662,7 +662,7 @@ function downloadItems(items) {
 
 async function renderVideoPlayer(id) {
   const item = await api(`/api/item/${id}`);
-  const allowDownloads = !state.bootstrap?.preventDownload;
+  const allowDownloads = !state.bootstrap?.preventDownload && Boolean(item.downloadUrl);
   debugTrace(
     "video_item_loaded",
     `id=${item.id} mode=${item.playbackMode} mime=${item.mimeType || ""} hls=${Boolean(item.hlsUrl)} streamReady=${item.streamReady}`,
@@ -726,7 +726,7 @@ function renderVideoStage(item) {
 }
 
 function videoMarkup(item) {
-  const allowDownloads = !state.bootstrap?.preventDownload;
+  const allowDownloads = !state.bootstrap?.preventDownload && Boolean(item.downloadUrl);
   const nativeClass = shouldUseNativeVideoPlayer(item) ? " gs-native-video" : "";
   const preload = shouldUseNativeVideoPlayer(item) ? "metadata" : "auto";
   const sourceUrl = shouldUseNativeHlsPlayback(item) ? item.hlsUrl : item.streamUrl;
@@ -822,7 +822,11 @@ function hydrateVideoPlayer(item, options = {}) {
           bufferAppendErrors += 1;
           if (bufferAppendErrors >= MAX_BUFFER_APPEND_ERRORS) {
             debugTrace("hls_error", `id=${item.id} fatal=true type=bufferAppend_threshold details=exceeded`);
-            showHlsError("This browser could not decode the video stream. Try downloading the original file.");
+            showHlsError(
+              state.bootstrap?.preventDownload
+                ? "This browser could not decode the video stream."
+                : "This browser could not decode the video stream. Try downloading the original file.",
+            );
           }
         }
         return;
@@ -881,7 +885,9 @@ function hydrateVideoPlayer(item, options = {}) {
     if (errorCard) errorCard.classList.add("is-visible");
     if (errorText) {
       errorText.textContent = item.playbackMode === "DIRECT"
-        ? "This browser could not start the video. Try again or download the original file."
+        ? (state.bootstrap?.preventDownload
+          ? "This browser could not start the video. Try again."
+          : "This browser could not start the video. Try again or download the original file.")
         : "This video is still opening. Try again in a moment.";
     }
     if (item.playbackMode !== "DIRECT" && !autoRetryUsed) {
@@ -987,7 +993,7 @@ function ensureCompatiblePlayerMounted(item) {
 
 async function renderPhotoViewer(id) {
   const item = await api(`/api/item/${id}`);
-  const allowDownloads = !state.bootstrap?.preventDownload;
+  const allowDownloads = !state.bootstrap?.preventDownload && Boolean(item.downloadUrl);
   let prev = null;
   let next = null;
   try {
@@ -1069,7 +1075,7 @@ function renderError(message) {
 }
 
 function card(item, selectable = false) {
-  const allowDownloads = !state.bootstrap?.preventDownload;
+  const allowDownloads = !state.bootstrap?.preventDownload && Boolean(item.downloadUrl);
   const actionBtnClass = state.bootstrap?.prominentDownloadButton
     ? "gs-btn gs-btn-sm"
     : "gs-btn gs-btn-accent gs-btn-sm";
