@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -131,7 +132,7 @@ fun SharedLibraryScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(vertical = 20.dp),
+        contentPadding = PaddingValues(vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
@@ -310,6 +311,7 @@ private fun LibraryHeader(
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(
             modifier = Modifier.padding(22.dp),
@@ -450,9 +452,10 @@ private fun LibraryControlsCard(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(
-            modifier = Modifier.padding(18.dp),
+            modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Surface(
@@ -530,16 +533,19 @@ private fun LibraryControlsCard(
                 ) {
                     OutlinedButton(
                         onClick = onOpenAddFiles,
+                        modifier = Modifier.heightIn(min = 48.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = librarySecondaryButtonColors(),
                     ) { Text("Add files") }
                     OutlinedButton(
                         onClick = onOpenAddFolder,
+                        modifier = Modifier.heightIn(min = 48.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = librarySecondaryButtonColors(),
                     ) { Text("Add whole folder") }
                     OutlinedButton(
                         onClick = onOpenBatchSelect,
+                        modifier = Modifier.heightIn(min = 48.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = librarySecondaryButtonColors(),
                     ) { Text("Add from suggestions") }
@@ -554,6 +560,7 @@ private fun LibraryControlsCard(
                 ) {
                     OutlinedButton(
                         onClick = onSortExpand,
+                        modifier = Modifier.heightIn(min = 48.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = librarySecondaryButtonColors(),
                     ) {
@@ -571,6 +578,7 @@ private fun LibraryControlsCard(
                     if (selectionMode) {
                         OutlinedButton(
                             onClick = onCancelSelectionMode,
+                            modifier = Modifier.heightIn(min = 48.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = librarySecondaryButtonColors(),
                         ) {
@@ -579,6 +587,7 @@ private fun LibraryControlsCard(
                         Button(
                             onClick = onSaveSelection,
                             enabled = selectedCount > 0,
+                            modifier = Modifier.heightIn(min = 48.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = libraryPrimaryButtonColors(),
                         ) {
@@ -587,6 +596,7 @@ private fun LibraryControlsCard(
                     } else {
                         OutlinedButton(
                             onClick = onEnterSelectionMode,
+                            modifier = Modifier.heightIn(min = 48.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = librarySecondaryButtonColors(),
                         ) {
@@ -628,6 +638,7 @@ private fun FolderRow(
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        tonalElevation = 1.dp,
     ) {
         Row(
             modifier = Modifier
@@ -663,6 +674,7 @@ private fun FolderRow(
             Spacer(modifier = Modifier.width(12.dp))
             OutlinedButton(
                 onClick = { onRemoveFolder(folder.id) },
+                modifier = Modifier.heightIn(min = 48.dp),
                 shape = RoundedCornerShape(14.dp),
                 colors = librarySecondaryButtonColors(),
             ) {
@@ -701,6 +713,7 @@ private fun LibraryItemRow(
             1.dp,
             if (isSelected) libraryAccentBorder() else MaterialTheme.colorScheme.outline,
         ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         BoxWithConstraints {
             val compactActions = maxWidth < 520.dp
@@ -792,6 +805,7 @@ private fun LibraryItemRow(
                     if (selectionMode) {
                         OutlinedButton(
                             onClick = { onToggleSelected(item.id) },
+                            modifier = Modifier.heightIn(min = 48.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = librarySecondaryButtonColors(),
                         ) {
@@ -800,6 +814,7 @@ private fun LibraryItemRow(
                     } else {
                         OutlinedButton(
                             onClick = { onRemoveItem(item.id) },
+                            modifier = Modifier.heightIn(min = 48.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = librarySecondaryButtonColors(),
                         ) {
@@ -816,6 +831,7 @@ private fun LibraryItemRow(
                             -> OutlinedButton(
                                 onClick = {},
                                 enabled = false,
+                                modifier = Modifier.heightIn(min = 48.dp),
                                 shape = RoundedCornerShape(16.dp),
                                 colors = librarySecondaryButtonColors(),
                             ) {
@@ -825,6 +841,7 @@ private fun LibraryItemRow(
                             CompatibilityStatus.READY -> OutlinedButton(
                                 onClick = {},
                                 enabled = false,
+                                modifier = Modifier.heightIn(min = 48.dp),
                                 shape = RoundedCornerShape(16.dp),
                                 colors = librarySecondaryButtonColors(),
                             ) {
@@ -834,6 +851,7 @@ private fun LibraryItemRow(
                             else -> Button(
                                 onClick = { onPrepareItem(item.id) },
                                 enabled = item.isAvailable,
+                                modifier = Modifier.heightIn(min = 48.dp),
                                 shape = RoundedCornerShape(16.dp),
                                 colors = libraryPrimaryButtonColors(),
                             ) {

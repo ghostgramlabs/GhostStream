@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -107,7 +109,8 @@ fun HomeScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
             TopBrandHeader(
@@ -166,9 +169,7 @@ fun HomeScreen(
             }
         }
 
-        item {
-            Spacer(modifier = Modifier.height(18.dp))
-        }
+        item { Spacer(modifier = Modifier.height(4.dp)) }
     }
 
     pendingUploadRequest?.let { request ->
@@ -232,9 +233,9 @@ private fun TopBrandHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 20.dp),
+            .padding(horizontal = 20.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Top,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -249,42 +250,46 @@ private fun TopBrandHeader(
                 color = MaterialTheme.colorScheme.tertiary,
             )
         }
-        Spacer(modifier = Modifier.width(10.dp))
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = ghostAccentSurface(),
-            border = BorderStroke(1.dp, ghostAccentBorder()),
-            modifier = Modifier.clickable(onClick = onOpenHistory),
-        ) {
-            Box(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                contentAlignment = Alignment.Center,
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = ghostAccentSurface(),
+                border = BorderStroke(1.dp, ghostAccentBorder()),
+                modifier = Modifier
+                    .heightIn(min = 48.dp)
+                    .clickable(onClick = onOpenHistory),
             ) {
-                Icon(
-                    Icons.Outlined.History,
-                    contentDescription = "Transfer History",
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
+                Box(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Outlined.History,
+                        contentDescription = "Transfer History",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
-        }
-        Spacer(modifier = Modifier.width(10.dp))
-        Surface(
-            shape = RoundedCornerShape(16.dp),
-            color = ghostAccentSurface(),
-            border = BorderStroke(1.dp, ghostAccentBorder()),
-            modifier = Modifier.clickable(onClick = onOpenSettings),
-        ) {
-            Box(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                contentAlignment = Alignment.Center,
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = ghostAccentSurface(),
+                border = BorderStroke(1.dp, ghostAccentBorder()),
+                modifier = Modifier
+                    .heightIn(min = 48.dp)
+                    .clickable(onClick = onOpenSettings),
             ) {
-                Icon(
-                    Icons.Outlined.Settings,
-                    contentDescription = "Settings",
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
+                Box(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Outlined.Settings,
+                        contentDescription = "Settings",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
         }
     }
@@ -338,6 +343,7 @@ private fun SessionHeroCard(
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = heroContainerColor),
         border = BorderStroke(1.dp, heroBorderColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(
             modifier = Modifier
@@ -485,6 +491,7 @@ private fun ConnectedDevicesCard(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text("Connected devices", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -577,6 +584,7 @@ private fun ActionShelf(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text("Add to share", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -638,6 +646,7 @@ private fun ActionTile(
     )
     Card(
         modifier = modifier
+            .heightIn(min = 124.dp)
             .graphicsLayer {
                 scaleX = scale
                 scaleY = scale
@@ -651,7 +660,7 @@ private fun ActionTile(
         colors = CardDefaults.cardColors(containerColor = containerColor),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)) {
             Box(
                 modifier = Modifier
                     .size(36.dp)
@@ -681,6 +690,7 @@ private fun QuickDateFiltersCard(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text("Quick filters", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -886,6 +896,7 @@ private fun SupportPanel(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(
@@ -1158,6 +1169,7 @@ private fun SharePresetsCard(
                 Button(
                     onClick = { onSavePreset(defaultPresetName) },
                     enabled = canSavePreset,
+                    modifier = Modifier.heightIn(min = 48.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = ghostPrimaryButtonColors(),
                 ) {
@@ -1258,6 +1270,7 @@ private fun RecentSessionsCard(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(

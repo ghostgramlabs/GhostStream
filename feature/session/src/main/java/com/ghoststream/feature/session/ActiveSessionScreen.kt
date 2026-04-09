@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -100,8 +102,8 @@ fun ActiveSessionScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
             SessionTopBar(onBack = onBack)
@@ -148,7 +150,7 @@ fun ActiveSessionScreen(
                 modifier = Modifier
                     .padding(horizontal = 20.dp)
                     .fillMaxWidth()
-                    .height(56.dp),
+                    .heightIn(min = 56.dp),
                 shape = RoundedCornerShape(18.dp),
                 colors = sessionPrimaryButtonColors(),
             ) {
@@ -167,7 +169,7 @@ private fun SessionTopBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = 20.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onBack) {
@@ -208,6 +210,7 @@ private fun SessionHeroCard(
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = cardContainerColor.value),
         border = androidx.compose.foundation.BorderStroke(1.dp, cardBorderColor.value),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), // Slight elevation gives the hero area a clearer entry point on the page.
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -331,6 +334,7 @@ private fun SessionQrCard(
         shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        tonalElevation = 1.dp,
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -395,6 +399,7 @@ private fun SessionAccessPanel(
         shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        tonalElevation = 1.dp,
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -454,6 +459,7 @@ private fun SessionAccessPanel(
                             onTogglePinProtection(true)
                         }
                     },
+                    modifier = Modifier.heightIn(min = 48.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = sessionSecondaryButtonColors(),
                 ) {
@@ -462,6 +468,7 @@ private fun SessionAccessPanel(
                 if (sessionState.authEnabled) {
                     OutlinedButton(
                         onClick = { onTogglePinProtection(false) },
+                        modifier = Modifier.heightIn(min = 48.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = sessionSecondaryButtonColors(),
                     ) {
@@ -495,6 +502,7 @@ private fun SessionAccessPanel(
             ) {
                 Button(
                     onClick = onCopyLink,
+                    modifier = Modifier.heightIn(min = 48.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = sessionPrimaryButtonColors(),
                 ) {
@@ -504,6 +512,7 @@ private fun SessionAccessPanel(
                 }
                 OutlinedButton(
                     onClick = onShareLink,
+                    modifier = Modifier.heightIn(min = 48.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = sessionSecondaryButtonColors(),
                 ) {
@@ -580,6 +589,7 @@ private fun ConnectedDevicesCard(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -610,6 +620,7 @@ private fun ConnectedDevicesCard(
                 if (sessionState.connectedClients.size > 1) {
                     OutlinedButton(
                         onClick = onDisconnectAll,
+                        modifier = Modifier.heightIn(min = 48.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = sessionSecondaryButtonColors(),
                     ) {
@@ -680,6 +691,7 @@ private fun ConnectedClientRow(
                     Spacer(modifier = Modifier.width(12.dp))
                     OutlinedButton(
                         onClick = { onBlockClient(client.ipAddress) },
+                        modifier = Modifier.heightIn(min = 48.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = sessionSecondaryButtonColors(),
                     ) {
@@ -733,6 +745,7 @@ private fun BlockedDevicesCard(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -806,6 +819,7 @@ private fun BlockedClientRow(
                     Spacer(modifier = Modifier.width(12.dp))
                     OutlinedButton(
                         onClick = { onUnblockClient(blocked.ipAddress) },
+                        modifier = Modifier.heightIn(min = 48.dp),
                         shape = RoundedCornerShape(14.dp),
                         colors = sessionSecondaryButtonColors(),
                     ) {

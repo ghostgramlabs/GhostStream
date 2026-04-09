@@ -3,6 +3,8 @@ package com.ghoststream.feature.history
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.*
@@ -28,7 +30,7 @@ fun HistoryScreen(
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("All Activity", "Received")
-    
+
     val filteredHistory = when (selectedTab) {
         1 -> history.filter { it.direction == TransferDirection.RECEIVED && it.fileUri != null }
         else -> history
@@ -47,17 +49,35 @@ fun HistoryScreen(
         },
         modifier = modifier
     ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
-            TabRow(selectedTabIndex = selectedTab) {
-                tabs.forEachIndexed { index, title ->
-                    Tab(
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index },
-                        text = { Text(title) }
-                    )
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize(),
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                tonalElevation = 1.dp,
+            ) {
+                TabRow(
+                    selectedTabIndex = selectedTab,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    divider = {},
+                ) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            text = { Text(title) }
+                        )
+                    }
                 }
             }
-            
+
             if (filteredHistory.isEmpty()) {
                 EmptyHistoryState(
                     message = if (selectedTab == 0) "No transfers yet." else "No received files yet."
@@ -65,7 +85,7 @@ fun HistoryScreen(
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(filteredHistory, key = { it.id }) { record ->
@@ -93,14 +113,20 @@ private fun HistoryItem(
     val timeStr = remember(record.timestampMs) {
         SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(record.timestampMs))
     }
-    
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
+        ),
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 val icon = when (record.direction) {
                     TransferDirection.SENT -> Icons.Outlined.Upload
@@ -110,23 +136,32 @@ private fun HistoryItem(
                     TransferDirection.SENT -> MaterialTheme.colorScheme.secondary
                     TransferDirection.RECEIVED -> MaterialTheme.colorScheme.primary
                 }
-                
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    tint = iconColor,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = if (record.direction == TransferDirection.SENT) "Sent" else "Received",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = iconColor
-                )
+
+                Surface(
+                    shape = RoundedCornerShape(999.dp),
+                    color = iconColor.copy(alpha = 0.12f),
+                    border = BorderStroke(1.dp, iconColor.copy(alpha = 0.22f)),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            icon,
+                            contentDescription = null,
+                            tint = iconColor,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (record.direction == TransferDirection.SENT) "Sent" else "Received",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = iconColor
+                        )
+                    }
+                }
             }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
+
             Text(
                 text = record.name,
                 style = MaterialTheme.typography.bodyLarge,
@@ -148,7 +183,6 @@ private fun HistoryItem(
             )
 
             if (record.direction == TransferDirection.RECEIVED && record.fileUri != null) {
-                Spacer(modifier = Modifier.height(12.dp))
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -156,7 +190,7 @@ private fun HistoryItem(
                     Button(
                         onClick = onOpen,
                         modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp)
                     ) {
                         Icon(Icons.Outlined.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(8.dp))
@@ -167,7 +201,7 @@ private fun HistoryItem(
                         colors = IconButtonDefaults.outlinedIconButtonColors(
                             contentColor = MaterialTheme.colorScheme.error
                         ),
-                        modifier = Modifier.size(40.dp)
+                        modifier = Modifier.size(48.dp)
                     ) {
                         Icon(Icons.Outlined.Delete, contentDescription = "Delete")
                     }
@@ -192,7 +226,17 @@ private fun HistoryItem(
 @Composable
 private fun EmptyHistoryState(message: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Card(
+            modifier = Modifier.padding(horizontal = 24.dp),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        ) {
+            Column(
+                modifier = Modifier.padding(horizontal = 28.dp, vertical = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
             Icon(
                 Icons.Outlined.History,
                 contentDescription = null,
@@ -204,6 +248,7 @@ private fun EmptyHistoryState(message: String) {
                 text = message,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            }
         }
     }
 }

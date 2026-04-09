@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -80,6 +82,7 @@ fun SettingsScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
+        contentPadding = PaddingValues(vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
@@ -118,7 +121,7 @@ fun SettingsScreen(
                             if (isSelected) {
                                 Button(
                                     onClick = { onThemeModeSelected(mode) },
-                                    modifier = Modifier.height(40.dp),
+                                    modifier = Modifier.heightIn(min = 48.dp),
                                     colors = ButtonDefaults.buttonColors(),
                                 ) {
                                     Text(mode.label(), style = MaterialTheme.typography.labelMedium)
@@ -126,7 +129,7 @@ fun SettingsScreen(
                             } else {
                                 OutlinedButton(
                                     onClick = { onThemeModeSelected(mode) },
-                                    modifier = Modifier.height(40.dp),
+                                    modifier = Modifier.heightIn(min = 48.dp),
                                 ) {
                                     Text(mode.label(), style = MaterialTheme.typography.labelMedium)
                                 }
@@ -241,7 +244,7 @@ fun HelpScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(24.dp),
+            .padding(horizontal = 20.dp, vertical = 16.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -256,6 +259,7 @@ fun HelpScreen(
                 shape = RoundedCornerShape(28.dp),
                 colors = CardDefaults.cardColors(containerColor = ghostPanelColor()),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp), // Slight lift helps the intro card read as the primary entry section.
             ) {
                 Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Text("About DirectServe", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
@@ -328,6 +332,7 @@ private fun HelpSectionCard(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = ghostPanelColor()),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -351,11 +356,12 @@ private fun SettingsGroup(title: String, content: @Composable () -> Unit) {
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = ghostPanelColor()),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
-        Column(modifier = Modifier.padding(vertical = 10.dp)) {
+        Column(modifier = Modifier.padding(vertical = 12.dp)) {
             Text(
                 text = title,
-                modifier = Modifier.padding(horizontal = 18.dp, vertical = 10.dp),
+                modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -370,6 +376,7 @@ private fun SettingsToggleRow(title: String, description: String, checked: Boole
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onCheckedChange(!checked) }
+            .heightIn(min = 64.dp) // Gives the label and switch breathing room while keeping taps accessible.
             .padding(horizontal = 18.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -430,6 +437,7 @@ private fun SettingsChoiceRow(title: String, value: String, onClick: () -> Unit)
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
+            .heightIn(min = 56.dp) // Matches the rest of the settings list so rows scan and tap consistently.
             .padding(horizontal = 18.dp, vertical = 12.dp),
     ) {
         Text(title)
