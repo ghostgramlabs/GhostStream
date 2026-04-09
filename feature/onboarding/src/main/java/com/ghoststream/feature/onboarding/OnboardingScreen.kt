@@ -18,9 +18,12 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Devices
 import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Collections
+import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.SyncAlt
 import androidx.compose.material.icons.outlined.QrCode2
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -50,23 +53,33 @@ fun OnboardingScreen(
     val pages = listOf(
         OnboardingCard(
             icon = Icons.Outlined.Collections,
-            title = "Add files or folders",
-            description = "Works with your own local files so you can start from photos, videos, music, and documents already on your device.",
+            title = "Watch directly on nearby devices",
+            description = "Open your videos, photos, music, and files instantly on nearby devices without uploading them anywhere first.",
         ),
         OnboardingCard(
-            icon = Icons.Outlined.CloudOff,
-            title = "Nearby devices only",
-            description = "Connect nearby devices over the same Wi-Fi or your phone hotspot. No internet required.",
+            icon = Icons.Outlined.Devices,
+            title = "Works on almost any screen",
+            description = "Open on TV, laptop, iPhone, iPad, Mac, Windows, Android, or any other device with a browser.",
         ),
         OnboardingCard(
             icon = Icons.Outlined.QrCode2,
-            title = "Open in any browser",
-            description = "The receiver only needs a browser. Scan the QR code, stream media, or download the original file instantly.",
+            title = "Join with a browser",
+            description = "The receiving device only needs your local link or QR code. No extra app is required on the other device.",
+        ),
+        OnboardingCard(
+            icon = Icons.Outlined.SyncAlt,
+            title = "Share both ways",
+            description = "Send files out, let people receive them, and collect files back from connected devices during the same session.",
+        ),
+        OnboardingCard(
+            icon = Icons.Outlined.CloudOff,
+            title = "No internet required",
+            description = "Everything works over the same Wi-Fi network or your phone hotspot, so local sharing stays fast and reliable.",
         ),
         OnboardingCard(
             icon = Icons.Outlined.Lock,
             title = "Private by design",
-            description = "Data stays on your device. No cloud, no login, and no remote internet access in this build.",
+            description = "Your data stays on your device with no cloud upload, no account, and no remote internet access in this build.",
         ),
     )
     val pagerState = rememberPagerState(pageCount = { pages.size })
@@ -87,6 +100,18 @@ fun OnboardingScreen(
                     Text("Skip")
                 }
             }
+
+            Text(
+                text = "Direct streaming and file sharing",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Turn your phone into a private local hub for TV, laptop, phone, tablet, and browser access.",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
 
             HorizontalPager(
                 state = pagerState,
@@ -136,6 +161,13 @@ fun OnboardingScreen(
                             text = pages[page].description,
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
+                        Text(
+                            text = "${page + 1} of ${pages.size}",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium,
                         )
                     }
                 }

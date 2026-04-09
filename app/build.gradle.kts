@@ -1,4 +1,5 @@
 import java.util.Properties
+import org.gradle.api.tasks.bundling.Zip
 
 plugins {
     alias(libs.plugins.android.application)
@@ -28,8 +29,8 @@ android {
         applicationId = "com.ghostgramlabs.directserve"
         minSdk = 26
         targetSdk = 35
-        versionCode = 9
-        versionName = "1.0.8"
+        versionCode = 11
+        versionName = "1.0.10"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -48,7 +49,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             ndk {
                 debugSymbolLevel = "SYMBOL_TABLE"
             }
@@ -83,6 +84,19 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+}
+
+val packageReleaseNativeSymbols by tasks.registering(Zip::class) {
+    group = "build"
+    description = "Packages release native symbols for Play Console upload."
+    archiveFileName.set("native-debug-symbols.zip")
+    destinationDirectory.set(layout.buildDirectory.dir("outputs/native-debug-symbols/release"))
+    from(layout.buildDirectory.dir("intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib"))
+    dependsOn("mergeReleaseNativeLibs")
+}
+
+tasks.matching { it.name == "bundleRelease" }.configureEach {
+    finalizedBy(packageReleaseNativeSymbols)
 }
 
 dependencies {
