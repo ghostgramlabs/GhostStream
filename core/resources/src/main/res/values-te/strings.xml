@@ -563,4 +563,15 @@
     <string name="web_upload_target_kicker">లక్ష్య పరికరం</string>
     <string name="web_upload_target_status">స్థితి: కనెక్ట్ చేయబడింది మరియు బదిలీలకు సిద్ధంగా ఉంది</string>
     <string name="web_upload_title">పరికరానికి పంపండి</string>
+
+    <string name="web_btn_clear_selection">క్లియర్</string>
+    <string name="web_btn_select_all">అన్నింటినీ ఎంచుకోండి</string>
+    <string name="web_btn_select_files">ఫైళ్లను ఎంచుకోండి</string>
+    <string name="web_library_desc_browse">ఫైల్‌లను ఎంచుకుని, ఈ షెల్ఫ్‌ని బ్రౌజ్ చేయండి.</string>
+    <string name="web_library_desc_download">ఫైల్‌లను ఎంచుకోండి లేదా మొత్తం షెల్ఫ్‌ను డౌన్‌లోడ్ చేయండి.</string>
+    <string name="web_library_empty">ఈ విభాగంలో ఫైల్‌లు ఏవీ కనుగొనబడలేదు.</string>
+    <string name="web_player_slow_start_hint">ఈ వీడియో కొన్ని పరికరాలలో తెరవడానికి కొంచెం ఎక్కువ సమయం పట్టవచ్చు.</string>
+    <string name="web_search_placeholder">ఫైల్ పేరు ద్వారా శోధించండి</string>
+    <string name="web_selection_count">%1$d ఎంచుకోబడింది</string>
+    <string name="web_status_selection_on">ఎంపిక ఆన్‌లో ఉంది</string>
 </resources>

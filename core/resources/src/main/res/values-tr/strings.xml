@@ -540,4 +540,15 @@
     <string name="privacy_policy_title">Gizlilik Politikası</string>
     <string name="splash_subtitle">Özel yerel paylaşım</string>
     <string name="splash_title">DoğrudanServe</string>
+
+    <string name="web_btn_clear_selection">Temizle</string>
+    <string name="web_btn_select_all">Tümünü seç</string>
+    <string name="web_btn_select_files">Dosyaları seç</string>
+    <string name="web_library_desc_browse">Dosyaları seçin ve bu rafa göz atın.</string>
+    <string name="web_library_desc_download">Dosyaları seçin veya rafın tamamını indirin.</string>
+    <string name="web_library_empty">Bu bölümde dosya bulunamadı.</string>
+    <string name="web_player_slow_start_hint">Bu videonun bazı cihazlarda açılması biraz uzun sürebilir.</string>
+    <string name="web_search_placeholder">Dosya adına göre ara</string>
+    <string name="web_selection_count">%1$d seçildi</string>
+    <string name="web_status_selection_on">Seçim açık</string>
 </resources>

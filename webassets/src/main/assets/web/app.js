@@ -30,8 +30,13 @@ const routes = {
   "/upload": renderUpload,
 };
 
-function gsStr(key, defaultVal) {
-  return state.bootstrap?.strings?.[key] || defaultVal;
+function gsStr(key, defaultVal, ...args) {
+  let s = state.bootstrap?.strings?.[key] || defaultVal;
+  if (!s) return "";
+  args.forEach((arg, i) => {
+    s = s.replace(`%${i + 1}$d`, arg).replace(`%${i + 1}$s`, arg);
+  });
+  return s;
 }
 
 window.addEventListener("popstate", () => boot());
@@ -533,21 +538,21 @@ async function renderLibrary(category, title) {
     <section class="gs-section">
       <div class="gs-section-head">
         <h2>${esc(title)}</h2>
-        <span class="gs-section-meta">${allowDownloads ? "Select files or download the whole shelf." : "Select files and browse this shelf."}</span>
+        <span class="gs-section-meta">${allowDownloads ? gsStr("web_library_desc_download") : gsStr("web_library_desc_browse")}</span>
       </div>
       <div class="gs-control-card">
         <div class="gs-toolbar">
-          <input class="gs-search" id="libSearch" placeholder="Search by file name" value="${esc(state.query)}">
+          <input class="gs-search" id="libSearch" placeholder="${gsStr("web_search_placeholder")}" value="${esc(state.query)}">
           <div class="gs-toolbar-actions">
-            <button class="gs-btn" id="selectBtn">${state.selectMode ? "Selection on" : "Select files"}</button>
+            <button class="gs-btn" id="selectBtn">${state.selectMode ? gsStr("web_status_selection_on") : gsStr("web_btn_select_files")}</button>
             ${allowDownloads ? `<button class="gs-btn gs-btn-download" id="downloadAllBtn">${gsStr("web_btn_download_all", "Download all")}</button>` : ""}
           </div>
         </div>
         <div class="gs-select-bar${state.selectMode ? " is-visible" : ""}" id="selectBar">
           <span id="selectCount">0 selected</span>
           <div class="gs-toolbar-actions">
-            <button class="gs-btn gs-btn-sm" id="selectAllBtn">Select all</button>
-            <button class="gs-btn gs-btn-sm" id="clearSelectBtn">Clear</button>
+            <button class="gs-btn gs-btn-sm" id="selectAllBtn">${gsStr("web_btn_select_all")}</button>
+            <button class="gs-btn gs-btn-sm" id="clearSelectBtn">${gsStr("web_btn_clear_selection")}</button>
             ${allowDownloads ? `<button class="gs-btn gs-btn-accent gs-btn-sm" id="downloadSelectedBtn">${gsStr("web_btn_download_selected", "Download selected")}</button>` : ""}
           </div>
         </div>
@@ -566,7 +571,7 @@ async function renderLibrary(category, title) {
   const grid = document.getElementById("grid");
   grid.innerHTML = state.libraryItems.length
     ? state.libraryItems.map((item) => card(item, true)).join("")
-    : '<div class="gs-empty">No files found in this section.</div>';
+    : `<div class="gs-empty">${gsStr("web_library_empty")}</div>`;
 
   attachMusicPlayers();
   bindSelectableCards();
@@ -638,7 +643,7 @@ function updateSelectionUi() {
     selectBar.classList.toggle("is-visible", state.selectMode);
   }
   if (selectCount) {
-    selectCount.textContent = `${count} selected`;
+    selectCount.textContent = gsStr("web_selection_count", `${count} selected`, count);
   }
   document.querySelectorAll("[data-select-card]").forEach((cardElement) => {
     cardElement.classList.toggle("is-selected", state.selected.has(cardElement.dataset.selectCard));
@@ -1048,7 +1053,7 @@ function renderLogin(errorMessage = "") {
         <form id="loginForm">
           <input id="pinInput" class="gs-pin" inputmode="numeric" maxlength="6" placeholder="${gsStr("web_pin_entry_placeholder", "Enter PIN")}" autofocus>
           ${errorMessage ? `<p class="gs-error-text">${esc(errorMessage)}</p>` : ""}
-          <button class="gs-btn gs-btn-accent gs-btn-block" type="submit">Continue</button>
+          <button class="gs-btn gs-btn-accent gs-btn-block" type="submit">${gsStr('web_btn_continue')}</button>
         </form>
       </div>
     </div>`;
@@ -1109,7 +1114,7 @@ function card(item, selectable = false) {
         </div>
         <div class="gs-card-title">${esc(item.title)}</div>
         <div class="gs-meta">${fmtBytes(item.sizeBytes)}${item.durationMs ? ` | ${fmtDur(item.durationMs)}` : ""}</div>
-        ${showSlowStartHint ? `<div class="gs-card-caption">This video may take a little longer to open on some devices.</div>` : ""}
+        ${showSlowStartHint ? `<div class="gs-card-caption">${gsStr("web_player_slow_start_hint")}</div>` : ""}
         ${item.category === "music" ? `
           <div class="gs-music-row">
             <audio class="gs-audio-player" preload="none" src="${item.streamUrl}">
@@ -1353,11 +1358,11 @@ function skeletons(count) {
 
 function titleForPath(path) {
   switch (path) {
-    case "/videos": return "Videos";
-    case "/photos": return "Photos";
-    case "/music": return "Music";
-    case "/files": return "Files";
-    default: return "Library";
+    case "/videos": return gsStr("web_cat_videos", "Videos");
+    case "/photos": return gsStr("web_cat_photos", "Photos");
+    case "/music": return gsStr("web_cat_music", "Music");
+    case "/files": return gsStr("web_cat_files", "Files");
+    default: return gsStr("library_title", "Library");
   }
 }
 

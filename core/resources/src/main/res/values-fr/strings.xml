@@ -562,4 +562,15 @@
     <string name="web_error_downloads_disabled">Les t?l?chargements sont d?sactiv?s par le propri?taire de l\'appareil.</string>
     <string name="web_error_video_decode">Ce navigateur n\'a pas pu d?coder le flux vid?o. Essayez de t?l?charger le fichier original.</string>
     <string name="web_error_video_start">Ce navigateur n\'a pas pu d?marrer la vid?o. R?essayez ou t?l?chargez le fichier original.</string>
+
+    <string name="web_btn_clear_selection">Effacer</string>
+    <string name="web_btn_select_all">Tout sélectionner</string>
+    <string name="web_btn_select_files">Sélectionner des fichiers</string>
+    <string name="web_library_desc_browse">Sélectionnez des fichiers et parcourez cette étagère.</string>
+    <string name="web_library_desc_download">Sélectionnez des fichiers ou téléchargez l\'intégralité de l\'étagère.</string>
+    <string name="web_library_empty">Aucun fichier trouvé dans cette section.</string>
+    <string name="web_player_slow_start_hint">Cette vidéo peut prendre un peu plus de temps à s\'ouvrir sur certains appareils.</string>
+    <string name="web_search_placeholder">Recherche par nom de fichier</string>
+    <string name="web_selection_count">%1$d sélectionné</string>
+    <string name="web_status_selection_on">Sélection sur</string>
 </resources>

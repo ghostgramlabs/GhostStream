@@ -168,13 +168,15 @@ class SharingCoordinator(
         val settings = settingsRepository.settings.first()
         runCatching { nsdAdvertiser.stop() }
         runCatching { server.stop() }
-        compatibilityPipeline.clearTemporaryOutputs()
-        if (settings.clearAuthOnStop || settings.ghostMode) {
-            sessionManager.clearBrowserAuth()
-        }
+        
         if (settings.ghostMode) {
+            compatibilityPipeline.clearTemporaryOutputs()
             mediaAnalyzer.clearTemporaryCache()
             storageRepository.clearSelection()
+        }
+        
+        if (settings.clearAuthOnStop || settings.ghostMode) {
+            sessionManager.clearBrowserAuth()
         }
         sessionManager.stopSession(
             message = message,

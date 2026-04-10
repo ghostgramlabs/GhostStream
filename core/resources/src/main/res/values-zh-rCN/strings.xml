@@ -542,4 +542,15 @@
     <string name="home_upload_request_single">一个文件</string>
     <string name="home_upload_request_title">文件传输请求</string>
     <string name="home_upload_request_total_size">总大小：%1$s</string>
+
+    <string name="web_btn_clear_selection">清除</string>
+    <string name="web_btn_select_all">全选</string>
+    <string name="web_btn_select_files">选择文件</string>
+    <string name="web_library_desc_browse">选择文件并浏览此架子。</string>
+    <string name="web_library_desc_download">选择文件或下载整个架子。</string>
+    <string name="web_library_empty">此部分中未找到文件。</string>
+    <string name="web_player_slow_start_hint">该视频在某些设备上可能需要更长的时间才能打开。</string>
+    <string name="web_search_placeholder">按文件名搜索</string>
+    <string name="web_selection_count">已选择 %1$d</string>
+    <string name="web_status_selection_on">选择于</string>
 </resources>

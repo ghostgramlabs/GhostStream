@@ -20,6 +20,8 @@ enum class ThemeMode {
 @Serializable
 data class AppSettings(
     val onboardingCompleted: Boolean = false,
+    val languageSelectionCompleted: Boolean = false,
+    val languageTag: String? = null,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val autoStop: AutoStopOption = AutoStopOption.NEVER,
     val preferredPort: Int = 43183,
@@ -31,11 +33,17 @@ data class AppSettings(
     val autoGeneratePin: Boolean = true,
     val manualPin: String = "2468",
     val clearAuthOnStop: Boolean = true,
-    val ghostMode: Boolean = true,
+    val ghostMode: Boolean = false,
     val showThumbnails: Boolean = true,
     val largeTvCards: Boolean = false,
     val prominentDownloadButton: Boolean = true,
     val requireUploadApproval: Boolean = true,
+    val notifyOnDeviceConnect: Boolean = true,
+    val notifyOnFileDownload: Boolean = true,
+    val notifyOnUploadRequest: Boolean = true,
+    val requireDeviceApproval: Boolean = false,
+    val preventDownload: Boolean = false,
+    val deviceNicknames: Map<String, String> = emptyMap(), // ipAddress -> nickname
 )
 
 @Serializable

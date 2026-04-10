@@ -515,4 +515,15 @@
     <string name="web_strip_device">Perangkat</string>
     <string name="web_strip_link">Tautan</string>
     <string name="web_strip_session">Sidang</string>
+
+    <string name="web_btn_clear_selection">Hapus</string>
+    <string name="web_btn_select_all">Pilih semua</string>
+    <string name="web_btn_select_files">Pilih file</string>
+    <string name="web_library_desc_browse">Pilih file dan jelajahi rak ini.</string>
+    <string name="web_library_desc_download">Pilih file atau unduh seluruh rak.</string>
+    <string name="web_library_empty">Tidak ada file yang ditemukan di bagian ini.</string>
+    <string name="web_player_slow_start_hint">Video ini mungkin memerlukan waktu lebih lama untuk dibuka di beberapa perangkat.</string>
+    <string name="web_search_placeholder">Cari berdasarkan nama file</string>
+    <string name="web_selection_count">%1$d dipilih</string>
+    <string name="web_status_selection_on">Seleksi aktif</string>
 </resources>

@@ -33,7 +33,7 @@ data class AppSettings(
     val autoGeneratePin: Boolean = true,
     val manualPin: String = "2468",
     val clearAuthOnStop: Boolean = true,
-    val ghostMode: Boolean = true,
+    val ghostMode: Boolean = false,
     val showThumbnails: Boolean = true,
     val largeTvCards: Boolean = false,
     val prominentDownloadButton: Boolean = true,

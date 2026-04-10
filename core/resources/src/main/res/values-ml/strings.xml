@@ -563,4 +563,15 @@
     <string name="web_upload_target_kicker">ടാർഗെറ്റ് ഉപകരണം</string>
     <string name="web_upload_target_status">നില: ബന്ധിപ്പിച്ച് കൈമാറ്റത്തിന് തയ്യാറാണ്</string>
     <string name="web_upload_title">ഉപകരണത്തിലേക്ക് അയയ്ക്കുക</string>
+
+    <string name="web_btn_clear_selection">തെളിഞ്ഞു</string>
+    <string name="web_btn_select_all">എല്ലാം തിരഞ്ഞെടുക്കുക</string>
+    <string name="web_btn_select_files">ഫയലുകൾ തിരഞ്ഞെടുക്കുക</string>
+    <string name="web_library_desc_browse">ഫയലുകൾ തിരഞ്ഞെടുത്ത് ഈ ഷെൽഫ് ബ്രൗസ് ചെയ്യുക.</string>
+    <string name="web_library_desc_download">ഫയലുകൾ തിരഞ്ഞെടുക്കുക അല്ലെങ്കിൽ മുഴുവൻ ഷെൽഫും ഡൗൺലോഡ് ചെയ്യുക.</string>
+    <string name="web_library_empty">ഈ വിഭാഗത്തിൽ ഫയലുകളൊന്നും കണ്ടെത്തിയില്ല.</string>
+    <string name="web_player_slow_start_hint">ഈ വീഡിയോ ചില ഉപകരണങ്ങളിൽ തുറക്കാൻ കുറച്ച് സമയമെടുത്തേക്കാം.</string>
+    <string name="web_search_placeholder">ഫയലിൻ്റെ പേര് ഉപയോഗിച്ച് തിരയുക</string>
+    <string name="web_selection_count">%1$d തിരഞ്ഞെടുത്തു</string>
+    <string name="web_status_selection_on">തിരഞ്ഞെടുക്കൽ ഓണാണ്</string>
 </resources>

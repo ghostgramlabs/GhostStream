@@ -515,4 +515,15 @@
     <string name="web_strip_device">Toestel</string>
     <string name="web_strip_link">Skakel</string>
     <string name="web_strip_session">Sessie</string>
+
+    <string name="web_btn_clear_selection">Vee uit</string>
+    <string name="web_btn_select_all">Kies alles</string>
+    <string name="web_btn_select_files">Kies lêers</string>
+    <string name="web_library_desc_browse">Kies lêers en blaai deur hierdie rak.</string>
+    <string name="web_library_desc_download">Kies lêers of laai die hele rak af.</string>
+    <string name="web_library_empty">Geen lêers in hierdie afdeling gevind nie.</string>
+    <string name="web_player_slow_start_hint">Hierdie video kan dalk \'n bietjie langer neem om op sommige toestelle oop te maak.</string>
+    <string name="web_search_placeholder">Soek volgens lêernaam</string>
+    <string name="web_selection_count">%1$d gekies</string>
+    <string name="web_status_selection_on">Seleksie aan</string>
 </resources>

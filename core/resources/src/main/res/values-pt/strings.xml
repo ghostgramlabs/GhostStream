@@ -542,4 +542,15 @@
     <string name="home_upload_request_single">um arquivo</string>
     <string name="home_upload_request_title">Solicitação de transferência de arquivo</string>
     <string name="home_upload_request_total_size">Tamanho total: %1$s</string>
+
+    <string name="web_btn_clear_selection">Limpar</string>
+    <string name="web_btn_select_all">Selecionar tudo</string>
+    <string name="web_btn_select_files">Selecione os arquivos</string>
+    <string name="web_library_desc_browse">Selecione os arquivos e navegue nesta estante.</string>
+    <string name="web_library_desc_download">Selecione os arquivos ou baixe a estante inteira.</string>
+    <string name="web_library_empty">Nenhum arquivo encontrado nesta seção.</string>
+    <string name="web_player_slow_start_hint">Este vídeo pode demorar um pouco mais para abrir em alguns dispositivos.</string>
+    <string name="web_search_placeholder">Pesquise por nome de arquivo</string>
+    <string name="web_selection_count">%1$d selecionado</string>
+    <string name="web_status_selection_on">Seleção ativada</string>
 </resources>

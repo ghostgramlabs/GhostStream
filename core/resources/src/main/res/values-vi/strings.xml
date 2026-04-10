@@ -537,4 +537,15 @@
     <string name="sharing_same_wifi_needed">Kết nối cả hai thiết bị với cùng một Wi-Fi hoặc điểm phát sóng.</string>
     <string name="sharing_server_start_failed">Máy chủ không khởi động được: %1$s</string>
     <string name="sharing_stopped">Đã dừng chia sẻ</string>
+
+    <string name="web_btn_clear_selection">Xóa</string>
+    <string name="web_btn_select_all">Chọn tất cả</string>
+    <string name="web_btn_select_files">Chọn tập tin</string>
+    <string name="web_library_desc_browse">Chọn tập tin và duyệt kệ này.</string>
+    <string name="web_library_desc_download">Chọn tập tin hoặc tải xuống toàn bộ kệ.</string>
+    <string name="web_library_empty">Không tìm thấy tập tin nào trong phần này.</string>
+    <string name="web_player_slow_start_hint">Video này có thể mất nhiều thời gian hơn một chút để mở trên một số thiết bị.</string>
+    <string name="web_search_placeholder">Tìm kiếm theo tên tập tin</string>
+    <string name="web_selection_count">%1$d đã chọn</string>
+    <string name="web_status_selection_on">Lựa chọn bật</string>
 </resources>

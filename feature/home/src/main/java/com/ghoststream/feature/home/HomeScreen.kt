@@ -378,41 +378,50 @@ private fun SessionHeroCard(
                 }
                 Spacer(modifier = Modifier.height(18.dp))
             }
-            Text(
-                text = if (sessionState.isSharing) {
-                    stringResource(R.string.home_title_live)
-                } else {
-                    stringResource(R.string.home_title_start)
-                },
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = if (sessionState.isSharing) {
-                    heroMessage(
+            if (sessionState.isSharing) {
+                Text(
+                    text = stringResource(R.string.home_title_live),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = heroMessage(
                         sessionState = sessionState,
                         libraryState = libraryState,
                         diagnostics = connectionDiagnostics,
-                    )
-                } else {
-                    stringResource(R.string.home_body_start)
-                },
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                softWrap = true,
-            )
-            if (!sessionState.isSharing) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = stringResource(R.string.home_body_start_secondary),
-                    style = MaterialTheme.typography.bodyMedium,
+                    ),
+                    style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     softWrap = true,
                 )
+            } else {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.Transparent,
+                    border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.4f)),
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = stringResource(R.string.home_title_start),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "${stringResource(R.string.home_body_start)} ${stringResource(R.string.home_body_start_secondary)}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            softWrap = true,
+                        )
+                    }
+                }
             }
+
 
             Spacer(modifier = Modifier.height(22.dp))
             Button(

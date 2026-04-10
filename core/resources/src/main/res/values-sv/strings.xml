@@ -515,4 +515,15 @@
     <string name="web_strip_device">Enhet</string>
     <string name="web_strip_link">Länk</string>
     <string name="web_strip_session">Session</string>
+
+    <string name="web_btn_clear_selection">Rensa</string>
+    <string name="web_btn_select_all">Välj alla</string>
+    <string name="web_btn_select_files">Välj filer</string>
+    <string name="web_library_desc_browse">Välj filer och bläddra i den här hyllan.</string>
+    <string name="web_library_desc_download">Välj filer eller ladda ner hela hyllan.</string>
+    <string name="web_library_empty">Inga filer hittades i det här avsnittet.</string>
+    <string name="web_player_slow_start_hint">Den här videon kan ta lite längre tid att öppna på vissa enheter.</string>
+    <string name="web_search_placeholder">Sök efter filnamn</string>
+    <string name="web_selection_count">%1$d vald</string>
+    <string name="web_status_selection_on">Urval på</string>
 </resources>
