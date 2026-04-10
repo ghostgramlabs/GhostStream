@@ -538,4 +538,25 @@
     <string name="home_saved_shares_delete">ഇല്ലാതാക്കുക</string>
     <string name="home_saved_shares_items_count">%1$d ഇനങ്ങൾ</string>
     <string name="library_date_group_label">%1$s </string>
+
+    <string name="web_action_download">ഡൗൺലോഡ് ചെയ്യുക</string>
+    <string name="web_btn_download_all">എല്ലാം ഡൗൺലോഡ് ചെയ്യുക</string>
+    <string name="web_btn_download_original">ഒറിജിനൽ ഡൗൺലോഡ് ചെയ്യുക</string>
+    <string name="web_btn_download_selected">ഡൗൺലോഡ് തിരഞ്ഞെടുത്തു</string>
+    <string name="web_error_downloads_disabled">ഉപകരണ ഉടമ ഡൗൺലോഡുകൾ പ്രവർത്തനരഹിതമാക്കി.</string>
+    <string name="web_error_streaming_codec">ഈ ഫയലിൻ്റെ കോഡെക് സ്ട്രീമിംഗിനായി Android സെർവർ പിന്തുണയ്ക്കുന്നില്ല. ദയവായി ഡൗൺലോഡ് ചെയ്യുക.</string>
+    <string name="web_error_video_decode">ഈ ബ്രൗസറിന് വീഡിയോ സ്ട്രീം ഡീകോഡ് ചെയ്യാൻ കഴിഞ്ഞില്ല. യഥാർത്ഥ ഫയൽ ഡൗൺലോഡ് ചെയ്യാൻ ശ്രമിക്കുക.</string>
+    <string name="web_error_video_start">ഈ ബ്രൗസറിന് വീഡിയോ ആരംഭിക്കാനായില്ല. വീണ്ടും ശ്രമിക്കുക അല്ലെങ്കിൽ യഥാർത്ഥ ഫയൽ ഡൗൺലോഡ് ചെയ്യുക.</string>
+    <string name="web_photo_view">കാണുക</string>
+    <string name="web_upload_button_browse">ഫയലുകൾ ബ്രൗസ് ചെയ്യുക</string>
+    <string name="web_upload_how_body"><![CDATA[When you send a file, a notification will appear on the phone. The device owner must <strong>Accept</strong> for the transfer to begin.]]></string>
+    <string name="web_upload_how_kicker">ഇത് എങ്ങനെ പ്രവർത്തിക്കുന്നു</string>
+    <string name="web_upload_how_title">സുരക്ഷിതമായ അംഗീകാരം</string>
+    <string name="web_upload_prompt_desktop">ഇവിടെ വലിച്ചിടുക, അല്ലെങ്കിൽ താഴെയുള്ള ബട്ടൺ ടാപ്പ് ചെയ്യുക</string>
+    <string name="web_upload_prompt_mobile">നിങ്ങളുടെ ലൈബ്രറിയിൽ നിന്ന് ഫയലുകൾ തിരഞ്ഞെടുക്കാൻ ബട്ടൺ ടാപ്പുചെയ്യുക</string>
+    <string name="web_upload_prompt_title">അയയ്ക്കാൻ ഫയലുകൾ തിരഞ്ഞെടുക്കുക</string>
+    <string name="web_upload_subtitle">നെറ്റ്‌വർക്കിലൂടെ ഹോസ്റ്റ് ഉപകരണത്തിലേക്ക് ഫയലുകൾ അപ്‌ലോഡ് ചെയ്യുക.</string>
+    <string name="web_upload_target_kicker">ടാർഗെറ്റ് ഉപകരണം</string>
+    <string name="web_upload_target_status">നില: ബന്ധിപ്പിച്ച് കൈമാറ്റത്തിന് തയ്യാറാണ്</string>
+    <string name="web_upload_title">ഉപകരണത്തിലേക്ക് അയയ്ക്കുക</string>
 </resources>

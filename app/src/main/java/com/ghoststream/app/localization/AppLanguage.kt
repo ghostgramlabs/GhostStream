@@ -31,6 +31,9 @@ object AppLanguages {
         AppLanguage("id", "Indonesian", "Bahasa Indonesia"),
         AppLanguage("vi", "Vietnamese", "Tiếng Việt"),
         AppLanguage("th", "Thai", "ไทย"),
+        AppLanguage("af", "Afrikaans", "Afrikaans"),
+        AppLanguage("sv", "Swedish", "Svenska"),
+        AppLanguage("pt-BR", "Portuguese (Brazil)", "Português (Brasil)"),
     )
 
     fun resolve(tag: String?): AppLanguage = supported.firstOrNull { it.tag == canonicalize(tag) } ?: supported.first()
@@ -51,6 +54,8 @@ object AppLanguages {
         return when {
             language.equals("zh", ignoreCase = true) && region.equals("TW", ignoreCase = true) -> "zh-TW"
             language.equals("zh", ignoreCase = true) -> "zh-CN"
+            language.equals("pt", ignoreCase = true) && region.equals("BR", ignoreCase = true) -> "pt-BR"
+            language.equals("in", ignoreCase = true) -> "id"
             else -> language.lowercase()
         }
     }

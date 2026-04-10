@@ -67,6 +67,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ghostgramlabs.directserve.core.resources.R
 import com.ghoststream.core.model.ConnectionDiagnostics
@@ -228,12 +229,16 @@ private fun TopBrandHeader(
                 text = stringResource(R.string.home_brand_title),
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
                 text = stringResource(R.string.home_brand_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.tertiary,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -362,6 +367,8 @@ private fun SessionHeroCard(
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                 }
@@ -375,6 +382,8 @@ private fun SessionHeroCard(
                 },
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -389,6 +398,7 @@ private fun SessionHeroCard(
                 },
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                softWrap = true,
             )
             if (!sessionState.isSharing) {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -396,6 +406,7 @@ private fun SessionHeroCard(
                     text = stringResource(R.string.home_body_start_secondary),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    softWrap = true,
                 )
             }
 
@@ -422,13 +433,15 @@ private fun SessionHeroCard(
                         strokeWidth = 2.dp,
                     )
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text(stringResource(R.string.home_button_starting), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.home_button_starting), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 } else {
                     Icon(Icons.Outlined.PlayArrow, contentDescription = null)
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         if (sessionState.isSharing) stringResource(R.string.home_button_open_session) else stringResource(R.string.home_button_start_session),
                         style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -454,9 +467,9 @@ private fun SummaryStrip(libraryState: LibraryState) {
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        HeroStat(label = "Files", value = libraryState.summary.totalItems.toString())
-        HeroStat(label = "Media", value = (libraryState.summary.videos + libraryState.summary.photos + libraryState.summary.music).toString())
-        HeroStat(label = "Size", value = formatBytes(libraryState.summary.totalBytes))
+        HeroStat(label = stringResource(R.string.library_section_files), value = libraryState.summary.totalItems.toString())
+        HeroStat(label = stringResource(R.string.library_info_items), value = (libraryState.summary.videos + libraryState.summary.photos + libraryState.summary.music).toString())
+        HeroStat(label = stringResource(R.string.library_info_size), value = formatBytes(libraryState.summary.totalBytes))
     }
 }
 
@@ -478,7 +491,7 @@ private fun ConnectedDevicesCard(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text("Connected devices", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.home_connected_devices), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(modifier = Modifier.height(12.dp))
 
             connectedClients.forEach { client ->
@@ -493,8 +506,8 @@ private fun ConnectedDevicesCard(
                     val customName = deviceNicknames[client.ipAddress]
                     val displayName = customName ?: identity.generatedName
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(displayName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-                        Text(identity.ipAddress, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(displayName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(identity.ipAddress, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                     IconButton(
                         onClick = { 
@@ -518,15 +531,15 @@ private fun ConnectedDevicesCard(
         
         AlertDialog(
             onDismissRequest = { editingClientId = null },
-            title = { Text("Rename device") },
+            title = { Text(stringResource(R.string.home_rename_device)) },
             text = {
                 Column {
-                    Text("Device: $defaultName • ${editingClient?.ipAddress}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.home_rename_device_subtitle, defaultName, defaultIp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, softWrap = true)
                     Spacer(modifier = Modifier.height(12.dp))
                     OutlinedTextField(
                         value = editNickname,
                         onValueChange = { editNickname = it },
-                        label = { Text("Custom name (optional)") },
+                        label = { Text(stringResource(R.string.home_rename_custom_name)) },
                         placeholder = { Text(defaultName) },
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -542,12 +555,12 @@ private fun ConnectedDevicesCard(
                         editingClientId = null
                     }
                 ) {
-                    Text("Save")
+                    Text(stringResource(R.string.home_rename_save))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { editingClientId = null }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.home_rename_cancel))
                 }
             },
         )
@@ -570,12 +583,13 @@ private fun ActionShelf(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text(stringResource(R.string.home_action_add_to_share_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.home_action_add_to_share_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 stringResource(R.string.home_action_add_to_share_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                softWrap = true,
             )
             Spacer(modifier = Modifier.height(16.dp))
             BoxWithConstraints {
@@ -654,9 +668,9 @@ private fun ActionTile(
                 Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             }
             Spacer(modifier = Modifier.height(12.dp))
-            Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
             Spacer(modifier = Modifier.height(3.dp))
-            Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -879,93 +893,44 @@ private fun SupportPanel(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
-        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.home_nearby_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        stringResource(R.string.home_nearby_subtitle),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+                Text(
+                    stringResource(R.string.home_nearby_open_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 OutlinedButton(
-                    onClick = onRefreshConnection,
+                    onClick = onRefreshNearby,
                     shape = RoundedCornerShape(16.dp),
                     colors = ghostSecondaryButtonColors(),
                 ) {
-                    Text(stringResource(R.string.home_nearby_refresh_status))
+                    Text(stringResource(R.string.common_refresh), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
 
-            SupportRow(
-                icon = Icons.Outlined.NetworkCheck,
-                title = when (sessionState.networkAvailability.type) {
-                    NetworkType.WIFI -> stringResource(R.string.home_network_wifi)
-                    NetworkType.HOTSPOT -> stringResource(R.string.home_network_hotspot)
-                    NetworkType.LOCAL -> stringResource(R.string.home_network_local)
-                    NetworkType.NONE -> stringResource(R.string.home_network_none)
-                },
-                detail = when {
-                    sessionState.networkAvailability.isReady -> stringResource(R.string.home_network_ready_desc)
-                    else -> stringResource(R.string.home_network_none_desc)
-                },
-            )
-
             if (nearbyDiscoveryState.devices.isEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    SupportRow(
-                        icon = Icons.Outlined.OpenInBrowser,
-                        title = stringResource(R.string.home_nearby_optional_title),
-                        detail = stringResource(R.string.home_nearby_optional_desc),
-                    )
-                    OutlinedButton(
-                        onClick = onRefreshNearby,
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ghostSecondaryButtonColors(),
-                    ) {
-                        Text(stringResource(R.string.home_nearby_refresh))
-                    }
-                }
+                Text(
+                    stringResource(R.string.home_nearby_optional_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    softWrap = true,
+                )
             } else {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            stringResource(R.string.home_nearby_open_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        OutlinedButton(
-                            onClick = onRefreshNearby,
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ghostSecondaryButtonColors(),
-                        ) {
-                            Text(stringResource(R.string.home_nearby_refresh))
-                        }
-                    }
-                    Text(
-                        stringResource(R.string.home_nearby_open_desc),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                nearbyDiscoveryState.devices.take(3).forEach { device ->
+                    NearbyDeviceRow(
+                        device = device,
+                        isConnecting = connectingNearbyDeviceId == device.id,
+                        onOpen = { onOpenNearbyDevice(device) },
                     )
-                    nearbyDiscoveryState.devices.take(3).forEach { device ->
-                        NearbyDeviceRow(
-                            device = device,
-                            isConnecting = connectingNearbyDeviceId == device.id,
-                            onOpen = { onOpenNearbyDevice(device) },
-                        )
-                    }
                 }
             }
         }
@@ -1186,6 +1151,8 @@ private fun MinimalChip(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -1212,9 +1179,9 @@ private fun HeroStat(label: String, value: String) {
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
-            Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }

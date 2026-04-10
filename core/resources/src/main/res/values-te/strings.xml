@@ -538,4 +538,25 @@
     <string name="home_saved_shares_delete">తొలగించండి</string>
     <string name="home_saved_shares_items_count">%1$d అంశాలు</string>
     <string name="library_date_group_label">%1$s </string>
+
+    <string name="web_action_download">డౌన్‌లోడ్ చేయండి</string>
+    <string name="web_btn_download_all">అన్నింటినీ డౌన్‌లోడ్ చేయండి</string>
+    <string name="web_btn_download_original">అసలు డౌన్‌లోడ్ చేయండి</string>
+    <string name="web_btn_download_selected">డౌన్‌లోడ్ ఎంచుకోబడింది</string>
+    <string name="web_error_downloads_disabled">పరికర యజమాని ద్వారా డౌన్‌లోడ్‌లు నిలిపివేయబడ్డాయి.</string>
+    <string name="web_error_streaming_codec">స్ట్రీమింగ్ కోసం ఈ ఫైల్ కోడెక్‌కి Android సర్వర్ మద్దతు లేదు. దయచేసి డౌన్‌లోడ్ చేసుకోండి.</string>
+    <string name="web_error_video_decode">ఈ బ్రౌజర్ వీడియో స్ట్రీమ్‌ను డీకోడ్ చేయలేకపోయింది. అసలు ఫైల్‌ని డౌన్‌లోడ్ చేయడానికి ప్రయత్నించండి.</string>
+    <string name="web_error_video_start">ఈ బ్రౌజర్ వీడియోను ప్రారంభించలేకపోయింది. మళ్లీ ప్రయత్నించండి లేదా అసలు ఫైల్‌ను డౌన్‌లోడ్ చేయండి.</string>
+    <string name="web_photo_view">చూడండి</string>
+    <string name="web_upload_button_browse">ఫైళ్లను బ్రౌజ్ చేయండి</string>
+    <string name="web_upload_how_body"><![CDATA[When you send a file, a notification will appear on the phone. The device owner must <strong>Accept</strong> for the transfer to begin.]]></string>
+    <string name="web_upload_how_kicker">ఇది ఎలా పనిచేస్తుంది</string>
+    <string name="web_upload_how_title">సురక్షిత ఆమోదం</string>
+    <string name="web_upload_prompt_desktop">ఇక్కడకు లాగి వదలండి లేదా దిగువ బటన్‌ను నొక్కండి</string>
+    <string name="web_upload_prompt_mobile">మీ లైబ్రరీ నుండి ఫైల్‌లను ఎంచుకోవడానికి బటన్‌ను నొక్కండి</string>
+    <string name="web_upload_prompt_title">పంపడానికి ఫైల్‌లను ఎంచుకోండి</string>
+    <string name="web_upload_subtitle">నెట్‌వర్క్ ద్వారా హోస్ట్ పరికరానికి ఫైల్‌లను అప్‌లోడ్ చేయండి.</string>
+    <string name="web_upload_target_kicker">లక్ష్య పరికరం</string>
+    <string name="web_upload_target_status">స్థితి: కనెక్ట్ చేయబడింది మరియు బదిలీలకు సిద్ధంగా ఉంది</string>
+    <string name="web_upload_title">పరికరానికి పంపండి</string>
 </resources>
