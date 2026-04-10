@@ -46,6 +46,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ghostgramlabs.directserve.core.resources.R
+import com.ghostgramlabs.directserve.core.resources.ui.GhostSpacing
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -94,7 +95,10 @@ fun OnboardingScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(
+                horizontal = GhostSpacing.screenHorizontal,
+                vertical = GhostSpacing.screenVertical,
+            ),
         contentAlignment = Alignment.Center,
     ) {
         BoxWithConstraints(
@@ -156,7 +160,7 @@ fun OnboardingScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(horizontal = 24.dp, vertical = 28.dp),
+                                .padding(horizontal = GhostSpacing.heroCard, vertical = GhostSpacing.heroCard),
                         ) {
                             Surface(
                                 modifier = Modifier.size(72.dp),

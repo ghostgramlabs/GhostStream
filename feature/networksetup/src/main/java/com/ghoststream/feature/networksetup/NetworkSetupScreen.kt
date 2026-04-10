@@ -36,6 +36,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ghostgramlabs.directserve.core.resources.R
+import com.ghostgramlabs.directserve.core.resources.ui.GhostSpacing
 import com.ghoststream.core.model.NetworkAvailability
 
 @Composable
@@ -51,7 +52,10 @@ fun NetworkSetupScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(
+                horizontal = GhostSpacing.screenHorizontal,
+                vertical = GhostSpacing.screenVertical,
+            ),
         contentAlignment = Alignment.Center,
     ) {
         BoxWithConstraints(
@@ -59,7 +63,7 @@ fun NetworkSetupScreen(
                 .fillMaxWidth()
                 .widthIn(max = 560.dp),
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(GhostSpacing.section)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -79,8 +83,8 @@ fun NetworkSetupScreen(
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), // Soft elevation separates the guidance card from the page background.
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        modifier = Modifier.padding(GhostSpacing.heroCard),
+                        verticalArrangement = Arrangement.spacedBy(GhostSpacing.section),
                     ) {
                         Surface(
                             modifier = Modifier.size(56.dp),
@@ -116,7 +120,7 @@ fun NetworkSetupScreen(
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                         ) {
                             Column(
-                                modifier = Modifier.padding(16.dp),
+                                modifier = Modifier.padding(GhostSpacing.listItem),
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 Text(

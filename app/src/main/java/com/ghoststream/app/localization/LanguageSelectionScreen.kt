@@ -31,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ghostgramlabs.directserve.R
+import com.ghostgramlabs.directserve.core.resources.ui.GhostSpacing
 
 @Composable
 fun LanguageSelectionScreen(
@@ -44,8 +45,11 @@ fun LanguageSelectionScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(
+            horizontal = GhostSpacing.screenHorizontal,
+            vertical = GhostSpacing.screenVertical,
+        ),
+        verticalArrangement = Arrangement.spacedBy(GhostSpacing.section),
     ) {
         item {
             Card(
@@ -55,7 +59,7 @@ fun LanguageSelectionScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
             ) {
                 Column(
-                    modifier = Modifier.padding(24.dp),
+                    modifier = Modifier.padding(GhostSpacing.heroCard),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(

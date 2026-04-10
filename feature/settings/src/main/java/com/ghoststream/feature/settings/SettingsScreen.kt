@@ -39,6 +39,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ghostgramlabs.directserve.core.resources.R
+import com.ghostgramlabs.directserve.core.resources.ui.GhostSpacing
 import com.ghoststream.core.model.AppSettings
 import com.ghoststream.core.model.AutoStopOption
 import com.ghoststream.core.model.RecentSession
@@ -89,12 +90,15 @@ fun SettingsScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(vertical = GhostSpacing.screenVertical),
+        verticalArrangement = Arrangement.spacedBy(GhostSpacing.section),
     ) {
         item {
             Row(
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp),
+                modifier = Modifier.padding(
+                    horizontal = GhostSpacing.screenHorizontal,
+                    vertical = GhostSpacing.headerVertical,
+                ),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = onBack) {
@@ -114,7 +118,7 @@ fun SettingsScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 18.dp, vertical = 12.dp),
+                        .padding(horizontal = GhostSpacing.listItem, vertical = 12.dp),
                 ) {
                     Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                     Text(stringResource(R.string.settings_theme_subtitle), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
@@ -226,7 +230,7 @@ fun SettingsScreen(
                 SettingsChoiceRow(stringResource(R.string.settings_app_version), appVersionLabel, onClick = {})
                 Text(
                     text = stringResource(R.string.settings_recent_shares_count, recentSessions.size),
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
+                    modifier = Modifier.padding(horizontal = GhostSpacing.listItem, vertical = 12.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall,
                 )
@@ -242,7 +246,7 @@ fun SettingsScreen(
             }
         }
 
-        item { Spacer(modifier = Modifier.height(18.dp)) }
+        item { Spacer(modifier = Modifier.height(GhostSpacing.section)) }
     }
 }
 
@@ -255,9 +259,12 @@ fun HelpScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(
+                horizontal = GhostSpacing.screenHorizontal,
+                vertical = GhostSpacing.screenVertical,
+            ),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(GhostSpacing.section)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
                     Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
@@ -272,7 +279,10 @@ fun HelpScreen(
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp), // Slight lift helps the intro card read as the primary entry section.
             ) {
-                Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Column(
+                    modifier = Modifier.padding(GhostSpacing.heroCard),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
                     Text(stringResource(R.string.help_about_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
                     Text(stringResource(R.string.help_about_1), style = MaterialTheme.typography.bodyLarge)
                     Text(stringResource(R.string.help_about_2), color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -342,9 +352,12 @@ fun PrivacyPolicyScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 20.dp, vertical = 16.dp),
+            .padding(
+                horizontal = GhostSpacing.screenHorizontal,
+                vertical = GhostSpacing.screenVertical,
+            ),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(GhostSpacing.section)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
                     Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back))
@@ -358,7 +371,10 @@ fun PrivacyPolicyScreen(
                 colors = CardDefaults.cardColors(containerColor = ghostPanelColor()),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             ) {
-                Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(
+                    modifier = Modifier.padding(GhostSpacing.heroCard),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
                     Text(stringResource(R.string.privacy_policy_intro), style = MaterialTheme.typography.bodyLarge)
                     Text(stringResource(R.string.privacy_policy_line_1), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(stringResource(R.string.privacy_policy_line_2), color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -382,7 +398,10 @@ private fun HelpSectionCard(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
-        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(
+            modifier = Modifier.padding(GhostSpacing.card),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
             Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             lines.forEach { line ->
                 Text(
@@ -399,7 +418,7 @@ private fun HelpSectionCard(
 private fun SettingsGroup(title: String, content: @Composable () -> Unit) {
     Card(
         modifier = Modifier
-            .padding(horizontal = 20.dp)
+            .padding(horizontal = GhostSpacing.screenHorizontal)
             .fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = ghostPanelColor()),
@@ -409,7 +428,7 @@ private fun SettingsGroup(title: String, content: @Composable () -> Unit) {
         Column(modifier = Modifier.padding(vertical = 12.dp)) {
             Text(
                 text = title,
-                modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp),
+                modifier = Modifier.padding(horizontal = GhostSpacing.listItem, vertical = 8.dp),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -425,7 +444,7 @@ private fun SettingsToggleRow(title: String, description: String, checked: Boole
             .fillMaxWidth()
             .clickable { onCheckedChange(!checked) }
             .heightIn(min = 64.dp) // Gives the label and switch breathing room while keeping taps accessible.
-            .padding(horizontal = 18.dp, vertical = 12.dp),
+            .padding(horizontal = GhostSpacing.listItem, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -446,7 +465,7 @@ private fun ManualPinRow(currentPin: String, onPinChanged: (String) -> Unit) {
             onPinChanged(cleaned)
         },
         modifier = Modifier
-            .padding(horizontal = 18.dp, vertical = 8.dp)
+            .padding(horizontal = GhostSpacing.listItem, vertical = 8.dp)
             .fillMaxWidth(),
         label = { Text(stringResource(R.string.settings_pin_label)) },
         placeholder = { Text(stringResource(R.string.settings_pin_placeholder)) },
@@ -464,7 +483,7 @@ private fun ManualPortRow(currentPort: String, onPortChanged: (String) -> Unit) 
             onPortChanged(cleaned)
         },
         modifier = Modifier
-            .padding(horizontal = 18.dp, vertical = 8.dp)
+            .padding(horizontal = GhostSpacing.listItem, vertical = 8.dp)
             .fillMaxWidth(),
         label = { Text(stringResource(R.string.settings_sharing_port)) },
         placeholder = { Text(stringResource(R.string.settings_sharing_port_placeholder)) },
@@ -486,7 +505,7 @@ private fun SettingsChoiceRow(title: String, value: String, onClick: () -> Unit)
             .fillMaxWidth()
             .clickable(onClick = onClick)
             .heightIn(min = 56.dp) // Matches the rest of the settings list so rows scan and tap consistently.
-            .padding(horizontal = 18.dp, vertical = 12.dp),
+            .padding(horizontal = GhostSpacing.listItem, vertical = 12.dp),
     ) {
         Text(title)
         Spacer(modifier = Modifier.height(4.dp))

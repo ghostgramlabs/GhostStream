@@ -67,6 +67,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.ghostgramlabs.directserve.core.resources.R
+import com.ghostgramlabs.directserve.core.resources.ui.GhostSpacing
 import com.ghoststream.core.media.CompatibilityJob
 import com.ghoststream.core.media.CompatibilityStatus
 import com.ghoststream.core.model.LibraryState
@@ -132,14 +133,14 @@ fun SharedLibraryScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(vertical = GhostSpacing.screenVertical),
+        verticalArrangement = Arrangement.spacedBy(GhostSpacing.section),
     ) {
         item {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = GhostSpacing.screenHorizontal),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = onBack) {
@@ -187,7 +188,7 @@ fun SharedLibraryScreen(
             if (libraryState.folders.isNotEmpty()) {
                 item {
                     Column(
-                        modifier = Modifier.padding(horizontal = 20.dp),
+                        modifier = Modifier.padding(horizontal = GhostSpacing.screenHorizontal),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         SectionHeader(
@@ -213,7 +214,7 @@ fun SharedLibraryScreen(
                     SectionHeader(
                         title = stringResource(R.string.library_section_files),
                         subtitle = stringResource(R.string.library_items_in_view, filteredItems.size, if (filteredItems.size == 1) "" else "s"),
-                        modifier = Modifier.padding(horizontal = 20.dp),
+                        modifier = Modifier.padding(horizontal = GhostSpacing.screenHorizontal),
                     )
                 }
                 items(filteredItems, key = { it.id }) { item ->
@@ -243,7 +244,7 @@ private fun LibraryHeader(
     val hasVideos = libraryState.items.any { it.category == MediaCategory.VIDEO }
     Card(
         modifier = Modifier
-            .padding(horizontal = 20.dp)
+            .padding(horizontal = GhostSpacing.screenHorizontal)
             .fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -251,7 +252,7 @@ private fun LibraryHeader(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(
-            modifier = Modifier.padding(22.dp),
+            modifier = Modifier.padding(GhostSpacing.card),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text(
@@ -343,14 +344,14 @@ private fun LibraryInfoChip(
 internal fun LibraryEmptyState(title: String, description: String) {
     Card(
         modifier = Modifier
-            .padding(horizontal = 20.dp)
+            .padding(horizontal = GhostSpacing.screenHorizontal)
             .fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(GhostSpacing.card),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -381,7 +382,7 @@ private fun LibraryControlsCard(
 ) {
     Card(
         modifier = Modifier
-            .padding(horizontal = 20.dp)
+            .padding(horizontal = GhostSpacing.screenHorizontal)
             .fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -389,7 +390,7 @@ private fun LibraryControlsCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(GhostSpacing.card),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Surface(
@@ -595,7 +596,7 @@ private fun LibraryItemRow(
 ) {
     Card(
         modifier = Modifier
-            .padding(horizontal = 20.dp)
+            .padding(horizontal = GhostSpacing.screenHorizontal)
             .fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(
