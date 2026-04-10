@@ -308,7 +308,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
         NavHost(
             navController = navController,
             startDestination = Routes.Splash,
-            modifier = Modifier.padding(innerPadding).background(MaterialTheme.colorScheme.background),
+            modifier = Modifier.background(MaterialTheme.colorScheme.background),
         ) {
             composable(Routes.Splash) {
                 SplashRoute()
