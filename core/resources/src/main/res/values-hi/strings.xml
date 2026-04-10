@@ -489,6 +489,10 @@
     <string name="web_access_pin">पिन आवश्यक</string>
     <string name="web_access_instant">त्वरित ओपन</string>
     <string name="web_access_pin_desc">होस्ट फ़ोन से कोड दर्ज करें</string>
+    <string name="web_pin_entry_kicker">पिन संरक्षित सत्र</string>
+    <string name="web_pin_entry_title">एक्सेस पिन दर्ज करें</string>
+    <string name="web_pin_entry_desc">इस सत्र को अनलॉक करने के लिए होस्ट फ़ोन पर दिखाया गया पिन दर्ज करें।</string>
+    <string name="web_pin_entry_placeholder">पिन दर्ज करें</string>
     <string name="web_access_instant_desc">इस नेटवर्क पर किसी भी ब्राउज़र में खोलें</string>
     <string name="web_btn_videos">वीडियो ब्राउज़ करें</string>
     <string name="web_btn_download_all_files">सभी फ़ाइलें डाउनलोड करें</string>

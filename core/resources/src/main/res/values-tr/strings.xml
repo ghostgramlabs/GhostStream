@@ -469,6 +469,10 @@
     <string name="web_access_pin">PIN gerekli</string>
     <string name="web_access_instant">Anında açılış</string>
     <string name="web_access_pin_desc">Ana telefondaki kodu girin</string>
+    <string name="web_pin_entry_kicker">PIN korumal? oturum</string>
+    <string name="web_pin_entry_title">Eri?im PIN\'ini girin</string>
+    <string name="web_pin_entry_desc">Bu oturumun kilidini a?mak i?in ana telefonda g?sterilen PIN\'i girin.</string>
+    <string name="web_pin_entry_placeholder">PIN girin</string>
     <string name="web_access_instant_desc">Bu ağdaki herhangi bir tarayıcıda aç</string>
     <string name="web_btn_videos">Videolara göz at</string>
     <string name="web_btn_download_all_files">Tüm dosyaları indir</string>

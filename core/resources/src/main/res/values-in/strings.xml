@@ -485,6 +485,10 @@
     <string name="web_access_instant_desc">Buka di browser apa pun di jaringan ini</string>
     <string name="web_access_pin">Diperlukan PIN</string>
     <string name="web_access_pin_desc">Masukkan kode dari telepon host</string>
+    <string name="web_pin_entry_kicker">Sesi dilindungi PIN</string>
+    <string name="web_pin_entry_title">Masukkan PIN akses</string>
+    <string name="web_pin_entry_desc">Masukkan PIN yang ditampilkan di ponsel host untuk membuka sesi ini.</string>
+    <string name="web_pin_entry_placeholder">Masukkan PIN</string>
     <string name="web_btn_download_all_files">Unduh semua file</string>
     <string name="web_btn_videos">Jelajahi video</string>
     <string name="web_cat_files">Berkas</string>

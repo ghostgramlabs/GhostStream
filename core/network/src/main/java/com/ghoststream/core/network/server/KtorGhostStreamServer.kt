@@ -1,6 +1,7 @@
 package com.ghoststream.core.network.server
 
 import android.content.Context
+import android.content.res.Configuration
 import android.net.Uri
 import com.ghostgramlabs.directserve.core.resources.R
 import com.ghoststream.core.media.CompatibilityJob
@@ -54,6 +55,7 @@ import java.io.File
 import java.io.InputStream
 import java.io.RandomAccessFile
 import java.net.ServerSocket
+import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -187,37 +189,51 @@ class KtorGhostStreamServer(
             }
 
             get("/api/bootstrap") {
-                if (!call.authorizeBrowserCall()) return@get
                 val settings = settingsRepository.settings.first()
+                val localizedContext = localizedContext(settings.languageTag)
+                val clientIp = call.request.origin.remoteHost
+                if (sessionManager.isBlocked(clientIp)) {
+                    call.respond(
+                        HttpStatusCode.Forbidden,
+                        ErrorPayload(localizedContext.getString(R.string.browser_device_blocked)),
+                    )
+                    return@get
+                }
                 val state = sessionManager.sessionState.value
+                val isAuthorized = !state.authEnabled || sessionManager.validateToken(call.request.cookies[COOKIE_NAME])
                 val recentCards = mutableListOf<BrowserItemCard>()
                 val allowDownloads = !settings.preventDownload
-                for (item in state.selectedItems.take(8)) {
-                    recentCards += BrowserItemCard.from(
-                        item = item,
-                        compatibilityJob = compatibilitySnapshotFor(item, triggerPreparation = false),
-                        showThumbnails = settings.showThumbnails,
-                        allowDownloads = allowDownloads,
-                    )
+                if (isAuthorized) {
+                    for (item in state.selectedItems.take(8)) {
+                        recentCards += BrowserItemCard.from(
+                            item = item,
+                            compatibilityJob = compatibilitySnapshotFor(item, triggerPreparation = false),
+                            showThumbnails = settings.showThumbnails,
+                            allowDownloads = allowDownloads,
+                        )
+                    }
                 }
-                val clientIp = call.request.origin.remoteHost
                 val deviceName = DeviceNameGenerator.generateName(clientIp)
                 call.respond(
                     BrowserBootstrap(
-                        title = this@KtorGhostStreamServer.context.getString(R.string.browser_title),
-                        subtitle = this@KtorGhostStreamServer.context.getString(R.string.browser_subtitle),
+                        title = localizedContext.getString(R.string.browser_title),
+                        subtitle = localizedContext.getString(R.string.browser_subtitle),
                         authEnabled = state.authEnabled,
-                        sessionUrl = buildSessionAccessUrl(
-                            sessionUrl = state.sessionUrl,
-                            localAddress = state.networkAvailability.localAddress,
-                            port = state.serverPort,
-                        ),
-                        sessionPort = state.serverPort,
+                        sessionUrl = if (isAuthorized) {
+                            buildSessionAccessUrl(
+                                sessionUrl = state.sessionUrl,
+                                localAddress = state.networkAvailability.localAddress,
+                                port = state.serverPort,
+                            )
+                        } else {
+                            null
+                        },
+                        sessionPort = if (isAuthorized) state.serverPort else null,
                         categories = BrowserCategories(
-                            videos = state.selectedItems.count { it.category == MediaCategory.VIDEO },
-                            photos = state.selectedItems.count { it.category == MediaCategory.PHOTO },
-                            music = state.selectedItems.count { it.category == MediaCategory.MUSIC },
-                            files = state.selectedItems.count { it.category == MediaCategory.FILE },
+                            videos = if (isAuthorized) state.selectedItems.count { it.category == MediaCategory.VIDEO } else 0,
+                            photos = if (isAuthorized) state.selectedItems.count { it.category == MediaCategory.PHOTO } else 0,
+                            music = if (isAuthorized) state.selectedItems.count { it.category == MediaCategory.MUSIC } else 0,
+                            files = if (isAuthorized) state.selectedItems.count { it.category == MediaCategory.FILE } else 0,
                         ),
                         recent = recentCards,
                         themeMode = settings.themeMode,
@@ -229,56 +245,60 @@ class KtorGhostStreamServer(
                         deviceName = deviceName,
                         deviceIp = clientIp,
                         strings = mapOf(
-                            "web_hero_eyebrow" to this@KtorGhostStreamServer.context.getString(R.string.web_hero_eyebrow),
-                            "web_hero_title" to this@KtorGhostStreamServer.context.getString(R.string.web_hero_title),
-                            "web_hero_desc1" to this@KtorGhostStreamServer.context.getString(R.string.web_hero_desc1),
-                            "web_hero_desc2" to this@KtorGhostStreamServer.context.getString(R.string.web_hero_desc2),
-                            "web_hero_desc3" to this@KtorGhostStreamServer.context.getString(R.string.web_hero_desc3),
-                            "web_hero_stat_shared" to this@KtorGhostStreamServer.context.getString(R.string.web_hero_stat_shared),
-                            "web_items" to this@KtorGhostStreamServer.context.getString(R.string.web_items),
-                            "web_hero_stat_ready" to this@KtorGhostStreamServer.context.getString(R.string.web_hero_stat_ready),
-                            "web_hero_stat_access" to this@KtorGhostStreamServer.context.getString(R.string.web_hero_stat_access),
-                            "web_access_pin" to this@KtorGhostStreamServer.context.getString(R.string.web_access_pin),
-                            "web_access_instant" to this@KtorGhostStreamServer.context.getString(R.string.web_access_instant),
-                            "web_access_pin_desc" to this@KtorGhostStreamServer.context.getString(R.string.web_access_pin_desc),
-                            "web_access_instant_desc" to this@KtorGhostStreamServer.context.getString(R.string.web_access_instant_desc),
-                            "web_btn_videos" to this@KtorGhostStreamServer.context.getString(R.string.web_btn_videos),
-                            "web_btn_download_all_files" to this@KtorGhostStreamServer.context.getString(R.string.web_btn_download_all_files),
-                            "web_cat_videos" to this@KtorGhostStreamServer.context.getString(R.string.web_cat_videos),
-                            "web_cat_photos" to this@KtorGhostStreamServer.context.getString(R.string.web_cat_photos),
-                            "web_cat_music" to this@KtorGhostStreamServer.context.getString(R.string.web_cat_music),
-                            "web_cat_files" to this@KtorGhostStreamServer.context.getString(R.string.web_cat_files),
-                            "web_recent_title" to this@KtorGhostStreamServer.context.getString(R.string.web_recent_title),
-                            "web_recent_meta" to this@KtorGhostStreamServer.context.getString(R.string.web_recent_meta),
-                            "web_nav_home" to this@KtorGhostStreamServer.context.getString(R.string.web_nav_home),
-                            "web_nav_drop_zone" to this@KtorGhostStreamServer.context.getString(R.string.web_nav_drop_zone),
-                            "web_nav_logout" to this@KtorGhostStreamServer.context.getString(R.string.web_nav_logout),
-                            "web_strip_session" to this@KtorGhostStreamServer.context.getString(R.string.web_strip_session),
-                            "web_strip_device" to this@KtorGhostStreamServer.context.getString(R.string.web_strip_device),
-                            "web_strip_link" to this@KtorGhostStreamServer.context.getString(R.string.web_strip_link),
-                            "web_security_pin" to this@KtorGhostStreamServer.context.getString(R.string.web_security_pin),
-                            "web_security_open" to this@KtorGhostStreamServer.context.getString(R.string.web_security_open),
-                            "web_status_unknown" to this@KtorGhostStreamServer.context.getString(R.string.web_status_unknown),
-                            "web_upload_title" to this@KtorGhostStreamServer.context.getString(R.string.web_upload_title),
-                            "web_upload_subtitle" to this@KtorGhostStreamServer.context.getString(R.string.web_upload_subtitle),
-                            "web_upload_prompt_title" to this@KtorGhostStreamServer.context.getString(R.string.web_upload_prompt_title),
-                            "web_upload_prompt_desktop" to this@KtorGhostStreamServer.context.getString(R.string.web_upload_prompt_desktop),
-                            "web_upload_prompt_mobile" to this@KtorGhostStreamServer.context.getString(R.string.web_upload_prompt_mobile),
-                            "web_upload_button_browse" to this@KtorGhostStreamServer.context.getString(R.string.web_upload_button_browse),
-                            "web_upload_target_kicker" to this@KtorGhostStreamServer.context.getString(R.string.web_upload_target_kicker),
-                            "web_upload_target_status" to this@KtorGhostStreamServer.context.getString(R.string.web_upload_target_status),
-                            "web_upload_how_kicker" to this@KtorGhostStreamServer.context.getString(R.string.web_upload_how_kicker),
-                            "web_upload_how_title" to this@KtorGhostStreamServer.context.getString(R.string.web_upload_how_title),
-                            "web_upload_how_body" to this@KtorGhostStreamServer.context.getString(R.string.web_upload_how_body),
-                            "web_action_download" to this@KtorGhostStreamServer.context.getString(R.string.web_action_download),
-                            "web_photo_view" to this@KtorGhostStreamServer.context.getString(R.string.web_photo_view),
-                            "web_btn_download_all" to this@KtorGhostStreamServer.context.getString(R.string.web_btn_download_all),
-                            "web_btn_download_selected" to this@KtorGhostStreamServer.context.getString(R.string.web_btn_download_selected),
-                            "web_btn_download_original" to this@KtorGhostStreamServer.context.getString(R.string.web_btn_download_original),
-                            "web_error_streaming_codec" to this@KtorGhostStreamServer.context.getString(R.string.web_error_streaming_codec),
-                            "web_error_downloads_disabled" to this@KtorGhostStreamServer.context.getString(R.string.web_error_downloads_disabled),
-                            "web_error_video_decode" to this@KtorGhostStreamServer.context.getString(R.string.web_error_video_decode),
-                            "web_error_video_start" to this@KtorGhostStreamServer.context.getString(R.string.web_error_video_start),
+                            "web_hero_eyebrow" to localizedContext.getString(R.string.web_hero_eyebrow),
+                            "web_hero_title" to localizedContext.getString(R.string.web_hero_title),
+                            "web_hero_desc1" to localizedContext.getString(R.string.web_hero_desc1),
+                            "web_hero_desc2" to localizedContext.getString(R.string.web_hero_desc2),
+                            "web_hero_desc3" to localizedContext.getString(R.string.web_hero_desc3),
+                            "web_hero_stat_shared" to localizedContext.getString(R.string.web_hero_stat_shared),
+                            "web_items" to localizedContext.getString(R.string.web_items),
+                            "web_hero_stat_ready" to localizedContext.getString(R.string.web_hero_stat_ready),
+                            "web_hero_stat_access" to localizedContext.getString(R.string.web_hero_stat_access),
+                            "web_access_pin" to localizedContext.getString(R.string.web_access_pin),
+                            "web_access_instant" to localizedContext.getString(R.string.web_access_instant),
+                            "web_access_pin_desc" to localizedContext.getString(R.string.web_access_pin_desc),
+                            "web_access_instant_desc" to localizedContext.getString(R.string.web_access_instant_desc),
+                            "web_pin_entry_kicker" to localizedContext.getString(R.string.web_pin_entry_kicker),
+                            "web_pin_entry_title" to localizedContext.getString(R.string.web_pin_entry_title),
+                            "web_pin_entry_desc" to localizedContext.getString(R.string.web_pin_entry_desc),
+                            "web_pin_entry_placeholder" to localizedContext.getString(R.string.web_pin_entry_placeholder),
+                            "web_btn_videos" to localizedContext.getString(R.string.web_btn_videos),
+                            "web_btn_download_all_files" to localizedContext.getString(R.string.web_btn_download_all_files),
+                            "web_cat_videos" to localizedContext.getString(R.string.web_cat_videos),
+                            "web_cat_photos" to localizedContext.getString(R.string.web_cat_photos),
+                            "web_cat_music" to localizedContext.getString(R.string.web_cat_music),
+                            "web_cat_files" to localizedContext.getString(R.string.web_cat_files),
+                            "web_recent_title" to localizedContext.getString(R.string.web_recent_title),
+                            "web_recent_meta" to localizedContext.getString(R.string.web_recent_meta),
+                            "web_nav_home" to localizedContext.getString(R.string.web_nav_home),
+                            "web_nav_drop_zone" to localizedContext.getString(R.string.web_nav_drop_zone),
+                            "web_nav_logout" to localizedContext.getString(R.string.web_nav_logout),
+                            "web_strip_session" to localizedContext.getString(R.string.web_strip_session),
+                            "web_strip_device" to localizedContext.getString(R.string.web_strip_device),
+                            "web_strip_link" to localizedContext.getString(R.string.web_strip_link),
+                            "web_security_pin" to localizedContext.getString(R.string.web_security_pin),
+                            "web_security_open" to localizedContext.getString(R.string.web_security_open),
+                            "web_status_unknown" to localizedContext.getString(R.string.web_status_unknown),
+                            "web_upload_title" to localizedContext.getString(R.string.web_upload_title),
+                            "web_upload_subtitle" to localizedContext.getString(R.string.web_upload_subtitle),
+                            "web_upload_prompt_title" to localizedContext.getString(R.string.web_upload_prompt_title),
+                            "web_upload_prompt_desktop" to localizedContext.getString(R.string.web_upload_prompt_desktop),
+                            "web_upload_prompt_mobile" to localizedContext.getString(R.string.web_upload_prompt_mobile),
+                            "web_upload_button_browse" to localizedContext.getString(R.string.web_upload_button_browse),
+                            "web_upload_target_kicker" to localizedContext.getString(R.string.web_upload_target_kicker),
+                            "web_upload_target_status" to localizedContext.getString(R.string.web_upload_target_status),
+                            "web_upload_how_kicker" to localizedContext.getString(R.string.web_upload_how_kicker),
+                            "web_upload_how_title" to localizedContext.getString(R.string.web_upload_how_title),
+                            "web_upload_how_body" to localizedContext.getString(R.string.web_upload_how_body),
+                            "web_action_download" to localizedContext.getString(R.string.web_action_download),
+                            "web_photo_view" to localizedContext.getString(R.string.web_photo_view),
+                            "web_btn_download_all" to localizedContext.getString(R.string.web_btn_download_all),
+                            "web_btn_download_selected" to localizedContext.getString(R.string.web_btn_download_selected),
+                            "web_btn_download_original" to localizedContext.getString(R.string.web_btn_download_original),
+                            "web_error_streaming_codec" to localizedContext.getString(R.string.web_error_streaming_codec),
+                            "web_error_downloads_disabled" to localizedContext.getString(R.string.web_error_downloads_disabled),
+                            "web_error_video_decode" to localizedContext.getString(R.string.web_error_video_decode),
+                            "web_error_video_start" to localizedContext.getString(R.string.web_error_video_start),
                         ),
                     ),
                 )
@@ -674,8 +694,9 @@ class KtorGhostStreamServer(
     }
 
     private suspend fun io.ktor.server.application.ApplicationCall.serveShellPage() {
+        val localizedContext = localizedContext()
         if (sessionManager.isBlocked(remoteHost())) {
-            respond(HttpStatusCode.Forbidden, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_device_blocked)))
+            respond(HttpStatusCode.Forbidden, ErrorPayload(localizedContext.getString(R.string.browser_device_blocked)))
             return
         }
         val state = sessionManager.sessionState.value
@@ -684,24 +705,36 @@ class KtorGhostStreamServer(
             return
         }
         val html = assetLoader.readText("web/index.html")
-            .replace("__SESSION_TITLE__", this@KtorGhostStreamServer.context.getString(R.string.browser_title))
-            .replace("__SESSION_SUBTITLE__", this@KtorGhostStreamServer.context.getString(R.string.browser_subtitle))
+            .replace("__SESSION_TITLE__", localizedContext.getString(R.string.browser_title))
+            .replace("__SESSION_SUBTITLE__", localizedContext.getString(R.string.browser_subtitle))
         respondText(html, ContentType.Text.Html)
     }
 
     private suspend fun io.ktor.server.application.ApplicationCall.authorizeBrowserCall(): Boolean {
+        val localizedContext = localizedContext()
         val ipAddress = remoteHost()
         if (sessionManager.isBlocked(ipAddress)) {
-            respond(HttpStatusCode.Forbidden, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_device_blocked)))
+            respond(HttpStatusCode.Forbidden, ErrorPayload(localizedContext.getString(R.string.browser_device_blocked)))
             return false
         }
         val state = sessionManager.sessionState.value
         if (state.authEnabled && !sessionManager.validateToken(request.cookies[COOKIE_NAME])) {
-            respond(HttpStatusCode.Unauthorized, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_enter_pin)))
+            respond(HttpStatusCode.Unauthorized, ErrorPayload(localizedContext.getString(R.string.browser_enter_pin)))
             return false
         }
         sessionManager.observeClient(ipAddress, request.header(HttpHeaders.UserAgent), ClientActivity.BROWSING)
         return true
+    }
+
+    private suspend fun localizedContext(): Context = localizedContext(settingsRepository.settings.first().languageTag)
+
+    private fun localizedContext(languageTag: String?): Context {
+        if (languageTag.isNullOrBlank()) return context
+        val locale = Locale.forLanguageTag(languageTag)
+        val configuration = Configuration(context.resources.configuration)
+        configuration.setLocale(locale)
+        configuration.setLayoutDirection(locale)
+        return context.createConfigurationContext(configuration)
     }
 
     private suspend fun compatibilitySnapshotFor(

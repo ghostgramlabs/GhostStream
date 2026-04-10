@@ -485,6 +485,10 @@
     <string name="web_access_instant_desc">Maak oop in enige blaaier op hierdie netwerk</string>
     <string name="web_access_pin">PIN vereis</string>
     <string name="web_access_pin_desc">Voer die kode vanaf die gasheerfoon in</string>
+    <string name="web_pin_entry_kicker">PIN-beskermde sessie</string>
+    <string name="web_pin_entry_title">Voer toegangs-PIN in</string>
+    <string name="web_pin_entry_desc">Voer die PIN in wat op die gasheerfoon gewys word om hierdie sessie te ontsluit.</string>
+    <string name="web_pin_entry_placeholder">Voer PIN in</string>
     <string name="web_btn_download_all_files">Laai alle lêers af</string>
     <string name="web_btn_videos">Blaai deur video\'s</string>
     <string name="web_cat_files">Lêers</string>

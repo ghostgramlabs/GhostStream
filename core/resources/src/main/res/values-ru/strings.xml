@@ -489,6 +489,10 @@
     <string name="web_access_pin">Требуется PIN</string>
     <string name="web_access_instant">Мгновенное открытие</string>
     <string name="web_access_pin_desc">Введите код с главного телефона</string>
+    <string name="web_pin_entry_kicker">Сеанс, защищенный PIN-кодом</string>
+    <string name="web_pin_entry_title">Введите PIN-код доступа</string>
+    <string name="web_pin_entry_desc">Введите PIN-код, отображаемый на главном телефоне, чтобы разблокировать этот сеанс.</string>
+    <string name="web_pin_entry_placeholder">Введите PIN-код</string>
     <string name="web_access_instant_desc">Откройте в любом браузере в этой сети</string>
     <string name="web_btn_videos">Обзор видео</string>
     <string name="web_btn_download_all_files">Скачать все файлы</string>

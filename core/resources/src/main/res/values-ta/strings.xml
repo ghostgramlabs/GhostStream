@@ -489,6 +489,10 @@
     <string name="web_access_pin">PIN தேவை</string>
     <string name="web_access_instant">உடன் திற</string>
     <string name="web_access_pin_desc">ஹோஸ்ட் போனிலிருந்து குறியீட்டை உள்ளிடு</string>
+    <string name="web_pin_entry_kicker">பின் பாதுகாக்கப்பட்ட அமர்வு</string>
+    <string name="web_pin_entry_title">அணுகல் பின்னை உள்ளிடவும்</string>
+    <string name="web_pin_entry_desc">இந்த அமர்வைத் திறக்க, ஹோஸ்ட் ஃபோனில் காட்டப்பட்டுள்ள பின்னை உள்ளிடவும்.</string>
+    <string name="web_pin_entry_placeholder">பின்னை உள்ளிடவும்</string>
     <string name="web_access_instant_desc">இந்த நெட்வொர்க்கில் ஏதேனும் உலாவி திறக்கவும்</string>
     <string name="web_btn_videos">வீடியோக்களை உலாவு</string>
     <string name="web_btn_download_all_files">எல்லா கோப்புகளையும் பதிவிறக்கு</string>
@@ -549,7 +553,7 @@
     <string name="web_error_video_start">இந்த உலாவியில் வீடியோவைத் தொடங்க முடியவில்லை. மீண்டும் முயற்சிக்கவும் அல்லது அசல் கோப்பைப் பதிவிறக்கவும்.</string>
     <string name="web_photo_view">காண்க</string>
     <string name="web_upload_button_browse">கோப்புகளை உலாவவும்</string>
-    <string name="web_upload_how_body"><![CDATA[When you send a file, a notification will appear on the phone. The device owner must <strong>Accept</strong> for the transfer to begin.]]></string>
+        <string name="web_upload_how_body"><![CDATA[நீங்கள் ஒரு கோப்பை அனுப்பும்போது, ​​தொலைபேசியில் ஒரு அறிவிப்பு தோன்றும். பரிமாற்றம் தொடங்குவதற்கு சாதன உரிமையாளர் <strong>ஏற்றுக்கொள்</strong> வேண்டும்.]]></string>
     <string name="web_upload_how_kicker">இது எப்படி வேலை செய்கிறது</string>
     <string name="web_upload_how_title">பாதுகாப்பான ஒப்புதல்</string>
     <string name="web_upload_prompt_desktop">இங்கே இழுத்து விடுங்கள் அல்லது கீழே உள்ள பொத்தானைத் தட்டவும்</string>

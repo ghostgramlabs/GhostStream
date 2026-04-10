@@ -489,6 +489,10 @@
     <string name="web_access_pin">PINが必要です</string>
     <string name="web_access_instant">即時開く</string>
     <string name="web_access_pin_desc">ホストの電話からのコードを入力してください</string>
+    <string name="web_pin_entry_kicker">PINで保護されたセッション</string>
+    <string name="web_pin_entry_title">アクセスPINを入力してください</string>
+    <string name="web_pin_entry_desc">ホストの電話機に表示されている PIN を入力して、このセッションのロックを解除します。</string>
+    <string name="web_pin_entry_placeholder">PINを入力してください</string>
     <string name="web_access_instant_desc">このネットワーク上の任意のブラウザで開く</string>
     <string name="web_btn_videos">ビデオを参照</string>
     <string name="web_btn_download_all_files">すべてのファイルをダウンロード</string>

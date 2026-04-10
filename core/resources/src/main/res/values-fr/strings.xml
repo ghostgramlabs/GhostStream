@@ -489,6 +489,10 @@
     <string name="web_access_pin">Code PIN requis</string>
     <string name="web_access_instant">Ouverture instantanée</string>
     <string name="web_access_pin_desc">Saisissez le code du téléphone hôte</string>
+    <string name="web_pin_entry_kicker">Session prot&#233;g&#233;e par PIN</string>
+    <string name="web_pin_entry_title">Saisissez le PIN d\'acc&#232;s</string>
+    <string name="web_pin_entry_desc">Saisissez le PIN affich&#233; sur le t&#233;l&#233;phone h&#244;te pour d&#233;verrouiller cette session.</string>
+    <string name="web_pin_entry_placeholder">Saisissez le PIN</string>
     <string name="web_access_instant_desc">Ouvrir dans n\'importe quel navigateur de ce réseau</string>
     <string name="web_btn_videos">Parcourir les vidéos</string>
     <string name="web_btn_download_all_files">Télécharger tous les fichiers</string>
@@ -538,4 +542,24 @@
     <string name="home_saved_shares_delete">Supprimer</string>
     <string name="home_saved_shares_items_count">%1$d éléments</string>
     <string name="library_date_group_label">%1$s </string>
-<string name="web_upload_title">Envoyer à l\'appareil</string><string name="web_upload_subtitle">Téléchargez des fichiers sur le périphérique hôte via le réseau.</string><string name="web_upload_prompt_title">Sélectionnez les fichiers à envoyer</string><string name="web_upload_prompt_desktop">Faites glisser et déposez ici, ou appuyez sur le bouton ci-dessous</string><string name="web_upload_prompt_mobile">Appuyez sur le bouton pour sélectionner des fichiers de votre bibliothèque</string><string name="web_upload_button_browse">Parcourir les fichiers</string><string name="web_upload_target_kicker">Appareil cible</string><string name="web_upload_target_status">Statut : Connecté et prêt pour les transferts</string><string name="web_upload_how_kicker">Comment ça marche</string><string name="web_upload_how_title">Approbation sécurisée</string><string name="web_upload_how_body"><![CDATA[Lorsque vous envoyez un fichier, une notification apparaîtra sur le téléphone. Le propriétaire de l\'appareil doit <strong>Accepter</strong> pour que le transfert commence.]]></string><string name="web_action_download">Télécharger</string><string name="web_photo_view">Voir</string><string name="web_btn_download_all">Téléchargez tout</string><string name="web_btn_download_selected">Télécharger sélectionné</string><string name="web_btn_download_original">Télécharger l\'original</string><string name="web_error_streaming_codec">Le codec de ce fichier n\'est pas pris en charge par le serveur Android pour le streaming. Veuillez télécharger.</string><string name="web_error_downloads_disabled">Les téléchargements sont désactivés par le propriétaire de l\'appareil.</string><string name="web_error_video_decode">Ce navigateur n\'a pas pu décoder le flux vidéo. Essayez de télécharger le fichier original.</string><string name="web_error_video_start">Ce navigateur n\'a pas pu démarrer la vidéo. Réessayez ou téléchargez le fichier original.</string></resources>
+<string name="web_upload_title">Envoyer ? l\'appareil</string>
+    <string name="web_upload_subtitle">T?l?chargez des fichiers sur le p?riph?rique h?te via le r?seau.</string>
+    <string name="web_upload_prompt_title">S?lectionnez les fichiers ? envoyer</string>
+    <string name="web_upload_prompt_desktop">Faites glisser et d?posez ici, ou appuyez sur le bouton ci-dessous</string>
+    <string name="web_upload_prompt_mobile">Appuyez sur le bouton pour s?lectionner des fichiers de votre biblioth?que</string>
+    <string name="web_upload_button_browse">Parcourir les fichiers</string>
+    <string name="web_upload_target_kicker">Appareil cible</string>
+    <string name="web_upload_target_status">Statut?: Connect? et pr?t pour les transferts</string>
+    <string name="web_upload_how_kicker">Comment ?a marche</string>
+    <string name="web_upload_how_title">Approbation s?curis?e</string>
+    <string name="web_upload_how_body"><![CDATA[Lorsque vous envoyez un fichier, une notification apparait sur le telephone. Le proprietaire de cet appareil doit <strong>Accepter</strong> pour que le transfert commence.]]></string>
+    <string name="web_action_download">T?l?charger</string>
+    <string name="web_photo_view">Voir</string>
+    <string name="web_btn_download_all">T?l?charger tout</string>
+    <string name="web_btn_download_selected">T?l?charger la s?lection</string>
+    <string name="web_btn_download_original">T?l?charger l\'original</string>
+    <string name="web_error_streaming_codec">Le codec de ce fichier n\'est pas pris en charge par le serveur Android pour le streaming. Veuillez t?l?charger.</string>
+    <string name="web_error_downloads_disabled">Les t?l?chargements sont d?sactiv?s par le propri?taire de l\'appareil.</string>
+    <string name="web_error_video_decode">Ce navigateur n\'a pas pu d?coder le flux vid?o. Essayez de t?l?charger le fichier original.</string>
+    <string name="web_error_video_start">Ce navigateur n\'a pas pu d?marrer la vid?o. R?essayez ou t?l?chargez le fichier original.</string>
+</resources>

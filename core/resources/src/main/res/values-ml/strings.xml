@@ -489,6 +489,10 @@
     <string name="web_access_pin">PIN ആവശ്യമാണ്</string>
     <string name="web_access_instant">ഉടൻ തുറക്കുക</string>
     <string name="web_access_pin_desc">ഹോസ്റ്റ് ഫോണിൽ നിന്നുള്ള കോഡ് നൽകുക</string>
+    <string name="web_pin_entry_kicker">പിൻ പരിരക്ഷിത സെഷൻ</string>
+    <string name="web_pin_entry_title">ആക്‌സസ് പിൻ നൽകുക</string>
+    <string name="web_pin_entry_desc">ഈ സെഷൻ അൺലോക്ക് ചെയ്യാൻ ഹോസ്റ്റ് ഫോണിൽ കാണിച്ചിരിക്കുന്ന പിൻ നൽകുക.</string>
+    <string name="web_pin_entry_placeholder">പിൻ നൽകുക</string>
     <string name="web_access_instant_desc">ഈ നെറ്റ്‌വർക്കിലെ ഏത് ബ്രൗസറിലും തുറക്കുക</string>
     <string name="web_btn_videos">വീഡിയോകൾ ബ്രൗസ് ചെയ്യുക</string>
     <string name="web_btn_download_all_files">എല്ലാ ഫയലുകളും ഡൗൺലോഡ് ചെയ്യുക</string>
@@ -549,7 +553,7 @@
     <string name="web_error_video_start">ഈ ബ്രൗസറിന് വീഡിയോ ആരംഭിക്കാനായില്ല. വീണ്ടും ശ്രമിക്കുക അല്ലെങ്കിൽ യഥാർത്ഥ ഫയൽ ഡൗൺലോഡ് ചെയ്യുക.</string>
     <string name="web_photo_view">കാണുക</string>
     <string name="web_upload_button_browse">ഫയലുകൾ ബ്രൗസ് ചെയ്യുക</string>
-    <string name="web_upload_how_body"><![CDATA[When you send a file, a notification will appear on the phone. The device owner must <strong>Accept</strong> for the transfer to begin.]]></string>
+        <string name="web_upload_how_body"><![CDATA[നിങ്ങൾ ഒരു ഫയൽ അയയ്ക്കുമ്പോൾ, ഫോണിൽ ഒരു അറിയിപ്പ് ദൃശ്യമാകും. കൈമാറ്റം ആരംഭിക്കുന്നതിന് ഉപകരണ ഉടമ <strong>സ്വീകരിക്കുക</strong> ചെയ്യണം.]]></string>
     <string name="web_upload_how_kicker">ഇത് എങ്ങനെ പ്രവർത്തിക്കുന്നു</string>
     <string name="web_upload_how_title">സുരക്ഷിതമായ അംഗീകാരം</string>
     <string name="web_upload_prompt_desktop">ഇവിടെ വലിച്ചിടുക, അല്ലെങ്കിൽ താഴെയുള്ള ബട്ടൺ ടാപ്പ് ചെയ്യുക</string>

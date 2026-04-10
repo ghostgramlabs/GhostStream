@@ -489,6 +489,10 @@
     <string name="web_access_pin">Diperlukan PIN</string>
     <string name="web_access_instant">Buka instan</string>
     <string name="web_access_pin_desc">Masukkan kode dari ponsel host</string>
+    <string name="web_pin_entry_kicker">Sesi dilindungi PIN</string>
+    <string name="web_pin_entry_title">Masukkan PIN akses</string>
+    <string name="web_pin_entry_desc">Masukkan PIN yang ditampilkan di ponsel host untuk membuka sesi ini.</string>
+    <string name="web_pin_entry_placeholder">Masukkan PIN</string>
     <string name="web_access_instant_desc">Buka di browser mana saja di jaringan ini</string>
     <string name="web_btn_videos">Jelajahi video</string>
     <string name="web_btn_download_all_files">Unduh semua file</string>
@@ -549,7 +553,7 @@
     <string name="web_error_video_start">Browser ini tidak dapat memulai video. Coba lagi atau unduh file aslinya.</string>
     <string name="web_photo_view">Melihat</string>
     <string name="web_upload_button_browse">Jelajahi File</string>
-    <string name="web_upload_how_body"><![CDATA[When you send a file, a notification will appear on the phone. The device owner must <strong>Accept</strong> for the transfer to begin.]]></string>
+        <string name="web_upload_how_body"><![CDATA[Saat Anda mengirim file, notifikasi akan muncul di ponsel. Pemilik perangkat harus <strong>Menerima</strong> agar transfer dimulai.]]></string>
     <string name="web_upload_how_kicker">Bagaimana cara kerjanya</string>
     <string name="web_upload_how_title">Persetujuan Aman</string>
     <string name="web_upload_prompt_desktop">Seret dan lepas di sini, atau ketuk tombol di bawah</string>

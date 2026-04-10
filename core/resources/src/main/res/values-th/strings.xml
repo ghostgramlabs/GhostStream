@@ -489,6 +489,10 @@
     <string name="web_access_pin">ต้องใช้ PIN</string>
     <string name="web_access_instant">เปิดได้ทันที</string>
     <string name="web_access_pin_desc">ป้อนรหัสจากโทรศัพท์โฮสต์</string>
+    <string name="web_pin_entry_kicker">เซสชันที่ป้องกันด้วย PIN</string>
+    <string name="web_pin_entry_title">ป้อน PIN การเข้าถึง</string>
+    <string name="web_pin_entry_desc">ป้อน PIN ที่แสดงบนโทรศัพท์โฮสต์เพื่อปลดล็อกเซสชันนี้</string>
+    <string name="web_pin_entry_placeholder">ป้อนรหัส PIN</string>
     <string name="web_access_instant_desc">เปิดในเบราว์เซอร์ใดก็ได้บนเครือข่ายนี้</string>
     <string name="web_btn_videos">เรียกดูวิดีโอ</string>
     <string name="web_btn_download_all_files">ดาวน์โหลดไฟล์ทั้งหมด</string>

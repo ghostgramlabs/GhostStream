@@ -432,6 +432,10 @@
     <string name="web_access_pin">Yêu cầu mã PIN</string>
     <string name="web_access_instant">Mở tức thì</string>
     <string name="web_access_pin_desc">Nhập mã từ điện thoại lưu trữ</string>
+    <string name="web_pin_entry_kicker">Phi?n ???c b?o v? b?ng PIN</string>
+    <string name="web_pin_entry_title">Nh?p PIN truy c?p</string>
+    <string name="web_pin_entry_desc">Nh?p m? PIN hi?n th? tr?n ?i?n tho?i ch? ?? m? kh?a phi?n n?y.</string>
+    <string name="web_pin_entry_placeholder">Nh?p PIN</string>
     <string name="web_access_instant_desc">Mở bằng trình duyệt bất kỳ trên mạng này</string>
     <string name="web_btn_videos">Duyệt video</string>
     <string name="web_btn_download_all_files">Tải tất cả các tệp</string>

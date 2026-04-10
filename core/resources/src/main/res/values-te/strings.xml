@@ -489,6 +489,10 @@
     <string name="web_access_pin">PIN అవసరం</string>
     <string name="web_access_instant">తక్షణం తెరవండి</string>
     <string name="web_access_pin_desc">హోస్ట్ ఫోన్ నుండి కోడ్‌ను నమోదు చేయండి</string>
+    <string name="web_pin_entry_kicker">PIN రక్షిత సెషన్</string>
+    <string name="web_pin_entry_title">యాక్సెస్ PINని నమోదు చేయండి</string>
+    <string name="web_pin_entry_desc">ఈ సెషన్‌ను అన్‌లాక్ చేయడానికి హోస్ట్ ఫోన్‌లో చూపిన పిన్‌ని నమోదు చేయండి.</string>
+    <string name="web_pin_entry_placeholder">PINని నమోదు చేయండి</string>
     <string name="web_access_instant_desc">ఈ నెట్‌వర్క్‌లోని ఏ బ్రౌజర్‌లోనైనా తెరవండి</string>
     <string name="web_btn_videos">వీడియోలను బ్రౌజ్ చేయండి</string>
     <string name="web_btn_download_all_files">అన్ని ఫైల్‌లను డౌన్‌లోడ్ చేయండి</string>
@@ -549,7 +553,7 @@
     <string name="web_error_video_start">ఈ బ్రౌజర్ వీడియోను ప్రారంభించలేకపోయింది. మళ్లీ ప్రయత్నించండి లేదా అసలు ఫైల్‌ను డౌన్‌లోడ్ చేయండి.</string>
     <string name="web_photo_view">చూడండి</string>
     <string name="web_upload_button_browse">ఫైళ్లను బ్రౌజ్ చేయండి</string>
-    <string name="web_upload_how_body"><![CDATA[When you send a file, a notification will appear on the phone. The device owner must <strong>Accept</strong> for the transfer to begin.]]></string>
+        <string name="web_upload_how_body"><![CDATA[మీరు ఫైల్‌ను పంపినప్పుడు, ఫోన్‌లో నోటిఫికేషన్ కనిపిస్తుంది. బదిలీ ప్రారంభించడానికి పరికర యజమాని తప్పనిసరిగా <strong>అంగీకరించు</strong>.]]></string>
     <string name="web_upload_how_kicker">ఇది ఎలా పనిచేస్తుంది</string>
     <string name="web_upload_how_title">సురక్షిత ఆమోదం</string>
     <string name="web_upload_prompt_desktop">ఇక్కడకు లాగి వదలండి లేదా దిగువ బటన్‌ను నొక్కండి</string>

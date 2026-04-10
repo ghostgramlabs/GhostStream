@@ -485,6 +485,10 @@
     <string name="web_access_instant_desc">Öppna i valfri webbläsare på detta nätverk</string>
     <string name="web_access_pin">PIN krävs</string>
     <string name="web_access_pin_desc">Ange koden från värdtelefonen</string>
+    <string name="web_pin_entry_kicker">PIN-skyddad session</string>
+    <string name="web_pin_entry_title">Ange ?tkomst-PIN</string>
+    <string name="web_pin_entry_desc">Ange PIN-koden som visas p? v?rdtelefonen f?r att l?sa upp den h?r sessionen.</string>
+    <string name="web_pin_entry_placeholder">Ange PIN</string>
     <string name="web_btn_download_all_files">Ladda ner alla filer</string>
     <string name="web_btn_videos">Bläddra bland videor</string>
     <string name="web_cat_files">Filer</string>

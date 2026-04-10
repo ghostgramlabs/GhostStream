@@ -485,6 +485,10 @@
     <string name="web_access_instant_desc">Abra em qualquer navegador desta rede</string>
     <string name="web_access_pin">PIN necessário</string>
     <string name="web_access_pin_desc">Digite o código do telefone host</string>
+    <string name="web_pin_entry_kicker">Sess?o protegida por PIN</string>
+    <string name="web_pin_entry_title">Digite o PIN de acesso</string>
+    <string name="web_pin_entry_desc">Digite o PIN exibido no telefone host para desbloquear esta sess?o.</string>
+    <string name="web_pin_entry_placeholder">Digite o PIN</string>
     <string name="web_btn_download_all_files">Baixe todos os arquivos</string>
     <string name="web_btn_videos">Navegar pelos vídeos</string>
     <string name="web_cat_files">Arquivos</string>

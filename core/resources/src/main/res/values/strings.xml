@@ -489,6 +489,10 @@
     <string name="web_access_instant">Instant open</string>
     <string name="web_access_pin_desc">Enter the code from the host phone</string>
     <string name="web_access_instant_desc">Open in any browser on this network</string>
+    <string name="web_pin_entry_kicker">PIN protected session</string>
+    <string name="web_pin_entry_title">Enter access PIN</string>
+    <string name="web_pin_entry_desc">Enter the PIN shown on the host phone to unlock this session.</string>
+    <string name="web_pin_entry_placeholder">Enter PIN</string>
     <string name="web_btn_videos">Browse videos</string>
     <string name="web_btn_download_all_files">Download all files</string>
     <string name="web_cat_videos">Videos</string>

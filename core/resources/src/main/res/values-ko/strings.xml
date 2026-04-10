@@ -489,6 +489,10 @@
     <string name="web_access_pin">PIN 필요</string>
     <string name="web_access_instant">즉시 열기</string>
     <string name="web_access_pin_desc">호스트 전화의 코드를 입력하세요</string>
+    <string name="web_pin_entry_kicker">PIN으로 보호된 세션</string>
+    <string name="web_pin_entry_title">액세스 PIN을 입력하세요.</string>
+    <string name="web_pin_entry_desc">이 세션의 잠금을 해제하려면 호스트 전화기에 표시된 PIN을 입력하세요.</string>
+    <string name="web_pin_entry_placeholder">PIN 입력</string>
     <string name="web_access_instant_desc">이 네트워크의 모든 브라우저에서 열기</string>
     <string name="web_btn_videos">비디오 찾아보기</string>
     <string name="web_btn_download_all_files">모든 파일 다운로드</string>

@@ -489,6 +489,10 @@
     <string name="web_access_pin">PIN erforderlich</string>
     <string name="web_access_instant">Sofort öffnen</string>
     <string name="web_access_pin_desc">Geben Sie den Code vom Host-Telefon ein</string>
+    <string name="web_pin_entry_kicker">PIN-gesch?tzte Sitzung</string>
+    <string name="web_pin_entry_title">Zugriffs-PIN eingeben</string>
+    <string name="web_pin_entry_desc">Geben Sie die auf dem Host-Telefon angezeigte PIN ein, um diese Sitzung zu entsperren.</string>
+    <string name="web_pin_entry_placeholder">PIN eingeben</string>
     <string name="web_access_instant_desc">In einem beliebigen Browser in diesem Netzwerk öffnen</string>
     <string name="web_btn_videos">Videos durchsuchen</string>
     <string name="web_btn_download_all_files">Alle Dateien herunterladen</string>

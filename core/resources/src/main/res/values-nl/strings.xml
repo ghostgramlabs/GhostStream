@@ -489,6 +489,10 @@
     <string name="web_access_pin">PIN vereist</string>
     <string name="web_access_instant">Direct openen</string>
     <string name="web_access_pin_desc">Voer de code van de hosttelefoon in</string>
+    <string name="web_pin_entry_kicker">Met PIN beveiligde sessie</string>
+    <string name="web_pin_entry_title">Toegangs-PIN invoeren</string>
+    <string name="web_pin_entry_desc">Voer de PIN in die op de hosttelefoon wordt weergegeven om deze sessie te ontgrendelen.</string>
+    <string name="web_pin_entry_placeholder">PIN invoeren</string>
     <string name="web_access_instant_desc">Open in een browser op dit netwerk</string>
     <string name="web_btn_videos">Bladeren door video\'s</string>
     <string name="web_btn_download_all_files">Alle bestanden downloaden</string>

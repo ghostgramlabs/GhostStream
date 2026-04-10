@@ -489,6 +489,10 @@
     <string name="web_access_pin">مطلوب PIN</string>
     <string name="web_access_instant">فتح فوري</string>
     <string name="web_access_pin_desc">أدخل الرمز من الهاتف المضيف</string>
+    <string name="web_pin_entry_kicker">جلسة محمية برقم PIN</string>
+    <string name="web_pin_entry_title">أدخل رقم التعريف الشخصي للوصول</string>
+    <string name="web_pin_entry_desc">أدخل رقم التعريف الشخصي الذي يظهر على الهاتف المضيف لفتح هذه الجلسة.</string>
+    <string name="web_pin_entry_placeholder">أدخل رقم التعريف الشخصي</string>
     <string name="web_access_instant_desc">افتح في أي متصفح على هذه الشبكة</string>
     <string name="web_btn_videos">تصفح مقاطع الفيديو</string>
     <string name="web_btn_download_all_files">تنزيل جميع الملفات</string>

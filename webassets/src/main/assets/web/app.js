@@ -198,15 +198,15 @@ async function boot() {
   destroyHls();
   destroyMusicPlayers();
   const path = location.pathname;
-  if (path === "/login") {
-    renderLogin();
-    return;
-  }
 
   try {
     state.bootstrap = await api("/api/bootstrap");
     applyBootstrapUi();
     debugTrace("bootstrap_loaded", `route=${path} auth=${state.bootstrap?.authEnabled} theme=${state.bootstrap?.themeMode}`);
+    if (path === "/login") {
+      renderLogin();
+      return;
+    }
     if (path.startsWith("/player/video/")) {
       renderVideoPlayer(path.split("/").pop());
       return;
@@ -1042,11 +1042,11 @@ function renderLogin(errorMessage = "") {
           <span>${esc(bootstrap?.title || sessionTitle)}</span>
         </div>
         ${bootstrap?.subtitle ? `<span class="gs-subtitle">${esc(bootstrap.subtitle)}</span>` : ""}
-        <span class="gs-eyebrow">PIN protected session</span>
-        <h1>Enter access PIN</h1>
-        <p class="gs-meta">Enter the PIN shown on the host phone to unlock this session.</p>
+        <span class="gs-eyebrow">${gsStr("web_pin_entry_kicker", "PIN protected session")}</span>
+        <h1>${gsStr("web_pin_entry_title", "Enter access PIN")}</h1>
+        <p class="gs-meta">${gsStr("web_pin_entry_desc", "Enter the PIN shown on the host phone to unlock this session.")}</p>
         <form id="loginForm">
-          <input id="pinInput" class="gs-pin" inputmode="numeric" maxlength="6" placeholder="Enter PIN" autofocus>
+          <input id="pinInput" class="gs-pin" inputmode="numeric" maxlength="6" placeholder="${gsStr("web_pin_entry_placeholder", "Enter PIN")}" autofocus>
           ${errorMessage ? `<p class="gs-error-text">${esc(errorMessage)}</p>` : ""}
           <button class="gs-btn gs-btn-accent gs-btn-block" type="submit">Continue</button>
         </form>

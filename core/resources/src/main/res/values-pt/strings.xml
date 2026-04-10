@@ -479,6 +479,10 @@
     <string name="web_access_pin">PIN necessário</string>
     <string name="web_access_instant">Abertura instantânea</string>
     <string name="web_access_pin_desc">Introduza o código do telefone anfitrião</string>
+    <string name="web_pin_entry_kicker">Sess?o protegida por PIN</string>
+    <string name="web_pin_entry_title">Introduza o PIN de acesso</string>
+    <string name="web_pin_entry_desc">Introduza o PIN apresentado no telefone anfitri?o para desbloquear esta sess?o.</string>
+    <string name="web_pin_entry_placeholder">Introduza o PIN</string>
     <string name="web_access_instant_desc">Abrir num navegador nesta rede</string>
     <string name="web_btn_videos">Procurar vídeos</string>
     <string name="web_btn_download_all_files">Transferir todos os ficheiros</string>
