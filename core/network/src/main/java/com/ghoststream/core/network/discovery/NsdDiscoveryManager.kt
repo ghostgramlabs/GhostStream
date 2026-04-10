@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
 import android.os.Build
+import com.ghostgramlabs.directserve.core.resources.R
 import com.ghoststream.core.model.DebugLogSink
 import com.ghoststream.core.model.NearbyDevice
 import com.ghoststream.core.model.NearbyDiscoveryState
@@ -20,6 +21,7 @@ class NsdDiscoveryManager(
     private val endpointResolver: SessionEndpointResolver = SessionEndpointResolver(),
     private val debugLogSink: DebugLogSink = NoOpDebugLogSink,
 ) {
+    private val appContext = context.applicationContext
     private val nsdManager = context.getSystemService(Context.NSD_SERVICE) as? NsdManager
     private val stateLock = Any()
     private val _discoveryState = MutableStateFlow(NearbyDiscoveryState())
@@ -33,8 +35,8 @@ class NsdDiscoveryManager(
         val manager = nsdManager
         if (manager == null) {
             _discoveryState.value = NearbyDiscoveryState(
-                helperText = "Nearby discovery is not available on this device.",
-                lastError = "NSD unavailable",
+                helperText = appContext.getString(R.string.discovery_unavailable_device),
+                lastError = appContext.getString(R.string.discovery_nsd_unavailable),
             )
             return
         }
@@ -46,7 +48,7 @@ class NsdDiscoveryManager(
         }
         _discoveryState.value = NearbyDiscoveryState(
             isDiscovering = true,
-            helperText = "Looking for nearby DirectServe devices on this network...",
+            helperText = appContext.getString(R.string.discovery_searching),
         )
 
         val listener = object : NsdManager.DiscoveryListener {
@@ -56,8 +58,8 @@ class NsdDiscoveryManager(
                 }
                 debugLogSink.log("NsdDiscovery", "start discovery failed code=$errorCode serviceType=$serviceType")
                 _discoveryState.value = NearbyDiscoveryState(
-                    helperText = "Nearby discovery is unavailable right now. You can still use QR or a direct link.",
-                    lastError = "Start failed ($errorCode)",
+                    helperText = appContext.getString(R.string.discovery_unavailable_now),
+                    lastError = appContext.getString(R.string.discovery_start_failed, errorCode),
                 )
                 runCatching { manager.stopServiceDiscovery(this) }
             }
@@ -75,9 +77,9 @@ class NsdDiscoveryManager(
                     current.copy(
                         isDiscovering = true,
                         helperText = if (current.devices.isEmpty()) {
-                            "Looking for nearby DirectServe devices on this network..."
+                            appContext.getString(R.string.discovery_searching)
                         } else {
-                            "Nearby DirectServe devices are ready to open."
+                            appContext.getString(R.string.discovery_ready_to_open)
                         },
                         lastError = null,
                     )
@@ -118,7 +120,7 @@ class NsdDiscoveryManager(
             }
             debugLogSink.log("NsdDiscovery", "discoverServices crashed", it)
             _discoveryState.value = NearbyDiscoveryState(
-                helperText = "Nearby discovery is unavailable right now. You can still use QR or a direct link.",
+                helperText = appContext.getString(R.string.discovery_unavailable_now),
                 lastError = it.message,
             )
         }
@@ -221,9 +223,9 @@ class NsdDiscoveryManager(
             isDiscovering = discoveryListener != null,
             devices = devices,
             helperText = if (devices.isEmpty()) {
-                "Open DirectServe on another device on the same Wi-Fi or hotspot to see it here."
+                appContext.getString(R.string.nearby_helper_open_on_other_device)
             } else {
-                "Tap a nearby DirectServe session to open it in your browser."
+                appContext.getString(R.string.nearby_helper_tap_session)
             },
         )
     }

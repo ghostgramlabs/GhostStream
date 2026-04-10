@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">DirectServe</string>
+    <string name="app_tagline">Chia sẻ cục bộ riêng tư</string>
+    <string name="language_title">Chọn ngôn ngữ</string>
+    <string name="language_subtitle">DirectServe sẽ dùng ngôn ngữ này cho phần giới thiệu, cài đặt và các màn hình chia sẻ. Bạn có thể đổi lại sau trong Cài đặt.</string>
+    <string name="language_selected">Đã chọn</string>
+    <string name="language_continue">Tiếp tục</string>
+    <string name="notification_channel_name">Phiên chia sẻ</string>
+    <string name="notification_channel_description">Giữ DirectServe hoạt động chia sẻ ở chế độ nền.</string>
+    <string name="notification_title">DirectServe đang chia sẻ</string>
+    <string name="notification_stop">Dừng</string>
+</resources>

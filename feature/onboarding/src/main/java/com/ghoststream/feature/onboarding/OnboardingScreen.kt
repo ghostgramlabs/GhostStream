@@ -42,8 +42,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ghostgramlabs.directserve.core.resources.R
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -56,33 +58,33 @@ fun OnboardingScreen(
     val pages = listOf(
         OnboardingCard(
             icon = Icons.Outlined.Collections,
-            title = "Watch directly on nearby devices",
-            description = "Open your videos, photos, music, and files instantly on nearby devices without uploading them anywhere first.",
+            title = stringResource(R.string.onboarding_page_1_title),
+            description = stringResource(R.string.onboarding_page_1_description),
         ),
         OnboardingCard(
             icon = Icons.Outlined.Devices,
-            title = "Works on almost any screen",
-            description = "Open on TV, laptop, iPhone, iPad, Mac, Windows, Android, or any other device with a browser.",
+            title = stringResource(R.string.onboarding_page_2_title),
+            description = stringResource(R.string.onboarding_page_2_description),
         ),
         OnboardingCard(
             icon = Icons.Outlined.QrCode2,
-            title = "Join with a browser",
-            description = "The receiving device only needs your local link or QR code. No extra app is required on the other device.",
+            title = stringResource(R.string.onboarding_page_3_title),
+            description = stringResource(R.string.onboarding_page_3_description),
         ),
         OnboardingCard(
             icon = Icons.Outlined.SyncAlt,
-            title = "Share both ways",
-            description = "Send files out, let people receive them, and collect files back from connected devices during the same session.",
+            title = stringResource(R.string.onboarding_page_4_title),
+            description = stringResource(R.string.onboarding_page_4_description),
         ),
         OnboardingCard(
             icon = Icons.Outlined.CloudOff,
-            title = "No internet required",
-            description = "Everything works over the same Wi-Fi network or your phone hotspot, so local sharing stays fast and reliable.",
+            title = stringResource(R.string.onboarding_page_5_title),
+            description = stringResource(R.string.onboarding_page_5_description),
         ),
         OnboardingCard(
             icon = Icons.Outlined.Lock,
-            title = "Private by design",
-            description = "Your data stays on your device with no cloud upload, no account, and no remote internet access in this build.",
+            title = stringResource(R.string.onboarding_page_6_title),
+            description = stringResource(R.string.onboarding_page_6_description),
         ),
     )
     val pagerState = rememberPagerState(pageCount = { pages.size })
@@ -115,7 +117,7 @@ fun OnboardingScreen(
                         modifier = Modifier.heightIn(min = 48.dp), // Keep the secondary action easy to tap without crowding the header.
                         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
                     ) {
-                        Text("Skip")
+                        Text(stringResource(R.string.onboarding_skip))
                     }
                 }
 
@@ -124,12 +126,12 @@ fun OnboardingScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        text = "Direct streaming and file sharing",
+                        text = stringResource(R.string.onboarding_title),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        text = "Turn your phone into a private local hub for TV, laptop, phone, tablet, and browser access.",
+                        text = stringResource(R.string.onboarding_subtitle),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -189,7 +191,7 @@ fun OnboardingScreen(
                                 color = ghostAccentSurface(),
                             ) {
                                 Text(
-                                    text = "${page + 1} of ${pages.size}",
+                                    text = stringResource(R.string.onboarding_page_counter, page + 1, pages.size),
                                     style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.Medium,
@@ -238,7 +240,13 @@ fun OnboardingScreen(
                             contentColor = MaterialTheme.colorScheme.onPrimary,
                         ),
                     ) {
-                        Text(if (pagerState.currentPage == pages.lastIndex) "Get Started" else "Next")
+                        Text(
+                            if (pagerState.currentPage == pages.lastIndex) {
+                                stringResource(R.string.onboarding_get_started)
+                            } else {
+                                stringResource(R.string.onboarding_next)
+                            },
+                        )
                     }
                 }
             }

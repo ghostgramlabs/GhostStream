@@ -60,10 +60,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.ghostgramlabs.directserve.core.resources.R
 import com.ghoststream.core.media.CompatibilityJob
 import com.ghoststream.core.media.CompatibilityStatus
 import com.ghoststream.core.model.LibraryState
@@ -89,9 +92,10 @@ fun SharedLibraryScreen(
     onOpenBatchSelect: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     var query by rememberSaveable { mutableStateOf("") }
-    var selectedCategory by rememberSaveable { mutableStateOf("All") }
-    var sortOption by rememberSaveable { mutableStateOf("Newest") }
+    var selectedCategory by rememberSaveable { mutableStateOf("all") }
+    var sortOption by rememberSaveable { mutableStateOf("newest") }
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var selectionMode by rememberSaveable { mutableStateOf(false) }
     var showPresetDialog by rememberSaveable { mutableStateOf(false) }
@@ -108,22 +112,22 @@ fun SharedLibraryScreen(
         }
     }
 
-    val categories = listOf("All", "Videos", "Photos", "Music", "Files")
+    val categories = listOf("all", "videos", "photos", "music", "files")
     val filteredItems = libraryState.items
         .filter { item ->
-            selectedCategory == "All" ||
-                (selectedCategory == "Videos" && item.category == MediaCategory.VIDEO) ||
-                (selectedCategory == "Photos" && item.category == MediaCategory.PHOTO) ||
-                (selectedCategory == "Music" && item.category == MediaCategory.MUSIC) ||
-                (selectedCategory == "Files" && item.category == MediaCategory.FILE)
+            selectedCategory == "all" ||
+                (selectedCategory == "videos" && item.category == MediaCategory.VIDEO) ||
+                (selectedCategory == "photos" && item.category == MediaCategory.PHOTO) ||
+                (selectedCategory == "music" && item.category == MediaCategory.MUSIC) ||
+                (selectedCategory == "files" && item.category == MediaCategory.FILE)
         }
         .filter { item ->
             query.isBlank() || item.displayName.contains(query, ignoreCase = true)
         }
         .let { items ->
             when (sortOption) {
-                "Name" -> items.sortedBy { it.displayName.lowercase() }
-                "Size" -> items.sortedByDescending { it.sizeBytes }
+                "name" -> items.sortedBy { it.displayName.lowercase() }
+                "size" -> items.sortedByDescending { it.sizeBytes }
                 else -> items.sortedByDescending { it.dateAddedEpochMs }
             }
         }
@@ -143,10 +147,10 @@ fun SharedLibraryScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back))
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Library", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.library_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
             }
         }
         item { LibraryHeader(libraryState = libraryState) }
@@ -182,7 +186,11 @@ fun SharedLibraryScreen(
                     selectedItemIds.clear()
                 },
                 onSaveSelection = {
-                    presetName = if (selectedItemIds.size == 1) "Single file" else "Selected files"
+                    presetName = if (selectedItemIds.size == 1) {
+                        context.getString(R.string.library_single_file_name)
+                    } else {
+                        context.getString(R.string.library_selected_files_name)
+                    }
                     showPresetDialog = true
                 },
             )
@@ -191,8 +199,8 @@ fun SharedLibraryScreen(
         if (libraryState.items.isEmpty() && libraryState.folders.isEmpty()) {
             item {
                 LibraryEmptyState(
-                    title = "No files added yet",
-                    description = "Pick files, add a folder, or use Smart Picks to build your library.",
+                    title = stringResource(R.string.library_empty_title),
+                    description = stringResource(R.string.library_empty_body),
                 )
             }
         } else {
@@ -203,8 +211,8 @@ fun SharedLibraryScreen(
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
                         SectionHeader(
-                            title = "Folders",
-                            subtitle = "These folders stay linked to your current share.",
+                            title = stringResource(R.string.library_section_folders),
+                            subtitle = stringResource(R.string.library_section_folders_body),
                         )
                         libraryState.folders.forEach { folder ->
                             FolderRow(folder = folder, onRemoveFolder = onRemoveFolder)
@@ -216,15 +224,15 @@ fun SharedLibraryScreen(
             if (filteredItems.isEmpty()) {
                 item {
                     LibraryEmptyState(
-                        title = "Nothing matches this view",
-                        description = "Try another filter or search term.",
+                        title = stringResource(R.string.library_empty_filter_title),
+                        description = stringResource(R.string.library_empty_filter_body),
                     )
                 }
             } else {
                 item {
                     SectionHeader(
-                        title = "Files",
-                        subtitle = "${filteredItems.size} item${if (filteredItems.size == 1) "" else "s"} in this view",
+                        title = stringResource(R.string.library_section_files),
+                        subtitle = stringResource(R.string.library_items_in_view, filteredItems.size, if (filteredItems.size == 1) "" else "s"),
                         modifier = Modifier.padding(horizontal = 20.dp),
                     )
                 }
@@ -254,18 +262,18 @@ fun SharedLibraryScreen(
             containerColor = MaterialTheme.colorScheme.surface,
             titleContentColor = MaterialTheme.colorScheme.onSurface,
             textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            title = { Text("Save selected files") },
+            title = { Text(stringResource(R.string.library_save_selected_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        "Save these files together so you can bring them back with one tap later.",
+                        stringResource(R.string.library_save_selected_body),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     OutlinedTextField(
                         value = presetName,
                         onValueChange = { presetName = it },
-                        label = { Text("Share name") },
+                        label = { Text(stringResource(R.string.library_share_name)) },
                         singleLine = true,
                     )
                 }
@@ -282,7 +290,7 @@ fun SharedLibraryScreen(
                     shape = RoundedCornerShape(16.dp),
                     colors = libraryPrimaryButtonColors(),
                 ) {
-                    Text("Save")
+                    Text(stringResource(R.string.common_save))
                 }
             },
             dismissButton = {
@@ -291,7 +299,7 @@ fun SharedLibraryScreen(
                     shape = RoundedCornerShape(16.dp),
                     colors = librarySecondaryButtonColors(),
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             },
         )
@@ -318,19 +326,19 @@ private fun LibraryHeader(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text(
-                text = "Shared Library",
+                text = stringResource(R.string.library_header_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = "These are the files people can open from your share link.",
+                text = stringResource(R.string.library_header_body),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             if (hasVideos) {
                 Text(
-                    text = "Subtitles only appear when the matching .srt or .vtt file is added to this shared library too.",
+                    text = stringResource(R.string.library_header_subtitles),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -339,9 +347,9 @@ private fun LibraryHeader(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                LibraryInfoChip(label = "Items", value = libraryState.summary.totalItems.toString(), showDot = true)
-                LibraryInfoChip(label = "Folders", value = libraryState.folders.size.toString())
-                LibraryInfoChip(label = "Size", value = formatBytes(libraryState.summary.totalBytes))
+                LibraryInfoChip(label = stringResource(R.string.library_info_items), value = libraryState.summary.totalItems.toString(), showDot = true)
+                LibraryInfoChip(label = stringResource(R.string.library_info_folders), value = libraryState.folders.size.toString())
+                LibraryInfoChip(label = stringResource(R.string.library_info_size), value = formatBytes(libraryState.summary.totalBytes))
             }
         }
     }
@@ -468,19 +476,19 @@ private fun LibraryControlsCard(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
-                        text = if (selectionMode) "Saving a smaller share" else "Manage this share",
+                        text = if (selectionMode) stringResource(R.string.library_selection_title) else stringResource(R.string.library_manage_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
                         text = if (selectionMode) {
                             if (selectedCount == 0) {
-                                "Step 1: select the files you want in the saved share."
+                                stringResource(R.string.library_selection_step_1)
                             } else {
-                                "Step 2: create the saved share from the $selectedCount selected file${if (selectedCount == 1) "" else "s"}."
+                                stringResource(R.string.library_selection_step_2, selectedCount, if (selectedCount == 1) "" else "s")
                             }
                         } else {
-                            "Add files, search this share, or start selecting files for a reusable saved share."
+                            stringResource(R.string.library_manage_body)
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -493,12 +501,12 @@ private fun LibraryControlsCard(
                 onValueChange = onQueryChange,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(18.dp),
-                label = { Text("Search this share") },
+                label = { Text(stringResource(R.string.library_search_label)) },
                 singleLine = true,
             )
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                SectionHeader(title = "Show", subtitle = "Filter the current share")
+                SectionHeader(title = stringResource(R.string.library_show_title), subtitle = stringResource(R.string.library_show_body))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -507,7 +515,7 @@ private fun LibraryControlsCard(
                         FilterChip(
                             selected = selectedCategory == category,
                             onClick = { onSelectCategory(category) },
-                            label = { Text(category) },
+                            label = { Text(categoryLabel(category)) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = libraryAccentSurface(),
                                 selectedLabelColor = MaterialTheme.colorScheme.onSurface,
@@ -526,7 +534,7 @@ private fun LibraryControlsCard(
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                SectionHeader(title = "Add To Share", subtitle = "Bring in more content")
+                SectionHeader(title = stringResource(R.string.library_add_title), subtitle = stringResource(R.string.library_add_body))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -536,24 +544,24 @@ private fun LibraryControlsCard(
                         modifier = Modifier.heightIn(min = 48.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = librarySecondaryButtonColors(),
-                    ) { Text("Add files") }
+                    ) { Text(stringResource(R.string.library_add_files)) }
                     OutlinedButton(
                         onClick = onOpenAddFolder,
                         modifier = Modifier.heightIn(min = 48.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = librarySecondaryButtonColors(),
-                    ) { Text("Add whole folder") }
+                    ) { Text(stringResource(R.string.library_add_whole_folder)) }
                     OutlinedButton(
                         onClick = onOpenBatchSelect,
                         modifier = Modifier.heightIn(min = 48.dp),
                         shape = RoundedCornerShape(16.dp),
                         colors = librarySecondaryButtonColors(),
-                    ) { Text("Add from suggestions") }
+                    ) { Text(stringResource(R.string.library_add_from_suggestions)) }
                 }
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                SectionHeader(title = "Organize", subtitle = "Sort or save part of this share")
+                SectionHeader(title = stringResource(R.string.library_organize_title), subtitle = stringResource(R.string.library_organize_body))
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -564,12 +572,12 @@ private fun LibraryControlsCard(
                         shape = RoundedCornerShape(16.dp),
                         colors = librarySecondaryButtonColors(),
                     ) {
-                        Text("Sort files: $sortOption")
+                        Text(stringResource(R.string.library_sort_prefix, sortOptionLabel(sortOption)))
                     }
                     DropdownMenu(expanded = sortMenuExpanded, onDismissRequest = onSortDismiss) {
-                        listOf("Newest", "Name", "Size").forEach { option ->
+                        listOf("newest", "name", "size").forEach { option ->
                             DropdownMenuItem(
-                                text = { Text(option) },
+                                text = { Text(sortOptionLabel(option)) },
                                 onClick = { onSortSelected(option) },
                             )
                         }
@@ -582,7 +590,7 @@ private fun LibraryControlsCard(
                             shape = RoundedCornerShape(16.dp),
                             colors = librarySecondaryButtonColors(),
                         ) {
-                            Text("Cancel selection")
+                            Text(stringResource(R.string.library_cancel_selection))
                         }
                         Button(
                             onClick = onSaveSelection,
@@ -591,7 +599,7 @@ private fun LibraryControlsCard(
                             shape = RoundedCornerShape(16.dp),
                             colors = libraryPrimaryButtonColors(),
                         ) {
-                            Text("Create saved share")
+                            Text(stringResource(R.string.library_create_saved_share))
                         }
                     } else {
                         OutlinedButton(
@@ -600,7 +608,7 @@ private fun LibraryControlsCard(
                             shape = RoundedCornerShape(16.dp),
                             colors = librarySecondaryButtonColors(),
                         ) {
-                            Text("Start saved share selection")
+                            Text(stringResource(R.string.library_start_saved_share_selection))
                         }
                     }
                 }
@@ -616,9 +624,9 @@ private fun LibraryControlsCard(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
-                        Text("Browser prep keeps the original", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.library_browser_prep_title), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                         Text(
-                            "DirectServe may make a temporary browser copy for playback. Downloads still use the original file.",
+                            stringResource(R.string.library_browser_prep_body),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -665,7 +673,7 @@ private fun FolderRow(
                     Text(folder.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        "${folder.fileCount} files | ${formatBytes(folder.totalSizeBytes)}",
+                        stringResource(R.string.library_folder_summary, folder.fileCount, formatBytes(folder.totalSizeBytes)),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -678,7 +686,7 @@ private fun FolderRow(
                 shape = RoundedCornerShape(14.dp),
                 colors = librarySecondaryButtonColors(),
             ) {
-                Text("Remove")
+                Text(stringResource(R.string.common_remove))
             }
         }
     }
@@ -742,7 +750,7 @@ private fun LibraryItemRow(
                                 itemTypeLabel(item.category),
                                 item.durationMs?.let(::formatDuration),
                                 formatBytes(item.sizeBytes),
-                                if (!item.isAvailable) "Unavailable" else null,
+                                if (!item.isAvailable) stringResource(R.string.library_unavailable) else null,
                             ).joinToString(" | "),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -752,17 +760,17 @@ private fun LibraryItemRow(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             if (item.category == MediaCategory.VIDEO && item.playbackDecision.mode == PlaybackMode.DIRECT) {
-                                ItemPill("Direct Play", accent = true)
+                                ItemPill(stringResource(R.string.library_direct_play), accent = true)
                             }
                             item.playbackDecision.compatibilityLabel?.let { label -> ItemPill(label) }
                             if (item.subtitleMatch != null) {
-                                ItemPill("Subtitle")
+                                ItemPill(stringResource(R.string.library_subtitle))
                             }
                             if (!item.isAvailable) {
-                                ItemPill("Unavailable")
+                                ItemPill(stringResource(R.string.library_unavailable))
                             }
                             if (selectionMode) {
-                                ItemPill(if (isSelected) "Selected" else "Tap to select", accent = isSelected)
+                                ItemPill(if (isSelected) stringResource(R.string.library_selected) else stringResource(R.string.library_tap_to_select), accent = isSelected)
                             }
                         }
                     }
@@ -790,7 +798,7 @@ private fun LibraryItemRow(
                                 )
                             }
                             Text(
-                                text = "This creates a temporary browser copy. Downloads still use the original file.",
+                                text = stringResource(R.string.library_browser_prep_body),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -809,7 +817,7 @@ private fun LibraryItemRow(
                             shape = RoundedCornerShape(16.dp),
                             colors = librarySecondaryButtonColors(),
                         ) {
-                            Text(if (isSelected) "Selected" else "Select this file")
+                            Text(if (isSelected) stringResource(R.string.library_selected) else stringResource(R.string.library_select_this_file))
                         }
                     } else {
                         OutlinedButton(
@@ -820,7 +828,7 @@ private fun LibraryItemRow(
                         ) {
                             Icon(Icons.Outlined.Delete, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Remove")
+                            Text(stringResource(R.string.common_remove))
                         }
                     }
 
@@ -835,7 +843,7 @@ private fun LibraryItemRow(
                                 shape = RoundedCornerShape(16.dp),
                                 colors = librarySecondaryButtonColors(),
                             ) {
-                                Text(if (compactActions) "Preparing" else "Preparing for browser")
+                                Text(if (compactActions) stringResource(R.string.library_preparing) else stringResource(R.string.library_preparing_for_browser))
                             }
 
                             CompatibilityStatus.READY -> OutlinedButton(
@@ -845,7 +853,7 @@ private fun LibraryItemRow(
                                 shape = RoundedCornerShape(16.dp),
                                 colors = librarySecondaryButtonColors(),
                             ) {
-                                Text(if (compactActions) "Ready" else "Ready for browser")
+                                Text(if (compactActions) stringResource(R.string.library_ready) else stringResource(R.string.library_ready_for_browser))
                             }
 
                             else -> Button(
@@ -857,9 +865,9 @@ private fun LibraryItemRow(
                             ) {
                                 Text(
                                     if (compatibilityJob?.status == CompatibilityStatus.FAILED) {
-                                        if (compactActions) "Try again" else "Try browser prep again"
+                                        if (compactActions) stringResource(R.string.library_try_again) else stringResource(R.string.library_try_browser_prep_again)
                                     } else {
-                                        if (compactActions) "Prepare" else "Prepare for browser"
+                                        if (compactActions) stringResource(R.string.library_prepare) else stringResource(R.string.library_prepare_for_browser)
                                     },
                                 )
                             }
@@ -931,27 +939,45 @@ private fun ItemPill(
     }
 }
 
+@Composable
 private fun itemTypeLabel(category: MediaCategory): String {
     return when (category) {
-        MediaCategory.VIDEO -> "Video"
-        MediaCategory.PHOTO -> "Photo"
-        MediaCategory.MUSIC -> "Music"
-        MediaCategory.FILE -> "File"
+        MediaCategory.VIDEO -> androidx.compose.ui.res.stringResource(R.string.library_type_video)
+        MediaCategory.PHOTO -> androidx.compose.ui.res.stringResource(R.string.library_type_photo)
+        MediaCategory.MUSIC -> androidx.compose.ui.res.stringResource(R.string.library_type_music)
+        MediaCategory.FILE -> androidx.compose.ui.res.stringResource(R.string.library_type_file)
     }
 }
 
+@Composable
 private fun compatibilityStatusLabel(job: CompatibilityJob): String {
     if (job.streamable && job.status != CompatibilityStatus.READY) {
-        return "Ready to play | ${job.message}"
+        return stringResource(R.string.library_compat_ready_to_play, job.message)
     }
     val prefix = when (job.status) {
-        CompatibilityStatus.IDLE -> "Not prepared"
-        CompatibilityStatus.QUEUED -> "Queued"
-        CompatibilityStatus.PREPARING -> "Preparing"
-        CompatibilityStatus.READY -> "Ready"
-        CompatibilityStatus.FAILED -> "Unavailable"
+        CompatibilityStatus.IDLE -> stringResource(R.string.library_compat_not_prepared)
+        CompatibilityStatus.QUEUED -> stringResource(R.string.library_compat_queued)
+        CompatibilityStatus.PREPARING -> stringResource(R.string.library_compat_preparing)
+        CompatibilityStatus.READY -> stringResource(R.string.library_compat_ready)
+        CompatibilityStatus.FAILED -> stringResource(R.string.library_compat_unavailable)
     }
-    return "$prefix | ${job.message}"
+    return stringResource(R.string.library_compat_message, prefix, job.message)
+}
+
+@Composable
+private fun categoryLabel(category: String): String = when (category) {
+    "videos" -> stringResource(R.string.library_category_videos)
+    "photos" -> stringResource(R.string.library_category_photos)
+    "music" -> stringResource(R.string.library_category_music)
+    "files" -> stringResource(R.string.library_category_files)
+    else -> stringResource(R.string.library_category_all)
+}
+
+@Composable
+private fun sortOptionLabel(option: String): String = when (option) {
+    "name" -> stringResource(R.string.library_sort_name)
+    "size" -> stringResource(R.string.library_sort_size)
+    else -> stringResource(R.string.library_sort_newest)
 }
 
 @Composable

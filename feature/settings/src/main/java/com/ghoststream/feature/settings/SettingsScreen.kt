@@ -35,8 +35,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ghostgramlabs.directserve.core.resources.R
 import com.ghoststream.core.model.AppSettings
 import com.ghoststream.core.model.AutoStopOption
 import com.ghoststream.core.model.RecentSession
@@ -47,6 +49,8 @@ import com.ghoststream.core.model.ThemeMode
 fun SettingsScreen(
     settings: AppSettings,
     recentSessions: List<RecentSession>,
+    currentLanguageLabel: String,
+    appVersionLabel: String,
     onToggleKeepScreenAwake: (Boolean) -> Unit,
     onToggleHaptics: (Boolean) -> Unit,
     onToggleTransferSpeed: (Boolean) -> Unit,
@@ -69,9 +73,12 @@ fun SettingsScreen(
     onPreferredPortChanged: (String) -> Unit,
     onManualPinChanged: (String) -> Unit,
     onBack: () -> Unit,
+    onOpenLanguage: () -> Unit,
     onOpenWifiSettings: () -> Unit,
     onOpenHotspotSettings: () -> Unit,
     onOpenHelp: () -> Unit,
+    onOpenPrivacyPolicy: () -> Unit,
+    onViewOnboarding: () -> Unit,
     showDebugTools: Boolean = false,
     debugLogLocation: String = "",
     onShareDebugLog: () -> Unit = {},
@@ -95,21 +102,22 @@ fun SettingsScreen(
                 }
                 Spacer(modifier = Modifier.width(4.dp))
                 Column {
-                Text("Settings", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.SemiBold)
-                Text("Choose how DirectServe feels and behaves.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.settings_subtitle), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
 
         item {
-            SettingsGroup(title = "General") {
+            SettingsGroup(title = stringResource(R.string.settings_group_general)) {
+                SettingsChoiceRow(stringResource(R.string.settings_language), currentLanguageLabel, onOpenLanguage)
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 18.dp, vertical = 12.dp),
                 ) {
-                    Text("Theme", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                    Text("Choose your preferred appearance", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.settings_theme_subtitle), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     Spacer(modifier = Modifier.height(12.dp))
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
@@ -138,17 +146,17 @@ fun SettingsScreen(
                     }
                 }
                 Spacer(modifier = Modifier.height(12.dp))
-                SettingsToggleRow("Keep screen awake", "Keep the host screen on during sharing.", settings.keepScreenAwake, onToggleKeepScreenAwake)
-                SettingsToggleRow("Vibrate on connect", "Give a small vibration when someone joins.", settings.hapticOnDeviceConnect, onToggleHaptics)
-                SettingsToggleRow("Show speed", "Show live transfer speed on the session screen.", settings.showTransferSpeed, onToggleTransferSpeed)
-                SettingsToggleRow("Show recent shares", "Keep a short history on this device.", settings.showRecentSessions, onToggleRecentSessions)
+                SettingsToggleRow(stringResource(R.string.settings_keep_screen_awake), stringResource(R.string.settings_keep_screen_awake_desc), settings.keepScreenAwake, onToggleKeepScreenAwake)
+                SettingsToggleRow(stringResource(R.string.settings_vibrate_on_connect), stringResource(R.string.settings_vibrate_on_connect_desc), settings.hapticOnDeviceConnect, onToggleHaptics)
+                SettingsToggleRow(stringResource(R.string.settings_show_speed), stringResource(R.string.settings_show_speed_desc), settings.showTransferSpeed, onToggleTransferSpeed)
+                SettingsToggleRow(stringResource(R.string.settings_show_recent_shares), stringResource(R.string.settings_show_recent_shares_desc), settings.showRecentSessions, onToggleRecentSessions)
                 SettingsChoiceRow(
-                    title = "Auto-stop",
+                    title = stringResource(R.string.settings_auto_stop),
                     value = when (settings.autoStop) {
-                        AutoStopOption.NEVER -> "Never"
-                        AutoStopOption.MINUTES_15 -> "15 min"
-                        AutoStopOption.MINUTES_30 -> "30 min"
-                        AutoStopOption.HOUR_1 -> "1 hour"
+                        AutoStopOption.NEVER -> stringResource(R.string.settings_auto_stop_never)
+                        AutoStopOption.MINUTES_15 -> stringResource(R.string.settings_auto_stop_15m)
+                        AutoStopOption.MINUTES_30 -> stringResource(R.string.settings_auto_stop_30m)
+                        AutoStopOption.HOUR_1 -> stringResource(R.string.settings_auto_stop_1h)
                     },
                     onClick = {
                         val next = when (settings.autoStop) {
@@ -164,57 +172,60 @@ fun SettingsScreen(
         }
 
         item {
-            SettingsGroup(title = "Notifications") {
-                SettingsToggleRow("Connection alerts", "Alert when someone connects to your session.", settings.notifyOnDeviceConnect, onToggleNotifyOnDeviceConnect)
-                SettingsToggleRow("Download alerts", "Alert when someone downloads a file.", settings.notifyOnFileDownload, onToggleNotifyOnFileDownload)
-                SettingsToggleRow("Upload requests", "Alert when someone requests to upload.", settings.notifyOnUploadRequest, onToggleNotifyOnUploadRequest)
+            SettingsGroup(title = stringResource(R.string.settings_group_notifications)) {
+                SettingsToggleRow(stringResource(R.string.settings_connection_alerts), stringResource(R.string.settings_connection_alerts_desc), settings.notifyOnDeviceConnect, onToggleNotifyOnDeviceConnect)
+                SettingsToggleRow(stringResource(R.string.settings_download_alerts), stringResource(R.string.settings_download_alerts_desc), settings.notifyOnFileDownload, onToggleNotifyOnFileDownload)
+                SettingsToggleRow(stringResource(R.string.settings_upload_requests), stringResource(R.string.settings_upload_requests_desc), settings.notifyOnUploadRequest, onToggleNotifyOnUploadRequest)
             }
         }
 
         item {
-            SettingsGroup(title = "Privacy") {
-                SettingsToggleRow("Use PIN", "Ask browsers for a code before opening the session.", settings.requireSessionPin, onToggleRequirePin)
+            SettingsGroup(title = stringResource(R.string.settings_group_privacy)) {
+                SettingsToggleRow(stringResource(R.string.settings_use_pin), stringResource(R.string.settings_use_pin_desc), settings.requireSessionPin, onToggleRequirePin)
                 if (settings.requireSessionPin) {
-                    SettingsToggleRow("New PIN each time", "Create a fresh code for every session.", settings.autoGeneratePin, onToggleAutoGeneratePin)
+                    SettingsToggleRow(stringResource(R.string.settings_new_pin_each_time), stringResource(R.string.settings_new_pin_each_time_desc), settings.autoGeneratePin, onToggleAutoGeneratePin)
                     if (!settings.autoGeneratePin) {
                         ManualPinRow(currentPin = settings.manualPin, onPinChanged = onManualPinChanged)
                     }
                 }
-                SettingsToggleRow("Approve file uploads", "Ask you before browsers can upload files to this device.", settings.requireUploadApproval, onToggleRequireUploadApproval)
-                SettingsToggleRow("Approve per device", "Approve once per device, not per upload.", settings.requireDeviceApproval, onToggleRequireDeviceApproval)
+                SettingsToggleRow(stringResource(R.string.settings_approve_file_uploads), stringResource(R.string.settings_approve_file_uploads_desc), settings.requireUploadApproval, onToggleRequireUploadApproval)
+                SettingsToggleRow(stringResource(R.string.settings_approve_per_device), stringResource(R.string.settings_approve_per_device_desc), settings.requireDeviceApproval, onToggleRequireDeviceApproval)
             }
         }
 
         item {
-            SettingsGroup(title = "Browser") {
-                SettingsToggleRow("Show thumbnails", "Show quick previews for media.", settings.showThumbnails, onToggleShowThumbnails)
-                SettingsToggleRow("Large TV layout", "Make cards and spacing bigger on TVs.", settings.largeTvCards, onToggleLargeTvCards)
-                SettingsToggleRow("Highlight downloads", "Keep download buttons easy to spot.", settings.prominentDownloadButton, onToggleProminentDownloads)
+            SettingsGroup(title = stringResource(R.string.settings_group_browser)) {
+                SettingsToggleRow(stringResource(R.string.settings_show_thumbnails), stringResource(R.string.settings_show_thumbnails_desc), settings.showThumbnails, onToggleShowThumbnails)
+                SettingsToggleRow(stringResource(R.string.settings_large_tv_layout), stringResource(R.string.settings_large_tv_layout_desc), settings.largeTvCards, onToggleLargeTvCards)
+                SettingsToggleRow(stringResource(R.string.settings_highlight_downloads), stringResource(R.string.settings_highlight_downloads_desc), settings.prominentDownloadButton, onToggleProminentDownloads)
             }
         }
 
         item {
-            SettingsGroup(title = "Advanced") {
-                SettingsToggleRow("Sign out on stop", "End browser access when sharing stops.", settings.clearAuthOnStop, onToggleClearAuthOnStop)
-                SettingsToggleRow("Clear temporary files", "Remove prepared playback files when sharing stops.", settings.ghostMode, onToggleGhostMode)
-                SettingsToggleRow("Prevent downloads", "Disable download button in browser access.", settings.preventDownload, onTogglePreventDownload)
+            SettingsGroup(title = stringResource(R.string.settings_group_advanced)) {
+                SettingsToggleRow(stringResource(R.string.settings_sign_out_on_stop), stringResource(R.string.settings_sign_out_on_stop_desc), settings.clearAuthOnStop, onToggleClearAuthOnStop)
+                SettingsToggleRow(stringResource(R.string.settings_clear_temporary_files), stringResource(R.string.settings_clear_temporary_files_desc), settings.ghostMode, onToggleGhostMode)
+                SettingsToggleRow(stringResource(R.string.settings_prevent_downloads), stringResource(R.string.settings_prevent_downloads_desc), settings.preventDownload, onTogglePreventDownload)
                 ManualPortRow(currentPort = settings.preferredPort.toString(), onPortChanged = onPreferredPortChanged)
             }
         }
 
         item {
-            SettingsGroup(title = "Network") {
-                SettingsChoiceRow("Wi-Fi settings", "Put both devices on the same Wi-Fi.", onOpenWifiSettings)
-                SettingsChoiceRow("Hotspot settings", "Use your hotspot when Wi-Fi blocks local traffic.", onOpenHotspotSettings)
+            SettingsGroup(title = stringResource(R.string.settings_group_network)) {
+                SettingsChoiceRow(stringResource(R.string.settings_wifi_settings), stringResource(R.string.settings_wifi_settings_desc), onOpenWifiSettings)
+                SettingsChoiceRow(stringResource(R.string.settings_hotspot_settings), stringResource(R.string.settings_hotspot_settings_desc), onOpenHotspotSettings)
             }
         }
 
         item {
-            SettingsGroup(title = "Help") {
-                SettingsChoiceRow("Privacy promise", "Your files stay on this phone.", onOpenHelp)
-                SettingsChoiceRow("How it works", "Nearby devices open the link in a browser.", onOpenHelp)
+            SettingsGroup(title = stringResource(R.string.settings_group_help)) {
+                SettingsChoiceRow(stringResource(R.string.settings_view_onboarding), stringResource(R.string.settings_view_onboarding_desc), onViewOnboarding)
+                SettingsChoiceRow(stringResource(R.string.settings_privacy_policy), stringResource(R.string.settings_privacy_policy_desc), onOpenPrivacyPolicy)
+                SettingsChoiceRow(stringResource(R.string.settings_privacy_promise), stringResource(R.string.settings_privacy_promise_desc), onOpenHelp)
+                SettingsChoiceRow(stringResource(R.string.settings_how_it_works), stringResource(R.string.settings_how_it_works_desc), onOpenHelp)
+                SettingsChoiceRow(stringResource(R.string.settings_app_version), appVersionLabel, onClick = {})
                 Text(
-                    text = "Recent shares saved on this device: ${recentSessions.size}",
+                    text = stringResource(R.string.settings_recent_shares_count, recentSessions.size),
                     modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall,
@@ -224,9 +235,9 @@ fun SettingsScreen(
 
         if (showDebugTools) {
             item {
-                SettingsGroup(title = "Debug") {
-                    SettingsChoiceRow("Share debug log", "Email the latest startup and session log.", onShareDebugLog)
-                    SettingsChoiceRow("Clear debug log", debugLogLocation, onClearDebugLog)
+                SettingsGroup(title = stringResource(R.string.settings_group_debug)) {
+                    SettingsChoiceRow(stringResource(R.string.settings_share_debug_log), stringResource(R.string.settings_share_debug_log_desc), onShareDebugLog)
+                    SettingsChoiceRow(stringResource(R.string.settings_clear_debug_log), debugLogLocation, onClearDebugLog)
                 }
             }
         }
@@ -252,7 +263,7 @@ fun HelpScreen(
                     Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
                 }
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Help", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.help_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             }
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -262,62 +273,99 @@ fun HelpScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp), // Slight lift helps the intro card read as the primary entry section.
             ) {
                 Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Text("About DirectServe", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-                    Text("DirectServe lets nearby devices open your shared files in a browser without needing cloud storage or an account.", style = MaterialTheme.typography.bodyLarge)
-                    Text("It is platform-independent for receivers, so any device with Wi-Fi or hotspot access and a browser can connect.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("No cloud. No account. No internet required.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.help_about_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.help_about_1), style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.help_about_2), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.help_about_3), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             HelpSectionCard(
-                title = "What you can do",
+                title = stringResource(R.string.help_section_what_you_can_do),
                 lines = listOf(
-                    "Share videos, photos, music, documents, and folders from your phone.",
-                    "Open the session in a browser on Android phones, iPhone, iPad, Windows laptops, Mac, Linux, tablets, desktops, and many smart TVs.",
-                    "Any device with Wi-Fi or hotspot access and a browser can connect on the same local network.",
-                    "Keep one share open while several devices browse at the same time.",
+                    stringResource(R.string.help_line_share_files),
+                    stringResource(R.string.help_line_open_session),
+                    stringResource(R.string.help_line_same_network),
+                    stringResource(R.string.help_line_multiple_browse),
                 ),
             )
             HelpSectionCard(
-                title = "Video playback",
+                title = stringResource(R.string.help_section_video_playback),
                 lines = listOf(
-                    "Most videos can play directly in the browser.",
-                    "Some videos need a temporary browser-ready version for smoother playback on certain devices.",
-                    "The original file stays on your phone, and playback preparation does not replace your source file.",
+                    stringResource(R.string.help_line_video_direct),
+                    stringResource(R.string.help_line_video_temporary),
+                    stringResource(R.string.help_line_video_original),
                 ),
             )
             HelpSectionCard(
-                title = "Receiving files",
+                title = stringResource(R.string.help_section_receiving_files),
                 lines = listOf(
-                    "Other devices can send files to your phone through the web view when uploads are allowed.",
-                    "If upload approval is turned on, you will see a request before the files are accepted.",
-                    "Received files are saved on your device and can appear in your history.",
+                    stringResource(R.string.help_line_receive_upload),
+                    stringResource(R.string.help_line_receive_approval),
+                    stringResource(R.string.help_line_receive_history),
                 ),
             )
             HelpSectionCard(
-                title = "Multiple devices",
+                title = stringResource(R.string.help_section_multiple_devices),
                 lines = listOf(
-                    "More than one device can connect to the same session.",
-                    "The live session screen shows connected devices, activity, and the generated device names with IP addresses.",
-                    "You can block devices, disconnect everyone, or protect the session with a PIN.",
+                    stringResource(R.string.help_line_multi_connect),
+                    stringResource(R.string.help_line_multi_live),
+                    stringResource(R.string.help_line_multi_controls),
                 ),
             )
             HelpSectionCard(
-                title = "Good to know",
+                title = stringResource(R.string.help_section_good_to_know),
                 lines = listOf(
-                    "Both devices should be on the same Wi-Fi network or your phone hotspot.",
-                    "Public Wi-Fi sometimes blocks local device-to-device traffic, so hotspot is often the best fallback.",
-                    "If downloads are disabled in Settings, the web UI hides download actions completely.",
+                    stringResource(R.string.help_line_wifi_hotspot),
+                    stringResource(R.string.help_line_public_wifi),
+                    stringResource(R.string.help_line_downloads_disabled),
                 ),
             )
             HelpSectionCard(
-                title = "Quick flow",
+                title = stringResource(R.string.help_section_quick_flow),
                 lines = listOf(
-                    "1. Add files or a folder.",
-                    "2. Start the session.",
-                    "3. Open the shown link or scan the QR code on another device.",
-                    "4. Browse, play, preview, or upload files depending on what the host allows.",
+                    stringResource(R.string.help_line_flow_1),
+                    stringResource(R.string.help_line_flow_2),
+                    stringResource(R.string.help_line_flow_3),
+                    stringResource(R.string.help_line_flow_4),
                 ),
             )
+        }
+    }
+}
+
+@Composable
+fun PrivacyPolicyScreen(
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back))
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(stringResource(R.string.privacy_policy_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            }
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(28.dp),
+                colors = CardDefaults.cardColors(containerColor = ghostPanelColor()),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            ) {
+                Column(modifier = Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(stringResource(R.string.privacy_policy_intro), style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.privacy_policy_line_1), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.privacy_policy_line_2), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.privacy_policy_line_3), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.privacy_policy_line_4), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
         }
     }
 }
@@ -400,8 +448,8 @@ private fun ManualPinRow(currentPin: String, onPinChanged: (String) -> Unit) {
         modifier = Modifier
             .padding(horizontal = 18.dp, vertical = 8.dp)
             .fillMaxWidth(),
-        label = { Text("PIN") },
-        placeholder = { Text("4-6 digits") },
+        label = { Text(stringResource(R.string.settings_pin_label)) },
+        placeholder = { Text(stringResource(R.string.settings_pin_placeholder)) },
         shape = RoundedCornerShape(14.dp),
         singleLine = true,
     )
@@ -418,11 +466,11 @@ private fun ManualPortRow(currentPort: String, onPortChanged: (String) -> Unit) 
         modifier = Modifier
             .padding(horizontal = 18.dp, vertical = 8.dp)
             .fillMaxWidth(),
-        label = { Text("Sharing port") },
-        placeholder = { Text("43183") },
+        label = { Text(stringResource(R.string.settings_sharing_port)) },
+        placeholder = { Text(stringResource(R.string.settings_sharing_port_placeholder)) },
         supportingText = {
             Text(
-                text = "Most people can leave this alone.",
+                text = stringResource(R.string.settings_sharing_port_help),
                 style = MaterialTheme.typography.bodySmall,
             )
         },
@@ -446,10 +494,11 @@ private fun SettingsChoiceRow(title: String, value: String, onClick: () -> Unit)
     }
 }
 
+@Composable
 private fun ThemeMode.label(): String = when (this) {
-    ThemeMode.SYSTEM -> "System"
-    ThemeMode.DARK -> "Dark"
-    ThemeMode.LIGHT -> "Light"
+    ThemeMode.SYSTEM -> androidx.compose.ui.res.stringResource(R.string.settings_theme_system)
+    ThemeMode.DARK -> androidx.compose.ui.res.stringResource(R.string.settings_theme_dark)
+    ThemeMode.LIGHT -> androidx.compose.ui.res.stringResource(R.string.settings_theme_light)
 }
 
 @Composable

@@ -38,8 +38,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ghostgramlabs.directserve.core.resources.R
 import com.ghoststream.core.model.SmartSelectionGroup
 
 @Composable
@@ -60,21 +62,21 @@ fun AddFilesRoute(
 
     SelectionRouteScaffold(
         modifier = modifier,
-        title = "Add Files",
-        subtitle = "Select one or more files to make available in your session.",
-        primaryLabel = "Add Selected",
+        title = stringResource(R.string.selection_add_files_title),
+        subtitle = stringResource(R.string.selection_add_files_body),
+        primaryLabel = stringResource(R.string.selection_add_selected),
         onPrimary = {
             onAddSelected(selectedUris.toList())
             onBack()
         },
         onSecondary = { launcher.launch(arrayOf("*/*")) },
-        secondaryLabel = "Pick Files Again",
+        secondaryLabel = stringResource(R.string.selection_pick_files_again),
         onBack = onBack,
     ) {
         if (selectedUris.isEmpty()) {
             LibraryEmptyState(
-                title = "Nothing selected yet",
-                description = "Choose videos, photos, music, PDFs, or other files from the system picker.",
+                title = stringResource(R.string.selection_nothing_selected_title),
+                description = stringResource(R.string.selection_nothing_selected_body),
             )
         } else {
             selectedUris.forEach { uri ->
@@ -101,24 +103,24 @@ fun AddFolderRoute(
 
     SelectionRouteScaffold(
         modifier = modifier,
-        title = "Add Folder",
-        subtitle = "Choose a folder so DirectServe can scan its contents for sharing.",
-        primaryLabel = "Add Folder",
+        title = stringResource(R.string.selection_add_folder_title),
+        subtitle = stringResource(R.string.selection_add_folder_body),
+        primaryLabel = stringResource(R.string.selection_add_folder),
         onPrimary = {
             selectedTreeUri?.let(onAddFolder)
             onBack()
         },
         onSecondary = { launcher.launch(null) },
-        secondaryLabel = "Choose Another Folder",
+        secondaryLabel = stringResource(R.string.selection_choose_another_folder),
         onBack = onBack,
     ) {
         if (selectedTreeUri == null) {
             LibraryEmptyState(
-                title = "No folder selected",
-                description = "DirectServe can keep a lightweight link to folders you choose with Android's document picker.",
+                title = stringResource(R.string.selection_no_folder_title),
+                description = stringResource(R.string.selection_no_folder_body),
             )
         } else {
-            SelectionUriCard(uri = selectedTreeUri!!, title = "Selected folder")
+            SelectionUriCard(uri = selectedTreeUri!!, title = stringResource(R.string.selection_selected_folder))
         }
     }
 }
@@ -149,8 +151,8 @@ fun BatchSelectRoute(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Smart Picks", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.SemiBold)
-                    Text("Quick one-tap groups based on your recent local media", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.selection_smart_picks_title), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.selection_smart_picks_body), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (hasMediaAccess) {
                     OutlinedButton(
@@ -158,7 +160,7 @@ fun BatchSelectRoute(
                         shape = RoundedCornerShape(16.dp),
                         colors = selectionSecondaryButtonColors(),
                     ) {
-                        Text("Refresh")
+                        Text(stringResource(R.string.common_refresh))
                     }
                 }
             }
@@ -175,10 +177,10 @@ fun BatchSelectRoute(
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
-                        Text("Media access needed", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.selection_media_access_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "Smart Picks builds quick groups from your recent local photos, videos, and music. Allow media access to turn these on.",
+                            stringResource(R.string.selection_media_access_body),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Spacer(modifier = Modifier.height(14.dp))
@@ -187,7 +189,7 @@ fun BatchSelectRoute(
                             shape = RoundedCornerShape(16.dp),
                             colors = selectionPrimaryButtonColors(),
                         ) {
-                            Text("Grant Access")
+                            Text(stringResource(R.string.selection_grant_access))
                         }
                     }
                 }
@@ -195,8 +197,8 @@ fun BatchSelectRoute(
         } else if (isLoading) {
             item {
                 LibraryEmptyState(
-                    title = "Looking for smart groups",
-                    description = "DirectServe is scanning lightweight media metadata on this device.",
+                    title = stringResource(R.string.selection_loading_groups_title),
+                    description = stringResource(R.string.selection_loading_groups_body),
                 )
             }
         } else if (groups.isEmpty()) {
@@ -210,10 +212,10 @@ fun BatchSelectRoute(
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 ) {
                     Column(modifier = Modifier.padding(18.dp)) {
-                        Text("No smart groups found yet", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.selection_no_groups_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "Try Refresh if you recently granted media access. If your device has very little recent media, add files or a folder manually instead.",
+                            stringResource(R.string.selection_no_groups_body),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Spacer(modifier = Modifier.height(14.dp))
@@ -222,7 +224,7 @@ fun BatchSelectRoute(
                             shape = RoundedCornerShape(16.dp),
                             colors = selectionSecondaryButtonColors(),
                         ) {
-                            Text("Refresh smart groups")
+                            Text(stringResource(R.string.selection_refresh_groups))
                         }
                     }
                 }
@@ -242,7 +244,7 @@ fun BatchSelectRoute(
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(group.description, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(modifier = Modifier.height(12.dp))
-                        Text("${group.itemCount} items | ${formatBytes(group.totalSizeBytes)}")
+                        Text(stringResource(R.string.library_items_in_view, group.itemCount, if (group.itemCount == 1) "" else "s") + " | " + formatBytes(group.totalSizeBytes))
                         Spacer(modifier = Modifier.height(14.dp))
                         Button(
                             onClick = {
@@ -252,7 +254,7 @@ fun BatchSelectRoute(
                             shape = RoundedCornerShape(16.dp),
                             colors = selectionPrimaryButtonColors(),
                         ) {
-                            Text("Add Group")
+                            Text(stringResource(R.string.selection_add_group))
                         }
                     }
                 }
@@ -311,7 +313,7 @@ private fun SelectionRouteScaffold(
                     shape = RoundedCornerShape(16.dp),
                     colors = selectionSecondaryButtonColors(),
                 ) {
-                    Text("Back")
+                    Text(stringResource(R.string.common_back))
                 }
                 Spacer(modifier = Modifier.width(12.dp))
                 OutlinedButton(
@@ -342,7 +344,7 @@ private fun SelectionRouteScaffold(
 @Composable
 private fun SelectionUriCard(
     uri: Uri,
-    title: String = uri.lastPathSegment ?: "Selected item",
+    title: String = uri.lastPathSegment ?: "",
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -370,7 +372,7 @@ private fun SelectionUriCard(
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column {
-                Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
+                Text(title.ifBlank { stringResource(R.string.selection_selected_item) }, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(uri.toString(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }

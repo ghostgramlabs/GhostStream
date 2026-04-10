@@ -59,6 +59,15 @@ class DataStoreSettingsRepository(
         update { current -> current.copy(onboardingCompleted = true) }
     }
 
+    override suspend fun completeLanguageSelection(languageTag: String) {
+        update { current ->
+            current.copy(
+                languageSelectionCompleted = true,
+                languageTag = languageTag,
+            )
+        }
+    }
+
     private companion object {
         val SETTINGS_KEY = stringPreferencesKey("app_settings_json")
     }

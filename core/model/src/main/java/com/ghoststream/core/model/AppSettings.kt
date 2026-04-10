@@ -20,6 +20,8 @@ enum class ThemeMode {
 @Serializable
 data class AppSettings(
     val onboardingCompleted: Boolean = false,
+    val languageSelectionCompleted: Boolean = false,
+    val languageTag: String? = null,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val autoStop: AutoStopOption = AutoStopOption.NEVER,
     val preferredPort: Int = 43183,

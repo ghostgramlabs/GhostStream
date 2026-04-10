@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.LinkProperties
 import android.net.NetworkCapabilities
+import com.ghostgramlabs.directserve.core.resources.R
 import com.ghoststream.core.model.DebugLogSink
 import com.ghoststream.core.model.NetworkAvailability
 import com.ghoststream.core.model.NetworkType
@@ -53,7 +54,7 @@ class AndroidNetworkInspector(
                     type = NetworkType.WIFI,
                     localAddress = localAddress,
                     isReady = true,
-                    helperText = "Nearby devices can join the same Wi-Fi and open this link. If a public Wi-Fi blocks local access, switch to your hotspot.",
+                    helperText = context.getString(R.string.network_helper_wifi_ready),
                 )
             }
 
@@ -62,7 +63,7 @@ class AndroidNetworkInspector(
                     type = NetworkType.LOCAL,
                     localAddress = localAddress,
                     isReady = true,
-                    helperText = "Your local network is ready for nearby browser access.",
+                    helperText = context.getString(R.string.network_helper_local_ready),
                 )
             }
 
@@ -71,7 +72,7 @@ class AndroidNetworkInspector(
                     type = NetworkType.WIFI,
                     localAddress = localAddress,
                     isReady = true,
-                    helperText = "DirectServe found a Wi-Fi address on this device. Nearby devices on the same network should be able to open the link.",
+                    helperText = context.getString(R.string.network_helper_wifi_found),
                 )
             }
 
@@ -80,7 +81,7 @@ class AndroidNetworkInspector(
                     type = NetworkType.HOTSPOT,
                     localAddress = localAddress,
                     isReady = true,
-                    helperText = "Your hotspot looks ready for nearby access. Connect the other device to this hotspot and open the link.",
+                    helperText = context.getString(R.string.network_helper_hotspot_ready),
                 )
             }
 
@@ -89,7 +90,7 @@ class AndroidNetworkInspector(
                     type = NetworkType.NONE,
                     localAddress = null,
                     isReady = false,
-                    helperText = "Mobile data alone won't create a local DirectServe session. Use the same Wi-Fi or turn on your hotspot.",
+                    helperText = context.getString(R.string.network_helper_mobile_only),
                 )
             }
 
@@ -98,7 +99,7 @@ class AndroidNetworkInspector(
                     type = if (activeNetwork != null) NetworkType.LOCAL else NetworkType.HOTSPOT,
                     localAddress = localAddress,
                     isReady = true,
-                    helperText = "DirectServe found a usable local address on this device. Nearby devices on the same Wi-Fi or hotspot should be able to connect.",
+                    helperText = context.getString(R.string.network_helper_local_address_ready),
                 )
             }
 
@@ -107,7 +108,7 @@ class AndroidNetworkInspector(
                     type = NetworkType.NONE,
                     localAddress = null,
                     isReady = false,
-                    helperText = "Connect both devices to the same Wi-Fi or hotspot.",
+                    helperText = context.getString(R.string.network_helper_connect_both),
                 )
             }
         }

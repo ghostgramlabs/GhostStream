@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">DirectServe</string>
+    <string name="app_tagline">Condivisione locale privata</string>
+    <string name="language_title">Scegli la lingua</string>
+    <string name="language_subtitle">DirectServe userà questa lingua per benvenuto, impostazioni e schermate di condivisione. Potrai cambiarla più tardi nelle Impostazioni.</string>
+    <string name="language_selected">Selezionata</string>
+    <string name="language_continue">Continua</string>
+    <string name="notification_channel_name">Sessione di condivisione</string>
+    <string name="notification_channel_description">Mantiene attiva in background la condivisione di DirectServe.</string>
+    <string name="notification_title">DirectServe sta condividendo</string>
+    <string name="notification_stop">Interrompi</string>
+</resources>

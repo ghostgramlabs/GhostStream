@@ -7,7 +7,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -43,12 +42,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -57,6 +58,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.ghostgramlabs.directserve.service.GhostStreamForegroundService
+import com.ghostgramlabs.directserve.localization.LanguageSelectionScreen
 import com.ghostgramlabs.directserve.state.AppEvent
 import com.ghostgramlabs.directserve.state.MainViewModel
 import com.ghostgramlabs.directserve.ui.theme.GhostStreamTheme
@@ -71,11 +73,13 @@ import com.ghoststream.feature.networksetup.NetworkSetupScreen
 import com.ghoststream.feature.onboarding.OnboardingScreen
 import com.ghoststream.feature.session.ActiveSessionScreen
 import com.ghoststream.feature.settings.HelpScreen
+import com.ghoststream.feature.settings.PrivacyPolicyScreen
 import com.ghoststream.feature.settings.SettingsScreen
 import com.ghoststream.feature.history.HistoryScreen
+import com.ghostgramlabs.directserve.core.resources.R as SharedR
 import kotlinx.coroutines.launch
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     private val viewModel: MainViewModel by viewModels {
         MainViewModel.factory((application as GhostStreamApplication).container)
     }
@@ -117,7 +121,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                 GhostStreamForegroundService.start(context)
             }.onFailure {
                 viewModel.onServiceStartFailure(
-                    "Sharing started, but background protection could not start. Keep DirectServe open while you use it.",
+                    context.getString(SharedR.string.main_service_background_protection_failed),
                 )
             }
         }
@@ -127,7 +131,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
             startForegroundSharingService()
             if (!granted) {
                 scope.launch {
-                    snackbarHostState.showSnackbar("Sharing can still run, but Android may hide the notification until notifications are allowed.")
+                    snackbarHostState.showSnackbar(context.getString(SharedR.string.main_notification_permission_warning))
                 }
             }
         }
@@ -144,7 +148,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
             }
         } else {
             scope.launch {
-                snackbarHostState.showSnackbar("Allow Photos, Videos, or Music access to use Smart Picks. You can still add files manually anytime.")
+                snackbarHostState.showSnackbar(context.getString(SharedR.string.main_batch_media_access_needed))
             }
         }
         pendingBatchSelectNavigation = false
@@ -169,10 +173,18 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
         }
     }
 
-    LaunchedEffect(uiState.isReady, uiState.settings.onboardingCompleted) {
+    LaunchedEffect(
+        uiState.isReady,
+        uiState.settings.languageSelectionCompleted,
+        uiState.settings.onboardingCompleted,
+    ) {
         if (uiState.isReady && !launchHandled) {
             launchHandled = true
-            val route = if (uiState.settings.onboardingCompleted) Routes.Home else Routes.Onboarding
+            val route = when {
+                !uiState.settings.languageSelectionCompleted -> Routes.Language
+                uiState.settings.onboardingCompleted -> Routes.Home
+                else -> Routes.Onboarding
+            }
             navController.navigate(route) {
                 popUpTo(Routes.Splash) { inclusive = true }
             }
@@ -203,7 +215,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
         val message = uiState.sessionState.message
         if (uiState.sessionState.isSharing) {
             lastSessionMessage = null
-        } else if (message.isNotBlank() && message != "Not sharing" && message != lastSessionMessage) {
+        } else if (message.isNotBlank() && message != context.getString(SharedR.string.main_not_sharing) && message != lastSessionMessage) {
             lastSessionMessage = message
             snackbarHostState.showSnackbar(message)
         }
@@ -239,21 +251,21 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     }
                     val shareIntent = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
-                        putExtra(Intent.EXTRA_SUBJECT, "DirectServe debug log")
+                        putExtra(Intent.EXTRA_SUBJECT, context.getString(SharedR.string.main_debug_log_subject))
                         putExtra(
                             Intent.EXTRA_TEXT,
-                            "DirectServe debug log attached. This file is generated only in debug builds to diagnose local server startup issues.",
+                            context.getString(SharedR.string.main_debug_log_body),
                         )
                         putExtra(Intent.EXTRA_STREAM, event.uri)
-                        clipData = ClipData.newRawUri("DirectServe debug log", event.uri)
+                        clipData = ClipData.newRawUri(context.getString(SharedR.string.main_debug_log_subject), event.uri)
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         selector = emailSelector
                     }
                     runCatching {
-                        context.startActivity(Intent.createChooser(shareIntent, "Email debug log"))
+                        context.startActivity(Intent.createChooser(shareIntent, context.getString(SharedR.string.main_debug_log_chooser)))
                     }.onFailure {
                         scope.launch {
-                            snackbarHostState.showSnackbar("No compatible email app was found to share the debug log.")
+                            snackbarHostState.showSnackbar(context.getString(SharedR.string.main_no_email_app))
                         }
                     }
                 }
@@ -266,7 +278,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                         )
                     }.onFailure {
                         scope.launch {
-                            snackbarHostState.showSnackbar("No browser was available to open that nearby session.")
+                            snackbarHostState.showSnackbar(context.getString(SharedR.string.main_no_browser_app))
                         }
                     }
                 }
@@ -282,7 +294,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                         context.startActivity(intent)
                     }.onFailure {
                         scope.launch {
-                            snackbarHostState.showSnackbar("No app found to open this file.")
+                            snackbarHostState.showSnackbar(context.getString(SharedR.string.main_no_file_app))
                         }
                     }
                 }
@@ -305,6 +317,23 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                 OnboardingScreen(
                     onSkip = viewModel::completeOnboarding,
                     onGetStarted = viewModel::completeOnboarding,
+                    modifier = Modifier.padding(innerPadding),
+                )
+            }
+            composable(Routes.Language) {
+                var selectedLanguageTag by remember { mutableStateOf(viewModel.detectInitialLanguageTag()) }
+                LanguageSelectionScreen(
+                    selectedLanguageTag = selectedLanguageTag,
+                    onLanguageSelected = {
+                        selectedLanguageTag = it
+                        viewModel.selectLanguage(it, completeSelection = false)
+                    },
+                    onContinue = {
+                        viewModel.selectLanguage(selectedLanguageTag, completeSelection = true)
+                        navController.navigate(Routes.Onboarding) {
+                            popUpTo(Routes.Language) { inclusive = true }
+                        }
+                    },
                     modifier = Modifier.padding(innerPadding),
                 )
             }
@@ -448,11 +477,11 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                         val url = uiState.sessionState.resolvedAccessUrl()
                         if (url != null) {
                             clipboardManager.setText(AnnotatedString(url))
-                            scope.launch { snackbarHostState.showSnackbar("Link copied") }
+                            scope.launch { snackbarHostState.showSnackbar(context.getString(SharedR.string.main_link_copied)) }
                         } else {
                             viewModel.refreshNetwork()
                             scope.launch {
-                                snackbarHostState.showSnackbar("DirectServe is still preparing your local link.")
+                                snackbarHostState.showSnackbar(context.getString(SharedR.string.main_link_preparing))
                             }
                         }
                     },
@@ -463,11 +492,11 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                                 type = "text/plain"
                                 putExtra(Intent.EXTRA_TEXT, url)
                             }
-                            context.startActivity(Intent.createChooser(intent, "Share DirectServe link"))
+                            context.startActivity(Intent.createChooser(intent, context.getString(SharedR.string.main_share_link_chooser)))
                         } else {
                             viewModel.refreshNetwork()
                             scope.launch {
-                                snackbarHostState.showSnackbar("A local link is not ready yet. Check Wi-Fi or hotspot and try again.")
+                                snackbarHostState.showSnackbar(context.getString(SharedR.string.main_link_not_ready))
                             }
                         }
                     },
@@ -485,6 +514,8 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                 SettingsScreen(
                     settings = uiState.settings,
                     recentSessions = uiState.recentSessions,
+                    currentLanguageLabel = selectedLanguageLabel(uiState.settings.languageTag),
+                    appVersionLabel = viewModel.versionLabel(),
                     onToggleKeepScreenAwake = { viewModel.updateSettings { current -> current.copy(keepScreenAwake = it) } },
                     onToggleHaptics = { viewModel.updateSettings { current -> current.copy(hapticOnDeviceConnect = it) } },
                     onToggleTransferSpeed = { viewModel.updateSettings { current -> current.copy(showTransferSpeed = it) } },
@@ -515,13 +546,41 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     },
                     onManualPinChanged = { pin -> viewModel.updateSettings { current -> current.copy(manualPin = pin) } },
                     onBack = { navController.popBackStack() },
+                    onOpenLanguage = { navController.navigate(Routes.LanguageSettings) },
                     onOpenWifiSettings = { context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS)) },
                     onOpenHotspotSettings = { context.startActivity(Intent("android.settings.TETHER_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) },
                     onOpenHelp = { navController.navigate(Routes.Help) },
+                    onOpenPrivacyPolicy = { navController.navigate(Routes.PrivacyPolicy) },
+                    onViewOnboarding = { navController.navigate(Routes.OnboardingPreview) },
                     showDebugTools = BuildConfig.DEBUG,
                     debugLogLocation = viewModel.debugLogLocationDescription(),
                     onShareDebugLog = viewModel::shareDebugLog,
                     onClearDebugLog = viewModel::clearDebugLog,
+                    modifier = Modifier.padding(innerPadding),
+                )
+            }
+            composable(Routes.LanguageSettings) {
+                var selectedLanguageTag by remember { mutableStateOf(uiState.settings.languageTag ?: viewModel.detectInitialLanguageTag()) }
+                LanguageSelectionScreen(
+                    selectedLanguageTag = selectedLanguageTag,
+                    onLanguageSelected = {
+                        selectedLanguageTag = it
+                        viewModel.selectLanguage(it, completeSelection = true)
+                    },
+                    onContinue = { navController.popBackStack() },
+                    modifier = Modifier.padding(innerPadding),
+                )
+            }
+            composable(Routes.OnboardingPreview) {
+                OnboardingScreen(
+                    onSkip = { navController.popBackStack() },
+                    onGetStarted = { navController.popBackStack() },
+                    modifier = Modifier.padding(innerPadding),
+                )
+            }
+            composable(Routes.PrivacyPolicy) {
+                PrivacyPolicyScreen(
+                    onBack = { navController.popBackStack() },
                     modifier = Modifier.padding(innerPadding),
                 )
             }
@@ -560,9 +619,9 @@ private fun SplashRoute() {
                 modifier = Modifier.size(88.dp),
             )
             Spacer(modifier = Modifier.height(18.dp))
-            Text("DirectServe", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(SharedR.string.splash_title), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(6.dp))
-            Text("Private local sharing", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(SharedR.string.splash_subtitle), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -581,7 +640,10 @@ private fun ResumeRefreshEffect(onResume: () -> Unit) {
 
 private object Routes {
     const val Splash = "splash"
+    const val Language = "language"
+    const val LanguageSettings = "language_settings"
     const val Onboarding = "onboarding"
+    const val OnboardingPreview = "onboarding_preview"
     const val Home = "home"
     const val Library = "library"
     const val AddFiles = "add_files"
@@ -592,6 +654,11 @@ private object Routes {
     const val Settings = "settings"
     const val History = "history"
     const val Help = "help"
+    const val PrivacyPolicy = "privacy_policy"
+}
+
+private fun selectedLanguageLabel(languageTag: String?): String {
+    return com.ghostgramlabs.directserve.localization.AppLanguages.resolve(languageTag).nativeName
 }
 
 @Composable

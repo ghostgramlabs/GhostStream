@@ -26,7 +26,7 @@ import com.ghoststream.core.storage.StorageRepository
 import com.ghoststream.core.storage.device.AndroidStorageRepository
 
 class AppContainer(
-    application: Application,
+    val application: Application,
 ) {
     private val appContext = application.applicationContext
 
@@ -85,6 +85,7 @@ class AppContainer(
     }
     val sharingCoordinator: SharingCoordinator by lazy {
         SharingCoordinator(
+            application = application,
             settingsRepository = settingsRepository,
             storageRepository = storageRepository,
             sessionManager = sessionManager,

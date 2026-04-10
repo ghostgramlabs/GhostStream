@@ -38,8 +38,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ghostgramlabs.directserve.core.resources.R
 
 @Composable
 fun AddFilesScreen(
@@ -59,21 +61,21 @@ fun AddFilesScreen(
 
     SelectionScreenScaffold(
         modifier = modifier,
-        title = "Add Files",
-        subtitle = "Select one or more files to make available in your session.",
-        primaryLabel = "Add Selected",
+        title = stringResource(R.string.selection_add_files_title),
+        subtitle = stringResource(R.string.selection_add_files_body),
+        primaryLabel = stringResource(R.string.selection_add_selected),
         onPrimary = {
             onAddSelected(selectedUris.toList())
             onBack()
         },
         onSecondary = { launcher.launch(arrayOf("*/*")) },
-        secondaryLabel = "Pick Files Again",
+        secondaryLabel = stringResource(R.string.selection_pick_files_again),
         onBack = onBack,
     ) {
         if (selectedUris.isEmpty()) {
             LibraryEmptyState(
-                title = "Nothing selected yet",
-                description = "Choose videos, photos, music, PDFs, or other files from the system picker.",
+                title = stringResource(R.string.selection_nothing_selected_title),
+                description = stringResource(R.string.selection_nothing_selected_body),
             )
         } else {
             selectedUris.forEach { uri ->
@@ -100,24 +102,24 @@ fun AddFolderScreen(
 
     SelectionScreenScaffold(
         modifier = modifier,
-        title = "Add Folder",
-        subtitle = "Choose a folder so DirectServe can scan its contents for sharing.",
-        primaryLabel = "Add Folder",
+        title = stringResource(R.string.selection_add_folder_title),
+        subtitle = stringResource(R.string.selection_add_folder_body),
+        primaryLabel = stringResource(R.string.selection_add_folder),
         onPrimary = {
             selectedTreeUri?.let(onAddFolder)
             onBack()
         },
         onSecondary = { launcher.launch(null) },
-        secondaryLabel = "Choose Another Folder",
+        secondaryLabel = stringResource(R.string.selection_choose_another_folder),
         onBack = onBack,
     ) {
         if (selectedTreeUri == null) {
             LibraryEmptyState(
-                title = "No folder selected",
-                description = "DirectServe can keep a lightweight link to folders you choose with Android's document picker.",
+                title = stringResource(R.string.selection_no_folder_title),
+                description = stringResource(R.string.selection_no_folder_body),
             )
         } else {
-            SelectionUriRow(uri = selectedTreeUri!!, title = "Selected folder")
+            SelectionUriRow(uri = selectedTreeUri!!, title = stringResource(R.string.selection_selected_folder))
         }
     }
 }
@@ -178,7 +180,7 @@ private fun SelectionScreenScaffold(
                     shape = RoundedCornerShape(16.dp),
                     colors = selectionSecondaryButtonColors(),
                 ) {
-                    Text("Back")
+                    Text(stringResource(R.string.common_back))
                 }
                 OutlinedButton(
                     onClick = onSecondary,
@@ -208,7 +210,7 @@ private fun SelectionScreenScaffold(
 }
 
 @Composable
-private fun SelectionUriRow(uri: Uri, title: String = uri.lastPathSegment ?: "Selected item") {
+private fun SelectionUriRow(uri: Uri, title: String = uri.lastPathSegment ?: "") {
     Card(
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = selectionRaisedColor()),
@@ -233,7 +235,7 @@ private fun SelectionUriRow(uri: Uri, title: String = uri.lastPathSegment ?: "Se
             }
             Spacer(modifier = Modifier.width(12.dp))
             Column {
-                Text(title, style = MaterialTheme.typography.titleMedium)
+                Text(title.ifBlank { stringResource(R.string.selection_selected_item) }, style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(uri.toString(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }

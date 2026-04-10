@@ -16,6 +16,7 @@ import androidx.core.content.ContextCompat
 import com.ghostgramlabs.directserve.GhostStreamApplication
 import com.ghostgramlabs.directserve.MainActivity
 import com.ghostgramlabs.directserve.R
+import com.ghostgramlabs.directserve.core.resources.R as SharedR
 import com.ghostgramlabs.directserve.state.ShareStartResult
 import com.ghoststream.core.model.AppSettings
 import com.ghoststream.core.model.ConnectedClient
@@ -132,7 +133,7 @@ class GhostStreamForegroundService : Service() {
                         startupInProgress = false
                         serviceScope.launch {
                             container.sharingCoordinator.stopSharing(
-                                "DirectServe couldn't start background sharing on this device.",
+                                getString(SharedR.string.service_start_failed),
                             )
                             stopSelf()
                         }
@@ -212,7 +213,7 @@ class GhostStreamForegroundService : Service() {
     }
 
     private suspend fun stopForAutoStop() {
-        container.sharingCoordinator.stopSharing("Sharing stopped after inactivity.")
+        container.sharingCoordinator.stopSharing(getString(SharedR.string.service_auto_stop_message))
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -236,18 +237,18 @@ class GhostStreamForegroundService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        val fileText = if (request.fileCount > 1) "${request.fileCount} files" else request.fileName
+        val fileText = if (request.fileCount > 1) getString(SharedR.string.service_file_count, request.fileCount) else request.fileName
         val notification = NotificationCompat.Builder(this, REQUEST_CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle("Incoming Transfer")
-            .setContentText("$fileText (${formatBytes(request.sizeBytes)}) from ${formatGeneratedNameWithIp(request.requesterIp)}")
+            .setContentTitle(getString(SharedR.string.service_upload_request_title))
+            .setContentText(getString(SharedR.string.service_upload_request_text, fileText, formatBytes(request.sizeBytes), formatGeneratedNameWithIp(request.requesterIp)))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_EVENT)
             .setAutoCancel(true)
             .setOngoing(true)
             .setVibrate(longArrayOf(0, 500, 200, 500))
-            .addAction(0, "Accept", acceptIntent)
-            .addAction(0, "Decline", declineIntent)
+            .addAction(0, getString(SharedR.string.common_accept), acceptIntent)
+            .addAction(0, getString(SharedR.string.common_decline), declineIntent)
             .build()
 
         NotificationManagerCompat.from(this).notify(REQUEST_NOTIFICATION_ID, notification)
@@ -270,15 +271,15 @@ class GhostStreamForegroundService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val title = if (clients.size == 1) {
-            "New device connected"
+            getString(SharedR.string.service_new_device_connected)
         } else {
-            "${clients.size} new devices connected"
+            getString(SharedR.string.service_new_devices_connected, clients.size)
         }
         val clientNames = clients.joinToString(", ") { formatGeneratedNameWithIp(it.ipAddress) }
         val detail = if (clients.size == 1) {
-            "$clientNames joined your DirectServe session."
+            getString(SharedR.string.service_device_joined, clientNames)
         } else {
-            "$clientNames joined. $totalConnectedCount devices are connected now."
+            getString(SharedR.string.service_devices_joined, clientNames, totalConnectedCount)
         }
         val notification = NotificationCompat.Builder(this, CONNECTION_CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
@@ -328,12 +329,12 @@ class GhostStreamForegroundService : Service() {
 
         val contentText = if (state.isSharing) {
             when (state.connectedClients.size) {
-                0 -> "Waiting for devices..."
-                1 -> "${formatGeneratedNameWithIp(state.connectedClients.first().ipAddress)} connected"
-                else -> "${state.connectedClients.size} devices connected"
+                0 -> getString(SharedR.string.service_waiting_for_devices)
+                1 -> getString(SharedR.string.service_device_connected, formatGeneratedNameWithIp(state.connectedClients.first().ipAddress))
+                else -> getString(SharedR.string.service_devices_connected, state.connectedClients.size)
             }
         } else {
-            "Preparing browser access..."
+            getString(SharedR.string.service_preparing_browser_access)
         }
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
@@ -366,20 +367,20 @@ class GhostStreamForegroundService : Service() {
 
         val requestChannel = NotificationChannel(
             REQUEST_CHANNEL_ID,
-            "Transfer Requests",
+            getString(SharedR.string.service_channel_requests_name),
             NotificationManager.IMPORTANCE_HIGH,
         ).apply {
-            description = "Notifications for incoming file transfers from PCs"
+            description = getString(SharedR.string.service_channel_requests_desc)
             enableVibration(true)
         }
         manager.createNotificationChannel(requestChannel)
 
         val connectionChannel = NotificationChannel(
             CONNECTION_CHANNEL_ID,
-            "Device Connections",
+            getString(SharedR.string.service_channel_connections_name),
             NotificationManager.IMPORTANCE_HIGH,
         ).apply {
-            description = "Notifications when a new device joins your DirectServe session"
+            description = getString(SharedR.string.service_channel_connections_desc)
             enableVibration(true)
         }
         manager.createNotificationChannel(connectionChannel)

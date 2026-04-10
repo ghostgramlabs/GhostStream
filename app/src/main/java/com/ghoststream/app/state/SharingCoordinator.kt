@@ -1,5 +1,7 @@
 package com.ghostgramlabs.directserve.state
 
+import android.app.Application
+import com.ghostgramlabs.directserve.core.resources.R
 import com.ghoststream.core.media.CompatibilityPipeline
 import com.ghoststream.core.media.MediaAnalyzer
 import com.ghoststream.core.model.DebugLogSink
@@ -32,6 +34,7 @@ sealed interface ShareStartResult {
 }
 
 class SharingCoordinator(
+    private val application: Application,
     private val settingsRepository: SettingsRepository,
     private val storageRepository: StorageRepository,
     private val sessionManager: SessionManager,
@@ -64,7 +67,7 @@ class SharingCoordinator(
             }
         }.getOrElse { e ->
             debugLogSink.log("SharingCoordinator", "preflight failed", e)
-            SharePreflightResult.Failure("Preflight check failed: ${e.message ?: e.javaClass.simpleName}")
+            SharePreflightResult.Failure(application.getString(R.string.sharing_preflight_failed, e.message ?: e.javaClass.simpleName))
         }
     }
 
@@ -75,8 +78,8 @@ class SharingCoordinator(
             if (preflight !is SharePreflightResult.Ready) {
                 debugLogSink.log("SharingCoordinator", "beginSharing blocked by preflight result=$preflight")
                 return when (preflight) {
-                    SharePreflightResult.NoContent -> ShareStartResult.Failure("Add some content first to start sharing.")
-                    is SharePreflightResult.NeedsNetwork -> ShareStartResult.Failure("Connect both devices to the same Wi-Fi or hotspot.")
+                    SharePreflightResult.NoContent -> ShareStartResult.Failure(application.getString(R.string.sharing_add_content_first))
+                    is SharePreflightResult.NeedsNetwork -> ShareStartResult.Failure(application.getString(R.string.sharing_same_wifi_needed))
                     is SharePreflightResult.Failure -> ShareStartResult.Failure(preflight.message)
                     SharePreflightResult.Ready -> error("Handled above")
                 }
@@ -96,7 +99,7 @@ class SharingCoordinator(
                 "SharingCoordinator",
                 "beginSharing blocked network type=${network.type} ready=${network.isReady} localAddress=${network.localAddress}",
             )
-            return ShareStartResult.Failure("Connect this device to Wi-Fi or turn on your hotspot before starting a session.")
+            return ShareStartResult.Failure(application.getString(R.string.sharing_connect_before_start))
         }
         val nearbyDeviceLabel = formatGeneratedNameWithIp(network.localAddress!!)
 
@@ -156,11 +159,11 @@ class SharingCoordinator(
             ShareStartResult.Started(sessionUrl)
         }.getOrElse { e ->
             debugLogSink.log("SharingCoordinator", "server failed to start", e)
-            ShareStartResult.Failure("Server failed to start: ${e.message ?: e.javaClass.simpleName}")
+            ShareStartResult.Failure(application.getString(R.string.sharing_server_start_failed, e.message ?: e.javaClass.simpleName))
         }
     }
 
-    suspend fun stopSharing(message: String = "Sharing stopped") {
+    suspend fun stopSharing(message: String = application.getString(R.string.sharing_stopped)) {
         debugLogSink.log("SharingCoordinator", "stopSharing message=$message")
         val settings = settingsRepository.settings.first()
         runCatching { nsdAdvertiser.stop() }
@@ -205,7 +208,7 @@ class SharingCoordinator(
                     authRequired = enabled,
                     browserSupported = true,
                     streamingSupported = session.selectedItems.any { item -> item.category != com.ghoststream.core.model.MediaCategory.FILE },
-                    deviceLabel = session.advertisedName ?: session.networkAvailability.localAddress?.let(::formatGeneratedNameWithIp) ?: "Android",
+                    deviceLabel = session.advertisedName ?: session.networkAvailability.localAddress?.let(::formatGeneratedNameWithIp) ?: application.getString(R.string.sharing_device_android),
                 ),
             )
             if (advertised != null) {

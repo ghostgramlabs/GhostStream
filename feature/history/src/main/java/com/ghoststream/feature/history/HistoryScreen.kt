@@ -12,9 +12,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.ghostgramlabs.directserve.core.resources.R
 import com.ghoststream.core.model.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -29,7 +31,7 @@ fun HistoryScreen(
     modifier: Modifier = Modifier,
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("All Activity", "Received")
+    val tabs = listOf(stringResource(R.string.history_tab_all), stringResource(R.string.history_tab_received))
 
     val filteredHistory = when (selectedTab) {
         1 -> history.filter { it.direction == TransferDirection.RECEIVED && it.fileUri != null }
@@ -39,10 +41,10 @@ fun HistoryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Transfer History") },
+                title = { Text(stringResource(R.string.history_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 }
             )
@@ -80,7 +82,7 @@ fun HistoryScreen(
 
             if (filteredHistory.isEmpty()) {
                 EmptyHistoryState(
-                    message = if (selectedTab == 0) "No transfers yet." else "No received files yet."
+                    message = if (selectedTab == 0) stringResource(R.string.history_empty_all) else stringResource(R.string.history_empty_received)
                 )
             } else {
                 LazyColumn(
@@ -154,7 +156,7 @@ private fun HistoryItem(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (record.direction == TransferDirection.SENT) "Sent" else "Received",
+                            text = if (record.direction == TransferDirection.SENT) stringResource(R.string.history_sent) else stringResource(R.string.history_received),
                             style = MaterialTheme.typography.labelMedium,
                             color = iconColor
                         )
@@ -194,7 +196,7 @@ private fun HistoryItem(
                     ) {
                         Icon(Icons.Outlined.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Open")
+                        Text(stringResource(R.string.history_open))
                     }
                     OutlinedIconButton(
                         onClick = onDelete,
@@ -203,7 +205,7 @@ private fun HistoryItem(
                         ),
                         modifier = Modifier.size(48.dp)
                     ) {
-                        Icon(Icons.Outlined.Delete, contentDescription = "Delete")
+                        Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.history_delete))
                     }
                 }
             } else {
@@ -212,7 +214,7 @@ private fun HistoryItem(
                     IconButton(onClick = onDelete) {
                         Icon(
                             Icons.Outlined.Delete,
-                            contentDescription = "Delete from history",
+                            contentDescription = stringResource(R.string.history_delete_desc),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(20.dp)
                         )

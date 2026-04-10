@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">DirectServe</string>
+    <string name="app_tagline">Private lokale Freigabe</string>
+    <string name="language_title">Sprache auswählen</string>
+    <string name="language_subtitle">DirectServe verwendet diese Sprache für Einführung, Einstellungen und Freigabebildschirme. Du kannst sie später in den Einstellungen ändern.</string>
+    <string name="language_selected">Ausgewählt</string>
+    <string name="language_continue">Weiter</string>
+    <string name="notification_channel_name">Freigabesitzung</string>
+    <string name="notification_channel_description">Hält DirectServe-Freigaben im Hintergrund aktiv.</string>
+    <string name="notification_title">DirectServe teilt gerade</string>
+    <string name="notification_stop">Stopp</string>
+</resources>

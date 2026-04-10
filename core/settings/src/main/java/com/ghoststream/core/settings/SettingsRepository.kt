@@ -8,5 +8,5 @@ interface SettingsRepository {
 
     suspend fun update(transform: (AppSettings) -> AppSettings)
     suspend fun markOnboardingCompleted()
+    suspend fun completeLanguageSelection(languageTag: String)
 }
-

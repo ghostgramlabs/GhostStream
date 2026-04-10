@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">DirectServe</string>
+    <string name="app_tagline">مشاركة محلية خاصة</string>
+    <string name="language_title">اختر لغتك</string>
+    <string name="language_subtitle">سيستخدم DirectServe هذه اللغة في الترحيب والإعدادات وشاشات المشاركة. يمكنك تغييرها لاحقًا من الإعدادات.</string>
+    <string name="language_selected">محدد</string>
+    <string name="language_continue">متابعة</string>
+    <string name="notification_channel_name">جلسة المشاركة</string>
+    <string name="notification_channel_description">يحافظ على مشاركة DirectServe قيد التشغيل في الخلفية.</string>
+    <string name="notification_title">DirectServe يشارك الآن</string>
+    <string name="notification_stop">إيقاف</string>
+</resources>

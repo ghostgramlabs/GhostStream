@@ -65,8 +65,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ghostgramlabs.directserve.core.resources.R
 import com.ghoststream.core.model.ConnectionDiagnostics
 import com.ghoststream.core.model.DeviceNameGenerator
 import com.ghoststream.core.model.LibraryState
@@ -180,12 +182,12 @@ fun HomeScreen(
             titleContentColor = MaterialTheme.colorScheme.onSurface,
             textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             icon = { Icon(Icons.Outlined.Collections, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-            title = { Text("File transfer request") },
+            title = { Text(stringResource(R.string.home_upload_request_title)) },
             text = {
-                val fileText = if (request.fileCount > 1) "${request.fileCount} files" else "a file"
+                val fileText = if (request.fileCount > 1) stringResource(R.string.home_upload_request_files, request.fileCount) else stringResource(R.string.home_upload_request_single)
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        "${requesterIdentity.nameWithIp} wants to send you $fileText:",
+                        stringResource(R.string.home_upload_request_body, requesterIdentity.nameWithIp, fileText),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     if (request.fileCount == 1) {
@@ -197,7 +199,7 @@ fun HomeScreen(
                         )
                     }
                     Text(
-                        "Total Size: ${formatBytes(request.sizeBytes)}",
+                        stringResource(R.string.home_upload_request_total_size, formatBytes(request.sizeBytes)),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
@@ -208,7 +210,7 @@ fun HomeScreen(
                     shape = RoundedCornerShape(16.dp),
                     colors = ghostPrimaryButtonColors(),
                 ) {
-                    Text("Accept")
+                    Text(stringResource(R.string.common_accept))
                 }
             },
             dismissButton = {
@@ -217,7 +219,7 @@ fun HomeScreen(
                     shape = RoundedCornerShape(16.dp),
                     colors = ghostSecondaryButtonColors(),
                 ) {
-                    Text("Decline")
+                    Text(stringResource(R.string.common_decline))
                 }
             },
         )
@@ -239,13 +241,13 @@ private fun TopBrandHeader(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "DirectServe",
+                text = stringResource(R.string.home_brand_title),
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.SemiBold,
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "Private sharing on your Wi-Fi or hotspot",
+                text = stringResource(R.string.home_brand_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.tertiary,
             )
@@ -265,7 +267,7 @@ private fun TopBrandHeader(
                 ) {
                     Icon(
                         Icons.Outlined.History,
-                        contentDescription = "Transfer History",
+                        contentDescription = stringResource(R.string.home_history_content_desc),
                         modifier = Modifier.size(18.dp),
                         tint = MaterialTheme.colorScheme.primary,
                     )
@@ -285,7 +287,7 @@ private fun TopBrandHeader(
                 ) {
                     Icon(
                         Icons.Outlined.Settings,
-                        contentDescription = "Settings",
+                        contentDescription = stringResource(R.string.home_settings_content_desc),
                         modifier = Modifier.size(18.dp),
                         tint = MaterialTheme.colorScheme.primary,
                     )
@@ -321,16 +323,13 @@ private fun SessionHeroCard(
         AlertDialog(
             onDismissRequest = { showNoNetworkDialog = false },
             icon = { Icon(Icons.Outlined.NetworkCheck, contentDescription = null) },
-            title = { Text("Network Connection Required") },
+            title = { Text(stringResource(R.string.home_network_required_title)) },
             text = { 
-                Text(
-                    "Please connect to Wi-Fi or turn on your hotspot to start a session.\n\n" +
-                    "Mobile data alone cannot create a local session. Make sure both devices are on the same Wi-Fi network."
-                )
+                Text(stringResource(R.string.home_network_required_body))
             },
             confirmButton = {
                 TextButton(onClick = { showNoNetworkDialog = false }) {
-                    Text("Dismiss")
+                    Text(stringResource(R.string.common_dismiss))
                 }
             },
         )
@@ -343,7 +342,6 @@ private fun SessionHeroCard(
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = heroContainerColor),
         border = BorderStroke(1.dp, heroBorderColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(
             modifier = Modifier
@@ -354,7 +352,7 @@ private fun SessionHeroCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                MinimalChip(label = "Local session")
+                MinimalChip(label = stringResource(R.string.home_chip_local_session))
                 StatusChip(sessionState = sessionState)
             }
 
@@ -376,7 +374,7 @@ private fun SessionHeroCard(
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "Session is actively live on your local network",
+                            text = stringResource(R.string.home_live_banner),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -387,9 +385,9 @@ private fun SessionHeroCard(
             }
             Text(
                 text = if (sessionState.isSharing) {
-                    "Session is live"
+                    stringResource(R.string.home_title_live)
                 } else {
-                    "Watch directly and share files on any nearby device"
+                    stringResource(R.string.home_title_start)
                 },
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold,
@@ -403,7 +401,7 @@ private fun SessionHeroCard(
                         diagnostics = connectionDiagnostics,
                     )
                 } else {
-                    "Watch videos instantly on TV, laptop, iPhone, iPad, Mac, Windows, Android, or any browser-enabled device"
+                    stringResource(R.string.home_body_start)
                 },
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -411,7 +409,7 @@ private fun SessionHeroCard(
             if (!sessionState.isSharing) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Share files, watch directly, and send files back on the same Wi-Fi or hotspot. No internet required.",
+                    text = stringResource(R.string.home_body_start_secondary),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -440,17 +438,20 @@ private fun SessionHeroCard(
                         strokeWidth = 2.dp,
                     )
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text("Starting...", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.home_button_starting), style = MaterialTheme.typography.titleMedium)
                 } else {
                     Icon(Icons.Outlined.PlayArrow, contentDescription = null)
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text(if (sessionState.isSharing) "Open session" else "Start Session", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        if (sessionState.isSharing) stringResource(R.string.home_button_open_session) else stringResource(R.string.home_button_start_session),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
                 }
             }
             if (!sessionState.isSharing && !canStartSession) {
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    text = "No Wi-Fi or hotspot detected",
+                    text = stringResource(R.string.home_no_network),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -491,7 +492,6 @@ private fun ConnectedDevicesCard(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text("Connected devices", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -584,7 +584,6 @@ private fun ActionShelf(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text("Add to share", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -690,7 +689,6 @@ private fun QuickDateFiltersCard(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text("Quick filters", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -896,7 +894,6 @@ private fun SupportPanel(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Row(
@@ -1270,7 +1267,6 @@ private fun RecentSessionsCard(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
@@ -1338,9 +1334,9 @@ private fun MinimalChip(
 @Composable
 private fun StatusChip(sessionState: SessionState) {
     val label = when {
-        sessionState.isSharing -> "Sharing"
-        sessionState.networkAvailability.isWifiOrHotspotReady -> "Ready"
-        else -> "Setup needed"
+        sessionState.isSharing -> stringResource(R.string.home_chip_sharing)
+        sessionState.networkAvailability.isWifiOrHotspotReady -> stringResource(R.string.home_chip_ready)
+        else -> stringResource(R.string.home_chip_setup_needed)
     }
     MinimalChip(
         label = label,
@@ -1391,17 +1387,18 @@ private fun ghostLiveSurface() = MaterialTheme.colorScheme.primary.copy(alpha = 
 @Composable
 private fun ghostLiveBorder() = MaterialTheme.colorScheme.primary.copy(alpha = 0.42f)
 
+@Composable
 private fun heroMessage(
     sessionState: SessionState,
     libraryState: LibraryState,
     diagnostics: ConnectionDiagnostics,
 ): String {
     return when {
-        sessionState.isSharing -> "Your session is live. Sharing and receiving is ready."
-        libraryState.summary.totalItems == 0 -> "Start a session to send or receive files over Wi-Fi or hotspot."
-        diagnostics.actionCount > 0 -> "Connect both devices to the same Wi-Fi or hotspot."
-        diagnostics.warningCount > 0 -> "Everything is almost ready."
-        else -> "Ready for wireless sending and receiving."
+        sessionState.isSharing -> stringResource(R.string.home_body_live)
+        libraryState.summary.totalItems == 0 -> stringResource(R.string.network_setup_body)
+        diagnostics.actionCount > 0 -> stringResource(R.string.network_setup_body)
+        diagnostics.warningCount > 0 -> stringResource(R.string.home_chip_ready)
+        else -> stringResource(R.string.home_body_live)
     }
 }
 

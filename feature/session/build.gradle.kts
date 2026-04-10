@@ -27,6 +27,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:resources"))
     implementation(project(":core:model"))
     implementation(project(":core:session"))
     implementation(project(":core:settings"))
@@ -41,4 +42,3 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons)
 }
-

@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">DirectServe</string>
+    <string name="app_tagline">プライベートなローカル共有</string>
+    <string name="language_title">言語を選択</string>
+    <string name="language_subtitle">DirectServe は、この言語をオンボーディング、設定、共有画面で使用します。後で設定から変更できます。</string>
+    <string name="language_selected">選択中</string>
+    <string name="language_continue">続行</string>
+    <string name="notification_channel_name">共有セッション</string>
+    <string name="notification_channel_description">DirectServe の共有をバックグラウンドで維持します。</string>
+    <string name="notification_title">DirectServe が共有中です</string>
+    <string name="notification_stop">停止</string>
+</resources>

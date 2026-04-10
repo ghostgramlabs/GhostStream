@@ -32,8 +32,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ghostgramlabs.directserve.core.resources.R
 import com.ghoststream.core.model.NetworkAvailability
 
 @Composable
@@ -66,7 +68,7 @@ fun NetworkSetupScreen(
                         onClick = onBack,
                         modifier = Modifier.heightIn(min = 48.dp), // Maintain a reliable touch target while keeping the top row compact.
                     ) {
-                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 }
                 Card(
@@ -95,12 +97,12 @@ fun NetworkSetupScreen(
                             }
                         }
                         Text(
-                            text = "Local network needed",
+                            text = stringResource(R.string.network_setup_title),
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.SemiBold,
                         )
                         Text(
-                            text = "DirectServe works when both devices are on the same Wi-Fi or your phone hotspot.",
+                            text = stringResource(R.string.network_setup_body),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -118,12 +120,12 @@ fun NetworkSetupScreen(
                                 verticalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 Text(
-                                    text = "Having trouble on public Wi-Fi?",
+                                    text = stringResource(R.string.network_setup_trouble_title),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.SemiBold,
                                 )
                                 Text(
-                                    text = "Some airports, hotels, and coffee shops block device-to-device traffic. Your hotspot is usually the fastest fallback.",
+                                    text = stringResource(R.string.network_setup_trouble_body),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -141,7 +143,7 @@ fun NetworkSetupScreen(
                                 contentColor = MaterialTheme.colorScheme.onPrimary,
                             ),
                         ) {
-                            Text("Open Wi-Fi Settings")
+                            Text(stringResource(R.string.network_setup_open_wifi))
                         }
                         OutlinedButton(
                             onClick = onOpenHotspotSettings,
@@ -154,7 +156,7 @@ fun NetworkSetupScreen(
                                 contentColor = MaterialTheme.colorScheme.onSurface,
                             ),
                         ) {
-                            Text("Switch to Hotspot")
+                            Text(stringResource(R.string.network_setup_switch_hotspot))
                         }
                         OutlinedButton(
                             onClick = onRetry,
@@ -167,10 +169,10 @@ fun NetworkSetupScreen(
                                 contentColor = MaterialTheme.colorScheme.onSurface,
                             ),
                         ) {
-                            Text("Retry")
+                            Text(stringResource(R.string.network_setup_retry))
                         }
                         Text(
-                            text = "Hotspot is best for travel or when no router is available.",
+                            text = stringResource(R.string.network_setup_footer),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">DirectServe</string>
+    <string name="app_tagline">സ്വകാര്യ ലോക്കൽ ഷെയറിംഗ്</string>
+    <string name="language_title">ഭാഷ തിരഞ്ഞെടുക്കുക</string>
+    <string name="language_subtitle">DirectServe ഈ ഭാഷയെ സ്വാഗത സ്ക്രീനിലും സെറ്റിംഗ്സിലും ഷെയറിംഗ് സ്ക്രീനുകളിലും ഉപയോഗിക്കും. പിന്നീട് സെറ്റിംഗ്സിൽ ഇത് മാറ്റാം.</string>
+    <string name="language_selected">തിരഞ്ഞെടുത്തു</string>
+    <string name="language_continue">തുടരുക</string>
+    <string name="notification_channel_name">ഷെയറിംഗ് സെഷൻ</string>
+    <string name="notification_channel_description">DirectServe ഷെയറിംഗ് പശ്ചാത്തലത്തിൽ സജീവമായി നിലനിർത്തുന്നു.</string>
+    <string name="notification_title">DirectServe ഇപ്പോൾ ഷെയർ ചെയ്യുന്നു</string>
+    <string name="notification_stop">നിർത്തുക</string>
+</resources>

@@ -100,6 +100,7 @@ tasks.matching { it.name == "bundleRelease" }.configureEach {
 }
 
 dependencies {
+    implementation(project(":core:resources"))
     implementation(project(":core:model"))
     implementation(project(":core:network"))
     implementation(project(":core:media"))

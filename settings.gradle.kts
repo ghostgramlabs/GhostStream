@@ -18,6 +18,7 @@ rootProject.name = "DirectServe"
 
 include(
     ":app",
+    ":core:resources",
     ":core:model",
     ":core:network",
     ":core:media",

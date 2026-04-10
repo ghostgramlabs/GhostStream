@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStoreFile
+import com.ghostgramlabs.directserve.core.resources.R
 import com.ghoststream.core.model.LibraryState
 import com.ghoststream.core.model.SharePreset
 import com.ghoststream.core.storage.StorageRepository
@@ -31,6 +32,7 @@ import org.json.JSONObject
 class SharePresetStore(
     context: Context,
 ) {
+    private val appContext = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val dataStore: DataStore<Preferences> = PreferenceDataStoreFactory.create(
         scope = scope,
@@ -48,9 +50,9 @@ class SharePresetStore(
 
     suspend fun saveCurrentSelection(name: String, libraryState: LibraryState): Result<SharePreset> = runCatching {
         val trimmed = name.trim()
-        require(trimmed.isNotBlank()) { "Enter a collection name first." }
+        require(trimmed.isNotBlank()) { appContext.getString(R.string.share_preset_enter_name) }
         require(libraryState.summary.totalItems > 0 || libraryState.folders.isNotEmpty()) {
-            "Add some content first before saving a collection."
+            appContext.getString(R.string.share_preset_add_content_first)
         }
 
         val existing = currentPresets()
@@ -78,13 +80,13 @@ class SharePresetStore(
         libraryState: LibraryState,
     ): Result<SharePreset> = runCatching {
         val trimmed = name.trim()
-        require(trimmed.isNotBlank()) { "Enter a collection name first." }
-        require(selectedItemIds.isNotEmpty()) { "Select at least one file first." }
+        require(trimmed.isNotBlank()) { appContext.getString(R.string.share_preset_enter_name) }
+        require(selectedItemIds.isNotEmpty()) { appContext.getString(R.string.share_preset_select_file_first) }
 
         val selectedIdSet = selectedItemIds.toSet()
         val selectedItems = libraryState.items
             .filter { it.id in selectedIdSet }
-            .ifEmpty { error("Those files are no longer available in Shared Library.") }
+            .ifEmpty { error(appContext.getString(R.string.share_preset_files_unavailable)) }
 
         val selectedWithSubtitles = selectedItems + selectedItems.mapNotNull { item ->
             item.subtitleMatch?.let { match ->
@@ -117,7 +119,7 @@ class SharePresetStore(
     ): Result<LibraryState> = runCatching {
         val presets = currentPresets()
         val preset = presets.firstOrNull { it.id == presetId }
-            ?: error("This collection is no longer available.")
+            ?: error(appContext.getString(R.string.share_preset_collection_unavailable))
 
         withContext(Dispatchers.IO) {
             storageRepository.clearSelection()
@@ -138,7 +140,7 @@ class SharePresetStore(
 
         val refreshedState = storageRepository.libraryState.value
         if (refreshedState.summary.totalItems == 0 && preset.itemCount > 0) {
-            error("That collection couldn't be restored. Some files or permissions are no longer available.")
+            error(appContext.getString(R.string.share_preset_restore_failed))
         }
 
         val now = System.currentTimeMillis()

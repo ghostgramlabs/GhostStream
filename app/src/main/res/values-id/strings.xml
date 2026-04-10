@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">DirectServe</string>
+    <string name="app_tagline">Berbagi lokal pribadi</string>
+    <string name="language_title">Pilih bahasa Anda</string>
+    <string name="language_subtitle">DirectServe akan memakai bahasa ini di onboarding, pengaturan, dan layar berbagi. Anda bisa mengubahnya nanti di Pengaturan.</string>
+    <string name="language_selected">Dipilih</string>
+    <string name="language_continue">Lanjutkan</string>
+    <string name="notification_channel_name">Sesi berbagi</string>
+    <string name="notification_channel_description">Menjaga berbagi DirectServe tetap aktif di latar belakang.</string>
+    <string name="notification_title">DirectServe sedang berbagi</string>
+    <string name="notification_stop">Hentikan</string>
+</resources>

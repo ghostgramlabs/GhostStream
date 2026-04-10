@@ -1,6 +1,11 @@
 package com.ghostgramlabs.directserve.state
 
+import android.app.Application
 import android.net.Uri
+import com.ghostgramlabs.directserve.BuildConfig
+import com.ghostgramlabs.directserve.core.resources.R
+import com.ghostgramlabs.directserve.localization.AppLanguages
+import com.ghostgramlabs.directserve.localization.LocaleManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -29,6 +34,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class MainViewModel(
+    private val application: Application,
     private val container: AppContainer,
 ) : ViewModel() {
 
@@ -71,7 +77,7 @@ class MainViewModel(
         val connectingNearbyId = values[11] as String?
         val pendingUpload = values[12] as com.ghoststream.core.model.UploadRequest?
         val history = values[13] as List<com.ghoststream.core.model.TransferRecord>
-        val filteredNearbyDiscoveryState = nearbyDiscoveryState.filterCurrentSession(session)
+        val filteredNearbyDiscoveryState = nearbyDiscoveryState.filterCurrentSession(session, application)
         MainUiState(
             isReady = true,
             settings = settings,
@@ -112,6 +118,27 @@ class MainViewModel(
         }
     }
 
+    fun selectLanguage(languageTag: String, completeSelection: Boolean) {
+        val canonicalTag = AppLanguages.canonicalize(languageTag)
+        LocaleManager.applyLanguageTag(canonicalTag)
+        viewModelScope.launch {
+            if (completeSelection) {
+                container.settingsRepository.completeLanguageSelection(canonicalTag)
+            } else {
+                container.settingsRepository.update { current ->
+                    current.copy(languageTag = canonicalTag)
+                }
+            }
+        }
+    }
+
+    fun detectInitialLanguageTag(): String {
+        val stored = uiState.value.settings.languageTag
+        return stored ?: AppLanguages.detectSupportedDeviceLanguage().tag
+    }
+
+    fun versionLabel(): String = BuildConfig.VERSION_NAME
+
     fun refreshNetwork() {
         viewModelScope.launch {
             container.debugLogRepository.log("MainViewModel", "refreshNetwork requested")
@@ -147,7 +174,7 @@ class MainViewModel(
         viewModelScope.launch {
             val result = container.storageRepository.addFolder(uri)
             result.exceptionOrNull()?.let {
-                _events.emit(AppEvent.ShowMessage("Unable to add that folder right now."))
+                _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_unable_add_folder)))
             }
         }
     }
@@ -174,10 +201,10 @@ class MainViewModel(
         viewModelScope.launch {
             container.sharePresetStore.saveCurrentSelection(name, container.storageRepository.libraryState.value)
                 .onSuccess { preset ->
-                    _events.emit(AppEvent.ShowMessage("Saved share \"${preset.name}\"."))
+                    _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_saved_share_named, preset.name)))
                 }
                 .onFailure {
-                    _events.emit(AppEvent.ShowMessage(it.message ?: "Unable to save this share right now."))
+                    _events.emit(AppEvent.ShowMessage(it.message ?: application.getString(R.string.message_unable_save_share)))
                 }
         }
     }
@@ -189,9 +216,9 @@ class MainViewModel(
                 selectedItemIds = itemIds,
                 libraryState = container.storageRepository.libraryState.value,
             ).onSuccess { preset ->
-                _events.emit(AppEvent.ShowMessage("Saved share \"${preset.name}\"."))
+                _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_saved_share_named, preset.name)))
             }.onFailure {
-                _events.emit(AppEvent.ShowMessage(it.message ?: "Unable to save this share right now."))
+                _events.emit(AppEvent.ShowMessage(it.message ?: application.getString(R.string.message_unable_save_share)))
             }
         }
     }
@@ -201,11 +228,11 @@ class MainViewModel(
             container.sharePresetStore.applyPreset(presetId, container.storageRepository)
                 .onSuccess { presetState ->
                     container.sessionManager.refreshSelection(presetState.items, presetState.folders)
-                    _events.emit(AppEvent.ShowMessage("Saved share ready with ${presetState.summary.totalItems} items."))
+                    _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_saved_share_ready, presetState.summary.totalItems)))
                     _events.emit(AppEvent.NavigateLibrary)
                 }
                 .onFailure {
-                    _events.emit(AppEvent.ShowMessage(it.message ?: "Unable to open that saved share right now."))
+                    _events.emit(AppEvent.ShowMessage(it.message ?: application.getString(R.string.message_unable_open_saved_share)))
                 }
         }
     }
@@ -213,7 +240,7 @@ class MainViewModel(
     fun deletePreset(presetId: String) {
         viewModelScope.launch {
             container.sharePresetStore.deletePreset(presetId)
-            _events.emit(AppEvent.ShowMessage("Saved share removed."))
+            _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_saved_share_removed)))
         }
     }
 
@@ -263,7 +290,7 @@ class MainViewModel(
                 container.debugLogRepository.log("MainViewModel", "requestStartSharing crashed", e)
                 pendingShareAfterNetworkReady.value = false
                 startSharingInProgress.value = false
-                _events.emit(AppEvent.ShowMessage("Something went wrong. Please try again."))
+                _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_something_went_wrong)))
             }
         }
     }
@@ -333,7 +360,7 @@ class MainViewModel(
             container.sharingCoordinator.updatePinProtection(enabled)
             _events.emit(
                 AppEvent.ShowMessage(
-                    if (enabled) "PIN protection turned on for this session." else "PIN protection turned off for this session."
+                    if (enabled) application.getString(R.string.message_pin_on) else application.getString(R.string.message_pin_off)
                 )
             )
         }
@@ -375,7 +402,7 @@ class MainViewModel(
                 .onSuccess { uri -> _events.emit(AppEvent.ShareDebugLog(uri)) }
                 .onFailure {
                     container.debugLogRepository.log("MainViewModel", "shareDebugLog failed", it)
-                    _events.emit(AppEvent.ShowMessage("Unable to prepare the debug log right now."))
+                    _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_debug_log_prepare_failed)))
                 }
         }
     }
@@ -384,10 +411,10 @@ class MainViewModel(
         if (!container.debugLogRepository.isEnabled()) return
         viewModelScope.launch {
             container.debugLogRepository.clear()
-                .onSuccess { _events.emit(AppEvent.ShowMessage("Debug log cleared.")) }
+                .onSuccess { _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_debug_log_cleared))) }
                 .onFailure {
                     container.debugLogRepository.log("MainViewModel", "clearDebugLog failed", it)
-                    _events.emit(AppEvent.ShowMessage("Unable to clear the debug log right now."))
+                    _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_debug_log_clear_failed)))
                 }
         }
     }
@@ -423,11 +450,11 @@ class MainViewModel(
         viewModelScope.launch {
             val item = container.storageRepository.findItemById(itemId)
             if (item == null) {
-                _events.emit(AppEvent.ShowMessage("This file is no longer available on your device."))
+                _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_file_no_longer_available)))
                 return@launch
             }
             container.compatibilityPipeline.requestPreparation(item)
-            _events.emit(AppEvent.ShowMessage("Preparing ${item.displayName} for smoother browser playback."))
+            _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_preparing_browser_playback, item.displayName)))
         }
     }
 
@@ -460,14 +487,15 @@ class MainViewModel(
             return object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    return MainViewModel(container) as T
+                    val application = container.application
+                    return MainViewModel(application, container) as T
                 }
             }
         }
     }
 }
 
-private fun NearbyDiscoveryState.filterCurrentSession(sessionState: SessionState): NearbyDiscoveryState {
+private fun NearbyDiscoveryState.filterCurrentSession(sessionState: SessionState, application: Application): NearbyDiscoveryState {
     val sessionHost = sessionState.sessionUrl?.let(Uri::parse)?.host?.lowercase()
     val sessionAddress = sessionState.networkAvailability.localAddress?.lowercase()
     val sessionHostname = sessionState.hostname?.lowercase()
@@ -487,8 +515,8 @@ private fun NearbyDiscoveryState.filterCurrentSession(sessionState: SessionState
         devices = filteredDevices,
         helperText = when {
             lastError != null -> helperText
-            filteredDevices.isNotEmpty() -> "Tap a nearby DirectServe session to open it in your browser."
-            else -> "Open DirectServe on another device on the same Wi-Fi or hotspot to see it here."
+            filteredDevices.isNotEmpty() -> application.getString(R.string.nearby_helper_tap_session)
+            else -> application.getString(R.string.nearby_helper_open_on_other_device)
         },
     )
 }

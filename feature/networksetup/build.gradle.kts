@@ -27,6 +27,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:resources"))
     implementation(project(":core:model"))
     implementation(libs.androidx.core.ktx)
     implementation(platform(libs.compose.bom))
@@ -36,4 +37,3 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.material.icons)
 }
-

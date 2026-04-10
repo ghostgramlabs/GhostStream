@@ -49,9 +49,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.ghostgramlabs.directserve.core.resources.R
 import com.ghoststream.core.model.BlockedClient
 import com.ghoststream.core.model.ConnectedClient
 import com.ghoststream.core.model.SessionState
@@ -112,7 +114,7 @@ fun ActiveSessionScreen(
             SessionHeroCard(
                 sessionState = sessionState,
                     accessUrl = accessUrl,
-                    displayUrl = displayUrl ?: accessUrl ?: "Waiting for local link",
+                    displayUrl = displayUrl ?: accessUrl ?: stringResource(R.string.session_waiting_local_link),
                     onCopyLink = onCopyLink,
                     onShareLink = onShareLink,
                     onTogglePinProtection = onTogglePinProtection,
@@ -156,7 +158,7 @@ fun ActiveSessionScreen(
             ) {
                 Icon(Icons.Outlined.StopCircle, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Stop sharing")
+                Text(stringResource(R.string.session_stop_sharing))
             }
         }
     }
@@ -173,11 +175,11 @@ private fun SessionTopBar(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onBack) {
-            Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
+            Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back))
         }
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = "Live Session",
+            text = stringResource(R.string.session_title),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.SemiBold,
         )
@@ -210,7 +212,6 @@ private fun SessionHeroCard(
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = cardContainerColor.value),
         border = androidx.compose.foundation.BorderStroke(1.dp, cardBorderColor.value),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), // Slight elevation gives the hero area a clearer entry point on the page.
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -226,13 +227,13 @@ private fun SessionHeroCard(
                     Spacer(modifier = Modifier.height(14.dp))
                     if (sessionState.isSharing) {
                         LiveFeedbackBanner(
-                            title = "Live now",
-                            subtitle = "Your session is visible and ready for nearby devices.",
+                            title = stringResource(R.string.session_live_now),
+                            subtitle = stringResource(R.string.session_live_now_subtitle),
                         )
                         Spacer(modifier = Modifier.height(14.dp))
                     }
                     Text(
-                        text = if (sessionState.isSharing) "Your share is live" else "Preparing your share",
+                        text = if (sessionState.isSharing) stringResource(R.string.session_share_live) else stringResource(R.string.session_share_preparing),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -240,7 +241,7 @@ private fun SessionHeroCard(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = if (sessionState.isSharing) {
-                            "People nearby can scan this QR code or open the link below in any browser."
+                            stringResource(R.string.session_share_live_body)
                         } else {
                             sessionState.message
                         },
@@ -334,7 +335,6 @@ private fun SessionQrCard(
         shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        tonalElevation = 1.dp,
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -342,13 +342,13 @@ private fun SessionQrCard(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text(
-                text = "Scan to open in a browser",
+                text = stringResource(R.string.session_qr_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = "Best for phones, tablets, laptops, and TVs on the same Wi-Fi or hotspot.",
+                text = stringResource(R.string.session_qr_body),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -368,12 +368,12 @@ private fun SessionQrCard(
                         qrBitmap?.let {
                             Image(
                                 bitmap = it.asImageBitmap(),
-                                contentDescription = "Session QR",
+                                contentDescription = stringResource(R.string.session_qr_content_desc),
                                 modifier = Modifier.fillMaxSize(),
                             )
                         }
                     } ?: Text(
-                        text = "Preparing QR",
+                        text = stringResource(R.string.session_qr_preparing),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.Black.copy(alpha = 0.72f),
                     )
@@ -399,7 +399,6 @@ private fun SessionAccessPanel(
         shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        tonalElevation = 1.dp,
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -415,7 +414,7 @@ private fun SessionAccessPanel(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Text(
-                        text = "Share link",
+                        text = stringResource(R.string.session_share_link),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -428,7 +427,7 @@ private fun SessionAccessPanel(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        text = "Open this on the same Wi-Fi or hotspot. If typing is hard, scan the QR code instead.",
+                        text = stringResource(R.string.session_share_link_body),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -440,14 +439,14 @@ private fun SessionAccessPanel(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 SessionDetailChip(
-                    label = "Network",
+                    label = stringResource(R.string.session_network),
                     value = networkLabel(sessionState),
                     showDot = true,
                     modifier = Modifier.widthIn(min = 132.dp),
                 )
                 SessionDetailChip(
-                    label = "Access PIN",
-                    value = if (sessionState.authEnabled) (sessionState.pin ?: "----") else "Off",
+                    label = stringResource(R.string.session_access_pin),
+                    value = if (sessionState.authEnabled) (sessionState.pin ?: "----") else stringResource(R.string.session_pin_off),
                     showDot = sessionState.authEnabled,
                     modifier = Modifier.widthIn(min = 132.dp),
                 )
@@ -463,7 +462,7 @@ private fun SessionAccessPanel(
                     shape = RoundedCornerShape(16.dp),
                     colors = sessionSecondaryButtonColors(),
                 ) {
-                    Text(if (sessionState.authEnabled) "New PIN" else "Turn PIN on")
+                    Text(if (sessionState.authEnabled) stringResource(R.string.session_new_pin) else stringResource(R.string.session_turn_pin_on))
                 }
                 if (sessionState.authEnabled) {
                     OutlinedButton(
@@ -472,12 +471,12 @@ private fun SessionAccessPanel(
                         shape = RoundedCornerShape(16.dp),
                         colors = sessionSecondaryButtonColors(),
                     ) {
-                        Text("Turn PIN off")
+                        Text(stringResource(R.string.session_turn_pin_off))
                     }
                 }
                 sessionState.advertisedName?.takeIf { it.isNotBlank() }?.let { nearby ->
                     SessionDetailChip(
-                        label = "Nearby name",
+                        label = stringResource(R.string.session_nearby_name),
                         value = nearby,
                         modifier = Modifier.widthIn(min = 170.dp),
                     )
@@ -485,15 +484,15 @@ private fun SessionAccessPanel(
             }
 
             SessionInfoRow(
-                title = "What happens now",
+                title = stringResource(R.string.session_what_happens_now),
                 value = when {
-                    !sessionState.isSharing -> "DirectServe is getting the session ready."
-                    sessionState.connectedClients.isEmpty() -> "Waiting for the first device to open the link or scan the QR code."
-                    else -> "${sessionState.connectedClients.size} device${if (sessionState.connectedClients.size == 1) "" else "s"} connected right now."
+                    !sessionState.isSharing -> stringResource(R.string.session_waiting_ready)
+                    sessionState.connectedClients.isEmpty() -> stringResource(R.string.session_waiting_first_device)
+                    else -> stringResource(R.string.session_devices_connected_now, sessionState.connectedClients.size)
                 },
             )
             sessionState.hostname?.takeIf { it.isNotBlank() }?.let { host ->
-                SessionInfoRow(title = "Friendly local name", value = host)
+                SessionInfoRow(title = stringResource(R.string.session_friendly_local_name), value = host)
             }
 
             FlowRow(
@@ -508,7 +507,7 @@ private fun SessionAccessPanel(
                 ) {
                     Icon(Icons.Outlined.ContentCopy, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Copy link")
+                    Text(stringResource(R.string.session_copy_link))
                 }
                 OutlinedButton(
                     onClick = onShareLink,
@@ -518,7 +517,7 @@ private fun SessionAccessPanel(
                 ) {
                     Icon(Icons.Outlined.Share, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Share")
+                    Text(stringResource(R.string.session_share))
                 }
             }
         }
@@ -536,12 +535,12 @@ private fun SessionStatsRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        SessionMetric("Devices", sessionState.connectedClients.size.toString())
-        SessionMetric("Sent", formatBytes(sessionState.transferStats.totalBytesSent))
+        SessionMetric(stringResource(R.string.session_metric_devices), sessionState.connectedClients.size.toString())
+        SessionMetric(stringResource(R.string.session_metric_sent), formatBytes(sessionState.transferStats.totalBytesSent))
         if (showTransferSpeed) {
-            SessionMetric("Speed", formatSpeed(sessionState.transferStats.currentBytesPerSecond))
+            SessionMetric(stringResource(R.string.session_metric_speed), formatSpeed(sessionState.transferStats.currentBytesPerSecond))
         }
-        SessionMetric("Elapsed", formatElapsed(sessionState.transferStats.startedAtEpochMs))
+        SessionMetric(stringResource(R.string.session_metric_elapsed), formatElapsed(sessionState.transferStats.startedAtEpochMs))
     }
 }
 
@@ -589,7 +588,6 @@ private fun ConnectedDevicesCard(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -602,16 +600,16 @@ private fun ConnectedDevicesCard(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = if (sessionState.connectedClients.isEmpty()) "Waiting for devices" else "Connected devices",
+                        text = if (sessionState.connectedClients.isEmpty()) stringResource(R.string.session_connected_waiting) else stringResource(R.string.session_connected_title),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = if (sessionState.connectedClients.isEmpty()) {
-                            "They will appear here when someone opens your session."
+                            stringResource(R.string.session_connected_waiting_body)
                         } else {
-                            "${sessionState.connectedClients.size} device${if (sessionState.connectedClients.size == 1) "" else "s"} active right now."
+                            stringResource(R.string.session_connected_count, sessionState.connectedClients.size)
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -624,7 +622,7 @@ private fun ConnectedDevicesCard(
                         shape = RoundedCornerShape(14.dp),
                         colors = sessionSecondaryButtonColors(),
                     ) {
-                        Text("Disconnect all")
+                        Text(stringResource(R.string.session_disconnect_all))
                     }
                 }
             }
@@ -636,7 +634,7 @@ private fun ConnectedDevicesCard(
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 ) {
                     Text(
-                    text = "No devices connected yet. The first device will appear here after it opens the link or scans the QR code.",
+                    text = stringResource(R.string.session_no_devices),
                         modifier = Modifier.padding(16.dp),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -678,7 +676,7 @@ private fun ConnectedClientRow(
                     ) {
                         Icon(Icons.Outlined.Block, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Block this device")
+                        Text(stringResource(R.string.session_block_device))
                     }
                 }
             } else {
@@ -697,7 +695,7 @@ private fun ConnectedClientRow(
                     ) {
                         Icon(Icons.Outlined.Block, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Block")
+                        Text(stringResource(R.string.session_block))
                     }
                 }
             }
@@ -745,14 +743,13 @@ private fun BlockedDevicesCard(
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                text = "Blocked devices",
+                text = stringResource(R.string.session_blocked_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -798,7 +795,7 @@ private fun BlockedClientRow(
                         shape = RoundedCornerShape(14.dp),
                         colors = sessionSecondaryButtonColors(),
                     ) {
-                        Text("Unblock device")
+                        Text(stringResource(R.string.session_unblock_device))
                     }
                 }
             } else {
@@ -823,7 +820,7 @@ private fun BlockedClientRow(
                         shape = RoundedCornerShape(14.dp),
                         colors = sessionSecondaryButtonColors(),
                     ) {
-                        Text("Unblock")
+                        Text(stringResource(R.string.session_unblock))
                     }
                 }
             }
@@ -834,9 +831,9 @@ private fun BlockedClientRow(
 @Composable
 private fun SessionStatePill(sessionState: SessionState) {
     val label = when {
-        sessionState.isSharing -> "Sharing now"
-        sessionState.networkAvailability.isReady -> "Preparing"
-        else -> "Network needed"
+        sessionState.isSharing -> stringResource(R.string.session_state_sharing_now)
+        sessionState.networkAvailability.isReady -> stringResource(R.string.session_state_preparing)
+        else -> stringResource(R.string.session_state_network_needed)
     }
     Surface(
         shape = RoundedCornerShape(999.dp),
@@ -967,12 +964,13 @@ private fun formatBytes(bytes: Long): String {
 
 private fun formatSpeed(bytesPerSecond: Long): String = "${formatBytes(bytesPerSecond)}/s"
 
+@Composable
 private fun networkLabel(sessionState: SessionState): String {
     return when {
-        sessionState.networkAvailability.type.name == "HOTSPOT" -> "Hotspot"
-        sessionState.networkAvailability.type.name == "WIFI" -> "Wi-Fi"
-        sessionState.networkAvailability.type.name == "LOCAL" -> "Local"
-        else -> "Offline"
+        sessionState.networkAvailability.type.name == "HOTSPOT" -> stringResource(R.string.session_network_hotspot)
+        sessionState.networkAvailability.type.name == "WIFI" -> stringResource(R.string.session_network_wifi)
+        sessionState.networkAvailability.type.name == "LOCAL" -> stringResource(R.string.session_network_local)
+        else -> stringResource(R.string.session_network_offline)
     }
 }
 

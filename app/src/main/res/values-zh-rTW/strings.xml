@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">DirectServe</string>
+    <string name="app_tagline">私密本機分享</string>
+    <string name="language_title">選擇語言</string>
+    <string name="language_subtitle">DirectServe 會在導覽、設定與分享畫面使用這個語言。之後也可以在設定中變更。</string>
+    <string name="language_selected">已選取</string>
+    <string name="language_continue">繼續</string>
+    <string name="notification_channel_name">分享工作階段</string>
+    <string name="notification_channel_description">讓 DirectServe 在背景維持分享狀態。</string>
+    <string name="notification_title">DirectServe 正在分享</string>
+    <string name="notification_stop">停止</string>
+</resources>

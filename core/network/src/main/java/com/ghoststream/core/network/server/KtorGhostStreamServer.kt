@@ -2,6 +2,7 @@ package com.ghoststream.core.network.server
 
 import android.content.Context
 import android.net.Uri
+import com.ghostgramlabs.directserve.core.resources.R
 import com.ghoststream.core.media.CompatibilityJob
 import com.ghoststream.core.media.CompatibilityPipeline
 import com.ghoststream.core.media.CompatibilityStatus
@@ -203,8 +204,8 @@ class KtorGhostStreamServer(
                 val deviceName = DeviceNameGenerator.generateName(clientIp)
                 call.respond(
                     BrowserBootstrap(
-                        title = "DirectServe",
-                        subtitle = "Stream & share files offline",
+                        title = this@KtorGhostStreamServer.context.getString(R.string.browser_title),
+                        subtitle = this@KtorGhostStreamServer.context.getString(R.string.browser_subtitle),
                         authEnabled = state.authEnabled,
                         sessionUrl = buildSessionAccessUrl(
                             sessionUrl = state.sessionUrl,
@@ -268,7 +269,7 @@ class KtorGhostStreamServer(
                 if (!call.authorizeBrowserCall()) return@get
                 val settings = settingsRepository.settings.first()
                 val item = resolveItem(call.parameters["id"]) ?: run {
-                    call.respond(HttpStatusCode.NotFound, ErrorPayload("This file is no longer available on your device."))
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_file_unavailable)))
                     return@get
                 }
                 debugLogSink.log(
@@ -291,7 +292,7 @@ class KtorGhostStreamServer(
             get("/api/compat/{id}") {
                 if (!call.authorizeBrowserCall()) return@get
                 val item = resolveItem(call.parameters["id"]) ?: run {
-                    call.respond(HttpStatusCode.NotFound, ErrorPayload("This file is no longer available on your device."))
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_file_unavailable)))
                     return@get
                 }
                 val job = compatibilitySnapshotFor(item, triggerPreparation = false)
@@ -311,7 +312,7 @@ class KtorGhostStreamServer(
             post("/api/compat/{id}/prepare") {
                 if (!call.authorizeBrowserCall()) return@post
                 val item = resolveItem(call.parameters["id"]) ?: run {
-                    call.respond(HttpStatusCode.NotFound, ErrorPayload("This file is no longer available on your device."))
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_file_unavailable)))
                     return@post
                 }
                 val job = compatibilitySnapshotFor(item, triggerPreparation = true)
@@ -330,13 +331,13 @@ class KtorGhostStreamServer(
 
             post("/api/debug/browser") {
                 if (!debugBrowserTracingEnabled) {
-                    call.respond(HttpStatusCode.NotFound, ErrorPayload("Debug tracing unavailable"))
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_debug_unavailable)))
                     return@post
                 }
                 if (!call.authorizeBrowserCall()) return@post
                 val payload = call.receiveNullable<BrowserDebugPayload>()
                 if (payload == null) {
-                    call.respond(HttpStatusCode.BadRequest, ErrorPayload("Missing debug payload"))
+                    call.respond(HttpStatusCode.BadRequest, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_debug_missing_payload)))
                     return@post
                 }
                 debugLogSink.log(
@@ -351,7 +352,7 @@ class KtorGhostStreamServer(
                 val enteredPin = payload?.pin.orEmpty()
                 val ipAddress = call.remoteHost()
                 if (!sessionManager.isPinValid(enteredPin)) {
-                    call.respond(HttpStatusCode.Unauthorized, ErrorPayload("That PIN didn't match. Please try again."))
+                    call.respond(HttpStatusCode.Unauthorized, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_pin_mismatch)))
                     return@post
                 }
 
@@ -622,7 +623,7 @@ class KtorGhostStreamServer(
 
     private suspend fun io.ktor.server.application.ApplicationCall.serveShellPage() {
         if (sessionManager.isBlocked(remoteHost())) {
-            respond(HttpStatusCode.Forbidden, ErrorPayload("This device can't access the session."))
+            respond(HttpStatusCode.Forbidden, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_device_blocked)))
             return
         }
         val state = sessionManager.sessionState.value
@@ -631,20 +632,20 @@ class KtorGhostStreamServer(
             return
         }
         val html = assetLoader.readText("web/index.html")
-            .replace("__SESSION_TITLE__", "DirectServe")
-            .replace("__SESSION_SUBTITLE__", "Stream & share files offline")
+            .replace("__SESSION_TITLE__", this@KtorGhostStreamServer.context.getString(R.string.browser_title))
+            .replace("__SESSION_SUBTITLE__", this@KtorGhostStreamServer.context.getString(R.string.browser_subtitle))
         respondText(html, ContentType.Text.Html)
     }
 
     private suspend fun io.ktor.server.application.ApplicationCall.authorizeBrowserCall(): Boolean {
         val ipAddress = remoteHost()
         if (sessionManager.isBlocked(ipAddress)) {
-            respond(HttpStatusCode.Forbidden, ErrorPayload("This device can't access the session."))
+            respond(HttpStatusCode.Forbidden, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_device_blocked)))
             return false
         }
         val state = sessionManager.sessionState.value
         if (state.authEnabled && !sessionManager.validateToken(request.cookies[COOKIE_NAME])) {
-            respond(HttpStatusCode.Unauthorized, ErrorPayload("Enter the session PIN to continue."))
+            respond(HttpStatusCode.Unauthorized, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_enter_pin)))
             return false
         }
         sessionManager.observeClient(ipAddress, request.header(HttpHeaders.UserAgent), ClientActivity.BROWSING)
@@ -668,11 +669,11 @@ class KtorGhostStreamServer(
         activity: ClientActivity,
     ) {
         val item = resolveItem(itemId) ?: run {
-            respond(HttpStatusCode.NotFound, ErrorPayload("This file is no longer available on your device."))
+            respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_file_unavailable)))
             return
         }
         if (!item.isAvailable) {
-            respond(HttpStatusCode.Gone, ErrorPayload("This file is no longer available on your device."))
+            respond(HttpStatusCode.Gone, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_file_unavailable)))
             return
         }
 
@@ -726,7 +727,7 @@ class KtorGhostStreamServer(
         val resolver = context.contentResolver
         val uri = Uri.parse(playbackSource.uriString)
         val descriptor = resolver.openAssetFileDescriptor(uri, "r") ?: run {
-            respond(HttpStatusCode.NotFound, ErrorPayload("This file is no longer available on your device."))
+            respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_file_unavailable)))
             return
         }
 
@@ -809,7 +810,7 @@ class KtorGhostStreamServer(
     ) {
         val file = File(playbackSource.filePath)
         if (!file.exists()) {
-            respond(HttpStatusCode.NotFound, ErrorPayload("Optimized playback is no longer available."))
+            respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_optimized_unavailable)))
             return
         }
         if (playbackSource.allowGrowing && !playbackSource.isComplete) {
@@ -892,7 +893,7 @@ class KtorGhostStreamServer(
                 response.headers.append(HttpHeaders.ContentRange, "bytes */$availableLength")
                 respond(
                     HttpStatusCode.RequestedRangeNotSatisfiable,
-                    ErrorPayload("That part of the video is still being prepared."),
+                    ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_video_part_preparing)),
                 )
                 return
             }
@@ -1004,7 +1005,7 @@ class KtorGhostStreamServer(
         val start = byteRange.first
         val endInclusive = byteRange.last
         if (!file.exists() || start < 0L || endInclusive < start || endInclusive >= file.length()) {
-            respond(HttpStatusCode.NotFound, ErrorPayload("This part of the video is no longer available."))
+            respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_video_part_unavailable)))
             return
         }
 
@@ -1053,15 +1054,15 @@ class KtorGhostStreamServer(
         itemId: String?,
     ): HlsPlaybackSource? {
         val item = resolveItem(itemId) ?: run {
-            respond(HttpStatusCode.NotFound, ErrorPayload("This file is no longer available on your device."))
+            respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_file_unavailable)))
             return null
         }
         if (!item.isAvailable) {
-            respond(HttpStatusCode.Gone, ErrorPayload("This file is no longer available on your device."))
+            respond(HttpStatusCode.Gone, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_file_unavailable)))
             return null
         }
         if (item.category != MediaCategory.VIDEO || item.playbackDecision.mode == PlaybackMode.DIRECT) {
-            respond(HttpStatusCode.Conflict, ErrorPayload("This video doesn't need HLS playback."))
+            respond(HttpStatusCode.Conflict, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_hls_not_needed)))
             return null
         }
 
@@ -1075,12 +1076,12 @@ class KtorGhostStreamServer(
             return null
         }
         if (!preparedAsset.isFragmentedMp4) {
-            respond(HttpStatusCode.Conflict, ErrorPayload("This compatibility stream is not HLS-ready yet."))
+            respond(HttpStatusCode.Conflict, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_hls_not_ready)))
             return null
         }
         val file = File(preparedAsset.filePath)
         if (!file.exists()) {
-            respond(HttpStatusCode.NotFound, ErrorPayload("Optimized playback is no longer available."))
+            respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_optimized_unavailable)))
             return null
         }
         return HlsPlaybackSource(

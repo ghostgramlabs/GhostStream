@@ -23,8 +23,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ghostgramlabs.directserve.core.resources.R
 import com.ghoststream.core.model.SmartSelectionGroup
 
 @Composable
@@ -43,16 +45,16 @@ fun BatchSelectScreen(
     ) {
         item {
             Column(modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp)) {
-                Text("Smart Picks", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.SemiBold)
-                Text("Smart one-tap groups based on your recent local media", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.selection_smart_picks_title), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.selection_smart_picks_body), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
         if (groups.isEmpty()) {
             item {
                 LibraryEmptyState(
-                    title = "No smart groups available right now",
-                    description = "Grant media access if needed, or add files manually from the picker.",
+                    title = stringResource(R.string.selection_no_groups_title),
+                    description = stringResource(R.string.selection_no_groups_body),
                 )
             }
         } else {
@@ -72,7 +74,7 @@ fun BatchSelectScreen(
                     ) {
                         Text(group.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                         Text(group.description, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("${group.itemCount} items | ${formatBytes(group.totalSizeBytes)}")
+                        Text(stringResource(R.string.library_items_in_view, group.itemCount, if (group.itemCount == 1) "" else "s") + " | " + formatBytes(group.totalSizeBytes))
                         Button(
                             onClick = {
                                 onAddGroup(group.uris.map(Uri::parse))
@@ -85,7 +87,7 @@ fun BatchSelectScreen(
                                 contentColor = MaterialTheme.colorScheme.onPrimary,
                             ),
                         ) {
-                            Text("Add Group")
+                            Text(stringResource(R.string.selection_add_group))
                         }
                     }
                 }
