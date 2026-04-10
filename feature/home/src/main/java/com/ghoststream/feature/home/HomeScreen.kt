@@ -76,7 +76,7 @@ import com.ghoststream.core.model.NearbyDevice
 import com.ghoststream.core.model.NearbyDiscoveryState
 import com.ghoststream.core.model.NetworkType
 import com.ghoststream.core.model.RecentSession
-import com.ghoststream.core.model.SharePreset
+
 import com.ghoststream.core.model.SessionState
 import com.ghoststream.core.model.deviceIdentity
 
@@ -86,16 +86,14 @@ fun HomeScreen(
     libraryState: LibraryState,
     sessionState: SessionState,
     recentSessions: List<RecentSession>,
-    sharePresets: List<SharePreset>,
+
     connectionDiagnostics: ConnectionDiagnostics,
     nearbyDiscoveryState: NearbyDiscoveryState,
     connectingNearbyDeviceId: String?,
     pendingUploadRequest: com.ghoststream.core.model.UploadRequest?,
     isStartingShare: Boolean,
     onStartSharing: () -> Unit,
-    onSavePreset: (String) -> Unit,
-    onApplyPreset: (String) -> Unit,
-    onDeletePreset: (String) -> Unit,
+
     onRefreshConnection: () -> Unit,
     onRefreshNearby: () -> Unit,
     onOpenNearbyDevice: (NearbyDevice) -> Unit,
@@ -149,20 +147,6 @@ fun HomeScreen(
                 onRefreshNearby = onRefreshNearby,
                 onOpenNearbyDevice = onOpenNearbyDevice,
             )
-        }
-
-        if (sharePresets.isNotEmpty() || libraryState.summary.totalItems > 0) {
-            item {
-                SharePresetsCard(
-                    presets = sharePresets,
-                    canSavePreset = libraryState.summary.totalItems > 0,
-                    defaultPresetName = libraryState.folders.firstOrNull()?.displayName
-                        ?: if (libraryState.summary.videos > 0) "Movie Night" else "My collection",
-                    onSavePreset = onSavePreset,
-                    onApplyPreset = onApplyPreset,
-                    onDeletePreset = onDeletePreset,
-                )
-            }
         }
 
         if (recentSessions.isNotEmpty()) {
@@ -586,10 +570,10 @@ private fun ActionShelf(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            Text("Add to share", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.home_action_add_to_share_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                "Pick the files you want to send.",
+                stringResource(R.string.home_action_add_to_share_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -601,22 +585,22 @@ private fun ActionShelf(
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         ActionTile(
-                            label = "Files",
-                            detail = "Choose",
+                            label = stringResource(R.string.home_action_files),
+                            detail = stringResource(R.string.home_action_files_desc),
                             icon = Icons.Outlined.AddBox,
                             onClick = onAddFiles,
                             modifier = Modifier.width(tileWidth),
                         )
                         ActionTile(
-                            label = "Folder",
-                            detail = "Scan",
+                            label = stringResource(R.string.home_action_folder),
+                            detail = stringResource(R.string.home_action_folder_desc),
                             icon = Icons.Outlined.FolderOpen,
                             onClick = onAddFolder,
                             modifier = Modifier.width(tileWidth),
                         )
                         ActionTile(
-                            label = "Library",
-                            detail = "Browse",
+                            label = stringResource(R.string.home_action_library),
+                            detail = stringResource(R.string.home_action_library_desc),
                             icon = Icons.Outlined.VideoLibrary,
                             onClick = onOpenLibrary,
                             modifier = Modifier.width(tileWidth),
@@ -810,7 +794,7 @@ private fun DateRangePickerDialog(
         containerColor = MaterialTheme.colorScheme.surface,
         titleContentColor = MaterialTheme.colorScheme.onSurface,
         textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        title = { Text("Select date range") },
+        title = { Text(stringResource(R.string.home_date_range_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
@@ -822,8 +806,8 @@ private fun DateRangePickerDialog(
                     OutlinedTextField(
                         value = startDateInput,
                         onValueChange = { startDateInput = it },
-                        label = { Text("From date") },
-                        placeholder = { Text("Select start date") },
+                        label = { Text(stringResource(R.string.home_date_range_from)) },
+                        placeholder = { Text(stringResource(R.string.home_date_range_start)) },
                         readOnly = true,
                         singleLine = true,
                         modifier = Modifier
@@ -836,8 +820,8 @@ private fun DateRangePickerDialog(
                     OutlinedTextField(
                         value = endDateInput,
                         onValueChange = { endDateInput = it },
-                        label = { Text("To date") },
-                        placeholder = { Text("Select end date") },
+                        label = { Text(stringResource(R.string.home_date_range_to)) },
+                        placeholder = { Text(stringResource(R.string.home_date_range_end)) },
                         readOnly = true,
                         singleLine = true,
                         modifier = Modifier
@@ -849,7 +833,7 @@ private fun DateRangePickerDialog(
                     )
                 }
                 Text(
-                    "Tip: Open the library to filter by these dates",
+                    stringResource(R.string.home_date_range_tip),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -861,7 +845,7 @@ private fun DateRangePickerDialog(
                 shape = RoundedCornerShape(16.dp),
                 colors = ghostPrimaryButtonColors(),
             ) {
-                Text("Apply filter")
+                Text(stringResource(R.string.home_date_range_apply))
             }
         },
         dismissButton = {
@@ -870,7 +854,7 @@ private fun DateRangePickerDialog(
                 shape = RoundedCornerShape(16.dp),
                 colors = ghostSecondaryButtonColors(),
             ) {
-                Text("Cancel")
+                Text(stringResource(R.string.home_date_range_cancel))
             }
         },
     )
@@ -902,10 +886,10 @@ private fun SupportPanel(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Nearby & network", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.home_nearby_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        "Make sure your local network is ready, then look for another DirectServe device if you want to open it in the app.",
+                        stringResource(R.string.home_nearby_subtitle),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -915,21 +899,21 @@ private fun SupportPanel(
                     shape = RoundedCornerShape(16.dp),
                     colors = ghostSecondaryButtonColors(),
                 ) {
-                    Text("Refresh status")
+                    Text(stringResource(R.string.home_nearby_refresh_status))
                 }
             }
 
             SupportRow(
                 icon = Icons.Outlined.NetworkCheck,
                 title = when (sessionState.networkAvailability.type) {
-                    NetworkType.WIFI -> "Wi-Fi connected"
-                    NetworkType.HOTSPOT -> "Hotspot active"
-                    NetworkType.LOCAL -> "Local network ready"
-                    NetworkType.NONE -> "Network needed"
+                    NetworkType.WIFI -> stringResource(R.string.home_network_wifi)
+                    NetworkType.HOTSPOT -> stringResource(R.string.home_network_hotspot)
+                    NetworkType.LOCAL -> stringResource(R.string.home_network_local)
+                    NetworkType.NONE -> stringResource(R.string.home_network_none)
                 },
                 detail = when {
-                    sessionState.networkAvailability.isReady -> "Nearby devices can open the link on this network."
-                    else -> "Connect both devices to the same Wi-Fi or hotspot."
+                    sessionState.networkAvailability.isReady -> stringResource(R.string.home_network_ready_desc)
+                    else -> stringResource(R.string.home_network_none_desc)
                 },
             )
 
@@ -937,15 +921,15 @@ private fun SupportPanel(
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     SupportRow(
                         icon = Icons.Outlined.OpenInBrowser,
-                        title = "DirectServe app is optional",
-                        detail = "If the other device also has DirectServe, it can appear here. Everyone else can still scan the QR code or open the browser link.",
+                        title = stringResource(R.string.home_nearby_optional_title),
+                        detail = stringResource(R.string.home_nearby_optional_desc),
                     )
                     OutlinedButton(
                         onClick = onRefreshNearby,
                         shape = RoundedCornerShape(16.dp),
                         colors = ghostSecondaryButtonColors(),
                     ) {
-                        Text("Refresh nearby")
+                        Text(stringResource(R.string.home_nearby_refresh))
                     }
                 }
             } else {
@@ -956,7 +940,7 @@ private fun SupportPanel(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            "Open in the DirectServe app",
+                            stringResource(R.string.home_nearby_open_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.weight(1f),
@@ -967,11 +951,11 @@ private fun SupportPanel(
                             shape = RoundedCornerShape(16.dp),
                             colors = ghostSecondaryButtonColors(),
                         ) {
-                            Text("Refresh nearby")
+                            Text(stringResource(R.string.home_nearby_refresh))
                         }
                     }
                     Text(
-                        "This is only for devices with DirectServe installed. The browser link and QR code still work for everyone else.",
+                        stringResource(R.string.home_nearby_open_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -1060,7 +1044,7 @@ private fun NearbyDeviceRow(
                         } else {
                             Icon(Icons.Outlined.OpenInBrowser, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Open nearby session")
+                            Text(stringResource(R.string.home_nearby_action_open_session))
                         }
                     }
                 }
@@ -1087,7 +1071,7 @@ private fun NearbyDeviceRow(
                         } else {
                             Icon(Icons.Outlined.OpenInBrowser, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Open")
+                            Text(stringResource(R.string.home_nearby_action_open))
                         }
                     }
                 }
@@ -1123,138 +1107,14 @@ private fun NearbyDeviceSummary(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            MinimalChip(label = "Available", showAccentDot = true)
+            MinimalChip(label = stringResource(R.string.home_nearby_device_available), showAccentDot = true)
             if (device.authRequired) {
-                MinimalChip(label = "PIN needed")
+                MinimalChip(label = stringResource(R.string.home_nearby_device_pin))
             }
         }
     }
 }
 
-@Composable
-private fun SharePresetsCard(
-    presets: List<SharePreset>,
-    canSavePreset: Boolean,
-    defaultPresetName: String,
-    onSavePreset: (String) -> Unit,
-    onApplyPreset: (String) -> Unit,
-    onDeletePreset: (String) -> Unit,
-) {
-    Card(
-        modifier = Modifier
-            .padding(horizontal = 20.dp)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-    ) {
-        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Saved shares", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        "Save this share as \"$defaultPresetName\" to reuse it later.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Button(
-                    onClick = { onSavePreset(defaultPresetName) },
-                    enabled = canSavePreset,
-                    modifier = Modifier.heightIn(min = 48.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ghostPrimaryButtonColors(),
-                ) {
-                    Text("Save now")
-                }
-            }
-
-            if (presets.isEmpty()) {
-                Text(
-                    text = "Nothing saved yet. Save your current selection above.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            } else {
-                presets.take(3).forEach { preset ->
-                    SharePresetRow(
-                        preset = preset,
-                        onApply = { onApplyPreset(preset.id) },
-                        onDelete = { onDeletePreset(preset.id) },
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SharePresetRow(
-    preset: SharePreset,
-    onApply: () -> Unit,
-    onDelete: () -> Unit,
-) {
-    Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-    ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(preset.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            Text(
-                text = "${preset.itemCount} items | ${formatBytes(preset.totalBytes)}" +
-                    (preset.lastUsedAtEpochMs?.let { " | Used ${DateUtils.getRelativeTimeSpanString(it)}" } ?: ""),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            BoxWithConstraints {
-                val stacked = maxWidth < 280.dp
-                if (stacked) {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        OutlinedButton(
-                            onClick = onApply,
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ghostSecondaryButtonColors(),
-                        ) {
-                            Text("Open")
-                        }
-                        OutlinedButton(
-                            onClick = onDelete,
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ghostSecondaryButtonColors(),
-                        ) {
-                            Text("Delete")
-                        }
-                    }
-                } else {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        OutlinedButton(
-                            onClick = onApply,
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ghostSecondaryButtonColors(),
-                        ) {
-                            Text("Open")
-                        }
-                        OutlinedButton(
-                            onClick = onDelete,
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ghostSecondaryButtonColors(),
-                        ) {
-                            Text("Delete")
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 @Composable
 private fun RecentSessionsCard(
@@ -1287,7 +1147,7 @@ private fun RecentSessionsCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("${session.totalItems} items", style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(R.string.home_saved_shares_items_count, session.totalItems), style = MaterialTheme.typography.titleMedium)
                         Text(
                             DateUtils.getRelativeTimeSpanString(session.endedAtEpochMs).toString(),
                             style = MaterialTheme.typography.bodySmall,

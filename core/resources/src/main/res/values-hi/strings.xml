@@ -445,4 +445,97 @@
     <string name="browser_video_part_unavailable">वीडियो का यह हिस्सा अब उपलब्ध नहीं है।</string>
     <string name="browser_hls_not_needed">इस वीडियो को HLS प्लेबैक की ज़रूरत नहीं है।</string>
     <string name="browser_hls_not_ready">यह कॉम्पैटिबिलिटी स्ट्रीम अभी तक HLS-रेडी नहीं है।</string>
+
+    <!-- Action Shelf (Add to share) -->
+    <string name="home_action_add_to_share_title">साझा करने के लिए जोड़ें</string>
+    <string name="home_action_add_to_share_subtitle">वे फ़ाइलें चुनें जिन्हें आप भेजना चाहते हैं।</string>
+    <string name="home_action_files">फ़ाइलें</string>
+    <string name="home_action_files_desc">चुनें</string>
+    <string name="home_action_folder">फ़ोल्डर</string>
+    <string name="home_action_folder_desc">स्कैन</string>
+    <string name="home_action_library">लाइब्रेरी</string>
+    <string name="home_action_library_desc">ब्राउज़</string>
+
+    <!-- Support Panel (Nearby & network) -->
+    <string name="home_nearby_title">आस-पास और नेटवर्क</string>
+    <string name="home_nearby_subtitle">सुनिश्चित करें कि आपका स्थानीय नेटवर्क तैयार है, फिर यदि आप इसे ऐप में खोलना चाहते हैं तो किसी अन्य DirectServe डिवाइस की खोज करें।</string>
+    <string name="home_nearby_refresh_status">स्थिति ताज़ा करें</string>
+    <string name="home_network_wifi">Wi-Fi कनेक्टेड</string>
+    <string name="home_network_hotspot">हॉटस्पॉट सक्रिय</string>
+    <string name="home_network_local">स्थानीय नेटवर्क तैयार</string>
+    <string name="home_network_none">नेटवर्क आवश्यक</string>
+    <string name="home_network_ready_desc">आस-पास के डिवाइस इस नेटवर्क पर लिंक खोल सकते हैं।</string>
+    <string name="home_network_none_desc">दोनों डिवाइस को एक ही Wi-Fi या हॉटस्पॉट से कनेक्ट करें।</string>
+    <string name="home_nearby_optional_title">DirectServe ऐप वैकल्पिक है</string>
+    <string name="home_nearby_optional_desc">अगर दूसरे डिवाइस में भी DirectServe है, तो वह यहाँ दिखाई दे सकता है। बाक़ी सभी लोग QR कोड स्कैन कर सकते हैं या ब्राउज़र लिंक खोल सकते हैं।</string>
+    <string name="home_nearby_refresh">आस-पास ताज़ा करें</string>
+    <string name="home_nearby_open_title">DirectServe ऐप में खोलें</string>
+    <string name="home_nearby_open_desc">यह केवल DirectServe इंस्टॉल किए गए डिवाइसों के लिए है। ब्राउज़र लिंक और QR कोड बाक़ी सभी के लिए काम करते रहेंगे।</string>
+    <string name="home_nearby_action_open_session">आस-पास का सत्र खोलें</string>
+    <string name="home_nearby_action_open">खोलें</string>
+    <string name="home_nearby_device_available">उपलब्ध</string>
+    <string name="home_nearby_device_pin">पिन आवश्यक</string>
+
+    <!-- Web UI -->
+    <string name="web_hero_eyebrow">निजी रिसीवर दृश्य</string>
+    <string name="web_hero_title">ऑफ़लाइन फ़ाइलें स्ट्रीम करें और साझा करें</string>
+    <string name="web_hero_desc1">ब्राउज़ करें, चलाएं, पूर्वावलोकन करें</string>
+    <string name="web_hero_desc2">, या डाउनलोड करें</string>
+    <string name="web_hero_desc3"> उसी स्थानीय नेटवर्क पर साझा किए गए आइटम।</string>
+    <string name="web_hero_stat_shared">अभी साझा किया गया</string>
+    <string name="web_items">आइटम</string>
+    <string name="web_hero_stat_ready">इस स्थानीय सत्र पर तैयार</string>
+    <string name="web_hero_stat_access">पहुंच</string>
+    <string name="web_access_pin">पिन आवश्यक</string>
+    <string name="web_access_instant">त्वरित ओपन</string>
+    <string name="web_access_pin_desc">होस्ट फ़ोन से कोड दर्ज करें</string>
+    <string name="web_access_instant_desc">इस नेटवर्क पर किसी भी ब्राउज़र में खोलें</string>
+    <string name="web_btn_videos">वीडियो ब्राउज़ करें</string>
+    <string name="web_btn_download_all_files">सभी फ़ाइलें डाउनलोड करें</string>
+    <string name="web_cat_videos">वीडियो</string>
+    <string name="web_cat_photos">तस्वीरें</string>
+    <string name="web_cat_music">संगीत</string>
+    <string name="web_cat_files">फ़ाइलें</string>
+    <string name="web_recent_title">हाल ही में जोड़ा गया</string>
+    <string name="web_recent_meta">हाइलाइट किए गए आइटम</string>
+    <string name="web_nav_home">होम</string>
+    <string name="web_nav_drop_zone">ड्रॉप ज़ोन</string>
+    <string name="web_nav_logout">लॉग आउट करें</string>
+    <string name="web_strip_session">सत्र</string>
+    <string name="web_strip_device">डिवाइस</string>
+    <string name="web_strip_link">लिंक</string>
+    <string name="web_security_pin">पिन से सुरक्षित</string>
+    <string name="web_security_open">स्थानीय नेटवर्क पर खोलें</string>
+    <string name="web_status_unknown">अज्ञात</string>
+
+    <!-- Misc Native UI -->
+    <string name="home_connected_devices">कनेक्टेड डिवाइस</string>
+    <string name="home_rename_device">डिवाइस का नाम बदलें</string>
+    <string name="home_rename_device_subtitle">डिवाइस: %1$s • %2$s</string>
+    <string name="home_rename_custom_name">कस्टम नाम (वैकल्पिक)</string>
+    <string name="home_rename_save">सहेजें</string>
+    <string name="home_rename_cancel">रद्द करें</string>
+    <string name="home_quick_filters">त्वरित फ़िल्टर</string>
+    <string name="home_quick_filter_today">आज</string>
+    <string name="home_quick_filter_today_desc">आज की फ़ाइलें</string>
+    <string name="home_quick_filter_week">पिछले सप्ताह</string>
+    <string name="home_quick_filter_week_desc">पिछले 7 दिनों की फ़ाइलें</string>
+    <string name="home_quick_filter_month">पिछले महीने</string>
+    <string name="home_quick_filter_month_desc">पिछले 30 दिनों की फ़ाइलें</string>
+    <string name="home_quick_filter_custom">कस्टम रेंज</string>
+    <string name="home_quick_filter_custom_desc">विशिष्ट तिथियां चुनें</string>
+    <string name="home_date_range_title">दिनांक सीमा चुनें</string>
+    <string name="home_date_range_from">दिनांक से</string>
+    <string name="home_date_range_start">प्रारंभ दिनांक चुनें</string>
+    <string name="home_date_range_to">दिनांक तक</string>
+    <string name="home_date_range_end">समाप्ति दिनांक चुनें</string>
+    <string name="home_date_range_tip">युक्ति: इन तिथियों के अनुसार फ़िल्टर करने के लिए लाइब्रेरी खोलें</string>
+    <string name="home_date_range_apply">फ़िल्टर लागू करें</string>
+    <string name="home_date_range_cancel">रद्द करें</string>
+    <string name="home_saved_shares">सहेजे गए शेयर</string>
+    <string name="home_saved_shares_save_now">अभी सहेजें</string>
+    <string name="home_saved_shares_open">खोलें</string>
+    <string name="home_saved_shares_delete">हटाएं</string>
+    <string name="home_saved_shares_items_count">%1$d आइटम</string>
+    <string name="library_date_group_label">%1$s </string>
 </resources>

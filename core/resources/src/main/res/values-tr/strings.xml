@@ -425,4 +425,97 @@
     <string name="browser_video_part_unavailable">Videonun o kısmı artık mevcut değil.</string>
     <string name="browser_hls_not_needed">Bu video HLS oynatma gerektirmiyor.</string>
     <string name="browser_hls_not_ready">Uyumluluk akışı henüz HLS için hazır değil.</string>
+
+    <!-- Action Shelf (Add to share) -->
+    <string name="home_action_add_to_share_title">Paylaşmak için ekle</string>
+    <string name="home_action_add_to_share_subtitle">Göndermek istediğiniz dosyaları seçin.</string>
+    <string name="home_action_files">Dosyalar</string>
+    <string name="home_action_files_desc">Seç</string>
+    <string name="home_action_folder">Klasör</string>
+    <string name="home_action_folder_desc">Tara</string>
+    <string name="home_action_library">Kütüphane</string>
+    <string name="home_action_library_desc">Gözat</string>
+
+    <!-- Support Panel (Nearby & network) -->
+    <string name="home_nearby_title">Yakındakiler ve ağ</string>
+    <string name="home_nearby_subtitle">Yerel ağınızın hazır olduğundan emin olun, ardından uygulama içinde açmak istiyorsanız başka bir DirectServe cihazı arayın.</string>
+    <string name="home_nearby_refresh_status">Durumu yenile</string>
+    <string name="home_network_wifi">Wi-Fi bağlı</string>
+    <string name="home_network_hotspot">Etkin nokta aktif</string>
+    <string name="home_network_local">Yerel ağ hazır</string>
+    <string name="home_network_none">Ağ gerekli</string>
+    <string name="home_network_ready_desc">Yakındaki cihazlar bağlantıyı bu ağ üzerinde açabilir.</string>
+    <string name="home_network_none_desc">Her iki cihazı da aynı Wi-Fi veya etkin noktaya bağlayın.</string>
+    <string name="home_nearby_optional_title">DirectServe uygulaması isteğe bağlıdır</string>
+    <string name="home_nearby_optional_desc">Diğer cihazda da DirectServe varsa, burada görünebilir. Diğer herkes QR kodunu tarayabilir veya tarayıcı bağlantısını açabilir.</string>
+    <string name="home_nearby_refresh">Yakındakileri yenile</string>
+    <string name="home_nearby_open_title">DirectServe uygulamasında aç</string>
+    <string name="home_nearby_open_desc">Bu sadece DirectServe yüklü cihazlar içindir. Tarayıcı bağlantısı ve QR kodu herkes için çalışmaya devam edecektir.</string>
+    <string name="home_nearby_action_open_session">Yakındaki oturumu aç</string>
+    <string name="home_nearby_action_open">Aç</string>
+    <string name="home_nearby_device_available">Kullanılabilir</string>
+    <string name="home_nearby_device_pin">PIN gereklidir</string>
+
+    <!-- Web UI -->
+    <string name="web_hero_eyebrow">Özel alıcı görünümü</string>
+    <string name="web_hero_title">Çevrimdışı dosyaları yayınla ve paylaş</string>
+    <string name="web_hero_desc1">Göz at, oynat, önizle</string>
+    <string name="web_hero_desc2">, veya indir</string>
+    <string name="web_hero_desc3"> aynı yerel ağda paylaşılan öğeler.</string>
+    <string name="web_hero_stat_shared">Şimdi paylaşılıyor</string>
+    <string name="web_items">öğeler</string>
+    <string name="web_hero_stat_ready">Bu yerel oturumda hazır</string>
+    <string name="web_hero_stat_access">Erişim</string>
+    <string name="web_access_pin">PIN gerekli</string>
+    <string name="web_access_instant">Anında açılış</string>
+    <string name="web_access_pin_desc">Ana telefondaki kodu girin</string>
+    <string name="web_access_instant_desc">Bu ağdaki herhangi bir tarayıcıda aç</string>
+    <string name="web_btn_videos">Videolara göz at</string>
+    <string name="web_btn_download_all_files">Tüm dosyaları indir</string>
+    <string name="web_cat_videos">Videolar</string>
+    <string name="web_cat_photos">Fotoğraflar</string>
+    <string name="web_cat_music">Müzik</string>
+    <string name="web_cat_files">Dosyalar</string>
+    <string name="web_recent_title">Son eklenenler</string>
+    <string name="web_recent_meta">vurgulanan öğeler</string>
+    <string name="web_nav_home">Ana Sayfa</string>
+    <string name="web_nav_drop_zone">Bırakma Alanı</string>
+    <string name="web_nav_logout">Çıkış Yap</string>
+    <string name="web_strip_session">Oturum</string>
+    <string name="web_strip_device">Cihaz</string>
+    <string name="web_strip_link">Bağlantı</string>
+    <string name="web_security_pin">PIN korumalı</string>
+    <string name="web_security_open">Yerel ağa açık</string>
+    <string name="web_status_unknown">Bilinmiyor</string>
+
+    <!-- Misc Native UI -->
+    <string name="home_connected_devices">Bağlı cihazlar</string>
+    <string name="home_rename_device">Cihazı yeniden adlandır</string>
+    <string name="home_rename_device_subtitle">Cihaz: %1$s • %2$s</string>
+    <string name="home_rename_custom_name">Özel ad (isteğe bağlı)</string>
+    <string name="home_rename_save">Kaydet</string>
+    <string name="home_rename_cancel">İptal</string>
+    <string name="home_quick_filters">Hızlı filtreler</string>
+    <string name="home_quick_filter_today">Bugün</string>
+    <string name="home_quick_filter_today_desc">Bugünün dosyaları</string>
+    <string name="home_quick_filter_week">Geçen hafta</string>
+    <string name="home_quick_filter_week_desc">Son 7 günün dosyaları</string>
+    <string name="home_quick_filter_month">Geçen ay</string>
+    <string name="home_quick_filter_month_desc">Son 30 günün dosyaları</string>
+    <string name="home_quick_filter_custom">Özel aralık</string>
+    <string name="home_quick_filter_custom_desc">Belirli tarihleri seçin</string>
+    <string name="home_date_range_title">Tarih aralığı seçin</string>
+    <string name="home_date_range_from">Tarihinden</string>
+    <string name="home_date_range_start">Başlangıç tarihini seçin</string>
+    <string name="home_date_range_to">Tarihine kadar</string>
+    <string name="home_date_range_end">Bitiş tarihini seçin</string>
+    <string name="home_date_range_tip">İpucu: Bu tarihlere göre filtrelemek için kitaplığı açın</string>
+    <string name="home_date_range_apply">Filtre uygula</string>
+    <string name="home_date_range_cancel">İptal</string>
+    <string name="home_saved_shares">Kaydedilen paylaşımlar</string>
+    <string name="home_saved_shares_save_now">Şimdi kaydet</string>
+    <string name="home_saved_shares_open">Aç</string>
+    <string name="home_saved_shares_delete">Sil</string>
+    <string name="home_saved_shares_items_count">%1$d öğe</string>
+    <string name="library_date_group_label">%1$s </string>
 </resources>

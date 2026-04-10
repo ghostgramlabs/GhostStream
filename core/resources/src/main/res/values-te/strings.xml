@@ -445,4 +445,97 @@
     <string name="browser_video_part_unavailable">వీడియో రాదు.</string>
     <string name="browser_hls_not_needed">అవసరం లేదు.</string>
     <string name="browser_hls_not_ready">సిద్ధంగా లేదు.</string>
+
+    <!-- Action Shelf (Add to share) -->
+    <string name="home_action_add_to_share_title">షేర్ చేయడానికి జోడించండి</string>
+    <string name="home_action_add_to_share_subtitle">మీరు పంపాలనుకుంటున్న ఫైల్‌లను ఎంచుకోండి.</string>
+    <string name="home_action_files">ఫైల్‌లు</string>
+    <string name="home_action_files_desc">ఎంచుకోండి</string>
+    <string name="home_action_folder">ఫోల్డర్</string>
+    <string name="home_action_folder_desc">స్కాన్ చేయండి</string>
+    <string name="home_action_library">లైబ్రరీ</string>
+    <string name="home_action_library_desc">బ్రౌజ్ చేయండి</string>
+
+    <!-- Support Panel (Nearby & network) -->
+    <string name="home_nearby_title">సమీపంగా &amp; నెట్‌వర్క్</string>
+    <string name="home_nearby_subtitle">మీ స్థానిక నెట్‌వర్క్ సిద్ధంగా ఉందని నిర్ధారించుకోండి, ఆపై మీరు యాప్‌లో తెరవాలనుకుంటే మరొక DirectServe పరికరం కోసం వెతకండి.</string>
+    <string name="home_nearby_refresh_status">స్థితిని రిఫ్రెష్ చేయండి</string>
+    <string name="home_network_wifi">Wi-Fi కనెక్ట్ చేయబడింది</string>
+    <string name="home_network_hotspot">హాట్‌స్పాట్ సక్రియంగా ఉంది</string>
+    <string name="home_network_local">స్థానిక నెట్‌వర్క్ సిద్ధంగా ఉంది</string>
+    <string name="home_network_none">నెట్‌వర్క్ అవసరం</string>
+    <string name="home_network_ready_desc">సమీపంలోని పరికరాలు ఈ నెట్‌వర్క్‌లోని లింక్‌ను తెరవగలవు.</string>
+    <string name="home_network_none_desc">రెండు పరికరాలను ఒకే Wi-Fi లేదా హాట్‌స్పాట్‌కి కనెక్ట్ చేయండి.</string>
+    <string name="home_nearby_optional_title">DirectServe యాప్ ఐచ్ఛికం</string>
+    <string name="home_nearby_optional_desc">మరొక పరికరం కూడా DirectServeని కలిగి ఉంటే, అది ఇక్కడ కనిపించవచ్చు. అందరు క్యూఆర్ కోడ్‌ని స్కాన్ చేయవచ్చు లేదా బ్రౌజర్ లింక్‌ను తెరవవచ్చు.</string>
+    <string name="home_nearby_refresh">సమీపగా ఉన్నవి రిఫ్రెష్ చేయండి</string>
+    <string name="home_nearby_open_title">DirectServe యాప్‌లో తెరవండి</string>
+    <string name="home_nearby_open_desc">ఇది DirectServe ఇన్‌స్టాల్ చేసిన పరికరాల కోసం మాత్రమే. బ్రౌజర్ లింక్ మరియు క్యూఆర్ కోడ్ మిగిలిన వారందరికీ పని చేస్తాయి.</string>
+    <string name="home_nearby_action_open_session">సమీప సెషన్‌ను తెరవండి</string>
+    <string name="home_nearby_action_open">తెరువు</string>
+    <string name="home_nearby_device_available">అందుబాటులో ఉంది</string>
+    <string name="home_nearby_device_pin">PIN అవసరం</string>
+
+    <!-- Web UI -->
+    <string name="web_hero_eyebrow">ప్రైవేట్ రిసీవర్ వ్యూ</string>
+    <string name="web_hero_title">ఆఫ్‌లైన్‌లో ఫైల్‌లను ప్రసారం చేయండి మరియు షేర్ చేయండి</string>
+    <string name="web_hero_desc1">బ్రౌజ్ చేయండి, ప్లే చేయండి, ప్రివ్యూ చూడండి</string>
+    <string name="web_hero_desc2">, లేదా డౌన్‌లోడ్ చేయండి</string>
+    <string name="web_hero_desc3"> అదే స్థానిక నెట్‌వర్క్‌లో పంచుకున్న అంశాలు.</string>
+    <string name="web_hero_stat_shared">ఇప్పుడు షేర్ చేయబడింది</string>
+    <string name="web_items">అంశాలు</string>
+    <string name="web_hero_stat_ready">ఈ స్థానిక సెషన్‌లో సిద్ధంగా ఉంది</string>
+    <string name="web_hero_stat_access">యాక్సెస్</string>
+    <string name="web_access_pin">PIN అవసరం</string>
+    <string name="web_access_instant">తక్షణం తెరవండి</string>
+    <string name="web_access_pin_desc">హోస్ట్ ఫోన్ నుండి కోడ్‌ను నమోదు చేయండి</string>
+    <string name="web_access_instant_desc">ఈ నెట్‌వర్క్‌లోని ఏ బ్రౌజర్‌లోనైనా తెరవండి</string>
+    <string name="web_btn_videos">వీడియోలను బ్రౌజ్ చేయండి</string>
+    <string name="web_btn_download_all_files">అన్ని ఫైల్‌లను డౌన్‌లోడ్ చేయండి</string>
+    <string name="web_cat_videos">వీడియోలు</string>
+    <string name="web_cat_photos">ఫోటోలు</string>
+    <string name="web_cat_music">సంగీతం</string>
+    <string name="web_cat_files">ఫైల్‌లు</string>
+    <string name="web_recent_title">ఇటీవల జోడించబడినవి</string>
+    <string name="web_recent_meta">హైలైట్ చేసిన అంశాలు</string>
+    <string name="web_nav_home">హోమ్</string>
+    <string name="web_nav_drop_zone">డ్రాప్ జోన్</string>
+    <string name="web_nav_logout">లాగ్ అవుట్ చేయండి</string>
+    <string name="web_strip_session">సెషన్</string>
+    <string name="web_strip_device">పరికరం</string>
+    <string name="web_strip_link">లింక్</string>
+    <string name="web_security_pin">PIN రక్షించబడింది</string>
+    <string name="web_security_open">స్థానిక నెట్‌వర్క్‌లో తెరవబడింది</string>
+    <string name="web_status_unknown">తెలియదు</string>
+
+    <!-- Misc Native UI -->
+    <string name="home_connected_devices">కనెక్ట్ చేయబడిన పరికరాలు</string>
+    <string name="home_rename_device">పరికరం పేరు మార్చండి</string>
+    <string name="home_rename_device_subtitle">పరికరం: %1$s • %2$s</string>
+    <string name="home_rename_custom_name">అనుకూల పేరు (ఐచ్ఛికం)</string>
+    <string name="home_rename_save">సేవ్ చేయండి</string>
+    <string name="home_rename_cancel">రద్దు చేయండి</string>
+    <string name="home_quick_filters">శీఘ్ర ఫిల్టర్‌లు</string>
+    <string name="home_quick_filter_today">ఈ రోజు</string>
+    <string name="home_quick_filter_today_desc">ఈ రోజు ఫైల్‌లు</string>
+    <string name="home_quick_filter_week">గత వారం</string>
+    <string name="home_quick_filter_week_desc">గత 7 రోజుల ఫైల్‌లు</string>
+    <string name="home_quick_filter_month">గత నెల</string>
+    <string name="home_quick_filter_month_desc">గత 30 రోజుల ఫైల్‌లు</string>
+    <string name="home_quick_filter_custom">అనుకూల పరిధి</string>
+    <string name="home_quick_filter_custom_desc">నిర్దిష్ట తేదీలను ఎంచుకోండి</string>
+    <string name="home_date_range_title">తేదీ పరిధిని ఎంచుకోండి</string>
+    <string name="home_date_range_from">తేదీ నుండి</string>
+    <string name="home_date_range_start">ప్రారంభ తేదీని ఎంచుకోండి</string>
+    <string name="home_date_range_to">తేదీ వరకు</string>
+    <string name="home_date_range_end">ముగింపు తేదీని ఎంచుకోండి</string>
+    <string name="home_date_range_tip">చిట్కా: ఈ తేదీల ద్వారా ఫిల్టర్ చేయడానికి లైబ్రరీని తెరవండి</string>
+    <string name="home_date_range_apply">ఫిల్టర్ వర్తింపజేయండి</string>
+    <string name="home_date_range_cancel">రద్దు చేయండి</string>
+    <string name="home_saved_shares">సేవ్ చేయబడిన షేర్‌లు</string>
+    <string name="home_saved_shares_save_now">ఇప్పుడే సేవ్ చేయండి</string>
+    <string name="home_saved_shares_open">తెరవండి</string>
+    <string name="home_saved_shares_delete">తొలగించండి</string>
+    <string name="home_saved_shares_items_count">%1$d అంశాలు</string>
+    <string name="library_date_group_label">%1$s </string>
 </resources>

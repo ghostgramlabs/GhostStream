@@ -445,4 +445,97 @@
     <string name="browser_video_part_unavailable">このセクションは現在利用できません。</string>
     <string name="browser_hls_not_needed">この動画は通常再生可能です。</string>
     <string name="browser_hls_not_ready">ストリーミングの準備ができていません。</string>
+
+    <!-- Action Shelf (Add to share) -->
+    <string name="home_action_add_to_share_title">共有に追加</string>
+    <string name="home_action_add_to_share_subtitle">送信するファイルを選択してください。</string>
+    <string name="home_action_files">ファイル</string>
+    <string name="home_action_files_desc">選択</string>
+    <string name="home_action_folder">フォルダー</string>
+    <string name="home_action_folder_desc">スキャン</string>
+    <string name="home_action_library">ライブラリ</string>
+    <string name="home_action_library_desc">参照</string>
+
+    <!-- Support Panel (Nearby & network) -->
+    <string name="home_nearby_title">付近とネットワーク</string>
+    <string name="home_nearby_subtitle">ローカルネットワークの準備ができていることを確認してから、アプリで開きたい場合は別のDirectServeデバイスを探してください。</string>
+    <string name="home_nearby_refresh_status">ステータスを更新</string>
+    <string name="home_network_wifi">Wi-Fiに接続済み</string>
+    <string name="home_network_hotspot">ホットスポットが有効</string>
+    <string name="home_network_local">ローカルネットワーク準備完了</string>
+    <string name="home_network_none">ネットワークが必要です</string>
+    <string name="home_network_ready_desc">付近のデバイスはこのネットワーク上のリンクを開くことができます。</string>
+    <string name="home_network_none_desc">両方のデバイスを同じWi-Fiまたはホットスポットに接続してください。</string>
+    <string name="home_nearby_optional_title">DirectServeアプリはオプションです</string>
+    <string name="home_nearby_optional_desc">もう一方のデバイスにもDirectServeがある場合、ここに表示されることがあります。それ以外の人は、引き続きQRコードをスキャンするか、ブラウザのリンクを開くことができます。</string>
+    <string name="home_nearby_refresh">付近を更新</string>
+    <string name="home_nearby_open_title">DirectServeアプリで開く</string>
+    <string name="home_nearby_open_desc">これはDirectServeがインストールされているデバイスのみ対象です。ブラウザのリンクとQRコードは引き続き全員に有効です。</string>
+    <string name="home_nearby_action_open_session">付近のセッションを開く</string>
+    <string name="home_nearby_action_open">開く</string>
+    <string name="home_nearby_device_available">利用可能</string>
+    <string name="home_nearby_device_pin">PINが必要です</string>
+
+    <!-- Web UI -->
+    <string name="web_hero_eyebrow">プライベートレシーバービュー</string>
+    <string name="web_hero_title">オフラインでファイルをストリーミング＆共有</string>
+    <string name="web_hero_desc1">参照、再生、プレビュー</string>
+    <string name="web_hero_desc2">、またはダウンロード</string>
+    <string name="web_hero_desc3"> 同じローカルネットワーク上の共有アイテム。</string>
+    <string name="web_hero_stat_shared">現在共有中</string>
+    <string name="web_items">個のアイテム</string>
+    <string name="web_hero_stat_ready">このローカルセッションで準備完了</string>
+    <string name="web_hero_stat_access">アクセス</string>
+    <string name="web_access_pin">PINが必要です</string>
+    <string name="web_access_instant">即時開く</string>
+    <string name="web_access_pin_desc">ホストの電話からのコードを入力してください</string>
+    <string name="web_access_instant_desc">このネットワーク上の任意のブラウザで開く</string>
+    <string name="web_btn_videos">ビデオを参照</string>
+    <string name="web_btn_download_all_files">すべてのファイルをダウンロード</string>
+    <string name="web_cat_videos">ビデオ</string>
+    <string name="web_cat_photos">写真</string>
+    <string name="web_cat_music">音楽</string>
+    <string name="web_cat_files">ファイル</string>
+    <string name="web_recent_title">最近追加された項目</string>
+    <string name="web_recent_meta">ハイライトされたアイテム</string>
+    <string name="web_nav_home">ホーム</string>
+    <string name="web_nav_drop_zone">ドロップゾーン</string>
+    <string name="web_nav_logout">ログアウト</string>
+    <string name="web_strip_session">セッション</string>
+    <string name="web_strip_device">デバイス</string>
+    <string name="web_strip_link">リンク</string>
+    <string name="web_security_pin">PIN保護</string>
+    <string name="web_security_open">ローカルネットワーク上で公開</string>
+    <string name="web_status_unknown">不明</string>
+
+    <!-- Misc Native UI -->
+    <string name="home_connected_devices">接続中のデバイス</string>
+    <string name="home_rename_device">デバイスの名前を変更</string>
+    <string name="home_rename_device_subtitle">デバイス: %1$s • %2$s</string>
+    <string name="home_rename_custom_name">カスタム名（オプション）</string>
+    <string name="home_rename_save">保存</string>
+    <string name="home_rename_cancel">キャンセル</string>
+    <string name="home_quick_filters">クイックフィルタ</string>
+    <string name="home_quick_filter_today">今日</string>
+    <string name="home_quick_filter_today_desc">今日のファイル</string>
+    <string name="home_quick_filter_week">先週</string>
+    <string name="home_quick_filter_week_desc">過去7日間のファイル</string>
+    <string name="home_quick_filter_month">先月</string>
+    <string name="home_quick_filter_month_desc">過去30日間のファイル</string>
+    <string name="home_quick_filter_custom">カスタム範囲</string>
+    <string name="home_quick_filter_custom_desc">特定の日付をピック</string>
+    <string name="home_date_range_title">日付範囲を選択</string>
+    <string name="home_date_range_from">開始日</string>
+    <string name="home_date_range_start">開始日を選択</string>
+    <string name="home_date_range_to">終了日</string>
+    <string name="home_date_range_end">終了日を選択</string>
+    <string name="home_date_range_tip">ヒント: これらの日付でフィルタリングするにはライブラリを開きます</string>
+    <string name="home_date_range_apply">フィルタを適用</string>
+    <string name="home_date_range_cancel">キャンセル</string>
+    <string name="home_saved_shares">保存された共有</string>
+    <string name="home_saved_shares_save_now">今すぐ保存</string>
+    <string name="home_saved_shares_open">開く</string>
+    <string name="home_saved_shares_delete">削除</string>
+    <string name="home_saved_shares_items_count">%1$d アイテム</string>
+    <string name="library_date_group_label">%1$s </string>
 </resources>

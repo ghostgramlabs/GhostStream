@@ -445,4 +445,97 @@
     <string name="browser_video_part_unavailable">Bagian video sudah tidak tersedia.</string>
     <string name="browser_hls_not_needed">Video tidak butuh HLS.</string>
     <string name="browser_hls_not_ready">Stream ini belum siap untuk HLS.</string>
+
+    <!-- Action Shelf (Add to share) -->
+    <string name="home_action_add_to_share_title">Tambahkan ke berbagi</string>
+    <string name="home_action_add_to_share_subtitle">Pilih file yang ingin Anda kirim.</string>
+    <string name="home_action_files">File</string>
+    <string name="home_action_files_desc">Pilih</string>
+    <string name="home_action_folder">Folder</string>
+    <string name="home_action_folder_desc">Pindai</string>
+    <string name="home_action_library">Pustaka</string>
+    <string name="home_action_library_desc">Jelajahi</string>
+
+    <!-- Support Panel (Nearby & network) -->
+    <string name="home_nearby_title">Di sekitar &amp; jaringan</string>
+    <string name="home_nearby_subtitle">Pastikan jaringan lokal Anda siap, lalu cari perangkat DirectServe lain jika Anda ingin membukanya di aplikasi.</string>
+    <string name="home_nearby_refresh_status">Perbarui status</string>
+    <string name="home_network_wifi">Wi-Fi terhubung</string>
+    <string name="home_network_hotspot">Hotspot aktif</string>
+    <string name="home_network_local">Jaringan lokal siap</string>
+    <string name="home_network_none">Dibutuhkan jaringan</string>
+    <string name="home_network_ready_desc">Perangkat di sekitar dapat membuka tautan di jaringan ini.</string>
+    <string name="home_network_none_desc">Hubungkan kedua perangkat ke Wi-Fi atau hotspot yang sama.</string>
+    <string name="home_nearby_optional_title">Aplikasi DirectServe opsional</string>
+    <string name="home_nearby_optional_desc">Jika perangkat lain juga memiliki DirectServe, ia dapat muncul di sini. Semua orang masih dapat memindai kode QR atau membuka tautan browser.</string>
+    <string name="home_nearby_refresh">Perbarui di sekitar</string>
+    <string name="home_nearby_open_title">Buka di aplikasi DirectServe</string>
+    <string name="home_nearby_open_desc">Ini hanya untuk perangkat yang menginstal DirectServe. Tautan browser dan kode QR masih berfungsi untuk semua orang.</string>
+    <string name="home_nearby_action_open_session">Buka sesi di sekitar</string>
+    <string name="home_nearby_action_open">Buka</string>
+    <string name="home_nearby_device_available">Tersedia</string>
+    <string name="home_nearby_device_pin">Diperlukan PIN</string>
+
+    <!-- Web UI -->
+    <string name="web_hero_eyebrow">Tampilan penerima pribadi</string>
+    <string name="web_hero_title">Streaming &amp; bagikan file secara offline</string>
+    <string name="web_hero_desc1">Jelajahi, putar, pratinjau</string>
+    <string name="web_hero_desc2">, atau unduh</string>
+    <string name="web_hero_desc3"> item yang dibagikan di jaringan lokal yang sama.</string>
+    <string name="web_hero_stat_shared">Dibagikan sekarang</string>
+    <string name="web_items">item</string>
+    <string name="web_hero_stat_ready">Siap di sesi lokal ini</string>
+    <string name="web_hero_stat_access">Akses</string>
+    <string name="web_access_pin">Diperlukan PIN</string>
+    <string name="web_access_instant">Buka instan</string>
+    <string name="web_access_pin_desc">Masukkan kode dari ponsel host</string>
+    <string name="web_access_instant_desc">Buka di browser mana saja di jaringan ini</string>
+    <string name="web_btn_videos">Jelajahi video</string>
+    <string name="web_btn_download_all_files">Unduh semua file</string>
+    <string name="web_cat_videos">Video</string>
+    <string name="web_cat_photos">Foto</string>
+    <string name="web_cat_music">Musik</string>
+    <string name="web_cat_files">File</string>
+    <string name="web_recent_title">Baru ditambahkan</string>
+    <string name="web_recent_meta">item yang disorot</string>
+    <string name="web_nav_home">Beranda</string>
+    <string name="web_nav_drop_zone">Zona Taruh</string>
+    <string name="web_nav_logout">Keluar</string>
+    <string name="web_strip_session">Sesi</string>
+    <string name="web_strip_device">Perangkat</string>
+    <string name="web_strip_link">Tautan</string>
+    <string name="web_security_pin">Dilindungi PIN</string>
+    <string name="web_security_open">Buka di jaringan lokal</string>
+    <string name="web_status_unknown">Tidak diketahui</string>
+
+    <!-- Misc Native UI -->
+    <string name="home_connected_devices">Perangkat terhubung</string>
+    <string name="home_rename_device">Ganti nama perangkat</string>
+    <string name="home_rename_device_subtitle">Perangkat: %1$s • %2$s</string>
+    <string name="home_rename_custom_name">Nama kustom (opsional)</string>
+    <string name="home_rename_save">Simpan</string>
+    <string name="home_rename_cancel">Batal</string>
+    <string name="home_quick_filters">Filter cepat</string>
+    <string name="home_quick_filter_today">Hari Ini</string>
+    <string name="home_quick_filter_today_desc">File dari hari ini</string>
+    <string name="home_quick_filter_week">Pekan lalu</string>
+    <string name="home_quick_filter_week_desc">File 7 hari terakhir</string>
+    <string name="home_quick_filter_month">Bulan lalu</string>
+    <string name="home_quick_filter_month_desc">File 30 hari terakhir</string>
+    <string name="home_quick_filter_custom">Rentang kustom</string>
+    <string name="home_quick_filter_custom_desc">Pilih tanggal spesifik</string>
+    <string name="home_date_range_title">Pilih rentang tanggal</string>
+    <string name="home_date_range_from">Dari tanggal</string>
+    <string name="home_date_range_start">Pilih tanggal mulai</string>
+    <string name="home_date_range_to">Sampai tanggal</string>
+    <string name="home_date_range_end">Pilih tanggal akhir</string>
+    <string name="home_date_range_tip">Tips: Buka perpustakaan untuk memfilter berdasarkan tanggal ini</string>
+    <string name="home_date_range_apply">Terapkan filter</string>
+    <string name="home_date_range_cancel">Batal</string>
+    <string name="home_saved_shares">Bagikan tersimpan</string>
+    <string name="home_saved_shares_save_now">Simpan sekarang</string>
+    <string name="home_saved_shares_open">Buka</string>
+    <string name="home_saved_shares_delete">Hapus</string>
+    <string name="home_saved_shares_items_count">%1$d item</string>
+    <string name="library_date_group_label">%1$s </string>
 </resources>

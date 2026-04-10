@@ -445,4 +445,97 @@
     <string name="browser_video_part_unavailable">影片該部分已不可用。</string>
     <string name="browser_hls_not_needed">此影片不需要使用 HLS 播放。</string>
     <string name="browser_hls_not_ready">相容性串流尚未準備好進行 HLS 播放。</string>
+
+    <!-- Action Shelf (Add to share) -->
+    <string name="home_action_add_to_share_title">加入至分享</string>
+    <string name="home_action_add_to_share_subtitle">選擇您要傳送的檔案。</string>
+    <string name="home_action_files">檔案</string>
+    <string name="home_action_files_desc">選擇</string>
+    <string name="home_action_folder">資料夾</string>
+    <string name="home_action_folder_desc">掃描</string>
+    <string name="home_action_library">媒體庫</string>
+    <string name="home_action_library_desc">瀏覽</string>
+
+    <!-- Support Panel (Nearby & network) -->
+    <string name="home_nearby_title">附近與網路</string>
+    <string name="home_nearby_subtitle">確保您的區域網路已準備就緒，如果您想在應用程式中開啟，請尋找另一個 DirectServe 裝置。</string>
+    <string name="home_nearby_refresh_status">重新整理狀態</string>
+    <string name="home_network_wifi">已連線 Wi-Fi</string>
+    <string name="home_network_hotspot">熱點已啟用</string>
+    <string name="home_network_local">區域網路備妥</string>
+    <string name="home_network_none">需要網路</string>
+    <string name="home_network_ready_desc">附近的裝置可以在此網路上開啟連結。</string>
+    <string name="home_network_none_desc">將兩部裝置連線到同一個 Wi-Fi 或熱點。</string>
+    <string name="home_nearby_optional_title">DirectServe 應用程式是選用的</string>
+    <string name="home_nearby_optional_desc">如果另一部裝置也有 DirectServe，它可能會出現在此處。其他人仍然可以掃描條碼或開啟瀏覽器連結。</string>
+    <string name="home_nearby_refresh">重新整理附近裝置</string>
+    <string name="home_nearby_open_title">在 DirectServe 應用程式中開啟</string>
+    <string name="home_nearby_open_desc">這僅適用於安裝了 DirectServe 的裝置。瀏覽器連結和 QR 碼仍然適用於其他人。</string>
+    <string name="home_nearby_action_open_session">開啟附近工作階段</string>
+    <string name="home_nearby_action_open">開啟</string>
+    <string name="home_nearby_device_available">可用</string>
+    <string name="home_nearby_device_pin">需要 PIN 碼</string>
+
+    <!-- Web UI -->
+    <string name="web_hero_eyebrow">私密接收者檢視</string>
+    <string name="web_hero_title">離線串流與分享檔案</string>
+    <string name="web_hero_desc1">瀏覽、播放、預覽</string>
+    <string name="web_hero_desc2">，或下載</string>
+    <string name="web_hero_desc3"> 位於相同區域網路上的分享項目。</string>
+    <string name="web_hero_stat_shared">現已分享</string>
+    <string name="web_items">個項目</string>
+    <string name="web_hero_stat_ready">在此本機工作階段就緒</string>
+    <string name="web_hero_stat_access">存取權限</string>
+    <string name="web_access_pin">需要 PIN 碼</string>
+    <string name="web_access_instant">立即開啟</string>
+    <string name="web_access_pin_desc">輸入來自管理員手機的代碼</string>
+    <string name="web_access_instant_desc">在此網路中的任何瀏覽器中開啟</string>
+    <string name="web_btn_videos">瀏覽影片</string>
+    <string name="web_btn_download_all_files">下載所有檔案</string>
+    <string name="web_cat_videos">影片</string>
+    <string name="web_cat_photos">相片</string>
+    <string name="web_cat_music">音樂</string>
+    <string name="web_cat_files">檔案</string>
+    <string name="web_recent_title">最近新增</string>
+    <string name="web_recent_meta">個醒目顯示項目</string>
+    <string name="web_nav_home">首頁</string>
+    <string name="web_nav_drop_zone">拖放區</string>
+    <string name="web_nav_logout">登出</string>
+    <string name="web_strip_session">工作階段</string>
+    <string name="web_strip_device">裝置</string>
+    <string name="web_strip_link">連結</string>
+    <string name="web_security_pin">受到 PIN 碼保護</string>
+    <string name="web_security_open">於區域網路開放</string>
+    <string name="web_status_unknown">未知</string>
+
+    <!-- Misc Native UI -->
+    <string name="home_connected_devices">已連線裝置</string>
+    <string name="home_rename_device">重新命名裝置</string>
+    <string name="home_rename_device_subtitle">裝置：%1$s • %2$s</string>
+    <string name="home_rename_custom_name">自訂名稱（選用）</string>
+    <string name="home_rename_save">儲存</string>
+    <string name="home_rename_cancel">取消</string>
+    <string name="home_quick_filters">快速篩選</string>
+    <string name="home_quick_filter_today">今天</string>
+    <string name="home_quick_filter_today_desc">今天的檔案</string>
+    <string name="home_quick_filter_week">過去一週</string>
+    <string name="home_quick_filter_week_desc">過去 7 天的檔案</string>
+    <string name="home_quick_filter_month">過去一個月</string>
+    <string name="home_quick_filter_month_desc">過去 30 天的檔案</string>
+    <string name="home_quick_filter_custom">自訂範圍</string>
+    <string name="home_quick_filter_custom_desc">選擇特定日期</string>
+    <string name="home_date_range_title">選擇日期範圍</string>
+    <string name="home_date_range_from">起始日期</string>
+    <string name="home_date_range_start">選擇開始日期</string>
+    <string name="home_date_range_to">結束日期</string>
+    <string name="home_date_range_end">選擇結束日期</string>
+    <string name="home_date_range_tip">提示：開啟媒體庫以依這些日期進行篩選</string>
+    <string name="home_date_range_apply">套用篩選</string>
+    <string name="home_date_range_cancel">取消</string>
+    <string name="home_saved_shares">已儲存的分享</string>
+    <string name="home_saved_shares_save_now">立即儲存</string>
+    <string name="home_saved_shares_open">開啟</string>
+    <string name="home_saved_shares_delete">刪除</string>
+    <string name="home_saved_shares_items_count">%1$d 個項目</string>
+    <string name="library_date_group_label">%1$s </string>
 </resources>

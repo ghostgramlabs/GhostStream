@@ -1,15 +1,5 @@
 package com.ghoststream.core.model
 
-data class SharePreset(
-    val id: String,
-    val name: String,
-    val createdAtEpochMs: Long,
-    val lastUsedAtEpochMs: Long? = null,
-    val itemUris: List<String> = emptyList(),
-    val folderUris: List<String> = emptyList(),
-    val itemCount: Int = 0,
-    val totalBytes: Long = 0L,
-)
 
 enum class DiagnosticLevel {
     GOOD,
@@ -65,10 +55,10 @@ fun buildConnectionDiagnostics(
         )
 
         add(
-            if (sessionState.networkAvailability.isReady && sessionState.networkAvailability.localAddress != null) {
+            if (sessionState.networkAvailability.isWifiOrHotspotReady) {
                 DiagnosticCheck(
                     id = "network",
-                    title = "Local network ready",
+                    title = "Wi-Fi or hotspot ready",
                     detail = sessionState.networkAvailability.helperText,
                     level = DiagnosticLevel.GOOD,
                 )

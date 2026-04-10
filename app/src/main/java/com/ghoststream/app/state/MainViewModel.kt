@@ -15,7 +15,6 @@ import com.ghoststream.core.model.LibraryState
 import com.ghoststream.core.model.NearbyDevice
 import com.ghoststream.core.model.NearbyDiscoveryState
 import com.ghoststream.core.model.SessionState
-import com.ghoststream.core.model.SharePreset
 import com.ghoststream.core.model.SmartSelectionGroup
 import com.ghoststream.core.model.RecentSession
 import com.ghoststream.core.model.buildConnectionDiagnostics
@@ -52,7 +51,6 @@ class MainViewModel(
         container.storageRepository.libraryState,
         container.sessionManager.sessionState,
         container.sessionManager.recentSessions,
-        container.sharePresetStore.presets,
         smartGroups,
         smartGroupsLoading,
         container.compatibilityPipeline.jobs,
@@ -67,16 +65,15 @@ class MainViewModel(
         val library = values[1] as LibraryState
         val session = values[2] as SessionState
         val recent = values[3] as List<RecentSession>
-        val presets = values[4] as List<SharePreset>
-        val groups = values[5] as List<SmartSelectionGroup>
-        val loading = values[6] as Boolean
-        val compatibilityJobs = values[7] as Map<String, CompatibilityJob>
-        val nearbyDiscoveryState = values[8] as NearbyDiscoveryState
-        val pendingShare = values[9] as Boolean
-        val isStartingShare = values[10] as Boolean
-        val connectingNearbyId = values[11] as String?
-        val pendingUpload = values[12] as com.ghoststream.core.model.UploadRequest?
-        val history = values[13] as List<com.ghoststream.core.model.TransferRecord>
+        val groups = values[4] as List<SmartSelectionGroup>
+        val loading = values[5] as Boolean
+        val compatibilityJobs = values[6] as Map<String, CompatibilityJob>
+        val nearbyDiscoveryState = values[7] as NearbyDiscoveryState
+        val pendingShare = values[8] as Boolean
+        val isStartingShare = values[9] as Boolean
+        val connectingNearbyId = values[10] as String?
+        val pendingUpload = values[11] as com.ghoststream.core.model.UploadRequest?
+        val history = values[12] as List<com.ghoststream.core.model.TransferRecord>
         val filteredNearbyDiscoveryState = nearbyDiscoveryState.filterCurrentSession(session, application)
         MainUiState(
             isReady = true,
@@ -84,7 +81,6 @@ class MainViewModel(
             libraryState = library,
             sessionState = session,
             recentSessions = if (settings.showRecentSessions) recent else emptyList(),
-            sharePresets = presets,
             smartGroups = groups,
             smartGroupsLoading = loading,
             compatibilityJobs = compatibilityJobs,
@@ -197,52 +193,6 @@ class MainViewModel(
         }
     }
 
-    fun saveCurrentAsPreset(name: String) {
-        viewModelScope.launch {
-            container.sharePresetStore.saveCurrentSelection(name, container.storageRepository.libraryState.value)
-                .onSuccess { preset ->
-                    _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_saved_share_named, preset.name)))
-                }
-                .onFailure {
-                    _events.emit(AppEvent.ShowMessage(it.message ?: application.getString(R.string.message_unable_save_share)))
-                }
-        }
-    }
-
-    fun saveSelectedItemsAsPreset(name: String, itemIds: Collection<String>) {
-        viewModelScope.launch {
-            container.sharePresetStore.saveSelectedItems(
-                name = name,
-                selectedItemIds = itemIds,
-                libraryState = container.storageRepository.libraryState.value,
-            ).onSuccess { preset ->
-                _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_saved_share_named, preset.name)))
-            }.onFailure {
-                _events.emit(AppEvent.ShowMessage(it.message ?: application.getString(R.string.message_unable_save_share)))
-            }
-        }
-    }
-
-    fun applyPreset(presetId: String) {
-        viewModelScope.launch {
-            container.sharePresetStore.applyPreset(presetId, container.storageRepository)
-                .onSuccess { presetState ->
-                    container.sessionManager.refreshSelection(presetState.items, presetState.folders)
-                    _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_saved_share_ready, presetState.summary.totalItems)))
-                    _events.emit(AppEvent.NavigateLibrary)
-                }
-                .onFailure {
-                    _events.emit(AppEvent.ShowMessage(it.message ?: application.getString(R.string.message_unable_open_saved_share)))
-                }
-        }
-    }
-
-    fun deletePreset(presetId: String) {
-        viewModelScope.launch {
-            container.sharePresetStore.deletePreset(presetId)
-            _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_saved_share_removed)))
-        }
-    }
 
     fun requestStartSharing() {
         viewModelScope.launch {

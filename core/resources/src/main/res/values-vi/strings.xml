@@ -388,4 +388,97 @@
     <string name="browser_video_part_unavailable">Phần video này không khả dụng.</string>
     <string name="browser_hls_not_needed">Video này không cần phát qua HLS.</string>
     <string name="browser_hls_not_ready">Luồng tương thích chưa sẵn sàng cho HLS.</string>
+
+    <!-- Action Shelf (Add to share) -->
+    <string name="home_action_add_to_share_title">Thêm vào chia sẻ</string>
+    <string name="home_action_add_to_share_subtitle">Chọn các tệp bạn muốn gửi.</string>
+    <string name="home_action_files">Tệp</string>
+    <string name="home_action_files_desc">Chọn</string>
+    <string name="home_action_folder">Thư mục</string>
+    <string name="home_action_folder_desc">Quét</string>
+    <string name="home_action_library">Thư viện</string>
+    <string name="home_action_library_desc">Duyệt</string>
+
+    <!-- Support Panel (Nearby & network) -->
+    <string name="home_nearby_title">Lân cận &amp; mạng</string>
+    <string name="home_nearby_subtitle">Đảm bảo mạng cục bộ của bạn đã sẵn sàng, sau đó tìm kiếm một thiết bị DirectServe khác nếu bạn muốn mở nó trong ứng dụng.</string>
+    <string name="home_nearby_refresh_status">Làm mới trạng thái</string>
+    <string name="home_network_wifi">Đã kết nối Wi-Fi</string>
+    <string name="home_network_hotspot">Điểm phát sóng đang hoạt động</string>
+    <string name="home_network_local">Mạng cục bộ đã sẵn sàng</string>
+    <string name="home_network_none">Cần có mạng</string>
+    <string name="home_network_ready_desc">Các thiết bị lân cận có thể mở liên kết trên mạng này.</string>
+    <string name="home_network_none_desc">Kết nối cả hai thiết bị với cùng một Wi-Fi hoặc điểm phát sóng.</string>
+    <string name="home_nearby_optional_title">Ứng dụng DirectServe là tùy chọn</string>
+    <string name="home_nearby_optional_desc">Nếu thiết bị kia cũng có DirectServe, nó có thể xuất hiện tại đây. Những người khác vẫn có thể quét mã QR hoặc mở liên kết trình duyệt.</string>
+    <string name="home_nearby_refresh">Làm mới lân cận</string>
+    <string name="home_nearby_open_title">Mở trong ứng dụng DirectServe</string>
+    <string name="home_nearby_open_desc">Điều này chỉ dành cho các thiết bị đã cài đặt DirectServe. Liên kết trình duyệt và mã QR vẫn hoạt động cho mọi người khác.</string>
+    <string name="home_nearby_action_open_session">Mở phiên lân cận</string>
+    <string name="home_nearby_action_open">Mở</string>
+    <string name="home_nearby_device_available">Có sẵn</string>
+    <string name="home_nearby_device_pin">Cần mã PIN</string>
+
+    <!-- Web UI -->
+    <string name="web_hero_eyebrow">Chế độ xem bộ thu riêng tư</string>
+    <string name="web_hero_title">Phát trực tuyến &amp; chia sẻ tệp ngoại tuyến</string>
+    <string name="web_hero_desc1">Duyệt, phát, xem trước</string>
+    <string name="web_hero_desc2">, hoặc tải xuống</string>
+    <string name="web_hero_desc3"> các tệp được chia sẻ trên cùng mạng cục bộ.</string>
+    <string name="web_hero_stat_shared">Chia sẻ bây giờ</string>
+    <string name="web_items">mục</string>
+    <string name="web_hero_stat_ready">Sẵn sàng ở phiên cục bộ này</string>
+    <string name="web_hero_stat_access">Truy cập</string>
+    <string name="web_access_pin">Yêu cầu mã PIN</string>
+    <string name="web_access_instant">Mở tức thì</string>
+    <string name="web_access_pin_desc">Nhập mã từ điện thoại lưu trữ</string>
+    <string name="web_access_instant_desc">Mở bằng trình duyệt bất kỳ trên mạng này</string>
+    <string name="web_btn_videos">Duyệt video</string>
+    <string name="web_btn_download_all_files">Tải tất cả các tệp</string>
+    <string name="web_cat_videos">Video</string>
+    <string name="web_cat_photos">Ảnh</string>
+    <string name="web_cat_music">Nhạc</string>
+    <string name="web_cat_files">Tệp</string>
+    <string name="web_recent_title">Đã thêm gần đây</string>
+    <string name="web_recent_meta">các mục nổi bật</string>
+    <string name="web_nav_home">Trang chủ</string>
+    <string name="web_nav_drop_zone">Khu vực thả</string>
+    <string name="web_nav_logout">Đăng xuất</string>
+    <string name="web_strip_session">Phiên</string>
+    <string name="web_strip_device">Thiết bị</string>
+    <string name="web_strip_link">Liên kết</string>
+    <string name="web_security_pin">Được bảo vệ bằng mã PIN</string>
+    <string name="web_security_open">Mở trên mạng cục bộ</string>
+    <string name="web_status_unknown">Không xác định</string>
+
+    <!-- Misc Native UI -->
+    <string name="home_connected_devices">Thiết bị được kết nối</string>
+    <string name="home_rename_device">Đổi tên thiết bị</string>
+    <string name="home_rename_device_subtitle">Thiết bị: %1$s • %2$s</string>
+    <string name="home_rename_custom_name">Tên tùy chỉnh (tùy chọn)</string>
+    <string name="home_rename_save">Lưu</string>
+    <string name="home_rename_cancel">Hủy</string>
+    <string name="home_quick_filters">Bộ lọc nhanh</string>
+    <string name="home_quick_filter_today">Hôm nay</string>
+    <string name="home_quick_filter_today_desc">Tệp của ngày hôm nay</string>
+    <string name="home_quick_filter_week">Tuần trước</string>
+    <string name="home_quick_filter_week_desc">Tệp từ 7 ngày qua</string>
+    <string name="home_quick_filter_month">Tháng trước</string>
+    <string name="home_quick_filter_month_desc">Tệp từ 30 ngày qua</string>
+    <string name="home_quick_filter_custom">Phạm vi tùy chỉnh</string>
+    <string name="home_quick_filter_custom_desc">Chọn ngày cụ thể</string>
+    <string name="home_date_range_title">Chọn phạm vi ngày</string>
+    <string name="home_date_range_from">Từ ngày</string>
+    <string name="home_date_range_start">Chọn ngày bắt đầu</string>
+    <string name="home_date_range_to">Đến ngày</string>
+    <string name="home_date_range_end">Chọn ngày kết thúc</string>
+    <string name="home_date_range_tip">Mẹo: Mở thư viện để lọc theo các ngày này</string>
+    <string name="home_date_range_apply">Áp dụng bộ lọc</string>
+    <string name="home_date_range_cancel">Hủy</string>
+    <string name="home_saved_shares">Tệp chia sẻ đã lưu</string>
+    <string name="home_saved_shares_save_now">Lưu ngay</string>
+    <string name="home_saved_shares_open">Mở</string>
+    <string name="home_saved_shares_delete">Xóa</string>
+    <string name="home_saved_shares_items_count">%1$d mục</string>
+    <string name="library_date_group_label">%1$s </string>
 </resources>

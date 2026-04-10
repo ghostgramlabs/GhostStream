@@ -445,4 +445,97 @@
     <string name="browser_video_part_unavailable">Эта часть видео больше недоступна.</string>
     <string name="browser_hls_not_needed">Для этого видео не требуется HLS.</string>
     <string name="browser_hls_not_ready">Поток совместимости еще не готов к HLS.</string>
+
+    <!-- Action Shelf (Add to share) -->
+    <string name="home_action_add_to_share_title">Добавить для отправки</string>
+    <string name="home_action_add_to_share_subtitle">Выберите файлы, которые хотите отправить.</string>
+    <string name="home_action_files">Файлы</string>
+    <string name="home_action_files_desc">Выбрать</string>
+    <string name="home_action_folder">Папка</string>
+    <string name="home_action_folder_desc">Сканировать</string>
+    <string name="home_action_library">Библиотека</string>
+    <string name="home_action_library_desc">Обзор</string>
+
+    <!-- Support Panel (Nearby & network) -->
+    <string name="home_nearby_title">Рядом и сеть</string>
+    <string name="home_nearby_subtitle">Убедитесь, что ваша локальная сеть готова, затем найдите другое устройство DirectServe, если хотите открыть его в приложении.</string>
+    <string name="home_nearby_refresh_status">Обновить статус</string>
+    <string name="home_network_wifi">Wi-Fi подключен</string>
+    <string name="home_network_hotspot">Точка доступа активна</string>
+    <string name="home_network_local">Локальная сеть готова</string>
+    <string name="home_network_none">Требуется сеть</string>
+    <string name="home_network_ready_desc">Устройства поблизости могут открыть ссылку в этой сети.</string>
+    <string name="home_network_none_desc">Подключите оба устройства к одной Wi-Fi или точке доступа.</string>
+    <string name="home_nearby_optional_title">Приложение DirectServe необязательно</string>
+    <string name="home_nearby_optional_desc">Если на другом устройстве тоже установлен DirectServe, оно может появиться здесь. Все остальные по-прежнему могут отсканировать QR-код или открыть ссылку в браузере.</string>
+    <string name="home_nearby_refresh">Обновить устройства рядом</string>
+    <string name="home_nearby_open_title">Открыть в приложении DirectServe</string>
+    <string name="home_nearby_open_desc">Это касается только устройств с установленным DirectServe. Ссылка в браузере и QR-код все еще работают для всех остальных.</string>
+    <string name="home_nearby_action_open_session">Открыть сеанс поблизости</string>
+    <string name="home_nearby_action_open">Открыть</string>
+    <string name="home_nearby_device_available">Доступно</string>
+    <string name="home_nearby_device_pin">Требуется PIN</string>
+
+    <!-- Web UI -->
+    <string name="web_hero_eyebrow">Вид частного приемника</string>
+    <string name="web_hero_title">Стрим и обмен файлами в автономном режиме</string>
+    <string name="web_hero_desc1">Просмотр, воспроизведение, предпросмотр</string>
+    <string name="web_hero_desc2">, или загрузка</string>
+    <string name="web_hero_desc3"> общих элементов в одной тактильной сети.</string>
+    <string name="web_hero_stat_shared">Доступно сейчас</string>
+    <string name="web_items">элементов</string>
+    <string name="web_hero_stat_ready">Готово в этом локальном сеансе</string>
+    <string name="web_hero_stat_access">Доступ</string>
+    <string name="web_access_pin">Требуется PIN</string>
+    <string name="web_access_instant">Мгновенное открытие</string>
+    <string name="web_access_pin_desc">Введите код с главного телефона</string>
+    <string name="web_access_instant_desc">Откройте в любом браузере в этой сети</string>
+    <string name="web_btn_videos">Обзор видео</string>
+    <string name="web_btn_download_all_files">Скачать все файлы</string>
+    <string name="web_cat_videos">Видео</string>
+    <string name="web_cat_photos">Фото</string>
+    <string name="web_cat_music">Музыка</string>
+    <string name="web_cat_files">Файлы</string>
+    <string name="web_recent_title">Недавно добавленные</string>
+    <string name="web_recent_meta">выделенных элементов</string>
+    <string name="web_nav_home">Главная</string>
+    <string name="web_nav_drop_zone">Зона загрузки</string>
+    <string name="web_nav_logout">Выйти</string>
+    <string name="web_strip_session">Сеанс</string>
+    <string name="web_strip_device">Устройство</string>
+    <string name="web_strip_link">Ссылка</string>
+    <string name="web_security_pin">Защищено PIN</string>
+    <string name="web_security_open">Открыто в локальной сети</string>
+    <string name="web_status_unknown">Неизвестно</string>
+
+    <!-- Misc Native UI -->
+    <string name="home_connected_devices">Подключенные устройства</string>
+    <string name="home_rename_device">Переименовать устройство</string>
+    <string name="home_rename_device_subtitle">Устройство: %1$s • %2$s</string>
+    <string name="home_rename_custom_name">Пользовательское имя (дополнительно)</string>
+    <string name="home_rename_save">Сохранить</string>
+    <string name="home_rename_cancel">Отмена</string>
+    <string name="home_quick_filters">Быстрые фильтры</string>
+    <string name="home_quick_filter_today">Сегодня</string>
+    <string name="home_quick_filter_today_desc">Файлы за сегодня</string>
+    <string name="home_quick_filter_week">Прошлая неделя</string>
+    <string name="home_quick_filter_week_desc">Файлы за последние 7 дней</string>
+    <string name="home_quick_filter_month">Прошлый месяц</string>
+    <string name="home_quick_filter_month_desc">Файлы за последние 30 дней</string>
+    <string name="home_quick_filter_custom">Произвольный диапазон</string>
+    <string name="home_quick_filter_custom_desc">Выберите конкретные даты</string>
+    <string name="home_date_range_title">Выберите диапазон дат</string>
+    <string name="home_date_range_from">С даты</string>
+    <string name="home_date_range_start">Выберите дату начала</string>
+    <string name="home_date_range_to">По дату</string>
+    <string name="home_date_range_end">Выберите дату окончания</string>
+    <string name="home_date_range_tip">Совет: Откройте библиотеку, чтобы отфильтровать по этим датам</string>
+    <string name="home_date_range_apply">Применить фильтр</string>
+    <string name="home_date_range_cancel">Отмена</string>
+    <string name="home_saved_shares">Сохраненные общие доступы</string>
+    <string name="home_saved_shares_save_now">Сохранить сейчас</string>
+    <string name="home_saved_shares_open">Открыть</string>
+    <string name="home_saved_shares_delete">Удалить</string>
+    <string name="home_saved_shares_items_count">%1$d элементов</string>
+    <string name="library_date_group_label">%1$s </string>
 </resources>

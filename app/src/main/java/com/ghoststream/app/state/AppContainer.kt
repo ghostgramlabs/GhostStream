@@ -33,7 +33,6 @@ class AppContainer(
     val debugLogRepository: DebugLogRepository by lazy { DebugLogRepository(appContext, enabled = BuildConfig.DEBUG) }
     val historyRepository: HistoryRepository by lazy { RoomHistoryRepository(appContext) }
     val settingsRepository: SettingsRepository by lazy { DataStoreSettingsRepository(appContext) }
-    val sharePresetStore: SharePresetStore by lazy { SharePresetStore(appContext) }
     val mediaAnalyzer: MediaAnalyzer by lazy { AndroidMediaAnalyzer(appContext) }
     private val tempPlaybackCache: TempPlaybackCache by lazy { TempPlaybackCache(appContext) }
     val compatibilityPipeline: CompatibilityPipeline by lazy {

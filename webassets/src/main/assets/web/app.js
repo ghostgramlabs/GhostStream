@@ -30,6 +30,10 @@ const routes = {
   "/upload": renderUpload,
 };
 
+function gsStr(key, defaultVal) {
+  return state.bootstrap?.strings?.[key] || defaultVal;
+}
+
 window.addEventListener("popstate", () => boot());
 document.addEventListener("click", (event) => {
   const link = event.target.closest("[data-link]");
@@ -382,11 +386,11 @@ function shell(content, options = {}) {
   }
   const bootstrap = state.bootstrap;
   const path = location.pathname;
-  const securityLabel = bootstrap?.authEnabled ? "PIN protected" : "Open on local network";
+  const securityLabel = bootstrap?.authEnabled ? gsStr("web_security_pin", "PIN protected") : gsStr("web_security_open", "Open on local network");
   const sessionLink = bootstrap?.sessionUrl
     ? `
       <div class="gs-inline-note">
-        <span class="gs-inline-note-label">Link</span>
+        <span class="gs-inline-note-label">${gsStr("web_strip_link", "Link")}</span>
         <span class="gs-status-link">${esc(bootstrap.sessionUrl)}</span>
       </div>
     `
@@ -400,26 +404,26 @@ function shell(content, options = {}) {
           <span>${esc(bootstrap?.title || sessionTitle)}</span>
         </a>
         <div class="gs-nav-links">
-          <a class="gs-tab${path === "/" ? " on" : ""}" data-link href="/">Home</a>
-          <a class="gs-tab${path === "/videos" ? " on" : ""}" data-link href="/videos">Videos</a>
-          <a class="gs-tab${path === "/photos" ? " on" : ""}" data-link href="/photos">Photos</a>
-          <a class="gs-tab${path === "/music" ? " on" : ""}" data-link href="/music">Music</a>
-          <a class="gs-tab${path === "/files" ? " on" : ""}" data-link href="/files">Files</a>
-          <a class="gs-tab${path === "/upload" ? " on" : ""}" data-link href="/upload">Drop Zone</a>
+          <a class="gs-tab${path === "/" ? " on" : ""}" data-link href="/">${gsStr("web_nav_home", "Home")}</a>
+          <a class="gs-tab${path === "/videos" ? " on" : ""}" data-link href="/videos">${gsStr("web_cat_videos", "Videos")}</a>
+          <a class="gs-tab${path === "/photos" ? " on" : ""}" data-link href="/photos">${gsStr("web_cat_photos", "Photos")}</a>
+          <a class="gs-tab${path === "/music" ? " on" : ""}" data-link href="/music">${gsStr("web_cat_music", "Music")}</a>
+          <a class="gs-tab${path === "/files" ? " on" : ""}" data-link href="/files">${gsStr("web_cat_files", "Files")}</a>
+          <a class="gs-tab${path === "/upload" ? " on" : ""}" data-link href="/upload">${gsStr("web_nav_drop_zone", "Drop Zone")}</a>
         </div>
         <div class="gs-nav-meta">
           <span class="gs-status-pill">${securityLabel}</span>
-          ${bootstrap?.authEnabled ? '<button class="gs-btn gs-btn-sm" id="logoutBtn">Log out</button>' : ""}
+          ${bootstrap?.authEnabled ? `<button class="gs-btn gs-btn-sm" id="logoutBtn">${gsStr("web_nav_logout", "Log out")}</button>` : ""}
         </div>
       </nav>
       <div class="gs-status-strip">
         <div class="gs-inline-note">
-          <span class="gs-inline-note-label">Session</span>
+          <span class="gs-inline-note-label">${gsStr("web_strip_session", "Session")}</span>
           <span>${esc(bootstrap?.subtitle || sessionSubtitle)}</span>
         </div>
         <div class="gs-inline-note">
-          <span class="gs-inline-note-label">Device</span>
-          <span>${bootstrap?.deviceName ? `${esc(bootstrap.deviceName)} • ${esc(bootstrap.deviceIp)}` : "Unknown"}</span>
+          <span class="gs-inline-note-label">${gsStr("web_strip_device", "Device")}</span>
+          <span>${bootstrap?.deviceName ? `${esc(bootstrap.deviceName)} • ${esc(bootstrap.deviceIp)}` : gsStr("web_status_unknown", "Unknown")}</span>
         </div>
         ${sessionLink}
       </div>
@@ -462,36 +466,36 @@ function renderHome() {
   const bootstrap = state.bootstrap;
   const allowDownloads = !bootstrap?.preventDownload;
   const categories = [
-    { key: "videos", label: "Videos", count: bootstrap.categories.videos, href: "/videos" },
-    { key: "photos", label: "Photos", count: bootstrap.categories.photos, href: "/photos" },
-    { key: "music", label: "Music", count: bootstrap.categories.music, href: "/music" },
-    { key: "files", label: "Files", count: bootstrap.categories.files, href: "/files" },
+    { key: "videos", label: gsStr("web_cat_videos", "Videos"), count: bootstrap.categories.videos, href: "/videos" },
+    { key: "photos", label: gsStr("web_cat_photos", "Photos"), count: bootstrap.categories.photos, href: "/photos" },
+    { key: "music", label: gsStr("web_cat_music", "Music"), count: bootstrap.categories.music, href: "/music" },
+    { key: "files", label: gsStr("web_cat_files", "Files"), count: bootstrap.categories.files, href: "/files" },
   ];
   const total = categories.reduce((sum, category) => sum + category.count, 0);
 
   shell(`
     <section class="gs-hero">
       <div class="gs-hero-copy">
-        <span class="gs-eyebrow">Private receiver view</span>
-        <h1>Stream & share files offline</h1>
-        <p>${esc(sessionSubtitle)}. Browse, play, preview${allowDownloads ? ", or download" : ""} ${total} shared items on the same local network.</p>
+        <span class="gs-eyebrow">${gsStr("web_hero_eyebrow", "Private receiver view")}</span>
+        <h1>${gsStr("web_hero_title", "Stream & share files offline")}</h1>
+        <p>${esc(sessionSubtitle)}. ${gsStr("web_hero_desc1", "Browse, play, preview")}${allowDownloads ? gsStr("web_hero_desc2", ", or download") : ""} ${total}${gsStr("web_hero_desc3", " shared items on the same local network.")}</p>
       </div>
       <div class="gs-hero-side">
         <div class="gs-hero-summary">
           <div class="gs-hero-stat">
-            <span class="gs-inline-note-label">Shared now</span>
-            <strong>${total} items</strong>
-            <span class="gs-meta">Ready on this local session</span>
+            <span class="gs-inline-note-label">${gsStr("web_hero_stat_shared", "Shared now")}</span>
+            <strong>${total} ${gsStr("web_items", "items")}</strong>
+            <span class="gs-meta">${gsStr("web_hero_stat_ready", "Ready on this local session")}</span>
           </div>
           <div class="gs-hero-stat">
-            <span class="gs-inline-note-label">Access</span>
-            <strong>${bootstrap?.authEnabled ? "PIN required" : "Instant open"}</strong>
-            <span class="gs-meta">${bootstrap?.authEnabled ? "Enter the code from the host phone" : "Open in any browser on this network"}</span>
+            <span class="gs-inline-note-label">${gsStr("web_hero_stat_access", "Access")}</span>
+            <strong>${bootstrap?.authEnabled ? gsStr("web_access_pin", "PIN required") : gsStr("web_access_instant", "Instant open")}</strong>
+            <span class="gs-meta">${bootstrap?.authEnabled ? gsStr("web_access_pin_desc", "Enter the code from the host phone") : gsStr("web_access_instant_desc", "Open in any browser on this network")}</span>
           </div>
         </div>
         <div class="gs-hero-actions">
-          <a class="gs-btn gs-btn-accent" data-link href="/videos">Browse videos</a>
-          ${allowDownloads ? '<button class="gs-btn gs-btn-download" id="downloadAllBtn">Download all files</button>' : ""}
+          <a class="gs-btn gs-btn-accent" data-link href="/videos">${gsStr("web_btn_videos", "Browse videos")}</a>
+          ${allowDownloads ? `<button class="gs-btn gs-btn-download" id="downloadAllBtn">${gsStr("web_btn_download_all_files", "Download all files")}</button>` : ""}
         </div>
       </div>
     </section>
@@ -509,8 +513,8 @@ function renderHome() {
     ${bootstrap.recent.length ? `
       <section class="gs-section">
         <div class="gs-section-head">
-          <h2>Recently added</h2>
-          <span class="gs-section-meta">${bootstrap.recent.length} highlighted items</span>
+          <h2>${gsStr("web_recent_title", "Recently added")}</h2>
+          <span class="gs-section-meta">${bootstrap.recent.length} ${gsStr("web_recent_meta", "highlighted items")}</span>
         </div>
         <div class="gs-grid">${bootstrap.recent.map((item) => card(item)).join("")}</div>
       </section>

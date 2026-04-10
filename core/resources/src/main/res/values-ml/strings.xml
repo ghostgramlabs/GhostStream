@@ -445,4 +445,97 @@
     <string name="browser_video_part_unavailable">കിട്ടില്ല.</string>
     <string name="browser_hls_not_needed">ആവശ്യമില്ല.</string>
     <string name="browser_hls_not_ready">റെഡി അല്ല.</string>
+
+    <!-- Action Shelf (Add to share) -->
+    <string name="home_action_add_to_share_title">ഷെയർ ചെയ്യാൻ ചേർക്കുക</string>
+    <string name="home_action_add_to_share_subtitle">നിങ്ങൾക്ക് അയക്കേണ്ട ഫയലുകൾ തിരഞ്ഞെടുക്കുക.</string>
+    <string name="home_action_files">ഫയലുകൾ</string>
+    <string name="home_action_files_desc">തിരഞ്ഞെടുക്കുക</string>
+    <string name="home_action_folder">ഫോൾഡർ</string>
+    <string name="home_action_folder_desc">സ്കാൻ</string>
+    <string name="home_action_library">ലൈബ്രറി</string>
+    <string name="home_action_library_desc">ബ്രൗസ്</string>
+
+    <!-- Support Panel (Nearby & network) -->
+    <string name="home_nearby_title">സമീപമുള്ളവയും നെറ്റ്‌വർക്കും</string>
+    <string name="home_nearby_subtitle">നിങ്ങളുടെ ലോക്കൽ നെറ്റ്‌വർക്ക് തയ്യാറാണെന്ന് ഉറപ്പുവരുത്തുക, തുടർന്ന് ആപ്പിൾതുറക്കാൻ താൽപ്പര്യമുള്ള മറ്റൊരു DirectServe ഉപകരണം തെരയുക.</string>
+    <string name="home_nearby_refresh_status">സ്റ്റാറ്റസ് റിഫ്രഷ് ചെയ്യുക</string>
+    <string name="home_network_wifi">Wi-Fi കണക്‌റ്റ് ചെയ്തു</string>
+    <string name="home_network_hotspot">ഹോട്ട്‌സ്പോട്ട് സജീവം</string>
+    <string name="home_network_local">ലോക്കൽ നെറ്റ്‌വർക്ക് തയ്യാർ</string>
+    <string name="home_network_none">നെറ്റ്‌വർക്ക് ആവശ്യമാണ്</string>
+    <string name="home_network_ready_desc">ഈ നെറ്റ്‌വർക്കിലെ ലിങ്ക് സമീപമുള്ള ഉപകരണങ്ങൾക്ക് തുറക്കാനാകും.</string>
+    <string name="home_network_none_desc">രണ്ട് ഉപകരണങ്ങളും ഒരേ Wi-Fi അല്ലെങ്കിൽ ഹോട്ട്‌സ്പോട്ടിലേക്ക് കണക്‌റ്റ് ചെയ്യുക.</string>
+    <string name="home_nearby_optional_title">DirectServe ആപ്പ് ഓപ്ഷണലാണ്</string>
+    <string name="home_nearby_optional_desc">മറ്റേ ഉപകരണത്തിലും DirectServe ഉണ്ടെങ്കിൽ, അവ ഇവിടെ കാണാം. മറ്റുള്ളവർക്ക് ഇപ്പോഴും QR കോഡ് സ്കാൻ ചെയ്യാനോ ബ്രൗസർ ലിങ്ക് തുറക്കാനോ കഴിയും.</string>
+    <string name="home_nearby_refresh">സമീപമുള്ളവ റിഫ്രഷ് ചെയ്യുക</string>
+    <string name="home_nearby_open_title">DirectServe ആപ്പിൽ തുറക്കുക</string>
+    <string name="home_nearby_open_desc">DirectServe ഇൻസ്റ്റാൾ ചെയ്തിട്ടുള്ള ഉപകരണങ്ങൾക്ക് മാത്രമാണിത്. ബ്രൗസർ ലിങ്കും QR കോഡും മറ്റുള്ളവർക്ക് തുടർന്നും പ്രവർത്തിക്കും.</string>
+    <string name="home_nearby_action_open_session">സമീപത്തെ സെഷൻ തുറക്കുക</string>
+    <string name="home_nearby_action_open">തുറക്കുക</string>
+    <string name="home_nearby_device_available">ലഭ്യമാണ്</string>
+    <string name="home_nearby_device_pin">PIN ആവശ്യമാണ്</string>
+
+    <!-- Web UI -->
+    <string name="web_hero_eyebrow">സ്വകാര്യ റിസീവർ വ്യൂ</string>
+    <string name="web_hero_title">ഓഫ്‌ലൈനായി ഫയലുകൾ സ്ട്രീം ചെയ്യുക &amp; ഷെയർ ചെയ്യുക</string>
+    <string name="web_hero_desc1">ബ്രൗസ് ചെയ്യുക, പ്ലേ ചെയ്യുക, പ്രിവ്യൂ കാണുക</string>
+    <string name="web_hero_desc2">, അല്ലെങ്കിൽ ഡൗൺലോഡ് ചെയ്യുക</string>
+    <string name="web_hero_desc3"> ഒരേ ലോക്കൽ നെറ്റ്‌വർക്കിൽ ഷെയർ ചെയ്ത ഇനങ്ങൾ.</string>
+    <string name="web_hero_stat_shared">ഇപ്പോൾ ഷെയർ ചെയ്തു</string>
+    <string name="web_items">ഇനങ്ങൾ</string>
+    <string name="web_hero_stat_ready">ഈ ലോക്കൽ സെഷനിൽ തയ്യാറാണ്</string>
+    <string name="web_hero_stat_access">ആക്സസ്</string>
+    <string name="web_access_pin">PIN ആവശ്യമാണ്</string>
+    <string name="web_access_instant">ഉടൻ തുറക്കുക</string>
+    <string name="web_access_pin_desc">ഹോസ്റ്റ് ഫോണിൽ നിന്നുള്ള കോഡ് നൽകുക</string>
+    <string name="web_access_instant_desc">ഈ നെറ്റ്‌വർക്കിലെ ഏത് ബ്രൗസറിലും തുറക്കുക</string>
+    <string name="web_btn_videos">വീഡിയോകൾ ബ്രൗസ് ചെയ്യുക</string>
+    <string name="web_btn_download_all_files">എല്ലാ ഫയലുകളും ഡൗൺലോഡ് ചെയ്യുക</string>
+    <string name="web_cat_videos">വീഡിയോകൾ</string>
+    <string name="web_cat_photos">ഫോട്ടോകൾ</string>
+    <string name="web_cat_music">സംഗീതം</string>
+    <string name="web_cat_files">ഫയലുകൾ</string>
+    <string name="web_recent_title">സമീപകാലത്ത് ചേർത്തവ</string>
+    <string name="web_recent_meta">ഹൈലൈറ്റ് ചെയ്ത ഇനങ്ങൾ</string>
+    <string name="web_nav_home">ഹോം</string>
+    <string name="web_nav_drop_zone">ഡ്രോപ്പ് സോൺ</string>
+    <string name="web_nav_logout">ലോഗ് ഔട്ട് ചെയ്യുക</string>
+    <string name="web_strip_session">സെഷൻ</string>
+    <string name="web_strip_device">ഉപകരണം</string>
+    <string name="web_strip_link">ലിങ്ക്</string>
+    <string name="web_security_pin">PIN പരിരക്ഷിച്ചിരിക്കുന്നു</string>
+    <string name="web_security_open">ലോക്കൽ നെറ്റ്‌വർക്കിൽ തുറക്കുക</string>
+    <string name="web_status_unknown">അജ്ഞാതം</string>
+
+    <!-- Misc Native UI -->
+    <string name="home_connected_devices">കണക്‌റ്റുചെയ്‌ത ഉപകരണങ്ങൾ</string>
+    <string name="home_rename_device">ഉപകരണത്തിന്റെ പേര് മാറ്റുക</string>
+    <string name="home_rename_device_subtitle">ഉപകരണം: %1$s • %2$s</string>
+    <string name="home_rename_custom_name">ഇഷ്‌ടാനുസൃത പേര് (ഓപ്ഷണൽ)</string>
+    <string name="home_rename_save">സംരക്ഷിക്കുക</string>
+    <string name="home_rename_cancel">റദ്ദാക്കുക</string>
+    <string name="home_quick_filters">ദ്രുത ഫിൽട്ടറുകൾ</string>
+    <string name="home_quick_filter_today">ഇന്ന്</string>
+    <string name="home_quick_filter_today_desc">ഇന്നത്തെ ഫയലുകൾ</string>
+    <string name="home_quick_filter_week">കഴിഞ്ഞ ആഴ്ച</string>
+    <string name="home_quick_filter_week_desc">കഴിഞ്ഞ 7 ദിവസത്തെ ഫയലുകൾ</string>
+    <string name="home_quick_filter_month">കഴിഞ്ഞ മാസം</string>
+    <string name="home_quick_filter_month_desc">കഴിഞ്ഞ 30 ദിവസത്തെ ഫയലുകൾ</string>
+    <string name="home_quick_filter_custom">ഇഷ്‌ടാനുസൃത ശ്രേണി</string>
+    <string name="home_quick_filter_custom_desc">നിർദ്ദിഷ്ട തീയതികൾ തിരഞ്ഞെടുക്കുക</string>
+    <string name="home_date_range_title">തീയതി ശ്രേണി തിരഞ്ഞെടുക്കുക</string>
+    <string name="home_date_range_from">തീയതി മുതൽ</string>
+    <string name="home_date_range_start">തുടങ്ങുന്ന തീയതി തിരഞ്ഞെടുക്കുക</string>
+    <string name="home_date_range_to">തീയതി വരെ</string>
+    <string name="home_date_range_end">അവസാന തീയതി തിരഞ്ഞെടുക്കുക</string>
+    <string name="home_date_range_tip">നുറുങ്ങ്: ഈ തീയതികൾ പ്രകാരം ഫിൽട്ടർ ചെയ്യാൻ ലൈബ്രറി തുറക്കുക</string>
+    <string name="home_date_range_apply">ഫിൽട്ടർ പ്രയോഗിക്കുക</string>
+    <string name="home_date_range_cancel">റദ്ദാക്കുക</string>
+    <string name="home_saved_shares">സംരക്ഷിച്ച ഷെയറുകൾ</string>
+    <string name="home_saved_shares_save_now">ഇപ്പോൾ സംരക്ഷിക്കുക</string>
+    <string name="home_saved_shares_open">തുറക്കുക</string>
+    <string name="home_saved_shares_delete">ഇല്ലാതാക്കുക</string>
+    <string name="home_saved_shares_items_count">%1$d ഇനങ്ങൾ</string>
+    <string name="library_date_group_label">%1$s </string>
 </resources>

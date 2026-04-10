@@ -445,4 +445,97 @@
     <string name="browser_video_part_unavailable">இந்த வீடியோ பகுதி இப்போது இல்லை.</string>
     <string name="browser_hls_not_needed">இந்த வீடியோவிற்கு HLS தேவையில்லை.</string>
     <string name="browser_hls_not_ready">இன்னும் தயாராகவில்லை.</string>
+
+    <!-- Action Shelf (Add to share) -->
+    <string name="home_action_add_to_share_title">பகிரச் சேர்</string>
+    <string name="home_action_add_to_share_subtitle">நீங்கள் அனுப்ப வேண்டிய கோப்புகளைத் தேர்வுசெய்யவும்.</string>
+    <string name="home_action_files">கோப்புகள்</string>
+    <string name="home_action_files_desc">தேர்வுசெய்க</string>
+    <string name="home_action_folder">கோப்புறை</string>
+    <string name="home_action_folder_desc">ஸ்கேன்</string>
+    <string name="home_action_library">நூலகம்</string>
+    <string name="home_action_library_desc">உலாவு</string>
+
+    <!-- Support Panel (Nearby & network) -->
+    <string name="home_nearby_title">அருக்கில் மற்றும் நெட்வொர்க்</string>
+    <string name="home_nearby_subtitle">உங்கள் உள்ளூர் நெட்வொர்க் தயார்நிலையில் உள்ளதா என்பதை உறுதிசெய்து, பயன்பாட்டில் அதனைத் திறக்க விரும்பினால், மற்றொரு DirectServe சாதனத்தைத் தேடவும்.</string>
+    <string name="home_nearby_refresh_status">நிலையைப் புதுப்பி</string>
+    <string name="home_network_wifi">Wi-Fi இணைக்கப்பட்டது</string>
+    <string name="home_network_hotspot">ஹாட்ஸ்பாட் செயலில் உள்ளது</string>
+    <string name="home_network_local">உள்ளூர் நெட்வொர்க் தயார்</string>
+    <string name="home_network_none">நெட்வொர்க் தேவை</string>
+    <string name="home_network_ready_desc">அருக்கிலுள்ள சாதனங்களால் இந்த நெட்வொர்க்கில் இணைப்பைத் திறக்க முடியும்.</string>
+    <string name="home_network_none_desc">இரண்டு சாதனங்களையும் ஒரே Wi-Fi அல்லது ஹாட்ஸ்பாட்டுடன் இணைக்கவும்.</string>
+    <string name="home_nearby_optional_title">DirectServe ஆப்ஸ் விருப்பத்தேர்வானது</string>
+    <string name="home_nearby_optional_desc">மற்றொரு சாதனத்திலும் DirectServe இருந்தால், அது இங்கு தோன்றலாம். மற்றவர்கள் QR குறியீட்டை ஸ்கேன் செய்யலாம் அல்லது உலாவி இணைப்பைத் திறக்கலாம்.</string>
+    <string name="home_nearby_refresh">அருக்கில் எனப் புதுப்பி</string>
+    <string name="home_nearby_open_title">DirectServe ஆப்ஸில் திற</string>
+    <string name="home_nearby_open_desc">இது DirectServe நிறுவப்பட்ட சாதனங்களுக்கு மட்டுமே. உலாவி இணைப்பும் QR குறியீடும் மற்ற அனைவருக்கும் தொடர்ந்து செயல்படும்.</string>
+    <string name="home_nearby_action_open_session">அருக்கிலுள்ள அமர்வைத் திற</string>
+    <string name="home_nearby_action_open">திற</string>
+    <string name="home_nearby_device_available">கிடைக்கிறது</string>
+    <string name="home_nearby_device_pin">PIN தேவை</string>
+
+    <!-- Web UI -->
+    <string name="web_hero_eyebrow">தனிப்பட்ட ரிசீவர் பார்வை</string>
+    <string name="web_hero_title">ஆஃப்லைனில் கோப்புகளை ஸ்ட்ரீம் மற்றும் பகிர்</string>
+    <string name="web_hero_desc1">உலாவு, இயக்கு, முன்காட்சி</string>
+    <string name="web_hero_desc2">, அல்லது பதிவிறக்கு</string>
+    <string name="web_hero_desc3"> அதே உள்ளூர் நெட்வொர்க்கில் பகிரப்பட்ட உருப்படிகள்.</string>
+    <string name="web_hero_stat_shared">இப்போது பகிரப்பட்டது</string>
+    <string name="web_items">உருப்படிகள்</string>
+    <string name="web_hero_stat_ready">இந்த உள்ளூர் அமர்வில் தயாராக உள்ளது</string>
+    <string name="web_hero_stat_access">அணுகல்</string>
+    <string name="web_access_pin">PIN தேவை</string>
+    <string name="web_access_instant">உடன் திற</string>
+    <string name="web_access_pin_desc">ஹோஸ்ட் போனிலிருந்து குறியீட்டை உள்ளிடு</string>
+    <string name="web_access_instant_desc">இந்த நெட்வொர்க்கில் ஏதேனும் உலாவி திறக்கவும்</string>
+    <string name="web_btn_videos">வீடியோக்களை உலாவு</string>
+    <string name="web_btn_download_all_files">எல்லா கோப்புகளையும் பதிவிறக்கு</string>
+    <string name="web_cat_videos">வீடியோக்கள்</string>
+    <string name="web_cat_photos">புகைப்படங்கள்</string>
+    <string name="web_cat_music">இசை</string>
+    <string name="web_cat_files">கோப்புகள்</string>
+    <string name="web_recent_title">சமீபத்தில் சேர்த்தவை</string>
+    <string name="web_recent_meta">சிறப்பம்ச உருப்படிகள்</string>
+    <string name="web_nav_home">முகப்பு</string>
+    <string name="web_nav_drop_zone">டிராப் சோன்</string>
+    <string name="web_nav_logout">வெளியேறு</string>
+    <string name="web_strip_session">அமர்வு</string>
+    <string name="web_strip_device">சாதனம்</string>
+    <string name="web_strip_link">இணைப்பு</string>
+    <string name="web_security_pin">PIN பாதுகாக்கலானது</string>
+    <string name="web_security_open">உள்ளூர் நெட்வொர்க்கில் திற</string>
+    <string name="web_status_unknown">தெரியவில்லை</string>
+
+    <!-- Misc Native UI -->
+    <string name="home_connected_devices">இணைக்கப்பட்ட சாதனங்கள்</string>
+    <string name="home_rename_device">சாதனத்தின் மறுபெயரிடு</string>
+    <string name="home_rename_device_subtitle">சாதனம்: %1$s • %2$s</string>
+    <string name="home_rename_custom_name">தனிப்பயன் பெயர் (விருப்பத்திற்குரியது)</string>
+    <string name="home_rename_save">சேமி</string>
+    <string name="home_rename_cancel">ரத்துசெய்</string>
+    <string name="home_quick_filters">விரைவு வடிப்பான்கள்</string>
+    <string name="home_quick_filter_today">இன்று</string>
+    <string name="home_quick_filter_today_desc">இன்றைய கோப்புகள்</string>
+    <string name="home_quick_filter_week">கடந்த வாரம்</string>
+    <string name="home_quick_filter_week_desc">கடைசி 7 நாட்கள் கோப்புகள்</string>
+    <string name="home_quick_filter_month">கடந்த மாதம்</string>
+    <string name="home_quick_filter_month_desc">கடைசி 30 நாட்கள் கோப்புகள்</string>
+    <string name="home_quick_filter_custom">தனிப்பயன் வரம்பு</string>
+    <string name="home_quick_filter_custom_desc">குறிப்பிட்ட தேதிகளை தேர்வு செய்க</string>
+    <string name="home_date_range_title">தேதி வரம்பைத் தேர்ந்தெடுக்கவும்</string>
+    <string name="home_date_range_from">தேதியிலிருந்து</string>
+    <string name="home_date_range_start">தொடக்க தேதியைத் தேர்ந்தெடுக்கவும்</string>
+    <string name="home_date_range_to">தேதி வரை</string>
+    <string name="home_date_range_end">முடிவு தேதியைத் தேர்ந்தெடுக்கவும்</string>
+    <string name="home_date_range_tip">உதவிக்குறிப்பு: இந்த தேதிகளின் அடிப்படையில் வடிகட்ட நூலகத்தைத் திறக்கவும்</string>
+    <string name="home_date_range_apply">வடிப்பானைப் பயன்படுத்து</string>
+    <string name="home_date_range_cancel">ரத்துசெய்</string>
+    <string name="home_saved_shares">சேமிக்கப்பட்ட பகிர்வுகள்</string>
+    <string name="home_saved_shares_save_now">இப்போது சேமி</string>
+    <string name="home_saved_shares_open">திற</string>
+    <string name="home_saved_shares_delete">அழி</string>
+    <string name="home_saved_shares_items_count">%1$d உருப்படிகள்</string>
+    <string name="library_date_group_label">%1$s </string>
 </resources>

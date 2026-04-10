@@ -445,4 +445,97 @@
     <string name="browser_video_part_unavailable">Esta parte del video ya no está disponible.</string>
     <string name="browser_hls_not_needed">Este video no requiere HLS.</string>
     <string name="browser_hls_not_ready">El stream no está listo para HLS aún.</string>
+
+    <!-- Action Shelf (Add to share) -->
+    <string name="home_action_add_to_share_title">Añadir para compartir</string>
+    <string name="home_action_add_to_share_subtitle">Elige los archivos que quieres enviar.</string>
+    <string name="home_action_files">Archivos</string>
+    <string name="home_action_files_desc">Elegir</string>
+    <string name="home_action_folder">Carpeta</string>
+    <string name="home_action_folder_desc">Escanear</string>
+    <string name="home_action_library">Biblioteca</string>
+    <string name="home_action_library_desc">Explorar</string>
+
+    <!-- Support Panel (Nearby & network) -->
+    <string name="home_nearby_title">Cercanos y red</string>
+    <string name="home_nearby_subtitle">Asegúrate de que tu red local esté lista, luego busca otro dispositivo DirectServe si quieres abrirlo en la aplicación.</string>
+    <string name="home_nearby_refresh_status">Actualizar estado</string>
+    <string name="home_network_wifi">Wi-Fi conectado</string>
+    <string name="home_network_hotspot">Punto de acceso activo</string>
+    <string name="home_network_local">Red local lista</string>
+    <string name="home_network_none">Se necesita red</string>
+    <string name="home_network_ready_desc">Los dispositivos cercanos pueden abrir el enlace en esta red.</string>
+    <string name="home_network_none_desc">Conecta ambos dispositivos al mismo Wi-Fi o punto de acceso.</string>
+    <string name="home_nearby_optional_title">La aplicación DirectServe es opcional</string>
+    <string name="home_nearby_optional_desc">Si el otro dispositivo también tiene DirectServe, puede aparecer aquí. Todos los demás aún pueden escanear el código QR o abrir el enlace del navegador.</string>
+    <string name="home_nearby_refresh">Actualizar cercanos</string>
+    <string name="home_nearby_open_title">Abrir en la aplicación DirectServe</string>
+    <string name="home_nearby_open_desc">Esto es solo para dispositivos que tienen DirectServe instalado. El enlace del navegador y el código QR aún funcionan para todos los demás.</string>
+    <string name="home_nearby_action_open_session">Abrir sesión cercana</string>
+    <string name="home_nearby_action_open">Abrir</string>
+    <string name="home_nearby_device_available">Disponible</string>
+    <string name="home_nearby_device_pin">Se necesita PIN</string>
+
+    <!-- Web UI -->
+    <string name="web_hero_eyebrow">Vista de receptor privado</string>
+    <string name="web_hero_title">Transmite y comparte archivos sin conexión</string>
+    <string name="web_hero_desc1">Explora, reproduce, previsualiza</string>
+    <string name="web_hero_desc2">, o descarga</string>
+    <string name="web_hero_desc3"> elementos compartidos en la misma red local.</string>
+    <string name="web_hero_stat_shared">Compartido ahora</string>
+    <string name="web_items">elementos</string>
+    <string name="web_hero_stat_ready">Listo en esta sesión local</string>
+    <string name="web_hero_stat_access">Acceso</string>
+    <string name="web_access_pin">Se requiere PIN</string>
+    <string name="web_access_instant">Apertura instantánea</string>
+    <string name="web_access_pin_desc">Ingresa el código del teléfono anfitrión</string>
+    <string name="web_access_instant_desc">Abrir en cualquier navegador en esta red</string>
+    <string name="web_btn_videos">Explorar videos</string>
+    <string name="web_btn_download_all_files">Descargar todos los archivos</string>
+    <string name="web_cat_videos">Videos</string>
+    <string name="web_cat_photos">Fotos</string>
+    <string name="web_cat_music">Música</string>
+    <string name="web_cat_files">Archivos</string>
+    <string name="web_recent_title">Añadidos recientemente</string>
+    <string name="web_recent_meta">elementos destacados</string>
+    <string name="web_nav_home">Inicio</string>
+    <string name="web_nav_drop_zone">Zona de carga</string>
+    <string name="web_nav_logout">Cerrar sesión</string>
+    <string name="web_strip_session">Sesión</string>
+    <string name="web_strip_device">Dispositivo</string>
+    <string name="web_strip_link">Enlace</string>
+    <string name="web_security_pin">Protegido con PIN</string>
+    <string name="web_security_open">Abierto en red local</string>
+    <string name="web_status_unknown">Desconocido</string>
+
+    <!-- Misc Native UI -->
+    <string name="home_connected_devices">Dispositivos conectados</string>
+    <string name="home_rename_device">Renombrar dispositivo</string>
+    <string name="home_rename_device_subtitle">Dispositivo: %1$s • %2$s</string>
+    <string name="home_rename_custom_name">Nombre personalizado (opcional)</string>
+    <string name="home_rename_save">Guardar</string>
+    <string name="home_rename_cancel">Cancelar</string>
+    <string name="home_quick_filters">Filtros rápidos</string>
+    <string name="home_quick_filter_today">Hoy</string>
+    <string name="home_quick_filter_today_desc">Archivos de hoy</string>
+    <string name="home_quick_filter_week">Semana pasada</string>
+    <string name="home_quick_filter_week_desc">Archivos de los últimos 7 días</string>
+    <string name="home_quick_filter_month">Mes pasado</string>
+    <string name="home_quick_filter_month_desc">Archivos de los últimos 30 días</string>
+    <string name="home_quick_filter_custom">Rango personalizado</string>
+    <string name="home_quick_filter_custom_desc">Elegir fechas específicas</string>
+    <string name="home_date_range_title">Seleccionar rango de fechas</string>
+    <string name="home_date_range_from">Desde la fecha</string>
+    <string name="home_date_range_start">Seleccionar fecha de inicio</string>
+    <string name="home_date_range_to">Hasta la fecha</string>
+    <string name="home_date_range_end">Seleccionar fecha de finalización</string>
+    <string name="home_date_range_tip">Consejo: Abre la biblioteca para filtrar por estas fechas</string>
+    <string name="home_date_range_apply">Aplicar filtro</string>
+    <string name="home_date_range_cancel">Cancelar</string>
+    <string name="home_saved_shares">Recursos compartidos guardados</string>
+    <string name="home_saved_shares_save_now">Guardar ahora</string>
+    <string name="home_saved_shares_open">Abrir</string>
+    <string name="home_saved_shares_delete">Eliminar</string>
+    <string name="home_saved_shares_items_count">%1$d elementos</string>
+    <string name="library_date_group_label">%1$s </string>
 </resources>

@@ -8,7 +8,6 @@ import com.ghoststream.core.model.LibraryState
 import com.ghoststream.core.model.NearbyDiscoveryState
 import com.ghoststream.core.model.RecentSession
 import com.ghoststream.core.model.SessionState
-import com.ghoststream.core.model.SharePreset
 import com.ghoststream.core.model.SmartSelectionGroup
 import com.ghoststream.core.model.TransferRecord
 
@@ -18,7 +17,6 @@ data class MainUiState(
     val libraryState: LibraryState = LibraryState(),
     val sessionState: SessionState = SessionState(),
     val recentSessions: List<RecentSession> = emptyList(),
-    val sharePresets: List<SharePreset> = emptyList(),
     val smartGroups: List<SmartSelectionGroup> = emptyList(),
     val smartGroupsLoading: Boolean = false,
     val compatibilityJobs: Map<String, CompatibilityJob> = emptyMap(),

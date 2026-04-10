@@ -445,4 +445,97 @@
     <string name="discovery_unavailable_now">ขณะนี้ไม่สามารถค้นหาเครื่องใกล้เคียงได้ คุณยังสามารถใช้ QR หรือลิงก์โดยตรงได้</string>
     <string name="discovery_start_failed">เริ่มทำงานไม่สำเร็จ (%1$d)</string>
     <string name="discovery_ready_to_open">พบอุปกรณ์ DirectServe พร้อมสำหรับการเชื่อมต่อ</string>
+
+    <!-- Action Shelf (Add to share) -->
+    <string name="home_action_add_to_share_title">เพิ่มเพื่อแชร์</string>
+    <string name="home_action_add_to_share_subtitle">เลือกไฟล์ที่คุณต้องการส่ง</string>
+    <string name="home_action_files">ไฟล์</string>
+    <string name="home_action_files_desc">เลือก</string>
+    <string name="home_action_folder">โฟลเดอร์</string>
+    <string name="home_action_folder_desc">สแกน</string>
+    <string name="home_action_library">คลัง</string>
+    <string name="home_action_library_desc">เรียกดู</string>
+
+    <!-- Support Panel (Nearby & network) -->
+    <string name="home_nearby_title">ใกล้เคียง &amp; เครือข่าย</string>
+    <string name="home_nearby_subtitle">ตรวจสอบให้แน่ใจว่าเครือข่ายท้องถิ่นของคุณพร้อมแล้ว จากนั้นมองหาอุปกรณ์ DirectServe อื่น หากคุณต้องการเปิดในแอป</string>
+    <string name="home_nearby_refresh_status">รีเฟรชสถานะ</string>
+    <string name="home_network_wifi">เชื่อมต่อ Wi-Fi แล้ว</string>
+    <string name="home_network_hotspot">ฮอตสปอตกำลังใช้งาน</string>
+    <string name="home_network_local">เครือข่ายท้องถิ่นพร้อม</string>
+    <string name="home_network_none">จำเป็นต้องใช้เครือข่าย</string>
+    <string name="home_network_ready_desc">อุปกรณ์ใกล้เคียงสามารถเปิดลิงก์บนเครือข่ายนี้ได้</string>
+    <string name="home_network_none_desc">เชื่อมต่ออุปกรณ์ทั้งสองเข้ากับ Wi-Fi หรือฮอตสปอตเดียวกัน</string>
+    <string name="home_nearby_optional_title">แอป DirectServe เป็นทางเลือก</string>
+    <string name="home_nearby_optional_desc">หากอุปกรณ์เครื่องอื่นมี DirectServe ด้วย อาจปรากฏขึ้นที่นี่ ทุกคนยังคงสามารถสแกนคิวอาร์โค้ดหรือเปิดลิงก์เบราว์เซอร์ได้</string>
+    <string name="home_nearby_refresh">รีเฟรชที่อยู่ใกล้เคียง</string>
+    <string name="home_nearby_open_title">เปิดในแอป DirectServe</string>
+    <string name="home_nearby_open_desc">สำหรับอุปกรณ์ที่ติดตั้ง DirectServe เท่านั้น ลิงก์เบราว์เซอร์และคิวอาร์โค้ดยังคงใช้งานได้สำหรับทุกคน</string>
+    <string name="home_nearby_action_open_session">เปิดเซสชันใกล้เคียง</string>
+    <string name="home_nearby_action_open">เปิด</string>
+    <string name="home_nearby_device_available">พร้อมใช้งาน</string>
+    <string name="home_nearby_device_pin">ต้องใช้ PIN</string>
+
+    <!-- Web UI -->
+    <string name="web_hero_eyebrow">มุมมองผู้รับส่วนตัว</string>
+    <string name="web_hero_title">สตรีม &amp; แชร์ไฟล์แบบออฟไลน์</string>
+    <string name="web_hero_desc1">เรียกดู เริ่มเล่น ดูตัวอย่าง</string>
+    <string name="web_hero_desc2">, หรือดาวน์โหลด</string>
+    <string name="web_hero_desc3"> รายการที่แชร์บนเครือข่ายท้องถิ่นเดียวกัน</string>
+    <string name="web_hero_stat_shared">แชร์อยู่ตอนนี้</string>
+    <string name="web_items">รายการ</string>
+    <string name="web_hero_stat_ready">พร้อมใช้งานในเซสชันท้องถิ่นนี้</string>
+    <string name="web_hero_stat_access">การเข้าถึง</string>
+    <string name="web_access_pin">ต้องใช้ PIN</string>
+    <string name="web_access_instant">เปิดได้ทันที</string>
+    <string name="web_access_pin_desc">ป้อนรหัสจากโทรศัพท์โฮสต์</string>
+    <string name="web_access_instant_desc">เปิดในเบราว์เซอร์ใดก็ได้บนเครือข่ายนี้</string>
+    <string name="web_btn_videos">เรียกดูวิดีโอ</string>
+    <string name="web_btn_download_all_files">ดาวน์โหลดไฟล์ทั้งหมด</string>
+    <string name="web_cat_videos">วิดีโอ</string>
+    <string name="web_cat_photos">รูปภาพ</string>
+    <string name="web_cat_music">เพลง</string>
+    <string name="web_cat_files">ไฟล์</string>
+    <string name="web_recent_title">เพิ่มเมื่อเร็วๆ นี้</string>
+    <string name="web_recent_meta">รายการเด่น</string>
+    <string name="web_nav_home">หน้าแรก</string>
+    <string name="web_nav_drop_zone">พื้นที่วางไฟล์</string>
+    <string name="web_nav_logout">ออกจากระบบ</string>
+    <string name="web_strip_session">เซสชัน</string>
+    <string name="web_strip_device">อุปกรณ์</string>
+    <string name="web_strip_link">ลิงก์</string>
+    <string name="web_security_pin">ได้รับการปกป้องด้วย PIN</string>
+    <string name="web_security_open">เปิดแชร์บนเครือข่ายท้องถิ่น</string>
+    <string name="web_status_unknown">ไม่ทราบ</string>
+
+    <!-- Misc Native UI -->
+    <string name="home_connected_devices">อุปกรณ์ที่เชื่อมต่อ</string>
+    <string name="home_rename_device">เปลี่ยนชื่ออุปกรณ์</string>
+    <string name="home_rename_device_subtitle">อุปกรณ์: %1$s • %2$s</string>
+    <string name="home_rename_custom_name">ชื่อที่กำหนดเอง (ไม่บังคับ)</string>
+    <string name="home_rename_save">บันทึก</string>
+    <string name="home_rename_cancel">ยกเลิก</string>
+    <string name="home_quick_filters">ตัวกรองด่วน</string>
+    <string name="home_quick_filter_today">วันนี้</string>
+    <string name="home_quick_filter_today_desc">ไฟล์จากวันนี้</string>
+    <string name="home_quick_filter_week">สัปดาห์ที่แล้ว</string>
+    <string name="home_quick_filter_week_desc">ไฟล์จาก 7 วันที่ผ่านมา</string>
+    <string name="home_quick_filter_month">เดือนที่แล้ว</string>
+    <string name="home_quick_filter_month_desc">ไฟล์จาก 30 วันที่ผ่านมา</string>
+    <string name="home_quick_filter_custom">ช่วงที่กำหนดเอง</string>
+    <string name="home_quick_filter_custom_desc">เลือกวันที่กำหนด</string>
+    <string name="home_date_range_title">เลือกช่วงวันที่</string>
+    <string name="home_date_range_from">จากวันที่</string>
+    <string name="home_date_range_start">เลือกวันที่เริ่มต้น</string>
+    <string name="home_date_range_to">ถึงวันที่</string>
+    <string name="home_date_range_end">เลือกวันที่สิ้นสุด</string>
+    <string name="home_date_range_tip">เคล็ดลับ: เปิดไลบรารีเพื่อกรองตามวันที่เหล่านี้</string>
+    <string name="home_date_range_apply">ใช้ตัวกรอง</string>
+    <string name="home_date_range_cancel">ยกเลิก</string>
+    <string name="home_saved_shares">รายการแชร์ที่บันทึกไว้</string>
+    <string name="home_saved_shares_save_now">บันทึกตอนนี้</string>
+    <string name="home_saved_shares_open">เปิด</string>
+    <string name="home_saved_shares_delete">ลบ</string>
+    <string name="home_saved_shares_items_count">%1$d รายการ</string>
+    <string name="library_date_group_label">%1$s </string>
 </resources>

@@ -84,7 +84,7 @@ fun SharedLibraryScreen(
     showThumbnails: Boolean,
     onBack: () -> Unit,
     onPrepareItem: (String) -> Unit,
-    onSavePresetSelection: (String, Collection<String>) -> Unit,
+
     onRemoveItem: (String) -> Unit,
     onRemoveFolder: (String) -> Unit,
     onOpenAddFiles: () -> Unit,
@@ -97,18 +97,14 @@ fun SharedLibraryScreen(
     var selectedCategory by rememberSaveable { mutableStateOf("all") }
     var sortOption by rememberSaveable { mutableStateOf("newest") }
     var sortMenuExpanded by remember { mutableStateOf(false) }
-    var selectionMode by rememberSaveable { mutableStateOf(false) }
-    var showPresetDialog by rememberSaveable { mutableStateOf(false) }
-    var presetName by rememberSaveable { mutableStateOf("") }
+
     val selectedItemIds = remember { mutableStateListOf<String>() }
 
     LaunchedEffect(libraryState.items, libraryState.folders) {
         val validIds = libraryState.items.mapTo(mutableSetOf()) { it.id }
         selectedItemIds.removeAll { it !in validIds }
         if (libraryState.items.isEmpty() && libraryState.folders.isEmpty()) {
-            selectionMode = false
             selectedItemIds.clear()
-            showPresetDialog = false
         }
     }
 
@@ -169,30 +165,14 @@ fun SharedLibraryScreen(
                     sortOption = it
                     sortMenuExpanded = false
                 },
-                selectionMode = selectionMode,
-                selectedCount = selectedItemIds.size,
+
                 hasNonDirectVideo = libraryState.items.any {
                     it.category == MediaCategory.VIDEO && it.playbackDecision.mode != PlaybackMode.DIRECT
                 },
                 onOpenAddFiles = onOpenAddFiles,
                 onOpenAddFolder = onOpenAddFolder,
                 onOpenBatchSelect = onOpenBatchSelect,
-                onEnterSelectionMode = {
-                    selectionMode = true
-                    selectedItemIds.clear()
-                },
-                onCancelSelectionMode = {
-                    selectionMode = false
-                    selectedItemIds.clear()
-                },
-                onSaveSelection = {
-                    presetName = if (selectedItemIds.size == 1) {
-                        context.getString(R.string.library_single_file_name)
-                    } else {
-                        context.getString(R.string.library_selected_files_name)
-                    }
-                    showPresetDialog = true
-                },
+
             )
         }
 
@@ -241,11 +221,7 @@ fun SharedLibraryScreen(
                         item = item,
                         compatibilityJob = compatibilityJobs[item.id],
                         showThumbnails = showThumbnails,
-                        selectionMode = selectionMode,
-                        isSelected = item.id in selectedItemIds,
-                        onToggleSelected = { itemId ->
-                            if (itemId in selectedItemIds) selectedItemIds.remove(itemId) else selectedItemIds.add(itemId)
-                        },
+
                         onPrepareItem = onPrepareItem,
                         onRemoveItem = onRemoveItem,
                     )
@@ -256,54 +232,7 @@ fun SharedLibraryScreen(
         item { Spacer(modifier = Modifier.height(18.dp)) }
     }
 
-    if (showPresetDialog) {
-        AlertDialog(
-            onDismissRequest = { showPresetDialog = false },
-            containerColor = MaterialTheme.colorScheme.surface,
-            titleContentColor = MaterialTheme.colorScheme.onSurface,
-            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            title = { Text(stringResource(R.string.library_save_selected_title)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        stringResource(R.string.library_save_selected_body),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    OutlinedTextField(
-                        value = presetName,
-                        onValueChange = { presetName = it },
-                        label = { Text(stringResource(R.string.library_share_name)) },
-                        singleLine = true,
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        onSavePresetSelection(presetName, selectedItemIds.toList())
-                        showPresetDialog = false
-                        selectionMode = false
-                        selectedItemIds.clear()
-                    },
-                    enabled = presetName.isNotBlank() && selectedItemIds.isNotEmpty(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = libraryPrimaryButtonColors(),
-                ) {
-                    Text(stringResource(R.string.common_save))
-                }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    onClick = { showPresetDialog = false },
-                    shape = RoundedCornerShape(16.dp),
-                    colors = librarySecondaryButtonColors(),
-                ) {
-                    Text(stringResource(R.string.common_cancel))
-                }
-            },
-        )
-    }
+
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -443,15 +372,12 @@ private fun LibraryControlsCard(
     onSortExpand: () -> Unit,
     onSortDismiss: () -> Unit,
     onSortSelected: (String) -> Unit,
-    selectionMode: Boolean,
-    selectedCount: Int,
+
     hasNonDirectVideo: Boolean,
     onOpenAddFiles: () -> Unit,
     onOpenAddFolder: () -> Unit,
     onOpenBatchSelect: () -> Unit,
-    onEnterSelectionMode: () -> Unit,
-    onCancelSelectionMode: () -> Unit,
-    onSaveSelection: () -> Unit,
+
 ) {
     Card(
         modifier = Modifier
@@ -476,20 +402,12 @@ private fun LibraryControlsCard(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
-                        text = if (selectionMode) stringResource(R.string.library_selection_title) else stringResource(R.string.library_manage_title),
+                        text = stringResource(R.string.library_manage_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                     )
                     Text(
-                        text = if (selectionMode) {
-                            if (selectedCount == 0) {
-                                stringResource(R.string.library_selection_step_1)
-                            } else {
-                                stringResource(R.string.library_selection_step_2, selectedCount, if (selectedCount == 1) "" else "s")
-                            }
-                        } else {
-                            stringResource(R.string.library_manage_body)
-                        },
+                        text = stringResource(R.string.library_manage_body),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -583,34 +501,7 @@ private fun LibraryControlsCard(
                         }
                     }
 
-                    if (selectionMode) {
-                        OutlinedButton(
-                            onClick = onCancelSelectionMode,
-                            modifier = Modifier.heightIn(min = 48.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = librarySecondaryButtonColors(),
-                        ) {
-                            Text(stringResource(R.string.library_cancel_selection))
-                        }
-                        Button(
-                            onClick = onSaveSelection,
-                            enabled = selectedCount > 0,
-                            modifier = Modifier.heightIn(min = 48.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = libraryPrimaryButtonColors(),
-                        ) {
-                            Text(stringResource(R.string.library_create_saved_share))
-                        }
-                    } else {
-                        OutlinedButton(
-                            onClick = onEnterSelectionMode,
-                            modifier = Modifier.heightIn(min = 48.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = librarySecondaryButtonColors(),
-                        ) {
-                            Text(stringResource(R.string.library_start_saved_share_selection))
-                        }
-                    }
+
                 }
             }
 
@@ -698,29 +589,19 @@ private fun LibraryItemRow(
     item: SharedItem,
     compatibilityJob: CompatibilityJob?,
     showThumbnails: Boolean,
-    selectionMode: Boolean,
-    isSelected: Boolean,
-    onToggleSelected: (String) -> Unit,
+
     onPrepareItem: (String) -> Unit,
     onRemoveItem: (String) -> Unit,
 ) {
     Card(
         modifier = Modifier
             .padding(horizontal = 20.dp)
-            .fillMaxWidth()
-            .clickable(enabled = selectionMode) { onToggleSelected(item.id) },
+            .fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) {
-                libraryAccentSurface()
-            } else {
-                MaterialTheme.colorScheme.surface
-            },
+            containerColor = MaterialTheme.colorScheme.surface,
         ),
-        border = BorderStroke(
-            1.dp,
-            if (isSelected) libraryAccentBorder() else MaterialTheme.colorScheme.outline,
-        ),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         BoxWithConstraints {
@@ -769,9 +650,7 @@ private fun LibraryItemRow(
                             if (!item.isAvailable) {
                                 ItemPill(stringResource(R.string.library_unavailable))
                             }
-                            if (selectionMode) {
-                                ItemPill(if (isSelected) stringResource(R.string.library_selected) else stringResource(R.string.library_tap_to_select), accent = isSelected)
-                            }
+
                         }
                     }
                 }
@@ -810,26 +689,15 @@ private fun LibraryItemRow(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    if (selectionMode) {
-                        OutlinedButton(
-                            onClick = { onToggleSelected(item.id) },
-                            modifier = Modifier.heightIn(min = 48.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = librarySecondaryButtonColors(),
-                        ) {
-                            Text(if (isSelected) stringResource(R.string.library_selected) else stringResource(R.string.library_select_this_file))
-                        }
-                    } else {
-                        OutlinedButton(
-                            onClick = { onRemoveItem(item.id) },
-                            modifier = Modifier.heightIn(min = 48.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = librarySecondaryButtonColors(),
-                        ) {
-                            Icon(Icons.Outlined.Delete, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.common_remove))
-                        }
+                    OutlinedButton(
+                        onClick = { onRemoveItem(item.id) },
+                        modifier = Modifier.heightIn(min = 48.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = librarySecondaryButtonColors(),
+                    ) {
+                        Icon(Icons.Outlined.Delete, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(stringResource(R.string.common_remove))
                     }
 
                     if (item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT) {

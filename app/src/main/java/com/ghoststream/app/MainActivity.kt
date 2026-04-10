@@ -361,7 +361,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     libraryState = uiState.libraryState,
                     sessionState = uiState.sessionState,
                     recentSessions = uiState.recentSessions,
-                    sharePresets = uiState.sharePresets,
+
                     connectionDiagnostics = uiState.connectionDiagnostics,
                     nearbyDiscoveryState = uiState.nearbyDiscoveryState,
                     connectingNearbyDeviceId = uiState.connectingNearbyDeviceId,
@@ -377,9 +377,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                             viewModel.requestStartSharing()
                         }
                     },
-                    onSavePreset = viewModel::saveCurrentAsPreset,
-                    onApplyPreset = viewModel::applyPreset,
-                    onDeletePreset = viewModel::deletePreset,
+
                     onRefreshConnection = viewModel::refreshNetwork,
                     onRefreshNearby = viewModel::refreshNearbyDiscovery,
                     onOpenNearbyDevice = viewModel::openNearbyDevice,
@@ -399,7 +397,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     showThumbnails = uiState.settings.showThumbnails,
                     onBack = { navController.popBackStack() },
                     onPrepareItem = viewModel::requestPrepareItem,
-                    onSavePresetSelection = viewModel::saveSelectedItemsAsPreset,
+
                     onRemoveItem = viewModel::removeItem,
                     onRemoveFolder = viewModel::removeFolder,
                     onOpenAddFiles = { navController.navigate(Routes.AddFiles) },
