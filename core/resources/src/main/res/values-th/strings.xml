@@ -446,7 +446,7 @@
     <string name="discovery_start_failed">เริ่มทำงานไม่สำเร็จ (%1$d)</string>
     <string name="discovery_ready_to_open">พบอุปกรณ์ DirectServe พร้อมสำหรับการเชื่อมต่อ</string>
 
-    <!-- Action Shelf (Add to share) -->
+    
     <string name="home_action_add_to_share_title">เพิ่มเพื่อแชร์</string>
     <string name="home_action_add_to_share_subtitle">เลือกไฟล์ที่คุณต้องการส่ง</string>
     <string name="home_action_files">ไฟล์</string>
@@ -456,7 +456,7 @@
     <string name="home_action_library">คลัง</string>
     <string name="home_action_library_desc">เรียกดู</string>
 
-    <!-- Support Panel (Nearby & network) -->
+    
     <string name="home_nearby_title">ใกล้เคียง &amp; เครือข่าย</string>
     <string name="home_nearby_subtitle">ตรวจสอบให้แน่ใจว่าเครือข่ายท้องถิ่นของคุณพร้อมแล้ว จากนั้นมองหาอุปกรณ์ DirectServe อื่น หากคุณต้องการเปิดในแอป</string>
     <string name="home_nearby_refresh_status">รีเฟรชสถานะ</string>
@@ -476,7 +476,7 @@
     <string name="home_nearby_device_available">พร้อมใช้งาน</string>
     <string name="home_nearby_device_pin">ต้องใช้ PIN</string>
 
-    <!-- Web UI -->
+    
     <string name="web_hero_eyebrow">มุมมองผู้รับส่วนตัว</string>
     <string name="web_hero_title">สตรีม &amp; แชร์ไฟล์แบบออฟไลน์</string>
     <string name="web_hero_desc1">เรียกดู เริ่มเล่น ดูตัวอย่าง</string>
@@ -508,7 +508,7 @@
     <string name="web_security_open">เปิดแชร์บนเครือข่ายท้องถิ่น</string>
     <string name="web_status_unknown">ไม่ทราบ</string>
 
-    <!-- Misc Native UI -->
+    
     <string name="home_connected_devices">อุปกรณ์ที่เชื่อมต่อ</string>
     <string name="home_rename_device">เปลี่ยนชื่ออุปกรณ์</string>
     <string name="home_rename_device_subtitle">อุปกรณ์: %1$s • %2$s</string>
@@ -538,4 +538,4 @@
     <string name="home_saved_shares_delete">ลบ</string>
     <string name="home_saved_shares_items_count">%1$d รายการ</string>
     <string name="library_date_group_label">%1$s </string>
-</resources>
+<string name="web_upload_title">ส่งไปยังอุปกรณ์</string><string name="web_upload_subtitle">อัปโหลดไฟล์ไปยังอุปกรณ์โฮสต์ผ่านเครือข่าย</string><string name="web_upload_prompt_title">เลือกไฟล์ที่จะส่ง</string><string name="web_upload_prompt_desktop">ลากและวางที่นี่ หรือแตะปุ่มด้านล่าง</string><string name="web_upload_prompt_mobile">แตะปุ่มเพื่อเลือกไฟล์จากไลบรารีของคุณ</string><string name="web_upload_button_browse">เรียกดูไฟล์</string><string name="web_upload_target_kicker">อุปกรณ์เป้าหมาย</string><string name="web_upload_target_status">สถานะ: เชื่อมต่อแล้วและพร้อมสำหรับการโอน</string><string name="web_upload_how_kicker">มันทำงานอย่างไร</string><string name="web_upload_how_title">การอนุมัติที่ปลอดภัย</string><string name="web_upload_how_body"><![CDATA[เมื่อคุณส่งไฟล์ การแจ้งเตือนจะปรากฏขึ้นบนโทรศัพท์ เจ้าของอุปกรณ์ต้อง<strong>ยอมรับ</strong>จึงจะเริ่มการโอนได้]]></string><string name="web_action_download">ดาวน์โหลด</string><string name="web_photo_view">ดู</string><string name="web_btn_download_all">ดาวน์โหลดทั้งหมด</string><string name="web_btn_download_selected">ดาวน์โหลดที่เลือกแล้ว</string><string name="web_btn_download_original">ดาวน์โหลดต้นฉบับ</string><string name="web_error_streaming_codec">เซิร์ฟเวอร์ Android ไม่รองรับตัวแปลงสัญญาณของไฟล์นี้สำหรับการสตรีม กรุณาดาวน์โหลด</string><string name="web_error_downloads_disabled">การดาวน์โหลดถูกปิดใช้งานโดยเจ้าของอุปกรณ์</string><string name="web_error_video_decode">เบราว์เซอร์นี้ไม่สามารถถอดรหัสสตรีมวิดีโอได้ ลองดาวน์โหลดไฟล์ต้นฉบับ</string><string name="web_error_video_start">เบราว์เซอร์นี้ไม่สามารถเริ่มวิดีโอได้ ลองอีกครั้งหรือดาวน์โหลดไฟล์ต้นฉบับ</string></resources>

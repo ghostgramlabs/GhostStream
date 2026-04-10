@@ -332,7 +332,7 @@ function compatibilityHeadline(item, streamLive = item.streamReady) {
 
 function compatibilityBody(item, streamLive = item.streamReady) {
   if (item.compatibilityStatus === "FAILED") {
-    return "This file's codec is not supported by the Android server for streaming. Please download.";
+    return gsStr("web_error_streaming_codec", "This file's codec is not supported by the Android server for streaming. Please download.");
   }
   if (!streamLive) {
     return "This browser needs a moment to open the video. Keep this page open.";
@@ -540,7 +540,7 @@ async function renderLibrary(category, title) {
           <input class="gs-search" id="libSearch" placeholder="Search by file name" value="${esc(state.query)}">
           <div class="gs-toolbar-actions">
             <button class="gs-btn" id="selectBtn">${state.selectMode ? "Selection on" : "Select files"}</button>
-            ${allowDownloads ? '<button class="gs-btn gs-btn-download" id="downloadAllBtn">Download all</button>' : ""}
+            ${allowDownloads ? `<button class="gs-btn gs-btn-download" id="downloadAllBtn">${gsStr("web_btn_download_all", "Download all")}</button>` : ""}
           </div>
         </div>
         <div class="gs-select-bar${state.selectMode ? " is-visible" : ""}" id="selectBar">
@@ -548,7 +548,7 @@ async function renderLibrary(category, title) {
           <div class="gs-toolbar-actions">
             <button class="gs-btn gs-btn-sm" id="selectAllBtn">Select all</button>
             <button class="gs-btn gs-btn-sm" id="clearSelectBtn">Clear</button>
-            ${allowDownloads ? '<button class="gs-btn gs-btn-accent gs-btn-sm" id="downloadSelectedBtn">Download selected</button>' : ""}
+            ${allowDownloads ? `<button class="gs-btn gs-btn-accent gs-btn-sm" id="downloadSelectedBtn">${gsStr("web_btn_download_selected", "Download selected")}</button>` : ""}
           </div>
         </div>
       </div>
@@ -648,7 +648,7 @@ function updateSelectionUi() {
 function downloadItems(items) {
   if (!items.length) return;
   if (state.bootstrap?.preventDownload) {
-    alert("Downloads are disabled by the device owner.");
+    alert(gsStr("web_error_downloads_disabled", "Downloads are disabled by the device owner."));
     return;
   }
   items.filter((item) => item.downloadUrl).forEach((item, index) => {
@@ -686,7 +686,7 @@ async function renderVideoPlayer(id) {
           </div>
           <div class="gs-toolbar-actions">
             <a class="gs-btn gs-btn-sm" data-link href="/videos">Back to videos</a>
-            ${allowDownloads ? `<a class="gs-btn gs-btn-download" href="${item.downloadUrl}">Download original</a>` : ""}
+            ${allowDownloads ? `<a class="gs-btn gs-btn-download" href="${item.downloadUrl}">${gsStr("web_btn_download_original", "Download original")}</a>` : ""}
           </div>
         </div>
         ${playerBadges ? `<div class="gs-badges">${playerBadges}</div>` : ""}
@@ -745,7 +745,7 @@ function videoMarkup(item) {
         <p id="vErrorText">This browser could not start the video.</p>
         <div class="gs-toolbar-actions">
           <button class="gs-btn gs-btn-accent gs-btn-sm" id="retryVideoBtn">Try again</button>
-          ${allowDownloads ? `<a class="gs-btn gs-btn-download gs-btn-sm" href="${item.downloadUrl}">Download original</a>` : ""}
+          ${allowDownloads ? `<a class="gs-btn gs-btn-download gs-btn-sm" href="${item.downloadUrl}">${gsStr("web_btn_download_original", "Download original")}</a>` : ""}
         </div>
       </div>
     </div>
@@ -829,7 +829,7 @@ function hydrateVideoPlayer(item, options = {}) {
             showHlsError(
               state.bootstrap?.preventDownload
                 ? "This browser could not decode the video stream."
-                : "This browser could not decode the video stream. Try downloading the original file.",
+                : gsStr("web_error_video_decode", "This browser could not decode the video stream. Try downloading the original file."),
             );
           }
         }
@@ -891,7 +891,7 @@ function hydrateVideoPlayer(item, options = {}) {
       errorText.textContent = item.playbackMode === "DIRECT"
         ? (state.bootstrap?.preventDownload
           ? "This browser could not start the video. Try again."
-          : "This browser could not start the video. Try again or download the original file.")
+          : gsStr("web_error_video_start", "This browser could not start the video. Try again or download the original file."))
         : "This video is still opening. Try again in a moment.";
     }
     if (item.playbackMode !== "DIRECT" && !autoRetryUsed) {
@@ -1019,7 +1019,7 @@ async function renderPhotoViewer(id) {
             ${prev ? `<a class="gs-btn gs-btn-sm" data-link href="/photo/${prev}">Previous</a>` : ""}
             ${next ? `<a class="gs-btn gs-btn-sm" data-link href="/photo/${next}">Next</a>` : ""}
             <a class="gs-btn gs-btn-sm" data-link href="/photos">Gallery</a>
-            ${allowDownloads ? `<a class="gs-btn gs-btn-download" href="${item.downloadUrl}">Download original</a>` : ""}
+            ${allowDownloads ? `<a class="gs-btn gs-btn-download" href="${item.downloadUrl}">${gsStr("web_btn_download_original", "Download original")}</a>` : ""}
           </div>
         </div>
         ${(item.mimeType === "application/pdf" || String(item.title).toLowerCase().endsWith(".pdf"))
@@ -1089,7 +1089,7 @@ function card(item, selectable = false) {
   const action = item.category === "video"
     ? `<a class="${actionBtnClass}" data-link href="/player/video/${item.id}">Play</a>`
     : item.category === "photo"
-      ? `<a class="${actionBtnClass}" data-link href="/photo/${item.id}">View</a>`
+      ? `<a class="${actionBtnClass}" data-link href="/photo/${item.id}">${gsStr("web_photo_view", "View")}</a>`
       : item.category === "music"
         ? `<button class="${actionBtnClass} music-play-btn" data-audio-item-id="${item.id}" data-title="${esc(item.title)}">Play</button>`
         : item.title.toLowerCase().endsWith(".pdf")
@@ -1119,7 +1119,7 @@ function card(item, selectable = false) {
         ` : ""}
         <div class="gs-card-actions">
           ${action}
-          ${allowDownloads ? `<a class="${downloadBtnClass}" href="${item.downloadUrl}">Download</a>` : ""}
+          ${allowDownloads ? `<a class="${downloadBtnClass}" href="${item.downloadUrl}">${gsStr("web_action_download", "Download")}</a>` : ""}
         </div>
       </div>
     </article>`;
@@ -1399,8 +1399,8 @@ async function renderUpload() {
     <div class="gs-section">
       <div class="gs-section-head">
         <div>
-          <h2>Send to Device</h2>
-          <div class="gs-section-meta">Upload files to the host device over the network.</div>
+          <h2>${gsStr("web_upload_title", "Send to Device")}</h2>
+          <div class="gs-section-meta">${gsStr("web_upload_subtitle", "Upload files to the host device over the network.")}</div>
         </div>
       </div>
       
@@ -1409,14 +1409,14 @@ async function renderUpload() {
           <div class="gs-upload-zone-icon">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           </div>
-          <h3>Select files to send</h3>
-          <p class="gs-desktop-only">Drag and drop here, or tap the button below</p>
-          <p class="gs-mobile-only">Tap the button to select files from your library</p>
+          <h3>${gsStr("web_upload_prompt_title", "Select files to send")}</h3>
+          <p class="gs-desktop-only">${gsStr("web_upload_prompt_desktop", "Drag and drop here, or tap the button below")}</p>
+          <p class="gs-mobile-only">${gsStr("web_upload_prompt_mobile", "Tap the button to select files from your library")}</p>
           
           <div class="gs-upload-zone-actions" style="margin-top: 16px">
             <button class="gs-btn gs-btn-accent gs-btn-block" style="padding: 18px 24px; font-size: 1.1rem; border-radius: 20px" id="browseBtn">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Browse Files
+              ${gsStr("web_upload_button_browse", "Browse Files")}
             </button>
             <input type="file" id="fileInput" style="display: none" multiple>
           </div>
@@ -1426,19 +1426,19 @@ async function renderUpload() {
       <div class="gs-section" style="margin-top: 40px">
         <div class="gs-category-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))">
           <div class="gs-category-card">
-            <div class="gs-category-kicker">Target Device</div>
+            <div class="gs-category-kicker">${gsStr("web_upload_target_kicker", "Target Device")}</div>
             <strong>${esc(bootstrap?.title || sessionTitle)}</strong>
             <div class="gs-category-meta" style="font-family: monospace; word-break: break-all; margin-top: 8px">
               ${esc(bootstrap?.sessionUrl || "Local connection")}
             </div>
             <div class="gs-category-meta" style="margin-top: 4px; font-size: 0.82rem">
-              Status: Connected and ready for transfers
+              ${gsStr("web_upload_target_status", "Status: Connected and ready for transfers")}
             </div>
           </div>
           <div class="gs-category-card">
-            <div class="gs-category-kicker">How it works</div>
-            <strong>Secure Approval</strong>
-            <div class="gs-category-meta">When you send a file, a notification will appear on the phone. The device owner must <strong>Accept</strong> for the transfer to begin.</div>
+            <div class="gs-category-kicker">${gsStr("web_upload_how_kicker", "How it works")}</div>
+            <strong>${gsStr("web_upload_how_title", "Secure Approval")}</strong>
+            <div class="gs-category-meta">${gsStr("web_upload_how_body", "When you send a file, a notification will appear on the phone. The device owner must <strong>Accept</strong> for the transfer to begin.")}</div>
           </div>
         </div>
       </div>

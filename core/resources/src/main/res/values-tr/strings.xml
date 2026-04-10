@@ -426,7 +426,7 @@
     <string name="browser_hls_not_needed">Bu video HLS oynatma gerektirmiyor.</string>
     <string name="browser_hls_not_ready">Uyumluluk akışı henüz HLS için hazır değil.</string>
 
-    <!-- Action Shelf (Add to share) -->
+    
     <string name="home_action_add_to_share_title">Paylaşmak için ekle</string>
     <string name="home_action_add_to_share_subtitle">Göndermek istediğiniz dosyaları seçin.</string>
     <string name="home_action_files">Dosyalar</string>
@@ -436,7 +436,7 @@
     <string name="home_action_library">Kütüphane</string>
     <string name="home_action_library_desc">Gözat</string>
 
-    <!-- Support Panel (Nearby & network) -->
+    
     <string name="home_nearby_title">Yakındakiler ve ağ</string>
     <string name="home_nearby_subtitle">Yerel ağınızın hazır olduğundan emin olun, ardından uygulama içinde açmak istiyorsanız başka bir DirectServe cihazı arayın.</string>
     <string name="home_nearby_refresh_status">Durumu yenile</string>
@@ -456,7 +456,7 @@
     <string name="home_nearby_device_available">Kullanılabilir</string>
     <string name="home_nearby_device_pin">PIN gereklidir</string>
 
-    <!-- Web UI -->
+    
     <string name="web_hero_eyebrow">Özel alıcı görünümü</string>
     <string name="web_hero_title">Çevrimdışı dosyaları yayınla ve paylaş</string>
     <string name="web_hero_desc1">Göz at, oynat, önizle</string>
@@ -488,7 +488,7 @@
     <string name="web_security_open">Yerel ağa açık</string>
     <string name="web_status_unknown">Bilinmiyor</string>
 
-    <!-- Misc Native UI -->
+    
     <string name="home_connected_devices">Bağlı cihazlar</string>
     <string name="home_rename_device">Cihazı yeniden adlandır</string>
     <string name="home_rename_device_subtitle">Cihaz: %1$s • %2$s</string>
@@ -518,4 +518,4 @@
     <string name="home_saved_shares_delete">Sil</string>
     <string name="home_saved_shares_items_count">%1$d öğe</string>
     <string name="library_date_group_label">%1$s </string>
-</resources>
+<string name="web_upload_title">Cihaza Gönder</string><string name="web_upload_subtitle">Dosyaları ağ üzerinden ana cihaza yükleyin.</string><string name="web_upload_prompt_title">Gönderilecek dosyaları seçin</string><string name="web_upload_prompt_desktop">Buraya sürükleyip bırakın veya aşağıdaki düğmeye dokunun</string><string name="web_upload_prompt_mobile">Kitaplığınızdan dosya seçmek için düğmeye dokunun</string><string name="web_upload_button_browse">Dosyalara Göz Atın</string><string name="web_upload_target_kicker">Hedef Cihaz</string><string name="web_upload_target_status">Durum: Bağlı ve aktarımlara hazır</string><string name="web_upload_how_kicker">Nasıl çalışır?</string><string name="web_upload_how_title">Güvenli Onay</string><string name="web_upload_how_body"><![CDATA[Bir dosya gönderdiğinizde telefonda bir bildirim görünecektir. Aktarımın başlaması için cihaz sahibinin <strong>Kabul etmesi</strong> gerekir.]]></string><string name="web_action_download">İndirmek</string><string name="web_photo_view">Görüş</string><string name="web_btn_download_all">Tümünü indir</string><string name="web_btn_download_selected">Seçileni indir</string><string name="web_btn_download_original">Orijinali indir</string><string name="web_error_streaming_codec">Bu dosyanın codec\'i akış için Android sunucusu tarafından desteklenmiyor. Lütfen indirin.</string><string name="web_error_downloads_disabled">İndirmeler cihaz sahibi tarafından devre dışı bırakıldı.</string><string name="web_error_video_decode">Bu tarayıcı video akışının kodunu çözemedi. Orijinal dosyayı indirmeyi deneyin.</string><string name="web_error_video_start">Bu tarayıcı videoyu başlatamadı. Tekrar deneyin veya orijinal dosyayı indirin.</string></resources>

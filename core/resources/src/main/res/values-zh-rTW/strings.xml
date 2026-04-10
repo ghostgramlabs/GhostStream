@@ -446,7 +446,7 @@
     <string name="browser_hls_not_needed">此影片不需要使用 HLS 播放。</string>
     <string name="browser_hls_not_ready">相容性串流尚未準備好進行 HLS 播放。</string>
 
-    <!-- Action Shelf (Add to share) -->
+    
     <string name="home_action_add_to_share_title">加入至分享</string>
     <string name="home_action_add_to_share_subtitle">選擇您要傳送的檔案。</string>
     <string name="home_action_files">檔案</string>
@@ -456,7 +456,7 @@
     <string name="home_action_library">媒體庫</string>
     <string name="home_action_library_desc">瀏覽</string>
 
-    <!-- Support Panel (Nearby & network) -->
+    
     <string name="home_nearby_title">附近與網路</string>
     <string name="home_nearby_subtitle">確保您的區域網路已準備就緒，如果您想在應用程式中開啟，請尋找另一個 DirectServe 裝置。</string>
     <string name="home_nearby_refresh_status">重新整理狀態</string>
@@ -476,7 +476,7 @@
     <string name="home_nearby_device_available">可用</string>
     <string name="home_nearby_device_pin">需要 PIN 碼</string>
 
-    <!-- Web UI -->
+    
     <string name="web_hero_eyebrow">私密接收者檢視</string>
     <string name="web_hero_title">離線串流與分享檔案</string>
     <string name="web_hero_desc1">瀏覽、播放、預覽</string>
@@ -508,7 +508,7 @@
     <string name="web_security_open">於區域網路開放</string>
     <string name="web_status_unknown">未知</string>
 
-    <!-- Misc Native UI -->
+    
     <string name="home_connected_devices">已連線裝置</string>
     <string name="home_rename_device">重新命名裝置</string>
     <string name="home_rename_device_subtitle">裝置：%1$s • %2$s</string>
@@ -538,4 +538,4 @@
     <string name="home_saved_shares_delete">刪除</string>
     <string name="home_saved_shares_items_count">%1$d 個項目</string>
     <string name="library_date_group_label">%1$s </string>
-</resources>
+<string name="web_upload_title">Send to Device</string><string name="web_upload_subtitle">Upload files to the host device over the network.</string><string name="web_upload_prompt_title">Select files to send</string><string name="web_upload_prompt_desktop">Drag and drop here, or tap the button below</string><string name="web_upload_prompt_mobile">Tap the button to select files from your library</string><string name="web_upload_button_browse">Browse Files</string><string name="web_upload_target_kicker">Target Device</string><string name="web_upload_target_status">Status: Connected and ready for transfers</string><string name="web_upload_how_kicker">How it works</string><string name="web_upload_how_title">Secure Approval</string><string name="web_upload_how_body"><![CDATA[When you send a file, a notification will appear on the phone. The device owner must <strong>Accept</strong> for the transfer to begin.]]></string><string name="web_action_download">Download</string><string name="web_photo_view">View</string><string name="web_btn_download_all">Download all</string><string name="web_btn_download_selected">Download selected</string><string name="web_btn_download_original">Download original</string><string name="web_error_streaming_codec">This file\'s codec is not supported by the Android server for streaming. Please download.</string><string name="web_error_downloads_disabled">Downloads are disabled by the device owner.</string><string name="web_error_video_decode">This browser could not decode the video stream. Try downloading the original file.</string><string name="web_error_video_start">This browser could not start the video. Try again or download the original file.</string></resources>

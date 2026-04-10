@@ -446,7 +446,7 @@
     <string name="browser_hls_not_needed">HLS für dieses Video nicht nötig.</string>
     <string name="browser_hls_not_ready">Stream noch nicht HLS-bereit.</string>
 
-    <!-- Action Shelf (Add to share) -->
+    
     <string name="home_action_add_to_share_title">Zum Teilen hinzufügen</string>
     <string name="home_action_add_to_share_subtitle">Wählen Sie die Dateien aus, die Sie senden möchten.</string>
     <string name="home_action_files">Dateien</string>
@@ -456,7 +456,7 @@
     <string name="home_action_library">Bibliothek</string>
     <string name="home_action_library_desc">Durchsuchen</string>
 
-    <!-- Support Panel (Nearby & network) -->
+    
     <string name="home_nearby_title">In der Nähe &amp; Netzwerk</string>
     <string name="home_nearby_subtitle">Stellen Sie sicher, dass Ihr lokales Netzwerk bereit ist, dann suchen Sie nach einem anderen DirectServe-Gerät, wenn Sie es in der App öffnen möchten.</string>
     <string name="home_nearby_refresh_status">Status aktualisieren</string>
@@ -476,7 +476,7 @@
     <string name="home_nearby_device_available">Verfügbar</string>
     <string name="home_nearby_device_pin">PIN erforderlich</string>
 
-    <!-- Web UI -->
+    
     <string name="web_hero_eyebrow">Private Empfängeransicht</string>
     <string name="web_hero_title">Dateien offline streamen &amp; teilen</string>
     <string name="web_hero_desc1">Durchsuchen, abspielen, in der Vorschau anzeigen</string>
@@ -508,7 +508,7 @@
     <string name="web_security_open">Im lokalen Netzwerk öffnen</string>
     <string name="web_status_unknown">Unbekannt</string>
 
-    <!-- Misc Native UI -->
+    
     <string name="home_connected_devices">Verbundene Geräte</string>
     <string name="home_rename_device">Gerät umbenennen</string>
     <string name="home_rename_device_subtitle">Gerät: %1$s • %2$s</string>
@@ -538,4 +538,4 @@
     <string name="home_saved_shares_delete">Löschen</string>
     <string name="home_saved_shares_items_count">%1$d Elemente</string>
     <string name="library_date_group_label">%1$s </string>
-</resources>
+<string name="web_upload_title">An Gerät senden</string><string name="web_upload_subtitle">Laden Sie Dateien über das Netzwerk auf das Hostgerät hoch.</string><string name="web_upload_prompt_title">Wählen Sie die zu sendenden Dateien aus</string><string name="web_upload_prompt_desktop">Ziehen Sie es per Drag &amp; Drop hierher oder tippen Sie auf die Schaltfläche unten</string><string name="web_upload_prompt_mobile">Tippen Sie auf die Schaltfläche, um Dateien aus Ihrer Bibliothek auszuwählen</string><string name="web_upload_button_browse">Dateien durchsuchen</string><string name="web_upload_target_kicker">Zielgerät</string><string name="web_upload_target_status">Status: Verbunden und bereit für Übertragungen</string><string name="web_upload_how_kicker">Wie es funktioniert</string><string name="web_upload_how_title">Sichere Genehmigung</string><string name="web_upload_how_body"><![CDATA[Wenn Sie eine Datei senden, erscheint eine Benachrichtigung auf dem Telefon. Der Geräteeigentümer muss <strong>Akzeptieren</strong>, damit die Übertragung beginnen kann.]]></string><string name="web_action_download">Herunterladen</string><string name="web_photo_view">Sicht</string><string name="web_btn_download_all">Alles herunterladen</string><string name="web_btn_download_selected">Download ausgewählt</string><string name="web_btn_download_original">Original herunterladen</string><string name="web_error_streaming_codec">Der Codec dieser Datei wird vom Android-Server für Streaming nicht unterstützt. Bitte herunterladen.</string><string name="web_error_downloads_disabled">Downloads werden vom Gerätebesitzer deaktiviert.</string><string name="web_error_video_decode">Dieser Browser konnte den Videostream nicht dekodieren. Versuchen Sie, die Originaldatei herunterzuladen.</string><string name="web_error_video_start">Dieser Browser konnte das Video nicht starten. Versuchen Sie es erneut oder laden Sie die Originaldatei herunter.</string></resources>

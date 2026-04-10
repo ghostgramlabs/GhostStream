@@ -389,7 +389,7 @@
     <string name="browser_hls_not_needed">Video này không cần phát qua HLS.</string>
     <string name="browser_hls_not_ready">Luồng tương thích chưa sẵn sàng cho HLS.</string>
 
-    <!-- Action Shelf (Add to share) -->
+    
     <string name="home_action_add_to_share_title">Thêm vào chia sẻ</string>
     <string name="home_action_add_to_share_subtitle">Chọn các tệp bạn muốn gửi.</string>
     <string name="home_action_files">Tệp</string>
@@ -399,7 +399,7 @@
     <string name="home_action_library">Thư viện</string>
     <string name="home_action_library_desc">Duyệt</string>
 
-    <!-- Support Panel (Nearby & network) -->
+    
     <string name="home_nearby_title">Lân cận &amp; mạng</string>
     <string name="home_nearby_subtitle">Đảm bảo mạng cục bộ của bạn đã sẵn sàng, sau đó tìm kiếm một thiết bị DirectServe khác nếu bạn muốn mở nó trong ứng dụng.</string>
     <string name="home_nearby_refresh_status">Làm mới trạng thái</string>
@@ -419,7 +419,7 @@
     <string name="home_nearby_device_available">Có sẵn</string>
     <string name="home_nearby_device_pin">Cần mã PIN</string>
 
-    <!-- Web UI -->
+    
     <string name="web_hero_eyebrow">Chế độ xem bộ thu riêng tư</string>
     <string name="web_hero_title">Phát trực tuyến &amp; chia sẻ tệp ngoại tuyến</string>
     <string name="web_hero_desc1">Duyệt, phát, xem trước</string>
@@ -451,7 +451,7 @@
     <string name="web_security_open">Mở trên mạng cục bộ</string>
     <string name="web_status_unknown">Không xác định</string>
 
-    <!-- Misc Native UI -->
+    
     <string name="home_connected_devices">Thiết bị được kết nối</string>
     <string name="home_rename_device">Đổi tên thiết bị</string>
     <string name="home_rename_device_subtitle">Thiết bị: %1$s • %2$s</string>
@@ -481,4 +481,4 @@
     <string name="home_saved_shares_delete">Xóa</string>
     <string name="home_saved_shares_items_count">%1$d mục</string>
     <string name="library_date_group_label">%1$s </string>
-</resources>
+<string name="web_upload_title">Gửi tới thiết bị</string><string name="web_upload_subtitle">Tải tập tin lên thiết bị chủ qua mạng.</string><string name="web_upload_prompt_title">Chọn tập tin để gửi</string><string name="web_upload_prompt_desktop">Kéo và thả vào đây hoặc nhấn vào nút bên dưới</string><string name="web_upload_prompt_mobile">Nhấn vào nút để chọn tệp từ thư viện của bạn</string><string name="web_upload_button_browse">Duyệt tập tin</string><string name="web_upload_target_kicker">Thiết bị mục tiêu</string><string name="web_upload_target_status">Trạng thái: Đã kết nối và sẵn sàng chuyển</string><string name="web_upload_how_kicker">Nó hoạt động như thế nào</string><string name="web_upload_how_title">Phê duyệt an toàn</string><string name="web_upload_how_body"><![CDATA[Khi bạn gửi file, một thông báo sẽ xuất hiện trên điện thoại. Chủ sở hữu thiết bị phải <strong>Chấp nhận</strong> để quá trình chuyển bắt đầu.]]></string><string name="web_action_download">Tải xuống</string><string name="web_photo_view">Xem</string><string name="web_btn_download_all">Tải xuống tất cả</string><string name="web_btn_download_selected">Đã chọn tải xuống</string><string name="web_btn_download_original">Tải xuống bản gốc</string><string name="web_error_streaming_codec">Codec của tệp này không được máy chủ Android hỗ trợ để phát trực tuyến. Xin vui lòng tải về.</string><string name="web_error_downloads_disabled">Việc tải xuống bị chủ sở hữu thiết bị vô hiệu hóa.</string><string name="web_error_video_decode">Trình duyệt này không thể giải mã luồng video. Hãy thử tải xuống tập tin gốc.</string><string name="web_error_video_start">Trình duyệt này không thể bắt đầu video. Hãy thử lại hoặc tải xuống tệp gốc.</string></resources>

@@ -446,7 +446,7 @@
     <string name="browser_hls_not_needed">Geen HLS nodig.</string>
     <string name="browser_hls_not_ready">Nog niet HLS-ready.</string>
 
-    <!-- Action Shelf (Add to share) -->
+    
     <string name="home_action_add_to_share_title">Toevoegen om te delen</string>
     <string name="home_action_add_to_share_subtitle">Kies de bestanden die u wilt verzenden.</string>
     <string name="home_action_files">Bestanden</string>
@@ -456,7 +456,7 @@
     <string name="home_action_library">Bibliotheek</string>
     <string name="home_action_library_desc">Bladeren</string>
 
-    <!-- Support Panel (Nearby & network) -->
+    
     <string name="home_nearby_title">Dichtbij &amp; netwerk</string>
     <string name="home_nearby_subtitle">Zorg ervoor dat uw lokale netwerk gereed is en zoek vervolgens een ander DirectServe-apparaat als u het in de app wilt openen.</string>
     <string name="home_nearby_refresh_status">Status vernieuwen</string>
@@ -476,7 +476,7 @@
     <string name="home_nearby_device_available">Beschikbaar</string>
     <string name="home_nearby_device_pin">PIN vereist</string>
 
-    <!-- Web UI -->
+    
     <string name="web_hero_eyebrow">Privé-ontvangerweergave</string>
     <string name="web_hero_title">Bestanden offline streamen en delen</string>
     <string name="web_hero_desc1">Bladeren, afspelen, bekijken</string>
@@ -508,7 +508,7 @@
     <string name="web_security_open">Openen op lokaal netwerk</string>
     <string name="web_status_unknown">Onbekend</string>
 
-    <!-- Misc Native UI -->
+    
     <string name="home_connected_devices">Verbonden apparaten</string>
     <string name="home_rename_device">Apparaat hernoemen</string>
     <string name="home_rename_device_subtitle">Apparaat: %1$s • %2$s</string>
@@ -538,4 +538,4 @@
     <string name="home_saved_shares_delete">Verwijderen</string>
     <string name="home_saved_shares_items_count">%1$d items</string>
     <string name="library_date_group_label">%1$s </string>
-</resources>
+<string name="web_upload_title">Verzenden naar apparaat</string><string name="web_upload_subtitle">Upload bestanden via het netwerk naar het hostapparaat.</string><string name="web_upload_prompt_title">Selecteer bestanden om te verzenden</string><string name="web_upload_prompt_desktop">Sleep hierheen en zet het neer, of tik op de onderstaande knop</string><string name="web_upload_prompt_mobile">Tik op de knop om bestanden uit uw bibliotheek te selecteren</string><string name="web_upload_button_browse">Blader door bestanden</string><string name="web_upload_target_kicker">Doelapparaat</string><string name="web_upload_target_status">Status: Verbonden en klaar voor overdracht</string><string name="web_upload_how_kicker">Hoe het werkt</string><string name="web_upload_how_title">Veilige goedkeuring</string><string name="web_upload_how_body"><![CDATA[Wanneer u een bestand verzendt, verschijnt er een melding op de telefoon. De eigenaar van het apparaat moet <strong>Accepteren</strong> voordat de overdracht kan beginnen.]]></string><string name="web_action_download">Downloaden</string><string name="web_photo_view">Weergave</string><string name="web_btn_download_all">Alles downloaden</string><string name="web_btn_download_selected">Geselecteerd downloaden</string><string name="web_btn_download_original">Origineel downloaden</string><string name="web_error_streaming_codec">De codec van dit bestand wordt niet ondersteund door de Android-server voor streaming. Download alstublieft.</string><string name="web_error_downloads_disabled">Downloads zijn uitgeschakeld door de eigenaar van het apparaat.</string><string name="web_error_video_decode">Deze browser kan de videostream niet decoderen. Probeer het originele bestand te downloaden.</string><string name="web_error_video_start">Deze browser kan de video niet starten. Probeer het opnieuw of download het originele bestand.</string></resources>

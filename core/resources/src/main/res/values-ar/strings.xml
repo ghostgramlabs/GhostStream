@@ -446,7 +446,7 @@
     <string name="browser_hls_not_needed">هذا الفيديو لا يحتاج لتشغيل HLS.</string>
     <string name="browser_hls_not_ready">بث التوافق ليس جاهزاً لـ HLS بعد.</string>
 
-    <!-- Action Shelf (Add to share) -->
+    
     <string name="home_action_add_to_share_title">إضافة للمشاركة</string>
     <string name="home_action_add_to_share_subtitle">اختر الملفات التي تريد إرسالها.</string>
     <string name="home_action_files">ملفات</string>
@@ -456,7 +456,7 @@
     <string name="home_action_library">المكتبة</string>
     <string name="home_action_library_desc">تصفح</string>
 
-    <!-- Support Panel (Nearby & network) -->
+    
     <string name="home_nearby_title">الشبكة والأجهزة القريبة</string>
     <string name="home_nearby_subtitle">تأكد من جاهزية شبكتك المحلية، ثم ابحث عن جهاز DirectServe آخر إذا كنت تريد فتحه في التطبيق.</string>
     <string name="home_nearby_refresh_status">تحديث الحالة</string>
@@ -476,7 +476,7 @@
     <string name="home_nearby_device_available">متاح</string>
     <string name="home_nearby_device_pin">مطلوب رقم تعريف (PIN)</string>
 
-    <!-- Web UI -->
+    
     <string name="web_hero_eyebrow">عرض جهاز الاستقبال الخاص</string>
     <string name="web_hero_title">بث ومشاركة الملفات بلا اتصال</string>
     <string name="web_hero_desc1">تصفح، تشغيل، معاينة</string>
@@ -508,7 +508,7 @@
     <string name="web_security_open">مفتوح على شبكة محلية</string>
     <string name="web_status_unknown">غير معروف</string>
 
-    <!-- Misc Native UI -->
+    
     <string name="home_connected_devices">الأجهزة المتصلة</string>
     <string name="home_rename_device">إعادة تسمية الجهاز</string>
     <string name="home_rename_device_subtitle">الجهاز: %1$s • %2$s</string>
@@ -538,4 +538,4 @@
     <string name="home_saved_shares_delete">حذف</string>
     <string name="home_saved_shares_items_count">%1$d عناصر</string>
     <string name="library_date_group_label">%1$s </string>
-</resources>
+<string name="web_upload_title">إرسال إلى الجهاز</string><string name="web_upload_subtitle">تحميل الملفات إلى الجهاز المضيف عبر الشبكة.</string><string name="web_upload_prompt_title">حدد الملفات لإرسالها</string><string name="web_upload_prompt_desktop">قم بالسحب والإسقاط هنا، أو اضغط على الزر أدناه</string><string name="web_upload_prompt_mobile">اضغط على الزر لتحديد الملفات من مكتبتك</string><string name="web_upload_button_browse">تصفح الملفات</string><string name="web_upload_target_kicker">الجهاز المستهدف</string><string name="web_upload_target_status">الحالة: متصل وجاهز للتحويلات</string><string name="web_upload_how_kicker">كيف يعمل</string><string name="web_upload_how_title">الموافقة الآمنة</string><string name="web_upload_how_body"><![CDATA[عند إرسال ملف، سيظهر إشعار على الهاتف. يجب على مالك الجهاز <strong>القبول</strong> لبدء عملية النقل.]]></string><string name="web_action_download">تحميل</string><string name="web_photo_view">منظر</string><string name="web_btn_download_all">تحميل الكل</string><string name="web_btn_download_selected">تحميل المحدد</string><string name="web_btn_download_original">تحميل الأصلي</string><string name="web_error_streaming_codec">برنامج الترميز الخاص بهذا الملف غير مدعوم من خادم Android للبث. يرجى التنزيل.</string><string name="web_error_downloads_disabled">يتم تعطيل التنزيلات من قبل مالك الجهاز.</string><string name="web_error_video_decode">لم يتمكن هذا المتصفح من فك تشفير دفق الفيديو. حاول تنزيل الملف الأصلي.</string><string name="web_error_video_start">تعذر على هذا المتصفح بدء تشغيل الفيديو. حاول مرة أخرى أو قم بتنزيل الملف الأصلي.</string></resources>

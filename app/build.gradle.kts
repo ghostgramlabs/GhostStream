@@ -51,7 +51,7 @@ android {
         release {
             isMinifyEnabled = true
             ndk {
-                debugSymbolLevel = "SYMBOL_TABLE"
+                debugSymbolLevel = "FULL"
             }
             signingConfig = signingConfigs.findByName("release")
             proguardFiles(

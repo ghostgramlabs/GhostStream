@@ -446,7 +446,7 @@
     <string name="browser_hls_not_needed">HLS non requis pour cette vidéo.</string>
     <string name="browser_hls_not_ready">Le flux de compatibilité n\'est pas encore prêt.</string>
 
-    <!-- Action Shelf (Add to share) -->
+    
     <string name="home_action_add_to_share_title">Ajouter au partage</string>
     <string name="home_action_add_to_share_subtitle">Choisissez les fichiers à envoyer.</string>
     <string name="home_action_files">Fichiers</string>
@@ -456,7 +456,7 @@
     <string name="home_action_library">Bibliothèque</string>
     <string name="home_action_library_desc">Parcourir</string>
 
-    <!-- Support Panel (Nearby & network) -->
+    
     <string name="home_nearby_title">À proximité et réseau</string>
     <string name="home_nearby_subtitle">Assurez-vous que votre réseau local est prêt, puis recherchez un autre appareil DirectServe si vous souhaitez l\'ouvrir dans l\'application.</string>
     <string name="home_nearby_refresh_status">Actualiser le statut</string>
@@ -476,7 +476,7 @@
     <string name="home_nearby_device_available">Disponible</string>
     <string name="home_nearby_device_pin">Code PIN requis</string>
 
-    <!-- Web UI -->
+    
     <string name="web_hero_eyebrow">Vue du récepteur privé</string>
     <string name="web_hero_title">Diffusez et partagez des fichiers hors ligne</string>
     <string name="web_hero_desc1">Parcourez, lisez, prévisualisez</string>
@@ -508,7 +508,7 @@
     <string name="web_security_open">Ouvert sur réseau local</string>
     <string name="web_status_unknown">Inconnu</string>
 
-    <!-- Misc Native UI -->
+    
     <string name="home_connected_devices">Appareils connectés</string>
     <string name="home_rename_device">Renommer l\'appareil</string>
     <string name="home_rename_device_subtitle">Appareil : %1$s • %2$s</string>
@@ -538,4 +538,4 @@
     <string name="home_saved_shares_delete">Supprimer</string>
     <string name="home_saved_shares_items_count">%1$d éléments</string>
     <string name="library_date_group_label">%1$s </string>
-</resources>
+<string name="web_upload_title">Envoyer à l\'appareil</string><string name="web_upload_subtitle">Téléchargez des fichiers sur le périphérique hôte via le réseau.</string><string name="web_upload_prompt_title">Sélectionnez les fichiers à envoyer</string><string name="web_upload_prompt_desktop">Faites glisser et déposez ici, ou appuyez sur le bouton ci-dessous</string><string name="web_upload_prompt_mobile">Appuyez sur le bouton pour sélectionner des fichiers de votre bibliothèque</string><string name="web_upload_button_browse">Parcourir les fichiers</string><string name="web_upload_target_kicker">Appareil cible</string><string name="web_upload_target_status">Statut : Connecté et prêt pour les transferts</string><string name="web_upload_how_kicker">Comment ça marche</string><string name="web_upload_how_title">Approbation sécurisée</string><string name="web_upload_how_body"><![CDATA[Lorsque vous envoyez un fichier, une notification apparaîtra sur le téléphone. Le propriétaire de l\'appareil doit <strong>Accepter</strong> pour que le transfert commence.]]></string><string name="web_action_download">Télécharger</string><string name="web_photo_view">Voir</string><string name="web_btn_download_all">Téléchargez tout</string><string name="web_btn_download_selected">Télécharger sélectionné</string><string name="web_btn_download_original">Télécharger l\'original</string><string name="web_error_streaming_codec">Le codec de ce fichier n\'est pas pris en charge par le serveur Android pour le streaming. Veuillez télécharger.</string><string name="web_error_downloads_disabled">Les téléchargements sont désactivés par le propriétaire de l\'appareil.</string><string name="web_error_video_decode">Ce navigateur n\'a pas pu décoder le flux vidéo. Essayez de télécharger le fichier original.</string><string name="web_error_video_start">Ce navigateur n\'a pas pu démarrer la vidéo. Réessayez ou téléchargez le fichier original.</string></resources>

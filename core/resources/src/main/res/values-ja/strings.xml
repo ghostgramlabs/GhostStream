@@ -446,7 +446,7 @@
     <string name="browser_hls_not_needed">この動画は通常再生可能です。</string>
     <string name="browser_hls_not_ready">ストリーミングの準備ができていません。</string>
 
-    <!-- Action Shelf (Add to share) -->
+    
     <string name="home_action_add_to_share_title">共有に追加</string>
     <string name="home_action_add_to_share_subtitle">送信するファイルを選択してください。</string>
     <string name="home_action_files">ファイル</string>
@@ -456,7 +456,7 @@
     <string name="home_action_library">ライブラリ</string>
     <string name="home_action_library_desc">参照</string>
 
-    <!-- Support Panel (Nearby & network) -->
+    
     <string name="home_nearby_title">付近とネットワーク</string>
     <string name="home_nearby_subtitle">ローカルネットワークの準備ができていることを確認してから、アプリで開きたい場合は別のDirectServeデバイスを探してください。</string>
     <string name="home_nearby_refresh_status">ステータスを更新</string>
@@ -476,7 +476,7 @@
     <string name="home_nearby_device_available">利用可能</string>
     <string name="home_nearby_device_pin">PINが必要です</string>
 
-    <!-- Web UI -->
+    
     <string name="web_hero_eyebrow">プライベートレシーバービュー</string>
     <string name="web_hero_title">オフラインでファイルをストリーミング＆共有</string>
     <string name="web_hero_desc1">参照、再生、プレビュー</string>
@@ -508,7 +508,7 @@
     <string name="web_security_open">ローカルネットワーク上で公開</string>
     <string name="web_status_unknown">不明</string>
 
-    <!-- Misc Native UI -->
+    
     <string name="home_connected_devices">接続中のデバイス</string>
     <string name="home_rename_device">デバイスの名前を変更</string>
     <string name="home_rename_device_subtitle">デバイス: %1$s • %2$s</string>
@@ -538,4 +538,4 @@
     <string name="home_saved_shares_delete">削除</string>
     <string name="home_saved_shares_items_count">%1$d アイテム</string>
     <string name="library_date_group_label">%1$s </string>
-</resources>
+<string name="web_upload_title">デバイスに送信</string><string name="web_upload_subtitle">ネットワーク経由でファイルをホスト デバイスにアップロードします。</string><string name="web_upload_prompt_title">送信するファイルを選択してください</string><string name="web_upload_prompt_desktop">ここにドラッグ＆ドロップするか、下のボタンをタップしてください</string><string name="web_upload_prompt_mobile">ボタンをタップしてライブラリからファイルを選択します</string><string name="web_upload_button_browse">ファイルを参照する</string><string name="web_upload_target_kicker">ターゲットデバイス</string><string name="web_upload_target_status">ステータス: 接続されており、転送の準備ができています</string><string name="web_upload_how_kicker">仕組み</string><string name="web_upload_how_title">安全な承認</string><string name="web_upload_how_body"><![CDATA[ファイルを送信すると、電話に通知が表示されます。転送を開始するには、デバイスの所有者が<strong>同意する</strong>必要があります。]]></string><string name="web_action_download">ダウンロード</string><string name="web_photo_view">ビュー</string><string name="web_btn_download_all">すべてダウンロード</string><string name="web_btn_download_selected">選択されたダウンロード</string><string name="web_btn_download_original">オリジナルをダウンロード</string><string name="web_error_streaming_codec">このファイルのコーデックは、Android サーバーのストリーミング用にサポートされていません。ダウンロードしてください。</string><string name="web_error_downloads_disabled">ダウンロードはデバイス所有者によって無効にされています。</string><string name="web_error_video_decode">このブラウザはビデオ ストリームをデコードできませんでした。元のファイルをダウンロードしてみてください。</string><string name="web_error_video_start">このブラウザではビデオを開始できませんでした。もう一度試すか、元のファイルをダウンロードしてください。</string></resources>
