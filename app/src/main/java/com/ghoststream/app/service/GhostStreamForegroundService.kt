@@ -47,6 +47,14 @@ class GhostStreamForegroundService : Service() {
         serviceScope.launch {
             container.sessionManager.sessionState.collectLatest { state ->
                 runCatching {
+                    if (!state.isSharing && !startupInProgress) {
+                        debugLogRepository.log("ForegroundService", "session inactive; stopping service")
+                        lastConnectedClientIds = null
+                        cancelActiveNotifications()
+                        stopForeground(STOP_FOREGROUND_REMOVE)
+                        stopSelf()
+                        return@runCatching
+                    }
                     val previousClientIds = lastConnectedClientIds
                     val newClients = if (previousClientIds == null) {
                         emptyList()
@@ -91,12 +99,15 @@ class GhostStreamForegroundService : Service() {
         debugLogRepository.log("ForegroundService", "onStartCommand action=${intent?.action} startupInProgress=$startupInProgress")
         when (intent?.action) {
             ACTION_STOP -> {
+                startupInProgress = false
                 serviceScope.launch {
                     debugLogRepository.log("ForegroundService", "stop action received")
                     container.sharingCoordinator.stopSharing()
+                    cancelActiveNotifications()
                     stopForeground(STOP_FOREGROUND_REMOVE)
                     stopSelf()
                 }
+                return START_NOT_STICKY
             }
 
             ACTION_ACCEPT_UPLOAD -> {
@@ -157,6 +168,7 @@ class GhostStreamForegroundService : Service() {
                                     debugLogRepository.log("ForegroundService", "service failed to start sharing message=${result.message}")
                                     startupInProgress = false
                                     container.sharingCoordinator.stopSharing(result.message)
+                                    cancelActiveNotifications()
                                     stopForeground(STOP_FOREGROUND_REMOVE)
                                     stopSelf()
                                 }
@@ -175,6 +187,7 @@ class GhostStreamForegroundService : Service() {
         debugLogRepository.log("ForegroundService", "onDestroy")
         autoStopJob?.cancel()
         lastConnectedClientIds = null
+        cancelActiveNotifications()
         serviceScope.cancel()
         super.onDestroy()
     }
@@ -214,8 +227,15 @@ class GhostStreamForegroundService : Service() {
 
     private suspend fun stopForAutoStop() {
         container.sharingCoordinator.stopSharing(getString(SharedR.string.service_auto_stop_message))
+        cancelActiveNotifications()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
+    }
+
+    private fun cancelActiveNotifications() {
+        NotificationManagerCompat.from(this).cancel(NOTIFICATION_ID)
+        NotificationManagerCompat.from(this).cancel(REQUEST_NOTIFICATION_ID)
+        NotificationManagerCompat.from(this).cancel(CONNECTION_NOTIFICATION_ID)
     }
 
     private fun showUploadRequestNotification(request: com.ghoststream.core.model.UploadRequest) {
