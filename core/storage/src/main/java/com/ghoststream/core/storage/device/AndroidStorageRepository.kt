@@ -210,6 +210,7 @@ class AndroidStorageRepository(
         mimeType: String,
         content: java.io.InputStream,
         peer: String,
+        onBytesCopied: ((Long) -> Unit)?,
     ): Uri? = withContext(Dispatchers.IO) {
         val resolver = context.contentResolver
         var finalUri: Uri? = null
@@ -225,7 +226,7 @@ class AndroidStorageRepository(
             val uri = resolver.insert(collection, contentValues) ?: return@withContext null
             finalUri = runCatching {
                 resolver.openOutputStream(uri)?.use { output ->
-                    bytesWritten = content.copyTo(output)
+                    bytesWritten = copyWithProgress(content, output, onBytesCopied)
                 }
                 val updatedValues = android.content.ContentValues().apply {
                     put(MediaStore.MediaColumns.IS_PENDING, 0)
@@ -241,7 +242,7 @@ class AndroidStorageRepository(
             val file = java.io.File(downloadsDir, fileName)
             finalUri = runCatching {
                 java.io.FileOutputStream(file).use { output ->
-                    bytesWritten = content.copyTo(output)
+                    bytesWritten = copyWithProgress(content, output, onBytesCopied)
                 }
                 android.media.MediaScannerConnection.scanFile(context, arrayOf(file.absolutePath), arrayOf(mimeType), null)
                 Uri.fromFile(file)
@@ -263,6 +264,24 @@ class AndroidStorageRepository(
             )
         }
         finalUri
+    }
+
+    private fun copyWithProgress(
+        input: java.io.InputStream,
+        output: java.io.OutputStream,
+        onBytesCopied: ((Long) -> Unit)?,
+    ): Long {
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        var totalBytes = 0L
+        while (true) {
+            val read = input.read(buffer)
+            if (read <= 0) break
+            output.write(buffer, 0, read)
+            totalBytes += read
+            onBytesCopied?.invoke(read.toLong())
+        }
+        output.flush()
+        return totalBytes
     }
 
     private fun buildSingleItemSync(uri: Uri, sourceFolderId: String?): SharedItem? {

@@ -259,6 +259,12 @@
     <string name="service_auto_stop_message">Sharing stopped after inactivity.</string>
     <string name="service_upload_request_title">Incoming Transfer</string>
     <string name="service_upload_request_text">%1$s (%2$s) from %3$s</string>
+    <string name="service_upload_progress_title">Receiving %1$s</string>
+    <string name="service_upload_progress_text">%1$d%% from %2$s to Downloads</string>
+    <string name="service_upload_progress_text_unknown">Receiving from %1$s to Downloads</string>
+    <string name="service_upload_success_title">%1$s saved successfully</string>
+    <string name="service_upload_success_text">Received from %1$s</string>
+    <string name="service_upload_success_subtext">Saved to Downloads</string>
     <string name="service_file_count">%1$d files</string>
     <string name="service_new_device_connected">New device connected</string>
     <string name="service_new_devices_connected">%1$d new devices connected</string>

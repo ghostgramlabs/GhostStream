@@ -3,7 +3,9 @@ package com.ghoststream.core.session
 import com.ghoststream.core.model.BlockedClient
 import com.ghoststream.core.model.ClientActivity
 import com.ghoststream.core.model.ConnectedClient
+import com.ghoststream.core.model.IncomingUploadCompletion
 import com.ghoststream.core.model.NetworkAvailability
+import com.ghoststream.core.model.IncomingUploadProgress
 import com.ghoststream.core.model.RecentSession
 import com.ghoststream.core.model.SessionState
 import com.ghoststream.core.model.SharedFolder
@@ -72,8 +74,16 @@ interface SessionManager {
     fun disconnectAllClients()
 
     val pendingUploadRequest: StateFlow<UploadRequest?>
+    val incomingUploadProgress: StateFlow<IncomingUploadProgress?>
+    val incomingUploadCompletion: StateFlow<IncomingUploadCompletion?>
+    fun registerUploadRequest(request: UploadRequest)
     suspend fun submitUploadRequest(request: UploadRequest)
     fun resolveUploadRequest(requestId: String, accepted: Boolean)
     suspend fun waitForUploadResolution(requestId: String): Boolean
+    fun onIncomingUploadStarted(requestId: String, fileName: String, currentFileIndex: Int)
+    fun onIncomingUploadProgress(requestId: String, fileName: String, currentFileIndex: Int, transferredBytes: Long)
+    fun completeIncomingUpload(requestId: String)
+    fun clearIncomingUpload(requestId: String)
+    fun clearIncomingUploadCompletion(requestId: String)
 }
 

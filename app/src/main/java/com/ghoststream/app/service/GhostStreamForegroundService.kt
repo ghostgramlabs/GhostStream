@@ -20,6 +20,8 @@ import com.ghostgramlabs.directserve.core.resources.R as SharedR
 import com.ghostgramlabs.directserve.state.ShareStartResult
 import com.ghoststream.core.model.AppSettings
 import com.ghoststream.core.model.ConnectedClient
+import com.ghoststream.core.model.IncomingUploadCompletion
+import com.ghoststream.core.model.IncomingUploadProgress
 import com.ghoststream.core.model.SessionState
 import com.ghoststream.core.model.formatGeneratedNameWithIp
 import kotlinx.coroutines.CoroutineScope
@@ -92,6 +94,31 @@ class GhostStreamForegroundService : Service() {
                     cancelUploadRequestNotification()
                 }
             }
+        }
+        serviceScope.launch {
+            combine(
+                container.settingsRepository.settings,
+                container.sessionManager.incomingUploadProgress,
+            ) { settings, progress -> settings to progress }
+                .collectLatest { (settings, progress) ->
+                    if (settings.notifyOnUploadRequest && progress != null) {
+                        showIncomingUploadProgressNotification(progress)
+                    } else {
+                        cancelIncomingUploadProgressNotification()
+                    }
+                }
+        }
+        serviceScope.launch {
+            combine(
+                container.settingsRepository.settings,
+                container.sessionManager.incomingUploadCompletion,
+            ) { settings, completion -> settings to completion }
+                .collectLatest { (settings, completion) ->
+                    if (settings.notifyOnUploadRequest && completion != null) {
+                        showIncomingUploadSuccessNotification(completion)
+                        container.sessionManager.clearIncomingUploadCompletion(completion.requestId)
+                    }
+                }
         }
     }
 
@@ -236,6 +263,8 @@ class GhostStreamForegroundService : Service() {
         NotificationManagerCompat.from(this).cancel(NOTIFICATION_ID)
         NotificationManagerCompat.from(this).cancel(REQUEST_NOTIFICATION_ID)
         NotificationManagerCompat.from(this).cancel(CONNECTION_NOTIFICATION_ID)
+        NotificationManagerCompat.from(this).cancel(UPLOAD_PROGRESS_NOTIFICATION_ID)
+        NotificationManagerCompat.from(this).cancel(UPLOAD_SUCCESS_NOTIFICATION_ID)
     }
 
     private fun showUploadRequestNotification(request: com.ghoststream.core.model.UploadRequest) {
@@ -276,6 +305,79 @@ class GhostStreamForegroundService : Service() {
 
     private fun cancelUploadRequestNotification() {
         NotificationManagerCompat.from(this).cancel(REQUEST_NOTIFICATION_ID)
+    }
+
+    private fun showIncomingUploadProgressNotification(progress: IncomingUploadProgress) {
+        val openAppIntent = PendingIntent.getActivity(
+            this,
+            203,
+            Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            },
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val fileLabel = if (progress.fileCount > 1) {
+            "${progress.currentFileName} (${progress.currentFileIndex}/${progress.fileCount})"
+        } else {
+            progress.currentFileName
+        }
+        val senderLabel = formatGeneratedNameWithIp(progress.requesterIp)
+        val percent = progress.progressPercent
+        val detail = if (percent != null) {
+            getString(SharedR.string.service_upload_progress_text, percent, senderLabel)
+        } else {
+            getString(SharedR.string.service_upload_progress_text_unknown, senderLabel)
+        }
+        val notification = NotificationCompat.Builder(this, REQUEST_CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(getString(SharedR.string.service_upload_progress_title, fileLabel))
+            .setContentText(detail)
+            .setSubText("${formatBytes(progress.transferredBytes)} / ${formatBytes(progress.totalSizeBytes)}")
+            .setContentIntent(openAppIntent)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setCategory(NotificationCompat.CATEGORY_PROGRESS)
+            .setProgress(
+                if (progress.totalSizeBytes > 0L) 100 else 0,
+                percent ?: 0,
+                progress.totalSizeBytes <= 0L,
+            )
+            .build()
+
+        NotificationManagerCompat.from(this).notify(UPLOAD_PROGRESS_NOTIFICATION_ID, notification)
+    }
+
+    private fun cancelIncomingUploadProgressNotification() {
+        NotificationManagerCompat.from(this).cancel(UPLOAD_PROGRESS_NOTIFICATION_ID)
+    }
+
+    private fun showIncomingUploadSuccessNotification(completion: IncomingUploadCompletion) {
+        val openAppIntent = PendingIntent.getActivity(
+            this,
+            204,
+            Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            },
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val fileLabel = if (completion.fileCount > 1) {
+            getString(SharedR.string.service_file_count, completion.fileCount)
+        } else {
+            completion.fileName
+        }
+        val senderLabel = formatGeneratedNameWithIp(completion.requesterIp)
+        val notification = NotificationCompat.Builder(this, REQUEST_CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(getString(SharedR.string.service_upload_success_title, fileLabel))
+            .setContentText(getString(SharedR.string.service_upload_success_text, senderLabel))
+            .setSubText(getString(SharedR.string.service_upload_success_subtext))
+            .setContentIntent(openAppIntent)
+            .setAutoCancel(true)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setOnlyAlertOnce(true)
+            .build()
+
+        NotificationManagerCompat.from(this).notify(UPLOAD_SUCCESS_NOTIFICATION_ID, notification)
     }
 
     private fun showDeviceConnectionNotification(
@@ -413,6 +515,8 @@ class GhostStreamForegroundService : Service() {
         private const val NOTIFICATION_ID = 404
         private const val REQUEST_NOTIFICATION_ID = 405
         private const val CONNECTION_NOTIFICATION_ID = 406
+        private const val UPLOAD_PROGRESS_NOTIFICATION_ID = 407
+        private const val UPLOAD_SUCCESS_NOTIFICATION_ID = 408
         private const val ACTION_START = "com.ghostgramlabs.directserve.action.START_SHARING"
         private const val ACTION_STOP = "com.ghostgramlabs.directserve.action.STOP_SHARING"
         private const val ACTION_ACCEPT_UPLOAD = "com.ghostgramlabs.directserve.action.ACCEPT_UPLOAD"

@@ -19,5 +19,11 @@ interface StorageRepository {
     suspend fun clearSelection()
     suspend fun loadSmartSelectionGroups(): List<SmartSelectionGroup>
     fun findItemById(itemId: String): SharedItem?
-    suspend fun saveUploadedFile(fileName: String, mimeType: String, content: java.io.InputStream, peer: String): Uri?
+    suspend fun saveUploadedFile(
+        fileName: String,
+        mimeType: String,
+        content: java.io.InputStream,
+        peer: String,
+        onBytesCopied: ((Long) -> Unit)? = null,
+    ): Uri?
 }

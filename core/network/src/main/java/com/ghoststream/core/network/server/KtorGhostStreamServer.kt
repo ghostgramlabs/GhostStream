@@ -647,6 +647,7 @@ class KtorGhostStreamServer(
                     requesterIp = call.remoteHost(),
                     requestedAtEpochMs = System.currentTimeMillis(),
                 )
+                sessionManager.registerUploadRequest(request)
                 
                 val settings = settingsRepository.settings.first()
                 if (settings.requireUploadApproval) {
@@ -664,34 +665,59 @@ class KtorGhostStreamServer(
             post("/api/upload/execute/{id}") {
                 if (!call.authorizeBrowserCall()) return@post
                 val requestId = call.parameters["id"] ?: return@post
-                
+
                 val multipart = call.receiveMultipart()
                 val uploadedUris = mutableListOf<Uri>()
-                
-                multipart.forEachPart { part ->
-                    if (part is PartData.FileItem) {
-                        val fileName = part.originalFileName ?: "uploaded_file"
-                        val mimeType = part.contentType?.toString() ?: "application/octet-stream"
-                        
-                        part.streamProvider().use { input ->
-                            storageRepository.saveUploadedFile(
+                var totalUploadedBytes = 0L
+                var currentFileIndex = 0
+
+                try {
+                    multipart.forEachPart { part ->
+                        if (part is PartData.FileItem) {
+                            currentFileIndex += 1
+                            val fileName = part.originalFileName ?: "uploaded_file"
+                            val mimeType = part.contentType?.toString() ?: "application/octet-stream"
+                            sessionManager.onIncomingUploadStarted(
+                                requestId = requestId,
                                 fileName = fileName,
-                                mimeType = mimeType,
-                                content = input,
-                                peer = call.remoteHost(),
-                            )?.let { uri ->
-                                uploadedUris.add(uri)
+                                currentFileIndex = currentFileIndex,
+                            )
+
+                            part.streamProvider().use { input ->
+                                storageRepository.saveUploadedFile(
+                                    fileName = fileName,
+                                    mimeType = mimeType,
+                                    content = input,
+                                    peer = call.remoteHost(),
+                                    onBytesCopied = { bytesCopied ->
+                                        totalUploadedBytes += bytesCopied
+                                        sessionManager.onIncomingUploadProgress(
+                                            requestId = requestId,
+                                            fileName = fileName,
+                                            currentFileIndex = currentFileIndex,
+                                            transferredBytes = totalUploadedBytes,
+                                        )
+                                    },
+                                )?.let { uri ->
+                                    uploadedUris.add(uri)
+                                }
                             }
                         }
+                        part.dispose()
                     }
-                    part.dispose()
-                }
 
-                if (uploadedUris.isNotEmpty()) {
-                    storageRepository.addFiles(uploadedUris)
-                    call.respond(AuthResult(success = true))
-                } else {
-                    call.respond(HttpStatusCode.InternalServerError, ErrorPayload("No files were successfully saved."))
+                    if (uploadedUris.isNotEmpty()) {
+                        storageRepository.addFiles(uploadedUris)
+                        sessionManager.completeIncomingUpload(requestId)
+                        sessionManager.clearIncomingUpload(requestId)
+                        call.respond(AuthResult(success = true))
+                    } else {
+                        sessionManager.clearIncomingUpload(requestId)
+                        call.respond(HttpStatusCode.InternalServerError, ErrorPayload("No files were successfully saved."))
+                    }
+                } catch (error: Exception) {
+                    sessionManager.clearIncomingUpload(requestId)
+                    throw error
                 }
             }
 
@@ -699,6 +725,7 @@ class KtorGhostStreamServer(
                 if (!call.authorizeBrowserCall()) return@post
                 val requestId = call.parameters["id"] ?: return@post
                 sessionManager.resolveUploadRequest(requestId, accepted = false)
+                sessionManager.clearIncomingUpload(requestId)
                 call.respond(AuthResult(success = true))
             }
         }

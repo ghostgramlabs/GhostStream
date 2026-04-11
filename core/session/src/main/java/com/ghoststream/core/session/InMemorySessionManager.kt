@@ -4,6 +4,8 @@ import com.ghoststream.core.model.BlockedClient
 import com.ghoststream.core.model.ClientActivity
 import com.ghoststream.core.model.ConnectedClient
 import com.ghoststream.core.model.DebugLogSink
+import com.ghoststream.core.model.IncomingUploadCompletion
+import com.ghoststream.core.model.IncomingUploadProgress
 import com.ghoststream.core.model.NetworkAvailability
 import com.ghoststream.core.model.NetworkType
 import com.ghoststream.core.model.NoOpDebugLogSink
@@ -29,13 +31,18 @@ class InMemorySessionManager(
     private val authTokens = linkedMapOf<String, String>()
 
     private val _pendingUploadRequest = MutableStateFlow<UploadRequest?>(null)
+    private val _incomingUploadProgress = MutableStateFlow<IncomingUploadProgress?>(null)
+    private val _incomingUploadCompletion = MutableStateFlow<IncomingUploadCompletion?>(null)
     private val uploadResolutions = mutableMapOf<String, CompletableDeferred<Boolean>>()
+    private val uploadRequests = mutableMapOf<String, UploadRequest>()
 
     private var speedWindowStartedAt = 0L
     private var speedWindowBytes = 0L
 
     override val sessionState: StateFlow<SessionState> = _sessionState.asStateFlow()
     override val recentSessions: StateFlow<List<RecentSession>> = _recentSessions.asStateFlow()
+    override val incomingUploadProgress: StateFlow<IncomingUploadProgress?> = _incomingUploadProgress.asStateFlow()
+    override val incomingUploadCompletion: StateFlow<IncomingUploadCompletion?> = _incomingUploadCompletion.asStateFlow()
 
     override fun refreshSelection(items: List<SharedItem>, folders: List<SharedFolder>) {
         _sessionState.update { current ->
@@ -65,6 +72,9 @@ class InMemorySessionManager(
             speedWindowStartedAt = now
             speedWindowBytes = 0L
             authTokens.clear()
+            uploadRequests.clear()
+            _incomingUploadProgress.value = null
+            _incomingUploadCompletion.value = null
             _sessionState.value = SessionState(
                 sessionId = UUID.randomUUID().toString(),
                 isSharing = true,
@@ -323,8 +333,15 @@ class InMemorySessionManager(
 
     override val pendingUploadRequest: StateFlow<UploadRequest?> = _pendingUploadRequest.asStateFlow()
 
+    override fun registerUploadRequest(request: UploadRequest) {
+        synchronized(stateLock) {
+            uploadRequests[request.id] = request
+        }
+    }
+
     override suspend fun submitUploadRequest(request: UploadRequest) {
         synchronized(stateLock) {
+            uploadRequests[request.id] = request
             _pendingUploadRequest.value = request
             uploadResolutions[request.id] = CompletableDeferred()
         }
@@ -334,6 +351,12 @@ class InMemorySessionManager(
         synchronized(stateLock) {
             if (_pendingUploadRequest.value?.id == requestId) {
                 _pendingUploadRequest.value = null
+            }
+            if (!accepted) {
+                uploadRequests.remove(requestId)
+                if (_incomingUploadProgress.value?.requestId == requestId) {
+                    _incomingUploadProgress.value = null
+                }
             }
             uploadResolutions[requestId]?.complete(accepted)
         }
@@ -348,5 +371,80 @@ class InMemorySessionManager(
             uploadResolutions.remove(requestId)
         }
         return accepted
+    }
+
+    override fun onIncomingUploadStarted(requestId: String, fileName: String, currentFileIndex: Int) {
+        synchronized(stateLock) {
+            val request = uploadRequests[requestId] ?: return
+            val existingTransferredBytes = _incomingUploadProgress.value
+                ?.takeIf { it.requestId == requestId }
+                ?.transferredBytes
+                ?: 0L
+            _incomingUploadProgress.value = IncomingUploadProgress(
+                requestId = requestId,
+                currentFileName = fileName,
+                fileCount = request.fileCount,
+                currentFileIndex = currentFileIndex,
+                totalSizeBytes = request.sizeBytes,
+                transferredBytes = existingTransferredBytes,
+                requesterIp = request.requesterIp,
+                startedAtEpochMs = System.currentTimeMillis(),
+            )
+        }
+    }
+
+    override fun onIncomingUploadProgress(
+        requestId: String,
+        fileName: String,
+        currentFileIndex: Int,
+        transferredBytes: Long,
+    ) {
+        synchronized(stateLock) {
+            val request = uploadRequests[requestId] ?: return
+            _incomingUploadProgress.value = IncomingUploadProgress(
+                requestId = requestId,
+                currentFileName = fileName,
+                fileCount = request.fileCount,
+                currentFileIndex = currentFileIndex,
+                totalSizeBytes = request.sizeBytes,
+                transferredBytes = transferredBytes,
+                requesterIp = request.requesterIp,
+                startedAtEpochMs = _incomingUploadProgress.value
+                    ?.takeIf { it.requestId == requestId }
+                    ?.startedAtEpochMs
+                    ?: System.currentTimeMillis(),
+            )
+        }
+    }
+
+    override fun clearIncomingUpload(requestId: String) {
+        synchronized(stateLock) {
+            uploadRequests.remove(requestId)
+            if (_incomingUploadProgress.value?.requestId == requestId) {
+                _incomingUploadProgress.value = null
+            }
+        }
+    }
+
+    override fun completeIncomingUpload(requestId: String) {
+        synchronized(stateLock) {
+            val request = uploadRequests[requestId] ?: return
+            _incomingUploadCompletion.value = IncomingUploadCompletion(
+                requestId = requestId,
+                fileName = request.fileName,
+                fileCount = request.fileCount,
+                totalSizeBytes = request.sizeBytes,
+                requesterIp = request.requesterIp,
+                completedAtEpochMs = System.currentTimeMillis(),
+            )
+        }
+    }
+
+    override fun clearIncomingUploadCompletion(requestId: String) {
+        synchronized(stateLock) {
+            if (_incomingUploadCompletion.value?.requestId == requestId) {
+                _incomingUploadCompletion.value = null
+            }
+        }
     }
 }
