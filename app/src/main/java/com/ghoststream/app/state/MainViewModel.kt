@@ -193,6 +193,12 @@ class MainViewModel(
         }
     }
 
+    fun clearLibrarySelection() {
+        viewModelScope.launch {
+            container.storageRepository.clearSelection()
+        }
+    }
+
 
     fun requestStartSharing() {
         viewModelScope.launch {

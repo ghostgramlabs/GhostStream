@@ -320,6 +320,9 @@
     <string name="library_organize_title">Organize</string>
     <string name="library_organize_body">Sort or save part of this share</string>
     <string name="library_sort_prefix">Sort files: %1$s</string>
+    <string name="library_clear_all_action">Clear all</string>
+    <string name="library_clear_all_title">Clear this library?</string>
+    <string name="library_clear_all_body">This removes every shared file and folder from the current library.</string>
     <string name="library_sort_newest">Newest</string>
     <string name="library_sort_name">Name</string>
     <string name="library_sort_size">Size</string>

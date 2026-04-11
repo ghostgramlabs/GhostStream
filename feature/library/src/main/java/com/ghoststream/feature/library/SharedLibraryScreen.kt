@@ -85,7 +85,7 @@ fun SharedLibraryScreen(
     showThumbnails: Boolean,
     onBack: () -> Unit,
     onPrepareItem: (String) -> Unit,
-
+    onClearAll: () -> Unit,
     onRemoveItem: (String) -> Unit,
     onRemoveFolder: (String) -> Unit,
     onOpenAddFiles: () -> Unit,
@@ -98,14 +98,17 @@ fun SharedLibraryScreen(
     var selectedCategory by rememberSaveable { mutableStateOf("all") }
     var sortOption by rememberSaveable { mutableStateOf("newest") }
     var sortMenuExpanded by remember { mutableStateOf(false) }
+    var showClearAllDialog by rememberSaveable { mutableStateOf(false) }
 
     val selectedItemIds = remember { mutableStateListOf<String>() }
+    val hasLibraryContent = libraryState.items.isNotEmpty() || libraryState.folders.isNotEmpty()
 
     LaunchedEffect(libraryState.items, libraryState.folders) {
         val validIds = libraryState.items.mapTo(mutableSetOf()) { it.id }
         selectedItemIds.removeAll { it !in validIds }
         if (libraryState.items.isEmpty() && libraryState.folders.isEmpty()) {
             selectedItemIds.clear()
+            showClearAllDialog = false
         }
     }
 
@@ -166,14 +169,14 @@ fun SharedLibraryScreen(
                     sortOption = it
                     sortMenuExpanded = false
                 },
-
+                hasLibraryContent = hasLibraryContent,
                 hasNonDirectVideo = libraryState.items.any {
                     it.category == MediaCategory.VIDEO && it.playbackDecision.mode != PlaybackMode.DIRECT
                 },
+                onClearAll = { showClearAllDialog = true },
                 onOpenAddFiles = onOpenAddFiles,
                 onOpenAddFolder = onOpenAddFolder,
                 onOpenBatchSelect = onOpenBatchSelect,
-
             )
         }
 
@@ -233,6 +236,32 @@ fun SharedLibraryScreen(
         item { Spacer(modifier = Modifier.height(18.dp)) }
     }
 
+    if (showClearAllDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearAllDialog = false },
+            title = { Text(stringResource(R.string.library_clear_all_title)) },
+            text = { Text(stringResource(R.string.library_clear_all_body)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showClearAllDialog = false
+                        onClearAll()
+                    },
+                    colors = libraryPrimaryButtonColors(),
+                ) {
+                    Text(stringResource(R.string.library_clear_all_action))
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showClearAllDialog = false },
+                    colors = librarySecondaryButtonColors(),
+                ) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            },
+        )
+    }
 
 }
 
@@ -373,12 +402,12 @@ private fun LibraryControlsCard(
     onSortExpand: () -> Unit,
     onSortDismiss: () -> Unit,
     onSortSelected: (String) -> Unit,
-
+    hasLibraryContent: Boolean,
     hasNonDirectVideo: Boolean,
+    onClearAll: () -> Unit,
     onOpenAddFiles: () -> Unit,
     onOpenAddFolder: () -> Unit,
     onOpenBatchSelect: () -> Unit,
-
 ) {
     Card(
         modifier = Modifier
@@ -501,8 +530,16 @@ private fun LibraryControlsCard(
                             )
                         }
                     }
-
-
+                    if (hasLibraryContent) {
+                        OutlinedButton(
+                            onClick = onClearAll,
+                            modifier = Modifier.heightIn(min = 48.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = librarySecondaryButtonColors(),
+                        ) {
+                            Text(stringResource(R.string.library_clear_all_action))
+                        }
+                    }
                 }
             }
 

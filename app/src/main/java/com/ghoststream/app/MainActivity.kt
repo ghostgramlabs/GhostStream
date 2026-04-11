@@ -397,7 +397,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     showThumbnails = uiState.settings.showThumbnails,
                     onBack = { navController.popBackStack() },
                     onPrepareItem = viewModel::requestPrepareItem,
-
+                    onClearAll = viewModel::clearLibrarySelection,
                     onRemoveItem = viewModel::removeItem,
                     onRemoveFolder = viewModel::removeFolder,
                     onOpenAddFiles = { navController.navigate(Routes.AddFiles) },

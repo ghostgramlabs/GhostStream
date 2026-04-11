@@ -191,6 +191,9 @@
     <string name="library_manage_title">Hantera denna andel</string>
     <string name="library_organize_body">Sortera eller spara en del av denna andel</string>
     <string name="library_organize_title">Organisera</string>
+    <string name="library_clear_all_action">Rensa allt</string>
+    <string name="library_clear_all_title">Rensa biblioteket?</string>
+    <string name="library_clear_all_body">Detta tar bort alla delade filer och mappar fran det aktuella biblioteket.</string>
     <string name="library_prepare">Förbered</string>
     <string name="library_prepare_for_browser">Förbered för webbläsare</string>
     <string name="library_preparing">Förbereder</string>
