@@ -12,7 +12,6 @@
     <string name="common_dismiss">تجاهل</string>
     <string name="common_remove">إزالة</string>
     <string name="common_search">بحث</string>
-
     <string name="onboarding_skip">تخطي</string>
     <string name="onboarding_title">بث مباشر ومشاركة ملفات</string>
     <string name="onboarding_subtitle">حوّل هاتفك إلى مركز محلي خاص للوصول عبر التلفاز، الكمبيوتر، الأجهزة اللوحية، والمتصفح.</string>
@@ -31,7 +30,6 @@
     <string name="onboarding_page_counter">%1$d من %2$d</string>
     <string name="onboarding_next">التالي</string>
     <string name="onboarding_get_started">ابدأ الآن</string>
-
     <string name="settings_title">الإعدادات</string>
     <string name="settings_subtitle">خصص تجربة استخدام DirectServe بما يناسبك.</string>
     <string name="settings_group_general">عام</string>
@@ -109,7 +107,6 @@
     <string name="settings_share_debug_log">مشاركة سجل التصحيح</string>
     <string name="settings_share_debug_log_desc">إرسال سجل الجلسة والتشغيل عبر البريد.</string>
     <string name="settings_clear_debug_log">مسح سجل التصحيح</string>
-
     <string name="help_title">المساعدة</string>
     <string name="help_about_title">حول DirectServe</string>
     <string name="help_about_1">يسمح DirectServe للأجهزة القريبة بفتح ملفاتك المشاركة عبر المتصفح دون الحاجة لسحابة إلكترونية أو حساب.</string>
@@ -141,7 +138,6 @@
     <string name="help_line_flow_2">2. ابدأ الجلسة.</string>
     <string name="help_line_flow_3">3. افتح الرابط المعروض أو امسح رمز QR من الجهاز الآخر.</string>
     <string name="help_line_flow_4">4. ابدأ بالتصفح، التشغيل، أو رفع الملفات حسب ما تسمح به.</string>
-
     <string name="home_brand_title">DirectServe</string>
     <string name="home_brand_subtitle">مشاركة خاصة عبر Wi-Fi أو نقطة الاتصال</string>
     <string name="home_chip_local_session">جلسة محلية</string>
@@ -158,7 +154,6 @@
     <string name="home_button_open_session">فتح الجلسة</string>
     <string name="home_button_starting">جاري البدء...</string>
     <string name="home_no_network">لم يتم اكتشاف Wi-Fi أو نقطة اتصال</string>
-
     <string name="network_setup_title">مطلوب اتصال بشبكة محلية</string>
     <string name="network_setup_body">يعمل DirectServe عندما يكون الجهازان متصلين بنفس شبكة Wi-Fi أو نقطة اتصالك.</string>
     <string name="network_setup_trouble_title">تواجه مشكلة مع Wi-Fi عام؟</string>
@@ -167,7 +162,6 @@
     <string name="network_setup_switch_hotspot">التحويل إلى نقطة الاتصال</string>
     <string name="network_setup_retry">إعادة المحاولة</string>
     <string name="network_setup_footer">نقطة الاتصال مثالية عند السفر أو عدم توفر راوتر.</string>
-
     <string name="session_title">جلسة مباشرة</string>
     <string name="session_stop_sharing">إيقاف المشاركة</string>
     <string name="session_live_now">نشط الآن</string>
@@ -218,7 +212,6 @@
     <string name="session_network_wifi">Wi-Fi</string>
     <string name="session_network_local">محلي</string>
     <string name="session_network_offline">أوفلاين</string>
-
     <string name="history_title">سجل النقل</string>
     <string name="history_tab_all">كل النشاط</string>
     <string name="history_tab_received">المستلمة</string>
@@ -229,17 +222,14 @@
     <string name="history_open">فتح</string>
     <string name="history_delete">حذف</string>
     <string name="history_delete_desc">حذف من السجل</string>
-
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">مشاركة محلية خاصة</string>
-
     <string name="privacy_policy_title">سياسة الخصوصية</string>
     <string name="privacy_policy_intro">تم تصميم DirectServe للمشاركة المحلية الخاصة. تبقى ملفاتك على هذا الجهاز ولا تتم مشاركتها إلا مع الأجهزة القريبة التي تختارها على نفس الشبكة.</string>
     <string name="privacy_policy_line_1">DirectServe لا يتطلب إنشاء حساب.</string>
     <string name="privacy_policy_line_2">DirectServe لا يرفع ملفاتك إلى أي خدمة سحابية في هذا الإصدار.</string>
     <string name="privacy_policy_line_3">الأجهزة القريبة يمكنها الوصول فقط أثناء نشاط الجلسة وللملفات التي اخترتها فقط.</string>
     <string name="privacy_policy_line_4">يمكنك وقف المشاركة في أي وقت، أو طلب رمز PIN، أو حظر الأجهزة، أو مسح ملفات التشغيل المؤقتة من الإعدادات.</string>
-
     <string name="main_service_background_protection_failed">بدأت المشاركة، لكن تعذر تفعيل حماية الخلفية. يرجى إبقاء التطبيق مفتوحاً أثناء الاستخدام.</string>
     <string name="main_notification_permission_warning">يمكن أن تستمر المشاركة، ولكن قد يخفي Android الإشعار حتى تسمح بالإشعارات.</string>
     <string name="main_batch_media_access_needed">يرجى السماح بالوصول للصور أو الفيديو أو الموسيقى لاستخدام ميزة "الاختيارات الذكية". يمكنك دائماً إضافة الملفات يدوياً.</string>
@@ -254,7 +244,6 @@
     <string name="main_share_link_chooser">مشاركة رابط DirectServe</string>
     <string name="main_link_not_ready">الرابط المحلي غير جاهز بعد. تأكد من اتصال Wi-Fi أو نقطة الاتصال وحاول مجدداً.</string>
     <string name="main_not_sharing">لا توجد مشاركة حالياً</string>
-
     <string name="service_start_failed">تعذر بدء المشاركة في الخلفية على هذا الجهاز.</string>
     <string name="service_auto_stop_message">توقفت المشاركة بسبب عدم وجود نشاط.</string>
     <string name="service_upload_request_title">نقل وارد</string>
@@ -272,7 +261,6 @@
     <string name="service_channel_requests_desc">إشعارات لطلبات نقل الملفات الواردة من أجهزة الكمبيوتر</string>
     <string name="service_channel_connections_name">اتصالات الأجهزة</string>
     <string name="service_channel_connections_desc">إشعارات عند انضمام جهاز جديد لجلسة DirectServe</string>
-
     <string name="library_title">المكتبة</string>
     <string name="library_header_title">المكتبة المشتركة</string>
     <string name="library_header_body">هذه هي الملفات التي يمكن للأشخاص فتحها عبر رابط المشاركة الخاص بك.</string>
@@ -348,7 +336,6 @@
     <string name="library_compat_ready">جاهز</string>
     <string name="library_compat_unavailable">غير متاح</string>
     <string name="library_compat_message">%1$s | %2$s</string>
-
     <string name="selection_add_files_title">إضافة ملفات</string>
     <string name="selection_add_files_body">اختر ملفاً أو أكثر لإتاحتها في جلستك.</string>
     <string name="selection_add_selected">إضافة المختار</string>
@@ -374,7 +361,6 @@
     <string name="selection_no_groups_body">حاول التحديث إذا منحت الإذن مؤخراً، أو أضف الملفات يدوياً.</string>
     <string name="selection_refresh_groups">تحديث المجموعات الذكية</string>
     <string name="selection_add_group">إضافة مجموعة</string>
-
     <string name="home_upload_request_title">طلب نقل ملفات</string>
     <string name="home_upload_request_single">ملف واحد</string>
     <string name="home_upload_request_files">%1$d ملفات</string>
@@ -384,7 +370,6 @@
     <string name="home_settings_content_desc">الإعدادات</string>
     <string name="home_network_required_title">مطلوب اتصال بالشبكة</string>
     <string name="home_network_required_body">يرجى الاتصال بـ Wi-Fi أو تفعيل نقطة الاتصال لبدء الجلسة.\n\nبيانات الهاتف وحدها لا يمكنها إنشاء جلسة محلية.</string>
-
     <string name="message_unable_add_folder">تعذر إضافة هذا المجلد الآن.</string>
     <string name="message_saved_share_named">تم حفظ المشاركة باسم \"%1$s\".</string>
     <string name="message_unable_save_share">تعذر حفظ هذه المشاركة الآن.</string>
@@ -401,14 +386,12 @@
     <string name="message_preparing_browser_playback">جاري تجهيز %1$s لتشغيل أسلس في المتصفح.</string>
     <string name="nearby_helper_tap_session">اضغط على جلسة قريبة لفتحها في متصفحك.</string>
     <string name="nearby_helper_open_on_other_device">افتح DirectServe على جهاز آخر متصل بنفس الشبكة ليظهر هنا.</string>
-
     <string name="share_preset_enter_name">يرجى إدخال اسم المجموعة أولاً.</string>
     <string name="share_preset_add_content_first">أضف بعض المحتوى أولاً قبل حفظ المجموعة.</string>
     <string name="share_preset_select_file_first">اختر ملفاً واحداً على الأقل.</string>
     <string name="share_preset_files_unavailable">هذه الملفات لم تعد متاحة في المكتبة المشتركة.</string>
     <string name="share_preset_collection_unavailable">هذه المجموعة لم تعد متاحة.</string>
     <string name="share_preset_restore_failed">تعذر استعادة المجموعة. قد تكون بعض الملفات أو الأذونات مفقودة.</string>
-
     <string name="sharing_preflight_failed">فشل فحص ما قبل البدء: %1$s</string>
     <string name="sharing_add_content_first">أضف بعض المحتوى أولاً لبدء المشاركة.</string>
     <string name="sharing_same_wifi_needed">صل الجهازين بنفس شبكة Wi-Fi أو نقطة الاتصال.</string>
@@ -416,7 +399,6 @@
     <string name="sharing_server_start_failed">فشل بدء الخادم: %1$s</string>
     <string name="sharing_stopped">توقفت المشاركة</string>
     <string name="sharing_device_android">Android</string>
-
     <string name="network_helper_wifi_ready">يمكن للأجهزة القريبة الانضمام لنفس الشبكة وفتح هذا الرابط. إذا منعت الشبكة العامة الوصول المحلي، استخدم نقطة الاتصال.</string>
     <string name="network_helper_local_ready">شبكتك المحلية جاهزة لوصول المتصفحات القريبة.</string>
     <string name="network_helper_wifi_found">تم العثور على عنوان Wi-Fi. الأجهزة على نفس الشبكة يمكنها الآن فتح الرابط.</string>
@@ -424,14 +406,12 @@
     <string name="network_helper_mobile_only">بيانات الهاتف وحدها لا تنشئ جلسة محلية. استخدم Wi-Fi أو فعل نقطة الاتصال.</string>
     <string name="network_helper_local_address_ready">تم العثور على عنوان محلي صالح. يمكن للأجهزة القريبة الاتصال الآن.</string>
     <string name="network_helper_connect_both">صل كلا الجهازين بنفس شبكة Wi-Fi أو نقطة الاتصال.</string>
-
     <string name="discovery_unavailable_device">ميزة الاكتشاف القريب غير متاحة على هذا الجهاز.</string>
     <string name="discovery_nsd_unavailable">خدمة NSD غير متاحة</string>
     <string name="discovery_searching">جاري البحث عن أجهزة DirectServe قريبة على هذه الشبكة...</string>
     <string name="discovery_unavailable_now">الاكتشاف القريب غير متاح حالياً. يمكنك استخدام رمز QR أو الرابط المباشر.</string>
     <string name="discovery_start_failed">فشل البدء (%1$d)</string>
     <string name="discovery_ready_to_open">أجهزة DirectServe القريبة جاهزة للفتح.</string>
-
     <string name="browser_title">DirectServe</string>
     <string name="browser_subtitle">بث ومشاركة الملفات أوفلاين</string>
     <string name="browser_file_unavailable">هذا الملف لم يعد متاحاً على الجهاز المستضيف.</string>
@@ -445,8 +425,6 @@
     <string name="browser_video_part_unavailable">هذا الجزء من الفيديو لم يعد متاحاً.</string>
     <string name="browser_hls_not_needed">هذا الفيديو لا يحتاج لتشغيل HLS.</string>
     <string name="browser_hls_not_ready">بث التوافق ليس جاهزاً لـ HLS بعد.</string>
-
-    
     <string name="home_action_add_to_share_title">إضافة للمشاركة</string>
     <string name="home_action_add_to_share_subtitle">اختر الملفات التي تريد إرسالها.</string>
     <string name="home_action_files">ملفات</string>
@@ -455,8 +433,6 @@
     <string name="home_action_folder_desc">مسح</string>
     <string name="home_action_library">المكتبة</string>
     <string name="home_action_library_desc">تصفح</string>
-
-    
     <string name="home_nearby_title">الشبكة والأجهزة القريبة</string>
     <string name="home_nearby_subtitle">تأكد من جاهزية شبكتك المحلية، ثم ابحث عن جهاز DirectServe آخر إذا كنت تريد فتحه في التطبيق.</string>
     <string name="home_nearby_refresh_status">تحديث الحالة</string>
@@ -475,8 +451,6 @@
     <string name="home_nearby_action_open">فتح</string>
     <string name="home_nearby_device_available">متاح</string>
     <string name="home_nearby_device_pin">مطلوب رقم تعريف (PIN)</string>
-
-    
     <string name="web_hero_eyebrow">عرض جهاز الاستقبال الخاص</string>
     <string name="web_hero_title">بث ومشاركة الملفات بلا اتصال</string>
     <string name="web_hero_desc1">تصفح، تشغيل، معاينة</string>
@@ -511,8 +485,6 @@
     <string name="web_security_pin">محمي بـ PIN</string>
     <string name="web_security_open">مفتوح على شبكة محلية</string>
     <string name="web_status_unknown">غير معروف</string>
-
-    
     <string name="home_connected_devices">الأجهزة المتصلة</string>
     <string name="home_rename_device">إعادة تسمية الجهاز</string>
     <string name="home_rename_device_subtitle">الجهاز: %1$s • %2$s</string>
@@ -542,7 +514,26 @@
     <string name="home_saved_shares_delete">حذف</string>
     <string name="home_saved_shares_items_count">%1$d عناصر</string>
     <string name="library_date_group_label">%1$s </string>
-<string name="web_upload_title">إرسال إلى الجهاز</string><string name="web_upload_subtitle">تحميل الملفات إلى الجهاز المضيف عبر الشبكة.</string><string name="web_upload_prompt_title">حدد الملفات لإرسالها</string><string name="web_upload_prompt_desktop">قم بالسحب والإسقاط هنا، أو اضغط على الزر أدناه</string><string name="web_upload_prompt_mobile">اضغط على الزر لتحديد الملفات من مكتبتك</string><string name="web_upload_button_browse">تصفح الملفات</string><string name="web_upload_target_kicker">الجهاز المستهدف</string><string name="web_upload_target_status">الحالة: متصل وجاهز للتحويلات</string><string name="web_upload_how_kicker">كيف يعمل</string><string name="web_upload_how_title">الموافقة الآمنة</string><string name="web_upload_how_body"><![CDATA[عند إرسال ملف، سيظهر إشعار على الهاتف. يجب على مالك الجهاز <strong>القبول</strong> لبدء عملية النقل.]]></string><string name="web_action_download">تحميل</string><string name="web_photo_view">منظر</string><string name="web_btn_download_all">تحميل الكل</string><string name="web_btn_download_selected">تحميل المحدد</string><string name="web_btn_download_original">تحميل الأصلي</string><string name="web_error_streaming_codec">برنامج الترميز الخاص بهذا الملف غير مدعوم من خادم Android للبث. يرجى التنزيل.</string><string name="web_error_downloads_disabled">يتم تعطيل التنزيلات من قبل مالك الجهاز.</string><string name="web_error_video_decode">لم يتمكن هذا المتصفح من فك تشفير دفق الفيديو. حاول تنزيل الملف الأصلي.</string><string name="web_error_video_start">تعذر على هذا المتصفح بدء تشغيل الفيديو. حاول مرة أخرى أو قم بتنزيل الملف الأصلي.</string>
+    <string name="web_upload_title">إرسال إلى الجهاز</string>
+    <string name="web_upload_subtitle">تحميل الملفات إلى الجهاز المضيف عبر الشبكة.</string>
+    <string name="web_upload_prompt_title">حدد الملفات لإرسالها</string>
+    <string name="web_upload_prompt_desktop">قم بالسحب والإسقاط هنا، أو اضغط على الزر أدناه</string>
+    <string name="web_upload_prompt_mobile">اضغط على الزر لتحديد الملفات من مكتبتك</string>
+    <string name="web_upload_button_browse">تصفح الملفات</string>
+    <string name="web_upload_target_kicker">الجهاز المستهدف</string>
+    <string name="web_upload_target_status">الحالة: متصل وجاهز للتحويلات</string>
+    <string name="web_upload_how_kicker">كيف يعمل</string>
+    <string name="web_upload_how_title">الموافقة الآمنة</string>
+    <string name="web_upload_how_body"><![CDATA[عند إرسال ملف، سيظهر إشعار على الهاتف. يجب على مالك الجهاز <strong>القبول</strong> لبدء عملية النقل.]]></string>
+    <string name="web_action_download">تحميل</string>
+    <string name="web_photo_view">منظر</string>
+    <string name="web_btn_download_all">تحميل الكل</string>
+    <string name="web_btn_download_selected">تحميل المحدد</string>
+    <string name="web_btn_download_original">تحميل الأصلي</string>
+    <string name="web_error_streaming_codec">برنامج الترميز الخاص بهذا الملف غير مدعوم من خادم Android للبث. يرجى التنزيل.</string>
+    <string name="web_error_downloads_disabled">يتم تعطيل التنزيلات من قبل مالك الجهاز.</string>
+    <string name="web_error_video_decode">لم يتمكن هذا المتصفح من فك تشفير دفق الفيديو. حاول تنزيل الملف الأصلي.</string>
+    <string name="web_error_video_start">تعذر على هذا المتصفح بدء تشغيل الفيديو. حاول مرة أخرى أو قم بتنزيل الملف الأصلي.</string>
     <string name="web_btn_clear_selection">مسح</string>
     <string name="web_btn_select_all">حدد الكل</string>
     <string name="web_btn_select_files">حدد الملفات</string>
@@ -562,4 +553,78 @@
     <string name="library_clear_all_action">مسح الكل</string>
     <string name="library_clear_all_title">مسح هذه المكتبة؟</string>
     <string name="library_clear_all_body">سيؤدي هذا إلى إزالة جميع الملفات والمجلدات المشتركة من المكتبة الحالية.</string>
+    <string name="session_browser_prep_title">Preparing browser files</string>
+    <string name="session_browser_prep_active">%1$d%% • %2$d of %3$d ready</string>
+    <string name="session_browser_prep_queued">%1$d remaining in background</string>
+    <string name="session_browser_prep_ready">%1$d browser files ready</string>
+    <string name="session_browser_prep_message_active">Preparing %1$s for browser playback</string>
+    <string name="session_browser_prep_message_queued">Preparing browser-ready video files in the background</string>
+    <string name="session_browser_prep_message_ready">Browser playback preparation is complete</string>
+    <string name="session_browser_prep_message_manual">Browser prep is optional and only helps on videos that need conversion.</string>
+    <string name="session_browser_prep_manual_note">Playback can still start without this. Large batches may warm the phone a little, so you can start or stop preparation whenever you want.</string>
+    <string name="session_prepare_browser_files">Prepare browser files</string>
+    <string name="session_stop_browser_files">Stop browser prep</string>
+    <string name="session_library_refresh_title">Live library updates</string>
+    <string name="session_library_refresh_pending">%1$d new files and %2$d new folders are ready to add to this live server.</string>
+    <string name="session_library_refresh_up_to_date">This live server already matches your current library.</string>
+    <string name="session_refresh_library">Refresh live library</string>
+    <string name="message_live_library_refreshed_updates">Live server refreshed with %1$d new files and %2$d new folders.</string>
+    <string name="message_live_library_refreshed_current">Live server refreshed. It was already up to date.</string>
+    <string name="message_browser_playback_queued_all">Started browser preparation for %1$d files.</string>
+    <string name="message_browser_playback_already_ready">Browser files are already ready, already queued, or not needed.</string>
+    <string name="message_browser_playback_stopped">Stopped browser file preparation.</string>
+    <string name="library_importing_title">Adding files to library</string>
+    <string name="library_importing_body">%1$d selected items are still being added in the background.</string>
+    <string name="web_upload_selection_empty">لم يتم اختيار ملفات بعد.</string>
+    <string name="web_upload_selection_single">جاهز لإرسال %1$s</string>
+    <string name="web_upload_selection_multiple">جاهز لإرسال %1$d ملفات</string>
+    <string name="web_upload_button_send">رفع</string>
+    <string name="common_quick_filters">Quick filters</string>
+    <string name="common_edit_nickname">Edit nickname</string>
+    <string name="home_quick_filters_desc">Add files from a specific date. Open library to see all your files.</string>
+    <string name="home_date_range_body">Choose files from a specific date range.</string>
+    <string name="help_section_browser_preparation">Browser Preparation</string>
+    <string name="help_section_drop_zone">Drop Zone</string>
+    <string name="help_section_privacy_controls">Privacy Controls</string>
+    <string name="help_line_prep_optional">Preparation is optional but recommended for older devices to ensure smooth playback.</string>
+    <string name="help_line_prep_control">You can control preparation per-file from the library management screen.</string>
+    <string name="help_line_prep_batch">You can also batch-prepare files from the session status screen.</string>
+    <string name="help_line_drop_zone">The web interface includes a \'Drop Zone\' for receiving files.</string>
+    <string name="help_line_drop_zone_pick">Recipients can pick files or drag and drop them to send to your device.</string>
+    <string name="help_line_drop_zone_local">Transfers happen entirely over your local network and never touch the cloud.</string>
+    <string name="help_line_privacy_local">DirectServe is local-only; files are shared directly between devices.</string>
+    <string name="help_line_privacy_session">Access is only possible while your session is active on the host phone.</string>
+    <string name="web_upload_requesting">Requesting permission</string>
+    <string name="web_upload_waiting">Waiting for DirectServe</string>
+    <string name="web_upload_success_title">Success!</string>
+    <string name="web_upload_success_detail_single">File is ready on DirectServe.</string>
+    <string name="web_upload_success_detail_multiple">Files are ready on DirectServe.</string>
+    <string name="web_upload_failed_title">Transfer failed</string>
+    <string name="web_upload_failed_detail">Upload request was denied or failed.</string>
+    <string name="web_player_error_open">This video could not be opened</string>
+    <string name="web_player_opening">Opening video...</string>
+    <string name="web_player_ready">Video is ready</string>
+    <string name="web_player_starting">Starting playback...</string>
+    <string name="web_player_wait_desc">This browser needs a moment to open the video. Keep this page open.</string>
+    <string name="web_player_ready_desc">Playback is ready on this device.</string>
+    <string name="web_player_starting_desc">The video is starting now. If it pauses, wait a moment or try again.</string>
+    <string name="web_player_try_again">Try again</string>
+    <string name="web_player_status_opening">Opening</string>
+    <string name="web_player_status_ready">Ready</string>
+    <string name="web_player_status_playing">Playing</string>
+    <string name="web_btn_back">Back to videos</string>
+    <string name="web_status_subtitles_available">Subtitles available</string>
+    <string name="help_line_privacy_controls">Use PIN access and device blocking for extra security.</string>
+    <string name="web_now_playing">يتم التشغيل الآن</string>
+    <string name="common_resume">استئناف</string>
+    <string name="web_status_init_progress">0%</string>
+    <string name="common_play">تشغيل</string>
+    <string name="common_pause">إيقاف مؤقت</string>
+    <string name="common_unit_b">B</string>
+    <string name="common_unit_kb">KB</string>
+    <string name="common_unit_mb">MB</string>
+    <string name="common_unit_gb">GB</string>
+    <string name="common_unit_tb">TB</string>
+    <string name="service_file_index_pattern">%1$s (%2$d/%3$d)</string>
+    <string name="service_upload_progress_subtext_pattern">%1$s / %2$s</string>
 </resources>

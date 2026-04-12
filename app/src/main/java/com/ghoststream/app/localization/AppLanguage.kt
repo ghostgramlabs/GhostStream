@@ -34,6 +34,7 @@ object AppLanguages {
         AppLanguage("af", "Afrikaans", "Afrikaans"),
         AppLanguage("sv", "Swedish", "Svenska"),
         AppLanguage("pt-BR", "Portuguese (Brazil)", "Português (Brasil)"),
+        AppLanguage("el", "Greek", "Ελληνικά"),
     )
 
     fun resolve(tag: String?): AppLanguage = supported.firstOrNull { it.tag == canonicalize(tag) } ?: supported.first()

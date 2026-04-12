@@ -311,6 +311,30 @@ class KtorGhostStreamServer(
                             "web_search_placeholder" to localizedContext.getString(R.string.web_search_placeholder),
                             "web_library_empty" to localizedContext.getString(R.string.web_library_empty),
                             "library_title" to localizedContext.getString(R.string.library_title),
+                            "web_upload_requesting" to localizedContext.getString(R.string.web_upload_requesting),
+                            "web_upload_waiting" to localizedContext.getString(R.string.web_upload_waiting),
+                            "web_upload_success_title" to localizedContext.getString(R.string.web_upload_success_title),
+                            "web_upload_success_detail_single" to localizedContext.getString(R.string.web_upload_success_detail_single),
+                            "web_upload_success_detail_multiple" to localizedContext.getString(R.string.web_upload_success_detail_multiple),
+                            "web_upload_failed_title" to localizedContext.getString(R.string.web_upload_failed_title),
+                            "web_upload_failed_detail" to localizedContext.getString(R.string.web_upload_failed_detail),
+                            "web_player_error_open" to localizedContext.getString(R.string.web_player_error_open),
+                            "web_player_opening" to localizedContext.getString(R.string.web_player_opening),
+                            "web_player_ready" to localizedContext.getString(R.string.web_player_ready),
+                            "web_player_starting" to localizedContext.getString(R.string.web_player_starting),
+                            "web_player_wait_desc" to localizedContext.getString(R.string.web_player_wait_desc),
+                            "web_player_ready_desc" to localizedContext.getString(R.string.web_player_ready_desc),
+                            "web_player_starting_desc" to localizedContext.getString(R.string.web_player_starting_desc),
+                            "web_player_try_again" to localizedContext.getString(R.string.web_player_try_again),
+                            "web_player_status_opening" to localizedContext.getString(R.string.web_player_status_opening),
+                            "web_player_status_ready" to localizedContext.getString(R.string.web_player_status_ready),
+                            "web_player_status_playing" to localizedContext.getString(R.string.web_player_status_playing),
+                            "web_btn_back" to localizedContext.getString(R.string.web_btn_back),
+                            "web_status_subtitles_available" to localizedContext.getString(R.string.web_status_subtitles_available),
+                            "web_now_playing" to localizedContext.getString(R.string.web_now_playing),
+                            "common_play" to localizedContext.getString(R.string.common_play),
+                            "common_pause" to localizedContext.getString(R.string.common_pause),
+                            "common_resume" to localizedContext.getString(R.string.common_resume),
                         ),
                     ),
                 )
@@ -486,7 +510,7 @@ class KtorGhostStreamServer(
                 if (!call.authorizeBrowserCall()) return@get
                 val settings = settingsRepository.settings.first()
                 if (settings.preventDownload) {
-                    call.respond(HttpStatusCode.Forbidden, ErrorPayload("Downloads are disabled for this session."))
+                    call.respond(HttpStatusCode.Forbidden, ErrorPayload(localizedContext().getString(R.string.web_error_downloads_disabled)))
                     return@get
                 }
                 call.streamItem(
@@ -500,7 +524,7 @@ class KtorGhostStreamServer(
                 if (!call.authorizeBrowserCall()) return@get
                 val itemId = call.parameters["id"]
                 val item = resolveItem(itemId) ?: run {
-                    call.respond(HttpStatusCode.NotFound, ErrorPayload("This file is no longer available on your device."))
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.browser_file_unavailable)))
                     return@get
                 }
                 val activity = when (item.category) {
@@ -525,12 +549,12 @@ class KtorGhostStreamServer(
                     requireFirstSegment = true,
                 ) ?: run {
                     debugLogSink.log("WebHls", "playlist pending id=${source.item.id}")
-                    call.respond(HttpStatusCode.Accepted, ErrorPayload("Preparing the HLS stream for iPhone playback."))
+                    call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
                     return@get
                 }
                 if (index.segments.isEmpty()) {
                     debugLogSink.log("WebHls", "playlist empty id=${source.item.id} init=${index.initSegmentLength} file=${index.fileLength}")
-                    call.respond(HttpStatusCode.Accepted, ErrorPayload("Preparing the HLS stream for iPhone playback."))
+                    call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
                     return@get
                 }
                 debugLogSink.log(
@@ -562,12 +586,12 @@ class KtorGhostStreamServer(
                     requireFirstSegment = false,
                 ) ?: run {
                     debugLogSink.log("WebHls", "init pending id=${source.item.id}")
-                    call.respond(HttpStatusCode.Accepted, ErrorPayload("Preparing the HLS stream for iPhone playback."))
+                    call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
                     return@get
                 }
                 if (index.initSegmentLength <= 0L) {
                     debugLogSink.log("WebHls", "init empty id=${source.item.id}")
-                    call.respond(HttpStatusCode.Accepted, ErrorPayload("Preparing the HLS stream for iPhone playback."))
+                    call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
                     return@get
                 }
                 debugLogSink.log("WebHls", "init served id=${source.item.id} bytes=${index.initSegmentLength}")

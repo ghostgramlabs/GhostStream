@@ -12,7 +12,6 @@
     <string name="common_dismiss">അവഗണിക്കുക</string>
     <string name="common_remove">നീക്കം ചെയ്യുക</string>
     <string name="common_search">തിരയുക</string>
-
     <string name="onboarding_skip">ഒഴിവാക്കുക</string>
     <string name="onboarding_title">ഡയറക്ട് സ്ട്രീമിംഗും ഫയൽ ഷെയറിംഗും</string>
     <string name="onboarding_subtitle">നിങ്ങളുടെ ഫോണിനെ ടിവി, ലാപ്ടോപ്പ്, ടാബ്‌ലെറ്റ്, ബ്രൗസർ എന്നിവയുമായി ബന്ധിപ്പിക്കാവുന്ന ഒരു പ്രൈവറ്റ് ഹബ്ബാക്കി മാറ്റൂ.</string>
@@ -31,7 +30,6 @@
     <string name="onboarding_page_counter">%1$d / %2$d</string>
     <string name="onboarding_next">അടുത്തത്</string>
     <string name="onboarding_get_started">തുടങ്ങാം</string>
-
     <string name="settings_title">സെറ്റിംഗ്സ്</string>
     <string name="settings_subtitle">DirectServe നിങ്ങൾക്ക് ഇഷ്ടമുള്ള രീതിയിൽ ക്രമീകരിക്കാം.</string>
     <string name="settings_group_general">ജനറൽ</string>
@@ -109,7 +107,6 @@
     <string name="settings_share_debug_log">ഡീബഗ് ലോഗ് ഷെയർ ചെയ്യുക</string>
     <string name="settings_share_debug_log_desc">പ്രശ്നങ്ങൾ കണ്ടെത്താൻ ലോഗുകൾ ഇമെയിൽ ചെയ്യാം.</string>
     <string name="settings_clear_debug_log">ഡീബഗ് ലോഗ് നീക്കം ചെയ്യുക</string>
-
     <string name="help_title">സഹായം</string>
     <string name="help_about_title">DirectServe-നെ കുറിച്ച്</string>
     <string name="help_about_1">ഇന്റർനെറ്റോ അക്കൗണ്ടോ ഇല്ലാതെ അടുത്തുള്ള ഉപകരണങ്ങളിലേക്ക് ബ്രൗസർ വഴി ഫയലുകൾ അയക്കാൻ സഹായിക്കുന്ന ആപ്പാണ് DirectServe.</string>
@@ -141,7 +138,6 @@
     <string name="help_line_flow_2">2. സെഷൻ സ്റ്റാർട്ട് ചെയ്യുക.</string>
     <string name="help_line_flow_3">3. മറ്റേ ഉപകരണത്തിൽ ലിങ്ക് തുറക്കുകയോ QR സ്കാൻ ചെയ്യുകയോ ചെയ്യുക.</string>
     <string name="help_line_flow_4">4. ഫയലുകൾ കാണുകയോ ഡൗൺലോഡ് ചെയ്യുകയോ ചെയ്യാം.</string>
-
     <string name="home_brand_title">DirectServe</string>
     <string name="home_brand_subtitle">സുരക്ഷിതമായ ലോക്കൽ ഷെയറിംഗ്</string>
     <string name="home_chip_local_session">ലോക്കൽ സെഷൻ</string>
@@ -158,7 +154,6 @@
     <string name="home_button_open_session">സെഷൻ തുറക്കുക</string>
     <string name="home_button_starting">തുടങ്ങുന്നു...</string>
     <string name="home_no_network">വൈഫൈയോ ഹോട്ട്‌സ്‌പോട്ടോ ഇല്ല</string>
-
     <string name="network_setup_title">നെറ്റ്‌വർക്ക് ആവശ്യമാണ്</string>
     <string name="network_setup_body">രണ്ട് ഉപകരണങ്ങളും ഒരേ വൈഫൈയിലോ ഹോട്ട്‌സ്‌പോട്ടിലോ ആയിരിക്കണം.</string>
     <string name="network_setup_trouble_title">കണക്ഷൻ പ്രശ്നമുണ്ടോ?</string>
@@ -167,7 +162,6 @@
     <string name="network_setup_switch_hotspot">ഹോട്ട്‌സ്‌പോർട്ടിലേക്ക് മാറാം</string>
     <string name="network_setup_retry">വീണ്ടും ശ്രമിക്കുക</string>
     <string name="network_setup_footer">യാത്രകളിലും മറ്റും ഹോട്ട്‌സ്‌പോട്ട് ആണ് ഏറ്റവും അനുയോജ്യം.</string>
-
     <string name="session_title">ലൈവ് സെഷൻ</string>
     <string name="session_stop_sharing">ഷെയറിംഗ് നിർത്തുക</string>
     <string name="session_live_now">ഇപ്പോൾ ലൈവ് ആണ്</string>
@@ -218,7 +212,6 @@
     <string name="session_network_wifi">വൈഫൈ</string>
     <string name="session_network_local">ലോക്കൽ</string>
     <string name="session_network_offline">ഓഫ്‌ലൈൻ</string>
-
     <string name="history_title">ഹിസ്റ്ററി</string>
     <string name="history_tab_all">എല്ലാം</string>
     <string name="history_tab_received">ലഭിച്ചവ</string>
@@ -229,17 +222,14 @@
     <string name="history_open">തുറക്കുക</string>
     <string name="history_delete">നീക്കം ചെയ്യുക</string>
     <string name="history_delete_desc">ഹിസ്റ്ററിയിൽ നിന്ന് മാറ്റുക</string>
-
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">സുരക്ഷിത ഷെയറിംഗ്</string>
-
     <string name="privacy_policy_title">പ്രൈവസി പോളിസി</string>
     <string name="privacy_policy_intro">DirectServe സുരക്ഷിതമായ ഷെയറിംഗിനായി നിർമ്മിച്ചതാണ്. നിങ്ങളുടെ ഫയലുകൾ ഒരേ നെറ്റ്‌വർക്കിലുള്ളവരിലേക്ക് മാത്രമേ പോകുകയുള്ളൂ.</string>
     <string name="privacy_policy_line_1">അക്കൗണ്ട് ആവശ്യമില്ല.</string>
     <string name="privacy_policy_line_2">ക്ലൗഡിലേക്ക് അപ്‌ലോഡ് ചെയ്യില്ല.</string>
     <string name="privacy_policy_line_3">സെഷൻ ഉള്ളപ്പോൾ മാത്രം തിരഞ്ഞെടുത്ത ഫയലുകൾ കാണാം.</string>
     <string name="privacy_policy_line_4">നിങ്ങൾക്ക് എപ്പോൾ വേണമെങ്കിലും ഷെയറിംഗ് നിർത്താം.</string>
-
     <string name="main_service_background_protection_failed">ഷെയറിംഗ് നടക്കുന്നു, എങ്കിലും ആപ്പ് ക്ലോസ് ചെയ്യാതെ സൂക്ഷിക്കുക.</string>
     <string name="main_notification_permission_warning">അറിയിപ്പുകൾ നൽകാൻ അനുമതി വേണം.</string>
     <string name="main_batch_media_access_needed">ഫയലുകൾ തിരഞ്ഞെടുക്കാൻ അനുമതി ആവശ്യമാണ്.</string>
@@ -254,7 +244,6 @@
     <string name="main_share_link_chooser">ലിങ്ക് ഷെയർ ചെയ്യാം</string>
     <string name="main_link_not_ready">ലിങ്ക് തയ്യാറായില്ല. നെറ്റ്‌വർക്ക് പരിശോധിക്കുക.</string>
     <string name="main_not_sharing">ഷെയർ ചെയ്യുന്നില്ല</string>
-
     <string name="service_start_failed">സർവീസ് തുടങ്ങാൻ പറ്റിയില്ല.</string>
     <string name="service_auto_stop_message">ഉപയോഗമില്ലാത്തതിനാൽ സെഷൻ അവസാനിച്ചു.</string>
     <string name="service_upload_request_title">പുതിയ ഫയൽ വരുന്നു</string>
@@ -272,7 +261,6 @@
     <string name="service_channel_requests_desc">ഫയലുകൾ സ്വീകരിക്കുമ്പോഴുള്ള അറിയിപ്പ്</string>
     <string name="service_channel_connections_name">കണക്ഷനുകൾ</string>
     <string name="service_channel_connections_desc">പുതിയ കണക്ഷനുകൾ വരുമ്പോഴുള്ള അറിയിപ്പ്</string>
-
     <string name="library_title">ലൈബ്രറി</string>
     <string name="library_header_title">ഷെയർ ചെയ്തവ</string>
     <string name="library_header_body">മറ്റുള്ളവർക്ക് കാണാൻ സാധിക്കുന്ന ഫയലുകൾ.</string>
@@ -348,7 +336,6 @@
     <string name="library_compat_ready">റെഡി</string>
     <string name="library_compat_unavailable">കിട്ടില്ല</string>
     <string name="library_compat_message">%1$s | %2$s</string>
-
     <string name="selection_add_files_title">ഫയലുകൾ ചേർക്കാം</string>
     <string name="selection_add_files_body">സെഷനിൽ ഷെയർ ചെയ്യാനുള്ള ഫയലുകൾ തിരഞ്ഞെടുക്കുക.</string>
     <string name="selection_add_selected">ചേർക്കുക</string>
@@ -374,7 +361,6 @@
     <string name="selection_no_groups_body">പുതിയ ഫയലുകൾ ഒന്നുമില്ലെങ്കിൽ ഫയലുകൾ നേരിട്ട് ചേർക്കുക.</string>
     <string name="selection_refresh_groups">പുതുക്കുക</string>
     <string name="selection_add_group">ഗ്രൂപ്പ് ചേർക്കാം</string>
-
     <string name="home_upload_request_title">ഫയൽ കൈമാറ്റ അപേക്ഷ</string>
     <string name="home_upload_request_single">ഒരു ഫയൽ</string>
     <string name="home_upload_request_files">%1$d ഫയലുകൾ</string>
@@ -384,7 +370,6 @@
     <string name="home_settings_content_desc">സെറ്റിംഗ്സ്</string>
     <string name="home_network_required_title">നെറ്റ്‌വർക്ക് വേണം</string>
     <string name="home_network_required_body">വൈഫൈയോ ഹോട്ട്‌സ്‌പോട്ടോ ഓൺ ചെയ്യുക.</string>
-
     <string name="message_unable_add_folder">ഫോൾഡർ ചേർക്കാൻ പറ്റിയില്ല.</string>
     <string name="message_saved_share_named">\"%1$s\" സേവ് ചെയ്തു.</string>
     <string name="message_unable_save_share">സേവ് ചെയ്യാൻ പറ്റിയില്ല.</string>
@@ -401,14 +386,12 @@
     <string name="message_preparing_browser_playback">മികച്ച പ്ലേബാക്കിനായി %1$s ഒരുക്കുന്നു.</string>
     <string name="nearby_helper_tap_session">അടുത്തുള്ള സെഷനിൽ ടാപ്പ് ചെയ്യുക.</string>
     <string name="nearby_helper_open_on_other_device">മറ്റേ ഉപകരണത്തിൽ ആപ്പ് തുറക്കുക.</string>
-
     <string name="share_preset_enter_name">പേര് നൽകുക.</string>
     <string name="share_preset_add_content_first">ഫയലുകൾ ചേർക്കുക.</string>
     <string name="share_preset_select_file_first">ഒരു ഫയലെങ്കിലും വേണം.</string>
     <string name="share_preset_files_unavailable">ഫയലുകൾ ലഭ്യമല്ല.</string>
     <string name="share_preset_collection_unavailable">ഈ ലിസ്റ്റ് ലഭ്യമല്ല.</string>
     <string name="share_preset_restore_failed">പുനഃസ്ഥാപിക്കാൻ പറ്റിയില്ല.</string>
-
     <string name="sharing_preflight_failed">തുടങ്ങാൻ പറ്റിയില്ല: %1$s</string>
     <string name="sharing_add_content_first">ഫയലുകൾ ചേർക്കാം.</string>
     <string name="sharing_same_wifi_needed">ഒരേ നെറ്റ്‌വർക്ക് ഉപയോഗിക്കുക.</string>
@@ -416,7 +399,6 @@
     <string name="sharing_server_start_failed">തുടങ്ങാൻ പറ്റിയില്ല: %1$s</string>
     <string name="sharing_stopped">ഷെയറിംഗ് നിർത്തി</string>
     <string name="sharing_device_android">Android</string>
-
     <string name="network_helper_wifi_ready">അടുത്തുള്ളവർക്ക് ഒരേ വൈഫൈ വഴി കണക്ട് ചെയ്യാം.</string>
     <string name="network_helper_local_ready">നെറ്റ്‌വർക്ക് തയ്യാറാണ്.</string>
     <string name="network_helper_wifi_found">വൈഫൈ കണ്ടെത്തി.</string>
@@ -424,14 +406,12 @@
     <string name="network_helper_mobile_only">മൊബൈൽ ഡാറ്റ മാത്രം പോരാ.</string>
     <string name="network_helper_local_address_ready">അഡ്രസ് റെഡി. കണക്ട് ചെയ്യാം.</string>
     <string name="network_helper_connect_both">രണ്ട് പേരും ഒരേ വൈഫൈയിൽ വേണം.</string>
-
     <string name="discovery_unavailable_device">ലഭ്യമല്ല.</string>
     <string name="discovery_nsd_unavailable">NSD ഇല്ല.</string>
     <string name="discovery_searching">കണ്ടെത്തുന്നു...</string>
     <string name="discovery_unavailable_now">ഇപ്പോൾ പറ്റില്ല. QR ഉപയോഗിക്കുക.</string>
     <string name="discovery_start_failed">പറ്റിയില്ല (%1$d)</string>
     <string name="discovery_ready_to_open">കണ്ടെത്തി.</string>
-
     <string name="browser_title">DirectServe</string>
     <string name="browser_subtitle">ഫയൽ സ്ട്രീമിംഗ് &amp; ഷെയറിംഗ്</string>
     <string name="browser_file_unavailable">ഫയൽ ഹോസ്റ്റ് ഉപകരണത്തിൽ ഇല്ല.</string>
@@ -445,8 +425,6 @@
     <string name="browser_video_part_unavailable">കിട്ടില്ല.</string>
     <string name="browser_hls_not_needed">ആവശ്യമില്ല.</string>
     <string name="browser_hls_not_ready">റെഡി അല്ല.</string>
-
-    <!-- Action Shelf (Add to share) -->
     <string name="home_action_add_to_share_title">ഷെയർ ചെയ്യാൻ ചേർക്കുക</string>
     <string name="home_action_add_to_share_subtitle">നിങ്ങൾക്ക് അയക്കേണ്ട ഫയലുകൾ തിരഞ്ഞെടുക്കുക.</string>
     <string name="home_action_files">ഫയലുകൾ</string>
@@ -455,8 +433,6 @@
     <string name="home_action_folder_desc">സ്കാൻ</string>
     <string name="home_action_library">ലൈബ്രറി</string>
     <string name="home_action_library_desc">ബ്രൗസ്</string>
-
-    <!-- Support Panel (Nearby & network) -->
     <string name="home_nearby_title">സമീപമുള്ളവയും നെറ്റ്‌വർക്കും</string>
     <string name="home_nearby_subtitle">നിങ്ങളുടെ ലോക്കൽ നെറ്റ്‌വർക്ക് തയ്യാറാണെന്ന് ഉറപ്പുവരുത്തുക, തുടർന്ന് ആപ്പിൾതുറക്കാൻ താൽപ്പര്യമുള്ള മറ്റൊരു DirectServe ഉപകരണം തെരയുക.</string>
     <string name="home_nearby_refresh_status">സ്റ്റാറ്റസ് റിഫ്രഷ് ചെയ്യുക</string>
@@ -475,8 +451,6 @@
     <string name="home_nearby_action_open">തുറക്കുക</string>
     <string name="home_nearby_device_available">ലഭ്യമാണ്</string>
     <string name="home_nearby_device_pin">PIN ആവശ്യമാണ്</string>
-
-    <!-- Web UI -->
     <string name="web_hero_eyebrow">സ്വകാര്യ റിസീവർ വ്യൂ</string>
     <string name="web_hero_title">ഓഫ്‌ലൈനായി ഫയലുകൾ സ്ട്രീം ചെയ്യുക &amp; ഷെയർ ചെയ്യുക</string>
     <string name="web_hero_desc1">ബ്രൗസ് ചെയ്യുക, പ്ലേ ചെയ്യുക, പ്രിവ്യൂ കാണുക</string>
@@ -511,8 +485,6 @@
     <string name="web_security_pin">PIN പരിരക്ഷിച്ചിരിക്കുന്നു</string>
     <string name="web_security_open">ലോക്കൽ നെറ്റ്‌വർക്കിൽ തുറക്കുക</string>
     <string name="web_status_unknown">അജ്ഞാതം</string>
-
-    <!-- Misc Native UI -->
     <string name="home_connected_devices">കണക്‌റ്റുചെയ്‌ത ഉപകരണങ്ങൾ</string>
     <string name="home_rename_device">ഉപകരണത്തിന്റെ പേര് മാറ്റുക</string>
     <string name="home_rename_device_subtitle">ഉപകരണം: %1$s • %2$s</string>
@@ -542,7 +514,6 @@
     <string name="home_saved_shares_delete">ഇല്ലാതാക്കുക</string>
     <string name="home_saved_shares_items_count">%1$d ഇനങ്ങൾ</string>
     <string name="library_date_group_label">%1$s </string>
-
     <string name="web_action_download">ഡൗൺലോഡ് ചെയ്യുക</string>
     <string name="web_btn_download_all">എല്ലാം ഡൗൺലോഡ് ചെയ്യുക</string>
     <string name="web_btn_download_original">ഒറിജിനൽ ഡൗൺലോഡ് ചെയ്യുക</string>
@@ -553,7 +524,7 @@
     <string name="web_error_video_start">ഈ ബ്രൗസറിന് വീഡിയോ ആരംഭിക്കാനായില്ല. വീണ്ടും ശ്രമിക്കുക അല്ലെങ്കിൽ യഥാർത്ഥ ഫയൽ ഡൗൺലോഡ് ചെയ്യുക.</string>
     <string name="web_photo_view">കാണുക</string>
     <string name="web_upload_button_browse">ഫയലുകൾ ബ്രൗസ് ചെയ്യുക</string>
-        <string name="web_upload_how_body"><![CDATA[നിങ്ങൾ ഒരു ഫയൽ അയയ്ക്കുമ്പോൾ, ഫോണിൽ ഒരു അറിയിപ്പ് ദൃശ്യമാകും. കൈമാറ്റം ആരംഭിക്കുന്നതിന് ഉപകരണ ഉടമ <strong>സ്വീകരിക്കുക</strong> ചെയ്യണം.]]></string>
+    <string name="web_upload_how_body"><![CDATA[നിങ്ങൾ ഒരു ഫയൽ അയയ്ക്കുമ്പോൾ, ഫോണിൽ ഒരു അറിയിപ്പ് ദൃശ്യമാകും. കൈമാറ്റം ആരംഭിക്കുന്നതിന് ഉപകരണ ഉടമ <strong>സ്വീകരിക്കുക</strong> ചെയ്യണം.]]></string>
     <string name="web_upload_how_kicker">ഇത് എങ്ങനെ പ്രവർത്തിക്കുന്നു</string>
     <string name="web_upload_how_title">സുരക്ഷിതമായ അംഗീകാരം</string>
     <string name="web_upload_prompt_desktop">ഇവിടെ വലിച്ചിടുക, അല്ലെങ്കിൽ താഴെയുള്ള ബട്ടൺ ടാപ്പ് ചെയ്യുക</string>
@@ -563,7 +534,6 @@
     <string name="web_upload_target_kicker">ടാർഗെറ്റ് ഉപകരണം</string>
     <string name="web_upload_target_status">നില: ബന്ധിപ്പിച്ച് കൈമാറ്റത്തിന് തയ്യാറാണ്</string>
     <string name="web_upload_title">ഉപകരണത്തിലേക്ക് അയയ്ക്കുക</string>
-
     <string name="web_btn_clear_selection">തെളിഞ്ഞു</string>
     <string name="web_btn_select_all">എല്ലാം തിരഞ്ഞെടുക്കുക</string>
     <string name="web_btn_select_files">ഫയലുകൾ തിരഞ്ഞെടുക്കുക</string>
@@ -583,4 +553,78 @@
     <string name="library_clear_all_action">എല്ലാം ക്ലിയർ ചെയ്യുക</string>
     <string name="library_clear_all_title">ഈ ലൈബ്രറി ക്ലിയർ ചെയ്യണോ?</string>
     <string name="library_clear_all_body">ഇത് നിലവിലെ ലൈബ്രറിയിൽ നിന്ന് പങ്കിട്ട എല്ലാ ഫയലുകളും ഫോൾഡറുകളും നീക്കംചെയ്യും.</string>
+    <string name="session_browser_prep_title">Preparing browser files</string>
+    <string name="session_browser_prep_active">%1$d%% • %2$d of %3$d ready</string>
+    <string name="session_browser_prep_queued">%1$d remaining in background</string>
+    <string name="session_browser_prep_ready">%1$d browser files ready</string>
+    <string name="session_browser_prep_message_active">Preparing %1$s for browser playback</string>
+    <string name="session_browser_prep_message_queued">Preparing browser-ready video files in the background</string>
+    <string name="session_browser_prep_message_ready">Browser playback preparation is complete</string>
+    <string name="session_browser_prep_message_manual">Browser prep is optional and only helps on videos that need conversion.</string>
+    <string name="session_browser_prep_manual_note">Playback can still start without this. Large batches may warm the phone a little, so you can start or stop preparation whenever you want.</string>
+    <string name="session_prepare_browser_files">Prepare browser files</string>
+    <string name="session_stop_browser_files">Stop browser prep</string>
+    <string name="session_library_refresh_title">Live library updates</string>
+    <string name="session_library_refresh_pending">%1$d new files and %2$d new folders are ready to add to this live server.</string>
+    <string name="session_library_refresh_up_to_date">This live server already matches your current library.</string>
+    <string name="session_refresh_library">Refresh live library</string>
+    <string name="message_live_library_refreshed_updates">Live server refreshed with %1$d new files and %2$d new folders.</string>
+    <string name="message_live_library_refreshed_current">Live server refreshed. It was already up to date.</string>
+    <string name="message_browser_playback_queued_all">Started browser preparation for %1$d files.</string>
+    <string name="message_browser_playback_already_ready">Browser files are already ready, already queued, or not needed.</string>
+    <string name="message_browser_playback_stopped">Stopped browser file preparation.</string>
+    <string name="library_importing_title">Adding files to library</string>
+    <string name="library_importing_body">%1$d selected items are still being added in the background.</string>
+    <string name="web_upload_selection_empty">No files selected yet.</string>
+    <string name="web_upload_selection_single">Ready to send %1$s</string>
+    <string name="web_upload_selection_multiple">Ready to send %1$d files</string>
+    <string name="web_upload_button_send">Upload</string>
+    <string name="common_quick_filters">Quick filters</string>
+    <string name="common_edit_nickname">Edit nickname</string>
+    <string name="home_quick_filters_desc">Add files from a specific date. Open library to see all your files.</string>
+    <string name="home_date_range_body">Choose files from a specific date range.</string>
+    <string name="help_section_browser_preparation">Browser Preparation</string>
+    <string name="help_section_drop_zone">Drop Zone</string>
+    <string name="help_section_privacy_controls">Privacy Controls</string>
+    <string name="help_line_prep_optional">Preparation is optional but recommended for older devices to ensure smooth playback.</string>
+    <string name="help_line_prep_control">You can control preparation per-file from the library management screen.</string>
+    <string name="help_line_prep_batch">You can also batch-prepare files from the session status screen.</string>
+    <string name="help_line_drop_zone">The web interface includes a \'Drop Zone\' for receiving files.</string>
+    <string name="help_line_drop_zone_pick">Recipients can pick files or drag and drop them to send to your device.</string>
+    <string name="help_line_drop_zone_local">Transfers happen entirely over your local network and never touch the cloud.</string>
+    <string name="help_line_privacy_local">DirectServe is local-only; files are shared directly between devices.</string>
+    <string name="help_line_privacy_session">Access is only possible while your session is active on the host phone.</string>
+    <string name="web_upload_requesting">Requesting permission</string>
+    <string name="web_upload_waiting">Waiting for DirectServe</string>
+    <string name="web_upload_success_title">Success!</string>
+    <string name="web_upload_success_detail_single">File is ready on DirectServe.</string>
+    <string name="web_upload_success_detail_multiple">Files are ready on DirectServe.</string>
+    <string name="web_upload_failed_title">Transfer failed</string>
+    <string name="web_upload_failed_detail">Upload request was denied or failed.</string>
+    <string name="web_player_error_open">This video could not be opened</string>
+    <string name="web_player_opening">Opening video...</string>
+    <string name="web_player_ready">Video is ready</string>
+    <string name="web_player_starting">Starting playback...</string>
+    <string name="web_player_wait_desc">This browser needs a moment to open the video. Keep this page open.</string>
+    <string name="web_player_ready_desc">Playback is ready on this device.</string>
+    <string name="web_player_starting_desc">The video is starting now. If it pauses, wait a moment or try again.</string>
+    <string name="web_player_try_again">Try again</string>
+    <string name="web_player_status_opening">Opening</string>
+    <string name="web_player_status_ready">Ready</string>
+    <string name="web_player_status_playing">Playing</string>
+    <string name="web_btn_back">Back to videos</string>
+    <string name="web_status_subtitles_available">Subtitles available</string>
+    <string name="help_line_privacy_controls">Use PIN access and device blocking for extra security.</string>
+    <string name="web_now_playing">Now playing</string>
+    <string name="common_resume">Resume</string>
+    <string name="web_status_init_progress">0%</string>
+    <string name="common_play">Play</string>
+    <string name="common_pause">Pause</string>
+    <string name="common_unit_b">B</string>
+    <string name="common_unit_kb">KB</string>
+    <string name="common_unit_mb">MB</string>
+    <string name="common_unit_gb">GB</string>
+    <string name="common_unit_tb">TB</string>
+    <string name="service_file_index_pattern">%1$s (%2$d/%3$d)</string>
+    <string name="service_upload_progress_subtext_pattern">%1$s / %2$s</string>
 </resources>

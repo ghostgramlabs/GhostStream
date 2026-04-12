@@ -529,7 +529,7 @@ private fun ConnectedDevicesCard(
                         },
                         modifier = Modifier.size(36.dp),
                     ) {
-                        Icon(Icons.Outlined.Edit, contentDescription = "Edit nickname", modifier = Modifier.size(18.dp))
+                        Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.common_edit_nickname), modifier = Modifier.size(18.dp))
                     }
                 }
             }
@@ -702,10 +702,10 @@ private fun QuickDateFiltersCard(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Column(modifier = Modifier.padding(GhostSpacing.card)) {
-            Text("Quick filters", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.home_quick_filters), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                "Add files from a specific date. Open library to see all your files.",
+                stringResource(R.string.home_quick_filters_desc),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -717,15 +717,15 @@ private fun QuickDateFiltersCard(
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         DateFilterTile(
-                            label = "Today",
-                            detail = "Files from today",
+                            label = stringResource(R.string.home_quick_filter_today),
+                            detail = stringResource(R.string.home_quick_filter_today_desc),
                             icon = Icons.Outlined.Schedule,
                             onClick = onOpenLibrary,
                             modifier = Modifier.width(tileWidth),
                         )
                         DateFilterTile(
-                            label = "This week",
-                            detail = "Last 7 days",
+                            label = stringResource(R.string.home_quick_filter_week),
+                            detail = stringResource(R.string.home_quick_filter_week_desc),
                             icon = Icons.Outlined.Schedule,
                             onClick = onOpenLibrary,
                             modifier = Modifier.width(tileWidth),
@@ -733,15 +733,15 @@ private fun QuickDateFiltersCard(
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         DateFilterTile(
-                            label = "This month",
-                            detail = "Last 30 days",
+                            label = stringResource(R.string.home_quick_filter_month),
+                            detail = stringResource(R.string.home_quick_filter_month_desc),
                             icon = Icons.Outlined.Schedule,
                             onClick = onOpenLibrary,
                             modifier = Modifier.width(tileWidth),
                         )
                         DateFilterTile(
-                            label = "Date range",
-                            detail = "From → To date",
+                            label = stringResource(R.string.home_quick_filter_custom),
+                            detail = stringResource(R.string.home_quick_filter_custom_desc),
                             icon = Icons.Outlined.Schedule,
                             onClick = onOpenDateRangePicker,
                             modifier = Modifier.width(tileWidth),
@@ -811,8 +811,8 @@ private fun DateRangePickerDialog(
     onDismiss: () -> Unit,
 ) {
     val sdf = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault())
-    val startDateStr = if (startDateMillis > 0) sdf.format(java.util.Date(startDateMillis)) else "Select start date"
-    val endDateStr = if (endDateMillis > 0) sdf.format(java.util.Date(endDateMillis)) else "Select end date"
+    val startDateStr = if (startDateMillis > 0) sdf.format(java.util.Date(startDateMillis)) else stringResource(R.string.home_date_range_start)
+    val endDateStr = if (endDateMillis > 0) sdf.format(java.util.Date(endDateMillis)) else stringResource(R.string.home_date_range_end)
     var startDateInput by remember { mutableStateOf(startDateStr) }
     var endDateInput by remember { mutableStateOf(endDateStr) }
 
@@ -825,7 +825,7 @@ private fun DateRangePickerDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 Text(
-                    "Choose files from a specific date range.",
+                    stringResource(R.string.home_date_range_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

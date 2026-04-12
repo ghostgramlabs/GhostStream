@@ -12,7 +12,6 @@
     <string name="common_dismiss">తీసివేయి</string>
     <string name="common_remove">తొలగించు</string>
     <string name="common_search">సెర్చ్</string>
-
     <string name="onboarding_skip">వదిలివేయి</string>
     <string name="onboarding_title">డైరెక్ట్ స్ట్రీమింగ్ మరియు ఫైల్ షేరింగ్</string>
     <string name="onboarding_subtitle">మీ ఫోన్‌ని టీవీ, ల్యాప్‌టాప్ మరియు టాబ్లెట్లలో యాక్సెస్ చేయగల ప్రైవేట్ లోకల్ హబ్‌గా మార్చుకోండి.</string>
@@ -31,7 +30,6 @@
     <string name="onboarding_page_counter">%1$d / %2$d</string>
     <string name="onboarding_next">తర్వాత</string>
     <string name="onboarding_get_started">ప్రారంభించు</string>
-
     <string name="settings_title">సెట్టింగ్‌లు</string>
     <string name="settings_subtitle">DirectServe పనితీరును మార్చుకోండి.</string>
     <string name="settings_group_general">సాధారణం</string>
@@ -109,7 +107,6 @@
     <string name="settings_share_debug_log">డీబగ్ లాగ్ షేర్ చేయి</string>
     <string name="settings_share_debug_log_desc">ప్రశ్నలు ఉంటే లాగ్ ఫైల్‌ను ఈమెయిల్ చేయండి.</string>
     <string name="settings_clear_debug_log">డీబగ్ లాగ్ క్లియర్ చేయి</string>
-
     <string name="help_title">సహాయం</string>
     <string name="help_about_title">DirectServe గురించి</string>
     <string name="help_about_1">DirectServe ద్వారా మీరు ఇంటర్నెట్ లేకుండానే వేరే డివైజ్‌లకు ఫైల్స్ షేర్ చేయవచ్చు.</string>
@@ -141,7 +138,6 @@
     <string name="help_line_flow_2">2. సెషన్ స్టార్ట్ చేయండి.</string>
     <string name="help_line_flow_3">3. లింక్ ఓపెన్ చేయండి లేదా QR స్కాన్ చేయండి.</string>
     <string name="help_line_flow_4">4. బ్రౌజ్ చేయండి లేదా ఫైల్స్ డౌన్‌లోడ్ చేయండి.</string>
-
     <string name="home_brand_title">DirectServe</string>
     <string name="home_brand_subtitle">వై-ఫై/హాట్‌స్పాట్ ద్వారా సురక్షిత షేరింగ్</string>
     <string name="home_chip_local_session">లోకల్ సెషన్</string>
@@ -158,7 +154,6 @@
     <string name="home_button_open_session">సెషన్ ఓపెన్ చేయి</string>
     <string name="home_button_starting">ప్రారంభమవుతోంది...</string>
     <string name="home_no_network">వై-ఫై లేదా హాట్‌స్పాట్ కనెక్ట్ కాలేదు</string>
-
     <string name="network_setup_title">లోకల్ నెట్‌వర్క్ అవసరం</string>
     <string name="network_setup_body">రెండు డివైజ్‌లు ఒకే వై-ఫై లేదా హాట్‌స్పాట్‌లో ఉండాలి.</string>
     <string name="network_setup_trouble_title">కనెక్షన్ సమస్యలా?</string>
@@ -167,7 +162,6 @@
     <string name="network_setup_switch_hotspot">హాట్‌స్పాట్‌కు మారు</string>
     <string name="network_setup_retry">మళ్ళీ ప్రయత్నించు</string>
     <string name="network_setup_footer">ప్రయాణాల్లో హాట్‌స్పాట్ చాలా బాగా పనిచేస్తుంది.</string>
-
     <string name="session_title">లైవ్ సెషన్</string>
     <string name="session_stop_sharing">షేరింగ్ ఆపివేయి</string>
     <string name="session_live_now">ప్రస్తుతం లైవ్‌లో ఉంది</string>
@@ -218,7 +212,6 @@
     <string name="session_network_wifi">వై-ఫై</string>
     <string name="session_network_local">లోకల్</string>
     <string name="session_network_offline">ఆఫ్‌లైన్</string>
-
     <string name="history_title">హిస్టరీ</string>
     <string name="history_tab_all">అన్నీ</string>
     <string name="history_tab_received">స్వీకరించినవి</string>
@@ -229,17 +222,14 @@
     <string name="history_open">ఓపెన్</string>
     <string name="history_delete">డిలీట్</string>
     <string name="history_delete_desc">హిస్టరీ నుండి తొలగించు</string>
-
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">ప్రైవేట్ లోకల్ షేరింగ్</string>
-
     <string name="privacy_policy_title">ప్రైవసీ పాలసీ</string>
     <string name="privacy_policy_intro">DirectServe సురక్షితమైన షేరింగ్ కోసం రూపొందించబడింది. మీ ఫైల్స్ మీ ఫోన్‌లోనే ఉంటాయి.</string>
     <string name="privacy_policy_line_1">అకౌంట్ అవసరం లేదు.</string>
     <string name="privacy_policy_line_2">ఫైల్స్ క్లౌడ్‌లోకి వెళ్ళవు.</string>
     <string name="privacy_policy_line_3">సెషన్ ఉన్నప్పుడు మాత్రమే మీరు అనుమతించినవి ఇతరులకు కనిపిస్తాయి.</string>
     <string name="privacy_policy_line_4">ఎప్పుడైనా షేరింగ్ ఆపవచ్చు లేదా PIN పెట్టుకోవచ్చు.</string>
-
     <string name="main_service_background_protection_failed">షేరింగ్ నడుస్తోంది, యాప్ క్లోజ్ చేయకండి.</string>
     <string name="main_notification_permission_warning">నోటిఫికేషన్ అనుమతి ఇస్తేనే అప్‌డేట్స్ తెలుస్తాయి.</string>
     <string name="main_batch_media_access_needed">స్మార్ట్ పిక్స్ కోసం మీడియా పర్మిషన్ కావాలి.</string>
@@ -254,7 +244,6 @@
     <string name="main_share_link_chooser">లింక్ షేర్ చేయి</string>
     <string name="main_link_not_ready">లింక్ ఇంకా సిద్ధం కాలేదు.</string>
     <string name="main_not_sharing">షేరింగ్ జరగట్లేదు</string>
-
     <string name="service_start_failed">సర్వీస్ ప్రారంభం కాలేదు.</string>
     <string name="service_auto_stop_message">చాలా సేపటి వరకు వాడనందున సెషన్ ఆగిపోయింది.</string>
     <string name="service_upload_request_title">ఫైల్ వస్తోంది</string>
@@ -272,7 +261,6 @@
     <string name="service_channel_requests_desc">ఫైల్స్ వస్తున్నప్పుడు వచ్చే నోటిఫికేషన్‌లు</string>
     <string name="service_channel_connections_name">డివైజ్ కనెక్షన్‌లు</string>
     <string name="service_channel_connections_desc">కొత్తవాళ్ళు చేరినప్పుడు వచ్చే నోటిఫికేషన్‌లు</string>
-
     <string name="library_title">లైబ్రరీ</string>
     <string name="library_header_title">షేర్ చేసినవి</string>
     <string name="library_header_body">మీ లింక్ ద్వారా ఇతరులకు కనిపించే ఫైల్స్.</string>
@@ -348,7 +336,6 @@
     <string name="library_compat_ready">సిద్ధం</string>
     <string name="library_compat_unavailable">రాదు</string>
     <string name="library_compat_message">%1$s | %2$s</string>
-
     <string name="selection_add_files_title">ఫైల్స్ జోడించు</string>
     <string name="selection_add_files_body">షేర్ చేయాల్సిన ఫైల్స్ ఎంచుకోండి.</string>
     <string name="selection_add_selected">సెలెక్ట్ చేసినవి జోడించు</string>
@@ -374,7 +361,6 @@
     <string name="selection_no_groups_body">రీసెంట్ ఫైల్స్ లేవు, కావాలంటే మాన్యువల్‌గా యాడ్ చేయండి.</string>
     <string name="selection_refresh_groups">మళ్ళీ వెతుకు</string>
     <string name="selection_add_group">గ్రూప్ జోడించు</string>
-
     <string name="home_upload_request_title">ఫైల్ బదిలీ కోరిక</string>
     <string name="home_upload_request_single">ఒక్క ఫైల్</string>
     <string name="home_upload_request_files">%1$d ఫైల్స్</string>
@@ -384,7 +370,6 @@
     <string name="home_settings_content_desc">సెట్టింగ్‌లు</string>
     <string name="home_network_required_title">నెట్‌వర్క్ కావాలి</string>
     <string name="home_network_required_body">వై-ఫై లేదా హాట్‌స్పాట్ ఆన్ చేయండి. డేటా ద్వారా లోకల్ సెషన్ రాదు.</string>
-
     <string name="message_unable_add_folder">ఫోల్డర్ యాడ్ చేయడం కుదరలేదు.</string>
     <string name="message_saved_share_named">\"%1$s\" సేవ్ అయ్యింది.</string>
     <string name="message_unable_save_share">సేవ్ చేయడం కుదరలేదు.</string>
@@ -401,14 +386,12 @@
     <string name="message_preparing_browser_playback">%1$s సిద్ధమవుతోంది...</string>
     <string name="nearby_helper_tap_session">సెషన్‌పై ట్యాప్ చేయండి.</string>
     <string name="nearby_helper_open_on_other_device">వేరే డివైజ్‌లో కూడా DirectServe ఓపెన్ చేయండి.</string>
-
     <string name="share_preset_enter_name">పేరు ఇవ్వండి.</string>
     <string name="share_preset_add_content_first">ఫైల్స్ యాడ్ చేయండి.</string>
     <string name="share_preset_select_file_first">ఒక్కటైనా ఉండాలి.</string>
     <string name="share_preset_files_unavailable">ఫైల్స్ లేవు.</string>
     <string name="share_preset_collection_unavailable">లిస్ట్ లేదు.</string>
     <string name="share_preset_restore_failed">రావట్లేదు.</string>
-
     <string name="sharing_preflight_failed">ఫెయిల్: %1$s</string>
     <string name="sharing_add_content_first">ఫైల్స్ యాడ్ చేయండి.</string>
     <string name="sharing_same_wifi_needed">ఒకే నెట్‌వర్క్ వాడండి.</string>
@@ -416,7 +399,6 @@
     <string name="sharing_server_start_failed">స్టార్ట్ కాలేదు: %1$s</string>
     <string name="sharing_stopped">ఆగిపోయింది</string>
     <string name="sharing_device_android">ఆండ్రాయిడ్</string>
-
     <string name="network_helper_wifi_ready">వేరేవాళ్ళు ఇదే వై-ఫైతో కనెక్ట్ అవ్వచ్చు.</string>
     <string name="network_helper_local_ready">నెట్‌వర్క్ సిద్ధంగా ఉంది.</string>
     <string name="network_helper_wifi_found">వై-ఫై ఐడి దొరికింది.</string>
@@ -424,14 +406,12 @@
     <string name="network_helper_mobile_only">మొబైల్ డేటా సరిపోదు.</string>
     <string name="network_helper_local_address_ready">అడ్రస్ సిద్ధం.</string>
     <string name="network_helper_connect_both">రెండు ఒకే చోట ఉండాలి.</string>
-
     <string name="discovery_unavailable_device">రాదు.</string>
     <string name="discovery_nsd_unavailable">NSD లేదు.</string>
     <string name="discovery_searching">వెతుకుతోంది...</string>
     <string name="discovery_unavailable_now">రావట్లేదు. QR వాడండి.</string>
     <string name="discovery_start_failed">ఫెయిల్ (%1$d)</string>
     <string name="discovery_ready_to_open">దొరికాయి.</string>
-
     <string name="browser_title">DirectServe</string>
     <string name="browser_subtitle">ఆఫ్‌లైన్ స్ట్రీమింగ్ &amp; షేరింగ్</string>
     <string name="browser_file_unavailable">ఈ ఫైల్ ఫోన్‌లో లేదు.</string>
@@ -445,8 +425,6 @@
     <string name="browser_video_part_unavailable">వీడియో రాదు.</string>
     <string name="browser_hls_not_needed">అవసరం లేదు.</string>
     <string name="browser_hls_not_ready">సిద్ధంగా లేదు.</string>
-
-    <!-- Action Shelf (Add to share) -->
     <string name="home_action_add_to_share_title">షేర్ చేయడానికి జోడించండి</string>
     <string name="home_action_add_to_share_subtitle">మీరు పంపాలనుకుంటున్న ఫైల్‌లను ఎంచుకోండి.</string>
     <string name="home_action_files">ఫైల్‌లు</string>
@@ -455,8 +433,6 @@
     <string name="home_action_folder_desc">స్కాన్ చేయండి</string>
     <string name="home_action_library">లైబ్రరీ</string>
     <string name="home_action_library_desc">బ్రౌజ్ చేయండి</string>
-
-    <!-- Support Panel (Nearby & network) -->
     <string name="home_nearby_title">సమీపంగా &amp; నెట్‌వర్క్</string>
     <string name="home_nearby_subtitle">మీ స్థానిక నెట్‌వర్క్ సిద్ధంగా ఉందని నిర్ధారించుకోండి, ఆపై మీరు యాప్‌లో తెరవాలనుకుంటే మరొక DirectServe పరికరం కోసం వెతకండి.</string>
     <string name="home_nearby_refresh_status">స్థితిని రిఫ్రెష్ చేయండి</string>
@@ -475,8 +451,6 @@
     <string name="home_nearby_action_open">తెరువు</string>
     <string name="home_nearby_device_available">అందుబాటులో ఉంది</string>
     <string name="home_nearby_device_pin">PIN అవసరం</string>
-
-    <!-- Web UI -->
     <string name="web_hero_eyebrow">ప్రైవేట్ రిసీవర్ వ్యూ</string>
     <string name="web_hero_title">ఆఫ్‌లైన్‌లో ఫైల్‌లను ప్రసారం చేయండి మరియు షేర్ చేయండి</string>
     <string name="web_hero_desc1">బ్రౌజ్ చేయండి, ప్లే చేయండి, ప్రివ్యూ చూడండి</string>
@@ -511,8 +485,6 @@
     <string name="web_security_pin">PIN రక్షించబడింది</string>
     <string name="web_security_open">స్థానిక నెట్‌వర్క్‌లో తెరవబడింది</string>
     <string name="web_status_unknown">తెలియదు</string>
-
-    <!-- Misc Native UI -->
     <string name="home_connected_devices">కనెక్ట్ చేయబడిన పరికరాలు</string>
     <string name="home_rename_device">పరికరం పేరు మార్చండి</string>
     <string name="home_rename_device_subtitle">పరికరం: %1$s • %2$s</string>
@@ -542,7 +514,6 @@
     <string name="home_saved_shares_delete">తొలగించండి</string>
     <string name="home_saved_shares_items_count">%1$d అంశాలు</string>
     <string name="library_date_group_label">%1$s </string>
-
     <string name="web_action_download">డౌన్‌లోడ్ చేయండి</string>
     <string name="web_btn_download_all">అన్నింటినీ డౌన్‌లోడ్ చేయండి</string>
     <string name="web_btn_download_original">అసలు డౌన్‌లోడ్ చేయండి</string>
@@ -553,7 +524,7 @@
     <string name="web_error_video_start">ఈ బ్రౌజర్ వీడియోను ప్రారంభించలేకపోయింది. మళ్లీ ప్రయత్నించండి లేదా అసలు ఫైల్‌ను డౌన్‌లోడ్ చేయండి.</string>
     <string name="web_photo_view">చూడండి</string>
     <string name="web_upload_button_browse">ఫైళ్లను బ్రౌజ్ చేయండి</string>
-        <string name="web_upload_how_body"><![CDATA[మీరు ఫైల్‌ను పంపినప్పుడు, ఫోన్‌లో నోటిఫికేషన్ కనిపిస్తుంది. బదిలీ ప్రారంభించడానికి పరికర యజమాని తప్పనిసరిగా <strong>అంగీకరించు</strong>.]]></string>
+    <string name="web_upload_how_body"><![CDATA[మీరు ఫైల్‌ను పంపినప్పుడు, ఫోన్‌లో నోటిఫికేషన్ కనిపిస్తుంది. బదిలీ ప్రారంభించడానికి పరికర యజమాని తప్పనిసరిగా <strong>అంగీకరించు</strong>.]]></string>
     <string name="web_upload_how_kicker">ఇది ఎలా పనిచేస్తుంది</string>
     <string name="web_upload_how_title">సురక్షిత ఆమోదం</string>
     <string name="web_upload_prompt_desktop">ఇక్కడకు లాగి వదలండి లేదా దిగువ బటన్‌ను నొక్కండి</string>
@@ -563,7 +534,6 @@
     <string name="web_upload_target_kicker">లక్ష్య పరికరం</string>
     <string name="web_upload_target_status">స్థితి: కనెక్ట్ చేయబడింది మరియు బదిలీలకు సిద్ధంగా ఉంది</string>
     <string name="web_upload_title">పరికరానికి పంపండి</string>
-
     <string name="web_btn_clear_selection">క్లియర్</string>
     <string name="web_btn_select_all">అన్నింటినీ ఎంచుకోండి</string>
     <string name="web_btn_select_files">ఫైళ్లను ఎంచుకోండి</string>
@@ -583,4 +553,78 @@
     <string name="library_clear_all_action">అన్నీ క్లియర్ చేయి</string>
     <string name="library_clear_all_title">ఈ లైబ్రరీని క్లియర్ చేయాలా?</string>
     <string name="library_clear_all_body">ఇది ప్రస్తుత లైబ్రరీ నుండి షేర్ చేసిన అన్ని ఫైల్‌లు మరియు ఫోల్డర్‌లను తొలగిస్తుంది.</string>
+    <string name="session_browser_prep_title">Preparing browser files</string>
+    <string name="session_browser_prep_active">%1$d%% • %2$d of %3$d ready</string>
+    <string name="session_browser_prep_queued">%1$d remaining in background</string>
+    <string name="session_browser_prep_ready">%1$d browser files ready</string>
+    <string name="session_browser_prep_message_active">Preparing %1$s for browser playback</string>
+    <string name="session_browser_prep_message_queued">Preparing browser-ready video files in the background</string>
+    <string name="session_browser_prep_message_ready">Browser playback preparation is complete</string>
+    <string name="session_browser_prep_message_manual">Browser prep is optional and only helps on videos that need conversion.</string>
+    <string name="session_browser_prep_manual_note">Playback can still start without this. Large batches may warm the phone a little, so you can start or stop preparation whenever you want.</string>
+    <string name="session_prepare_browser_files">Prepare browser files</string>
+    <string name="session_stop_browser_files">Stop browser prep</string>
+    <string name="session_library_refresh_title">Live library updates</string>
+    <string name="session_library_refresh_pending">%1$d new files and %2$d new folders are ready to add to this live server.</string>
+    <string name="session_library_refresh_up_to_date">This live server already matches your current library.</string>
+    <string name="session_refresh_library">Refresh live library</string>
+    <string name="message_live_library_refreshed_updates">Live server refreshed with %1$d new files and %2$d new folders.</string>
+    <string name="message_live_library_refreshed_current">Live server refreshed. It was already up to date.</string>
+    <string name="message_browser_playback_queued_all">Started browser preparation for %1$d files.</string>
+    <string name="message_browser_playback_already_ready">Browser files are already ready, already queued, or not needed.</string>
+    <string name="message_browser_playback_stopped">Stopped browser file preparation.</string>
+    <string name="library_importing_title">Adding files to library</string>
+    <string name="library_importing_body">%1$d selected items are still being added in the background.</string>
+    <string name="web_upload_selection_empty">No files selected yet.</string>
+    <string name="web_upload_selection_single">Ready to send %1$s</string>
+    <string name="web_upload_selection_multiple">Ready to send %1$d files</string>
+    <string name="web_upload_button_send">Upload</string>
+    <string name="common_quick_filters">Quick filters</string>
+    <string name="common_edit_nickname">Edit nickname</string>
+    <string name="home_quick_filters_desc">Add files from a specific date. Open library to see all your files.</string>
+    <string name="home_date_range_body">Choose files from a specific date range.</string>
+    <string name="help_section_browser_preparation">Browser Preparation</string>
+    <string name="help_section_drop_zone">Drop Zone</string>
+    <string name="help_section_privacy_controls">Privacy Controls</string>
+    <string name="help_line_prep_optional">Preparation is optional but recommended for older devices to ensure smooth playback.</string>
+    <string name="help_line_prep_control">You can control preparation per-file from the library management screen.</string>
+    <string name="help_line_prep_batch">You can also batch-prepare files from the session status screen.</string>
+    <string name="help_line_drop_zone">The web interface includes a \'Drop Zone\' for receiving files.</string>
+    <string name="help_line_drop_zone_pick">Recipients can pick files or drag and drop them to send to your device.</string>
+    <string name="help_line_drop_zone_local">Transfers happen entirely over your local network and never touch the cloud.</string>
+    <string name="help_line_privacy_local">DirectServe is local-only; files are shared directly between devices.</string>
+    <string name="help_line_privacy_session">Access is only possible while your session is active on the host phone.</string>
+    <string name="web_upload_requesting">Requesting permission</string>
+    <string name="web_upload_waiting">Waiting for DirectServe</string>
+    <string name="web_upload_success_title">Success!</string>
+    <string name="web_upload_success_detail_single">File is ready on DirectServe.</string>
+    <string name="web_upload_success_detail_multiple">Files are ready on DirectServe.</string>
+    <string name="web_upload_failed_title">Transfer failed</string>
+    <string name="web_upload_failed_detail">Upload request was denied or failed.</string>
+    <string name="web_player_error_open">This video could not be opened</string>
+    <string name="web_player_opening">Opening video...</string>
+    <string name="web_player_ready">Video is ready</string>
+    <string name="web_player_starting">Starting playback...</string>
+    <string name="web_player_wait_desc">This browser needs a moment to open the video. Keep this page open.</string>
+    <string name="web_player_ready_desc">Playback is ready on this device.</string>
+    <string name="web_player_starting_desc">The video is starting now. If it pauses, wait a moment or try again.</string>
+    <string name="web_player_try_again">Try again</string>
+    <string name="web_player_status_opening">Opening</string>
+    <string name="web_player_status_ready">Ready</string>
+    <string name="web_player_status_playing">Playing</string>
+    <string name="web_btn_back">Back to videos</string>
+    <string name="web_status_subtitles_available">Subtitles available</string>
+    <string name="help_line_privacy_controls">Use PIN access and device blocking for extra security.</string>
+    <string name="web_now_playing">Now playing</string>
+    <string name="common_resume">Resume</string>
+    <string name="web_status_init_progress">0%</string>
+    <string name="common_play">Play</string>
+    <string name="common_pause">Pause</string>
+    <string name="common_unit_b">B</string>
+    <string name="common_unit_kb">KB</string>
+    <string name="common_unit_mb">MB</string>
+    <string name="common_unit_gb">GB</string>
+    <string name="common_unit_tb">TB</string>
+    <string name="service_file_index_pattern">%1$s (%2$d/%3$d)</string>
+    <string name="service_upload_progress_subtext_pattern">%1$s / %2$s</string>
 </resources>

@@ -12,7 +12,6 @@
     <string name="common_dismiss">Sluiten</string>
     <string name="common_remove">Verwijderen</string>
     <string name="common_search">Zoeken</string>
-
     <string name="onboarding_skip">Overslaan</string>
     <string name="onboarding_title">Direct streamen en bestanden delen</string>
     <string name="onboarding_subtitle">Verander je telefoon in een eigen lokale hub voor je tv, laptop, tablet en browser.</string>
@@ -31,7 +30,6 @@
     <string name="onboarding_page_counter">%1$d / %2$d</string>
     <string name="onboarding_next">Volgende</string>
     <string name="onboarding_get_started">Aan de slag</string>
-
     <string name="settings_title">Instellingen</string>
     <string name="settings_subtitle">Kies hoe DirectServe eruitziet en werkt.</string>
     <string name="settings_group_general">Algemeen</string>
@@ -109,7 +107,6 @@
     <string name="settings_share_debug_log">Debug-log delen</string>
     <string name="settings_share_debug_log_desc">Email de laatste startup- en sessielogs.</string>
     <string name="settings_clear_debug_log">Debug-log wissen</string>
-
     <string name="help_title">Help</string>
     <string name="help_about_title">Over DirectServe</string>
     <string name="help_about_1">Met DirectServe kunnen apparaten in de buurt je gedeelde bestanden in de browser openen zonder cloudopslag of accounts.</string>
@@ -141,7 +138,6 @@
     <string name="help_line_flow_2">2. Start de sessie.</string>
     <string name="help_line_flow_3">3. Open de link of scan de QR-code op het andere apparaat.</string>
     <string name="help_line_flow_4">4. Blader, speel af of upload bestanden op basis van jouw machtigingen.</string>
-
     <string name="home_brand_title">DirectServe</string>
     <string name="home_brand_subtitle">Privé delen via je wifi of hotspot</string>
     <string name="home_chip_local_session">Lokale sessie</string>
@@ -158,7 +154,6 @@
     <string name="home_button_open_session">Sessie openen</string>
     <string name="home_button_starting">Starten...</string>
     <string name="home_no_network">Geen wifi of hotspot gedetecteerd</string>
-
     <string name="network_setup_title">Lokaal netwerk vereist</string>
     <string name="network_setup_body">DirectServe werkt wanneer beide apparaten op hetzelfde wifi-netwerk of jouw hotspot zitten.</string>
     <string name="network_setup_trouble_title">Problemen met openbare wifi?</string>
@@ -167,7 +162,6 @@
     <string name="network_setup_switch_hotspot">Wissel naar hotspot</string>
     <string name="network_setup_retry">Opnieuw proberen</string>
     <string name="network_setup_footer">Hotspot is ideaal voor onderweg of als er geen router is.</string>
-
     <string name="session_title">Live-sessie</string>
     <string name="session_stop_sharing">Stoppen met delen</string>
     <string name="session_live_now">Nu live</string>
@@ -218,7 +212,6 @@
     <string name="session_network_wifi">Wifi</string>
     <string name="session_network_local">Lokaal</string>
     <string name="session_network_offline">Offline</string>
-
     <string name="history_title">Overdrachtgeschiedenis</string>
     <string name="history_tab_all">Activiteit</string>
     <string name="history_tab_received">Ontvangen</string>
@@ -229,17 +222,14 @@
     <string name="history_open">Openen</string>
     <string name="history_delete">Verwijderen</string>
     <string name="history_delete_desc">Wissen uit geschiedenis</string>
-
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">Privé lokaal delen</string>
-
     <string name="privacy_policy_title">Privacybeleid</string>
     <string name="privacy_policy_intro">DirectServe is ontworpen voor privé lokaal delen. Je bestanden blijven op je apparaat, tenzij je ze deelt met apparaten in de buurt op je lokale netwerk.</string>
     <string name="privacy_policy_line_1">DirectServe vereist geen account.</string>
     <string name="privacy_policy_line_2">DirectServe uploadt je bestanden niet naar een cloudservice.</string>
     <string name="privacy_policy_line_3">Apparaten in de buurt hebben alleen toegang terwijl de sessie actief is en alleen tot geselecteerde items.</string>
     <string name="privacy_policy_line_4">Je kunt het delen op elk moment stoppen, een pincode vereisen of apparaten blokkeren.</string>
-
     <string name="main_service_background_protection_failed">Delen gestart, maar achtergrondbeveiliging mislukt. Houd DirectServe open tijdens gebruik.</string>
     <string name="main_notification_permission_warning">Delen gaat door, maar Android verbergt de melding mogelijk zolang er geen toestemming is.</string>
     <string name="main_batch_media_access_needed">Geef toegang tot foto\'s/video\'s voor Smart Picks. Je kunt ook handmatig toevoegen.</string>
@@ -254,7 +244,6 @@
     <string name="main_share_link_chooser">DirectServe-link delen</string>
     <string name="main_link_not_ready">Link niet gereed. Controleer je wifi of hotspot.</string>
     <string name="main_not_sharing">Niet aan het delen</string>
-
     <string name="service_start_failed">Kon delen op achtergrond niet starten.</string>
     <string name="service_auto_stop_message">Delen gestopt wegens inactiviteit.</string>
     <string name="service_upload_request_title">Inkomende overdracht</string>
@@ -272,7 +261,6 @@
     <string name="service_channel_requests_desc">Meldingen voor inkomende overdrachten</string>
     <string name="service_channel_connections_name">Apparaatverbindingen</string>
     <string name="service_channel_connections_desc">Meldingen wanneer nieuwe apparaten deelnemen</string>
-
     <string name="library_title">Bibliotheek</string>
     <string name="library_header_title">Gedeelde bibliotheek</string>
     <string name="library_header_body">Bestanden die anderen kunnen zien via jouw link.</string>
@@ -348,7 +336,6 @@
     <string name="library_compat_ready">Klaar</string>
     <string name="library_compat_unavailable">Niet beschikbaar</string>
     <string name="library_compat_message">%1$s | %2$s</string>
-
     <string name="selection_add_files_title">Bestanden toevoegen</string>
     <string name="selection_add_files_body">Kies de bestanden die je wilt delen.</string>
     <string name="selection_add_selected">Selectie toevoegen</string>
@@ -374,7 +361,6 @@
     <string name="selection_no_groups_body">Vernieuw als je net toestemming gaf, of voeg handmatig toe.</string>
     <string name="selection_refresh_groups">Vernieuwen</string>
     <string name="selection_add_group">Groep toevoegen</string>
-
     <string name="home_upload_request_title">Transferverzoek</string>
     <string name="home_upload_request_single">één bestand</string>
     <string name="home_upload_request_files">%1$d bestanden</string>
@@ -384,7 +370,6 @@
     <string name="home_settings_content_desc">Instellingen</string>
     <string name="home_network_required_title">Netwerkverbinding vereist</string>
     <string name="home_network_required_body">Verbind met wifi of zet hotspot aan om te starten.\n\nMobiele data is niet voldoende voor lokale sessies.</string>
-
     <string name="message_unable_add_folder">Kon map niet toevoegen.</string>
     <string name="message_saved_share_named">Share \"%1$s\" opgeslagen.</string>
     <string name="message_unable_save_share">Opslaan mislukt.</string>
@@ -401,14 +386,12 @@
     <string name="message_preparing_browser_playback">%1$s optimaliseren voor browser...</string>
     <string name="nearby_helper_tap_session">Tik op een sessie om te openen.</string>
     <string name="nearby_helper_open_on_other_device">Start DirectServe op een ander apparaat op hetzelfde netwerk.</string>
-
     <string name="share_preset_enter_name">Voer eerst een naam in.</string>
     <string name="share_preset_add_content_first">Voeg inhoud toe voordat je opslaat.</string>
     <string name="share_preset_select_file_first">Kies minimaal één bestand.</string>
     <string name="share_preset_files_unavailable">Bestanden niet meer beschikbaar.</string>
     <string name="share_preset_collection_unavailable">Collectie niet meer beschikbaar.</string>
     <string name="share_preset_restore_failed">Herstellen mislukt.</string>
-
     <string name="sharing_preflight_failed">Check mislukt: %1$s</string>
     <string name="sharing_add_content_first">Voeg inhoud toe om te delen.</string>
     <string name="sharing_same_wifi_needed">Zorg dat beide apparaten op hetzelfde netwerk zitten.</string>
@@ -416,7 +399,6 @@
     <string name="sharing_server_start_failed">Serverfout: %1$s</string>
     <string name="sharing_stopped">Delen gestopt</string>
     <string name="sharing_device_android">Android</string>
-
     <string name="network_helper_wifi_ready">Apparaten op hetzelfde wifi kunnen verbinden. Hotspot is een alternatief.</string>
     <string name="network_helper_local_ready">Lokaal netwerk gereed voor browsertoegang.</string>
     <string name="network_helper_wifi_found">Wifi-adres gevonden. Link is bereikbaar op dit netwerk.</string>
@@ -424,14 +406,12 @@
     <string name="network_helper_mobile_only">Mobiele data alleen is niet genoeg. Gebruik wifi of hotspot.</string>
     <string name="network_helper_local_address_ready">Lokaal adres gevonden. Verbinding mogelijk op dit netwerk.</string>
     <string name="network_helper_connect_both">Zorg dat beide apparaten op hetzelfde netwerk zitten.</string>
-
     <string name="discovery_unavailable_device">Zoeken naar apparaten niet ondersteund.</string>
     <string name="discovery_nsd_unavailable">NSD niet beschikbaar</string>
     <string name="discovery_searching">Zoeken naar DirectServe-apparaten...</string>
     <string name="discovery_unavailable_now">Nu niet beschikbaar. Gebruik QR of link.</string>
     <string name="discovery_start_failed">Fout bij starten (%1$d)</string>
     <string name="discovery_ready_to_open">DirectServe-apparaten gevonden.</string>
-
     <string name="browser_title">DirectServe</string>
     <string name="browser_subtitle">Stream en deel offline bestanden</string>
     <string name="browser_file_unavailable">Dit bestand is niet meer beschikbaar op het host-apparaat.</string>
@@ -445,8 +425,6 @@
     <string name="browser_video_part_unavailable">Videodeel niet meer beschikbaar.</string>
     <string name="browser_hls_not_needed">Geen HLS nodig.</string>
     <string name="browser_hls_not_ready">Nog niet HLS-ready.</string>
-
-    
     <string name="home_action_add_to_share_title">Toevoegen om te delen</string>
     <string name="home_action_add_to_share_subtitle">Kies de bestanden die u wilt verzenden.</string>
     <string name="home_action_files">Bestanden</string>
@@ -455,8 +433,6 @@
     <string name="home_action_folder_desc">Scannen</string>
     <string name="home_action_library">Bibliotheek</string>
     <string name="home_action_library_desc">Bladeren</string>
-
-    
     <string name="home_nearby_title">Dichtbij &amp; netwerk</string>
     <string name="home_nearby_subtitle">Zorg ervoor dat uw lokale netwerk gereed is en zoek vervolgens een ander DirectServe-apparaat als u het in de app wilt openen.</string>
     <string name="home_nearby_refresh_status">Status vernieuwen</string>
@@ -475,8 +451,6 @@
     <string name="home_nearby_action_open">Openen</string>
     <string name="home_nearby_device_available">Beschikbaar</string>
     <string name="home_nearby_device_pin">PIN vereist</string>
-
-    
     <string name="web_hero_eyebrow">Privé-ontvangerweergave</string>
     <string name="web_hero_title">Bestanden offline streamen en delen</string>
     <string name="web_hero_desc1">Bladeren, afspelen, bekijken</string>
@@ -511,8 +485,6 @@
     <string name="web_security_pin">PIN-beveiligd</string>
     <string name="web_security_open">Openen op lokaal netwerk</string>
     <string name="web_status_unknown">Onbekend</string>
-
-    
     <string name="home_connected_devices">Verbonden apparaten</string>
     <string name="home_rename_device">Apparaat hernoemen</string>
     <string name="home_rename_device_subtitle">Apparaat: %1$s • %2$s</string>
@@ -542,7 +514,26 @@
     <string name="home_saved_shares_delete">Verwijderen</string>
     <string name="home_saved_shares_items_count">%1$d items</string>
     <string name="library_date_group_label">%1$s </string>
-<string name="web_upload_title">Verzenden naar apparaat</string><string name="web_upload_subtitle">Upload bestanden via het netwerk naar het hostapparaat.</string><string name="web_upload_prompt_title">Selecteer bestanden om te verzenden</string><string name="web_upload_prompt_desktop">Sleep hierheen en zet het neer, of tik op de onderstaande knop</string><string name="web_upload_prompt_mobile">Tik op de knop om bestanden uit uw bibliotheek te selecteren</string><string name="web_upload_button_browse">Blader door bestanden</string><string name="web_upload_target_kicker">Doelapparaat</string><string name="web_upload_target_status">Status: Verbonden en klaar voor overdracht</string><string name="web_upload_how_kicker">Hoe het werkt</string><string name="web_upload_how_title">Veilige goedkeuring</string><string name="web_upload_how_body"><![CDATA[Wanneer u een bestand verzendt, verschijnt er een melding op de telefoon. De eigenaar van het apparaat moet <strong>Accepteren</strong> voordat de overdracht kan beginnen.]]></string><string name="web_action_download">Downloaden</string><string name="web_photo_view">Weergave</string><string name="web_btn_download_all">Alles downloaden</string><string name="web_btn_download_selected">Geselecteerd downloaden</string><string name="web_btn_download_original">Origineel downloaden</string><string name="web_error_streaming_codec">De codec van dit bestand wordt niet ondersteund door de Android-server voor streaming. Download alstublieft.</string><string name="web_error_downloads_disabled">Downloads zijn uitgeschakeld door de eigenaar van het apparaat.</string><string name="web_error_video_decode">Deze browser kan de videostream niet decoderen. Probeer het originele bestand te downloaden.</string><string name="web_error_video_start">Deze browser kan de video niet starten. Probeer het opnieuw of download het originele bestand.</string>
+    <string name="web_upload_title">Verzenden naar apparaat</string>
+    <string name="web_upload_subtitle">Upload bestanden via het netwerk naar het hostapparaat.</string>
+    <string name="web_upload_prompt_title">Selecteer bestanden om te verzenden</string>
+    <string name="web_upload_prompt_desktop">Sleep hierheen en zet het neer, of tik op de onderstaande knop</string>
+    <string name="web_upload_prompt_mobile">Tik op de knop om bestanden uit uw bibliotheek te selecteren</string>
+    <string name="web_upload_button_browse">Blader door bestanden</string>
+    <string name="web_upload_target_kicker">Doelapparaat</string>
+    <string name="web_upload_target_status">Status: Verbonden en klaar voor overdracht</string>
+    <string name="web_upload_how_kicker">Hoe het werkt</string>
+    <string name="web_upload_how_title">Veilige goedkeuring</string>
+    <string name="web_upload_how_body"><![CDATA[Wanneer u een bestand verzendt, verschijnt er een melding op de telefoon. De eigenaar van het apparaat moet <strong>Accepteren</strong> voordat de overdracht kan beginnen.]]></string>
+    <string name="web_action_download">Downloaden</string>
+    <string name="web_photo_view">Weergave</string>
+    <string name="web_btn_download_all">Alles downloaden</string>
+    <string name="web_btn_download_selected">Geselecteerd downloaden</string>
+    <string name="web_btn_download_original">Origineel downloaden</string>
+    <string name="web_error_streaming_codec">De codec van dit bestand wordt niet ondersteund door de Android-server voor streaming. Download alstublieft.</string>
+    <string name="web_error_downloads_disabled">Downloads zijn uitgeschakeld door de eigenaar van het apparaat.</string>
+    <string name="web_error_video_decode">Deze browser kan de videostream niet decoderen. Probeer het originele bestand te downloaden.</string>
+    <string name="web_error_video_start">Deze browser kan de video niet starten. Probeer het opnieuw of download het originele bestand.</string>
     <string name="web_btn_clear_selection">Wis</string>
     <string name="web_btn_select_all">Alles selecteren</string>
     <string name="web_btn_select_files">Selecteer bestanden</string>
@@ -562,4 +553,78 @@
     <string name="library_clear_all_action">Alles wissen</string>
     <string name="library_clear_all_title">Deze bibliotheek wissen?</string>
     <string name="library_clear_all_body">Dit verwijdert alle gedeelde bestanden en mappen uit de huidige bibliotheek.</string>
+    <string name="session_browser_prep_title">Preparing browser files</string>
+    <string name="session_browser_prep_active">%1$d%% • %2$d of %3$d ready</string>
+    <string name="session_browser_prep_queued">%1$d remaining in background</string>
+    <string name="session_browser_prep_ready">%1$d browser files ready</string>
+    <string name="session_browser_prep_message_active">Preparing %1$s for browser playback</string>
+    <string name="session_browser_prep_message_queued">Preparing browser-ready video files in the background</string>
+    <string name="session_browser_prep_message_ready">Browser playback preparation is complete</string>
+    <string name="session_browser_prep_message_manual">Browser prep is optional and only helps on videos that need conversion.</string>
+    <string name="session_browser_prep_manual_note">Playback can still start without this. Large batches may warm the phone a little, so you can start or stop preparation whenever you want.</string>
+    <string name="session_prepare_browser_files">Prepare browser files</string>
+    <string name="session_stop_browser_files">Stop browser prep</string>
+    <string name="session_library_refresh_title">Live library updates</string>
+    <string name="session_library_refresh_pending">%1$d new files and %2$d new folders are ready to add to this live server.</string>
+    <string name="session_library_refresh_up_to_date">This live server already matches your current library.</string>
+    <string name="session_refresh_library">Refresh live library</string>
+    <string name="message_live_library_refreshed_updates">Live server refreshed with %1$d new files and %2$d new folders.</string>
+    <string name="message_live_library_refreshed_current">Live server refreshed. It was already up to date.</string>
+    <string name="message_browser_playback_queued_all">Started browser preparation for %1$d files.</string>
+    <string name="message_browser_playback_already_ready">Browser files are already ready, already queued, or not needed.</string>
+    <string name="message_browser_playback_stopped">Stopped browser file preparation.</string>
+    <string name="library_importing_title">Adding files to library</string>
+    <string name="library_importing_body">%1$d selected items are still being added in the background.</string>
+    <string name="web_upload_selection_empty">No files selected yet.</string>
+    <string name="web_upload_selection_single">Ready to send %1$s</string>
+    <string name="web_upload_selection_multiple">Ready to send %1$d files</string>
+    <string name="web_upload_button_send">Upload</string>
+    <string name="common_quick_filters">Quick filters</string>
+    <string name="common_edit_nickname">Edit nickname</string>
+    <string name="home_quick_filters_desc">Add files from a specific date. Open library to see all your files.</string>
+    <string name="home_date_range_body">Choose files from a specific date range.</string>
+    <string name="help_section_browser_preparation">Browser Preparation</string>
+    <string name="help_section_drop_zone">Drop Zone</string>
+    <string name="help_section_privacy_controls">Privacy Controls</string>
+    <string name="help_line_prep_optional">Preparation is optional but recommended for older devices to ensure smooth playback.</string>
+    <string name="help_line_prep_control">You can control preparation per-file from the library management screen.</string>
+    <string name="help_line_prep_batch">You can also batch-prepare files from the session status screen.</string>
+    <string name="help_line_drop_zone">The web interface includes a \'Drop Zone\' for receiving files.</string>
+    <string name="help_line_drop_zone_pick">Recipients can pick files or drag and drop them to send to your device.</string>
+    <string name="help_line_drop_zone_local">Transfers happen entirely over your local network and never touch the cloud.</string>
+    <string name="help_line_privacy_local">DirectServe is local-only; files are shared directly between devices.</string>
+    <string name="help_line_privacy_session">Access is only possible while your session is active on the host phone.</string>
+    <string name="web_upload_requesting">Requesting permission</string>
+    <string name="web_upload_waiting">Waiting for DirectServe</string>
+    <string name="web_upload_success_title">Success!</string>
+    <string name="web_upload_success_detail_single">File is ready on DirectServe.</string>
+    <string name="web_upload_success_detail_multiple">Files are ready on DirectServe.</string>
+    <string name="web_upload_failed_title">Transfer failed</string>
+    <string name="web_upload_failed_detail">Upload request was denied or failed.</string>
+    <string name="web_player_error_open">This video could not be opened</string>
+    <string name="web_player_opening">Opening video...</string>
+    <string name="web_player_ready">Video is ready</string>
+    <string name="web_player_starting">Starting playback...</string>
+    <string name="web_player_wait_desc">This browser needs a moment to open the video. Keep this page open.</string>
+    <string name="web_player_ready_desc">Playback is ready on this device.</string>
+    <string name="web_player_starting_desc">The video is starting now. If it pauses, wait a moment or try again.</string>
+    <string name="web_player_try_again">Try again</string>
+    <string name="web_player_status_opening">Opening</string>
+    <string name="web_player_status_ready">Ready</string>
+    <string name="web_player_status_playing">Playing</string>
+    <string name="web_btn_back">Back to videos</string>
+    <string name="web_status_subtitles_available">Subtitles available</string>
+    <string name="help_line_privacy_controls">Use PIN access and device blocking for extra security.</string>
+    <string name="web_now_playing">Now playing</string>
+    <string name="common_resume">Resume</string>
+    <string name="web_status_init_progress">0%</string>
+    <string name="common_play">Play</string>
+    <string name="common_pause">Pause</string>
+    <string name="common_unit_b">B</string>
+    <string name="common_unit_kb">KB</string>
+    <string name="common_unit_mb">MB</string>
+    <string name="common_unit_gb">GB</string>
+    <string name="common_unit_tb">TB</string>
+    <string name="service_file_index_pattern">%1$s (%2$d/%3$d)</string>
+    <string name="service_upload_progress_subtext_pattern">%1$s / %2$s</string>
 </resources>
