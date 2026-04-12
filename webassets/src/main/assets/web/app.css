@@ -915,6 +915,71 @@ body.gs-dragging .gs-drop-indicator {
   margin-top: 12px;
 }
 
+.gs-upload-dashboard-wrap {
+  display: none;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.gs-upload-dashboard-wrap.has-files {
+  display: block;
+}
+
+.gs-upload-primary-btn {
+  padding: 18px 24px;
+  font-size: 1.1rem;
+  border-radius: 20px;
+}
+
+.gs-upload-zone-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gs-upload-native-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.gs-upload-selection {
+  min-height: 24px;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.gs-upload-zone-actions .gs-btn[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.gs-upload-dashboard-wrap .uppy-Dashboard--theme-light {
+  background: transparent;
+}
+
+.gs-upload-dashboard-wrap .uppy-Dashboard-inner {
+  width: 100% !important;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+}
+
+.gs-upload-dashboard-wrap .uppy-Dashboard-AddFiles {
+  border-color: var(--accent);
+}
+
+.gs-upload-dashboard-wrap .uppy-Dashboard-browse,
+.gs-upload-dashboard-wrap .uppy-c-btn-primary {
+  color: var(--text);
+}
+
 @media (max-width: 600px) {
   .gs-upload-zone-inner {
     padding: 40px 16px;

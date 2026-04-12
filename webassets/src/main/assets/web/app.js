@@ -14,7 +14,9 @@ const state = {
   plyrItemId: null,
   hls: null,
   hlsItemId: null,
+  uppy: null,
   musicPlayers: [],
+  pendingUploadFiles: [],
   searchTimer: null,
   compatPollToken: 0,
   compatPollTimer: null,
@@ -79,21 +81,15 @@ window.addEventListener("drop", (e) => {
   e.preventDefault();
   dragCounter = 0;
   document.body.classList.remove("gs-dragging");
-  const files = e.dataTransfer.files;
+  const files = Array.from(e.dataTransfer.files || []);
   if (files && files.length > 0) {
-    if (location.pathname !== "/upload") {
-      // Auto-navigate to upload tab when dropping elsewhere
-      navigate("/upload");
-      setTimeout(() => handleFilesUpload(Array.from(files)), 100);
-    } else {
-      handleFilesUpload(Array.from(files));
-    }
+    queueUploadFiles(files);
   }
 });
 
 let currentUploadXhr = null;
 
-async function handleFilesUpload(files) {
+async function handleFilesUpload(files, hooks = {}) {
   if (!files || files.length === 0) return;
   const overlay = document.getElementById("uploadOverlay");
   const title = document.getElementById("uploadTitle");
@@ -131,6 +127,7 @@ async function handleFilesUpload(files) {
   };
 
   try {
+    hooks.onStart?.({ files, fileCount, totalSize });
     const response = await api("/api/upload/request", {
       method: "POST",
       body: JSON.stringify({
@@ -157,6 +154,12 @@ async function handleFilesUpload(files) {
         const percent = Math.round((e.loaded / e.total) * 100);
         setProgress(percent);
         status.textContent = `${percent}% (${fmtBytes(e.loaded)} / ${fmtBytes(e.total)})`;
+        hooks.onProgress?.({
+          files,
+          loaded: e.loaded,
+          total: e.total,
+          percent,
+        });
       }
     };
 
@@ -183,6 +186,7 @@ async function handleFilesUpload(files) {
     title.textContent = "Success!";
     status.textContent = fileCount === 1 ? "File is ready on DirectServe." : "Files are ready on DirectServe.";
     setProgress(100);
+    hooks.onSuccess?.({ files, fileCount, totalSize });
     
     setTimeout(() => {
       showOverlay(false);
@@ -195,12 +199,17 @@ async function handleFilesUpload(files) {
   } catch (error) {
     title.textContent = "Transfer failed";
     status.textContent = error.message || "Upload request was denied or failed.";
+    hooks.onError?.(error);
     setTimeout(() => showOverlay(false), 3000);
+  } finally {
+    currentUploadXhr = null;
+    hooks.onSettled?.();
   }
 }
 
 async function boot() {
   cancelCompatPolling();
+  destroyUppy();
   destroyPlyr();
   destroyHls();
   destroyMusicPlayers();
@@ -306,7 +315,7 @@ function shouldUseManagedHlsPlayback(item) {
   // Chrome's MSE rejects those fMP4 segments with bufferAppendError due to
   // codec signaling issues in the init segment. Progressive MP4 streaming
   // via item.streamUrl works correctly with native byte-range seeking.
-  // HLS (managed or native) is still used for REMUX and for Apple devices.
+  // HLS remains the safer path for REMUX, including Apple devices.
   if (item.playbackMode === "TRANSCODE") return false;
   return canUseManagedHls(item);
 }
@@ -348,6 +357,10 @@ async function probeCompatiblePlaybackSource(item) {
 
 function shouldStartCompatibilityPlayback(item, job = null) {
   if (item.playbackMode === "DIRECT") return true;
+  if (shouldUseNativeHlsPlayback(item)) {
+    if (!job) return false;
+    return Boolean(job.ready || job.complete || job.status === "READY");
+  }
   const complete = job ? Boolean(job.complete) : Boolean(item.compatibilityComplete);
   const ready = job
     ? Boolean(job.ready || job.status === "READY")
@@ -416,6 +429,7 @@ async function api(url, options = {}) {
 }
 
 function shell(content, options = {}) {
+  destroyUppy();
   destroyPlyr();
   destroyHls();
   destroyMusicPlayers();
@@ -1400,6 +1414,58 @@ function destroyHls() {
   state.hlsItemId = null;
 }
 
+function destroyUppy() {
+  if (state.uppy) {
+    try {
+      state.uppy.destroy();
+    } catch (_) {}
+  }
+  state.uppy = null;
+}
+
+function queueUploadFiles(files) {
+  const normalized = Array.from(files || []).filter(Boolean);
+  if (normalized.length === 0) return;
+  if (location.pathname === "/upload" && state.uppy) {
+    addFilesToUppy(normalized);
+    return;
+  }
+  state.pendingUploadFiles = normalized;
+  if (location.pathname !== "/upload") {
+    navigate("/upload");
+  }
+}
+
+function addFilesToUppy(files) {
+  if (!state.uppy || !files || files.length === 0) return;
+  files.forEach((file) => {
+    try {
+      state.uppy.addFile({
+        id: `${file.name}-${file.size}-${file.lastModified}-${Math.random().toString(36).slice(2)}`,
+        name: file.name,
+        type: file.type,
+        data: file,
+        source: "Local",
+      });
+    } catch (_) {}
+  });
+}
+
+function describeUploadSelection(files) {
+  if (!files || files.length === 0) {
+    return gsStr("web_upload_selection_empty", "No files selected yet.");
+  }
+  if (files.length === 1) {
+    return gsStr("web_upload_selection_single", "Ready to send %1$s", files[0].name);
+  }
+  return gsStr("web_upload_selection_multiple", "Ready to send %1$d files", files.length);
+}
+
+function getUploadDisplayFiles() {
+  if (state.uppy) return state.uppy.getFiles();
+  return state.pendingUploadFiles || [];
+}
+
 function destroyMusicPlayers() {
   state.musicPlayers.forEach((player) => {
     try {
@@ -1527,13 +1593,17 @@ async function renderUpload() {
           <h3>${gsStr("web_upload_prompt_title", "Select files to send")}</h3>
           <p class="gs-desktop-only">${gsStr("web_upload_prompt_desktop", "Drag and drop here, or tap the button below")}</p>
           <p class="gs-mobile-only">${gsStr("web_upload_prompt_mobile", "Tap the button to select files from your library")}</p>
-          
-          <div class="gs-upload-zone-actions" style="margin-top: 16px">
-            <button class="gs-btn gs-btn-accent gs-btn-block" style="padding: 18px 24px; font-size: 1.1rem; border-radius: 20px" id="browseBtn">
+          <input id="nativeUploadInput" class="gs-upload-native-input" type="file" multiple>
+          <div class="gs-upload-zone-actions">
+            <button class="gs-btn gs-btn-accent gs-btn-block gs-upload-primary-btn" id="uppyBrowseBtn">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               ${gsStr("web_upload_button_browse", "Browse Files")}
             </button>
-            <input type="file" id="fileInput" style="display: none" multiple>
+            <button class="gs-btn gs-btn-block" id="uppyUploadBtn" disabled>${gsStr("web_upload_button_send", "Upload")}</button>
+          </div>
+          <div class="gs-upload-selection" id="uploadSelectionStatus">${gsStr("web_upload_selection_empty", "No files selected yet.")}</div>
+          <div class="gs-upload-dashboard-wrap">
+            <div id="uploadDashboard"></div>
           </div>
         </div>
       </div>
@@ -1561,30 +1631,185 @@ async function renderUpload() {
   `;
 
   shell(content);
+  mountUploadDashboard();
+}
 
+function mountUploadDashboard() {
   const zone = document.getElementById("uploadZone");
-  const fileInput = document.getElementById("fileInput");
-  const browseBtn = document.getElementById("browseBtn");
+  const dashboardTarget = document.getElementById("uploadDashboard");
+  const browseBtn = document.getElementById("uppyBrowseBtn");
+  const uploadBtn = document.getElementById("uppyUploadBtn");
+  const nativeInput = document.getElementById("nativeUploadInput");
+  const selectionStatus = document.getElementById("uploadSelectionStatus");
+  if (!browseBtn || !uploadBtn || !nativeInput) return;
 
-  browseBtn?.addEventListener("click", () => fileInput?.click());
-  fileInput?.addEventListener("change", (e) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      handleFilesUpload(Array.from(files));
+  const setSelectionStatus = (files) => {
+    if (selectionStatus) {
+      selectionStatus.textContent = describeUploadSelection(files);
     }
+    if (dashboardTarget) {
+      dashboardTarget.parentElement?.classList.toggle("has-files", Boolean(files && files.length > 0));
+    }
+  };
+
+  const refreshFallbackToolbar = () => {
+    uploadBtn.disabled = state.pendingUploadFiles.length === 0;
+    setSelectionStatus(state.pendingUploadFiles);
+  };
+
+  if (!window.Uppy?.Uppy || !window.Uppy?.Dashboard || !dashboardTarget) {
+    browseBtn.addEventListener("click", () => {
+      nativeInput.value = "";
+      nativeInput.click();
+    });
+    nativeInput.addEventListener("change", () => {
+      state.pendingUploadFiles = Array.from(nativeInput.files || []);
+      refreshFallbackToolbar();
+    });
+    uploadBtn.addEventListener("click", async () => {
+      if (state.pendingUploadFiles.length === 0) return;
+      uploadBtn.disabled = true;
+      try {
+        await handleFilesUpload(state.pendingUploadFiles);
+        state.pendingUploadFiles = [];
+        nativeInput.value = "";
+      } finally {
+        refreshFallbackToolbar();
+      }
+    });
+    refreshFallbackToolbar();
+    return;
+  }
+
+  const uppy = new window.Uppy.Uppy({
+    autoProceed: false,
+    allowMultipleUploadBatches: true,
   });
+  state.uppy = uppy;
+
+  uppy.use(window.Uppy.Dashboard, {
+    inline: true,
+    target: "#uploadDashboard",
+    proudlyDisplayPoweredByUppy: false,
+    hideUploadButton: true,
+    hideRetryButton: true,
+    hidePauseResumeButton: true,
+    showProgressDetails: true,
+    note: gsStr("web_upload_prompt_mobile", "Tap the button to select files from your library"),
+    width: "100%",
+    height: 420,
+    doneButtonHandler: null,
+    browserBackButtonClose: false,
+  });
+
+  const refreshUploadToolbar = () => {
+    const files = uppy.getFiles();
+    uploadBtn.disabled = files.length === 0;
+    setSelectionStatus(files);
+  };
+
+  browseBtn.addEventListener("click", () => {
+    nativeInput.value = "";
+    nativeInput.click();
+  });
+  nativeInput.addEventListener("change", () => {
+    const files = Array.from(nativeInput.files || []);
+    if (files.length === 0) return;
+    addFilesToUppy(files);
+  });
+  uploadBtn.addEventListener("click", () => {
+    uppy.upload().catch(() => {});
+  });
+
+  uppy.addUploader((fileIDs) => {
+    const selectedFiles = fileIDs
+      .map((id) => uppy.getFile(id))
+      .filter(Boolean);
+    const files = selectedFiles
+      .map((file) => file.data)
+      .filter(Boolean);
+
+    if (files.length === 0) return Promise.resolve();
+
+    const startedAt = Date.now();
+    selectedFiles.forEach((file) => {
+      uppy.setFileState(file.id, {
+        progress: {
+          ...file.progress,
+          uploadStarted: startedAt,
+          uploadComplete: false,
+          percentage: 0,
+          bytesUploaded: 0,
+          bytesTotal: file.size,
+        },
+      });
+    });
+
+    return handleFilesUpload(files, {
+      onProgress: ({ percent, loaded, total }) => {
+        selectedFiles.forEach((file) => {
+          const ratio = total > 0 ? loaded / total : 0;
+          uppy.setFileState(file.id, {
+            progress: {
+              ...file.progress,
+              uploadStarted: startedAt,
+              uploadComplete: false,
+              percentage: percent,
+              bytesUploaded: Math.min(file.size, Math.round(file.size * ratio)),
+              bytesTotal: file.size,
+            },
+          });
+        });
+      },
+      onSuccess: () => {
+        selectedFiles.forEach((file) => {
+          uppy.emit("upload-success", file, { status: 200, body: {} });
+          uppy.setFileState(file.id, {
+            progress: {
+              ...file.progress,
+              uploadStarted: startedAt,
+              uploadComplete: true,
+              percentage: 100,
+              bytesUploaded: file.size,
+              bytesTotal: file.size,
+            },
+          });
+        });
+        setTimeout(() => {
+          fileIDs.forEach((id) => {
+            try {
+              uppy.removeFile(id);
+            } catch (_) {}
+          });
+        }, 600);
+      },
+      onError: (error) => {
+        selectedFiles.forEach((file) => {
+          uppy.emit("upload-error", file, error);
+        });
+      },
+    });
+  });
+
+  uppy.on("file-added", refreshUploadToolbar);
+  uppy.on("file-removed", refreshUploadToolbar);
+  uppy.on("complete", refreshUploadToolbar);
+  uppy.on("upload-error", refreshUploadToolbar);
+  refreshUploadToolbar();
 
   zone?.addEventListener("dragover", (e) => {
     e.preventDefault();
     zone.classList.add("is-active");
   });
   zone?.addEventListener("dragleave", () => zone.classList.remove("is-active"));
-  zone?.addEventListener("drop", (e) => {
-    e.preventDefault();
+  zone?.addEventListener("drop", () => {
     zone.classList.remove("is-active");
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      handleFilesUpload(Array.from(files));
-    }
+    setSelectionStatus(getUploadDisplayFiles());
   });
+
+  if (state.pendingUploadFiles.length > 0) {
+    const queuedFiles = state.pendingUploadFiles;
+    state.pendingUploadFiles = [];
+    addFilesToUppy(queuedFiles);
+  }
 }
