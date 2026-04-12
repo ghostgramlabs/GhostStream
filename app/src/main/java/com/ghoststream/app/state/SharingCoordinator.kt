@@ -166,6 +166,7 @@ class SharingCoordinator(
     suspend fun stopSharing(message: String = application.getString(R.string.sharing_stopped)) {
         debugLogSink.log("SharingCoordinator", "stopSharing message=$message")
         val settings = settingsRepository.settings.first()
+        compatibilityPipeline.cancelPendingPreparations()
         runCatching { nsdAdvertiser.stop() }
         runCatching { server.stop() }
         

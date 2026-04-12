@@ -36,6 +36,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -69,6 +70,11 @@ import kotlin.math.roundToInt
 @Composable
 fun ActiveSessionScreen(
     sessionState: SessionState,
+    browserPrepTargetCount: Int,
+    browserPrepReadyCount: Int,
+    browserPrepPendingCount: Int,
+    browserPrepProgressPercent: Int,
+    browserPrepActiveFileName: String?,
     hapticOnDeviceConnect: Boolean,
     showTransferSpeed: Boolean,
     onCopyLink: () -> Unit,
@@ -130,6 +136,18 @@ fun ActiveSessionScreen(
             )
         }
 
+        if (browserPrepTargetCount > 0) {
+            item {
+                SessionBrowserPrepCard(
+                    targetCount = browserPrepTargetCount,
+                    readyCount = browserPrepReadyCount,
+                    pendingCount = browserPrepPendingCount,
+                    progressPercent = browserPrepProgressPercent,
+                    activeFileName = browserPrepActiveFileName,
+                )
+            }
+        }
+
         item {
             ConnectedDevicesCard(
                 sessionState = sessionState,
@@ -161,6 +179,77 @@ fun ActiveSessionScreen(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.session_stop_sharing))
             }
+        }
+    }
+}
+
+@Composable
+private fun SessionBrowserPrepCard(
+    targetCount: Int,
+    readyCount: Int,
+    pendingCount: Int,
+    progressPercent: Int,
+    activeFileName: String?,
+) {
+    Card(
+        modifier = Modifier
+            .padding(horizontal = GhostSpacing.screenHorizontal)
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Column(
+            modifier = Modifier.padding(GhostSpacing.card),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            val statusMessage = when {
+                pendingCount <= 0 -> stringResource(R.string.session_browser_prep_message_ready)
+                !activeFileName.isNullOrBlank() -> stringResource(
+                    R.string.session_browser_prep_message_active,
+                    activeFileName,
+                )
+                else -> stringResource(R.string.session_browser_prep_message_queued)
+            }
+            val progressLabel = when {
+                pendingCount <= 0 -> stringResource(R.string.session_browser_prep_ready, readyCount)
+                !activeFileName.isNullOrBlank() -> stringResource(
+                    R.string.session_browser_prep_active,
+                    progressPercent.coerceIn(0, 100),
+                    readyCount,
+                    targetCount,
+                )
+                else -> stringResource(R.string.session_browser_prep_queued, pendingCount)
+            }
+            Text(
+                text = activeFileName?.takeIf { it.isNotBlank() } ?: stringResource(R.string.session_browser_prep_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = statusMessage,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            LinearProgressIndicator(
+                progress = {
+                    when {
+                        targetCount <= 0 -> 0f
+                        pendingCount <= 0 -> 1f
+                        !activeFileName.isNullOrBlank() -> progressPercent.coerceIn(0, 100) / 100f
+                        else -> readyCount.toFloat() / targetCount.toFloat()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Text(
+                text = progressLabel,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

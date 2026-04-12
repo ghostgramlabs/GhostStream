@@ -467,8 +467,26 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                 KeepScreenAwakeEffect(
                     enabled = uiState.settings.keepScreenAwake && uiState.sessionState.isSharing,
                 )
+                val browserPrepCandidates = uiState.sessionState.selectedItems.filter { item ->
+                    item.playbackDecision.mode != com.ghoststream.core.model.PlaybackMode.DIRECT
+                }
+                val activeBrowserPrep = browserPrepCandidates.firstNotNullOfOrNull { item ->
+                    uiState.compatibilityJobs[item.id]
+                        ?.takeIf { it.status == com.ghoststream.core.media.CompatibilityStatus.PREPARING }
+                        ?.let { item to it }
+                }
+                val browserPrepReadyCount = browserPrepCandidates.count { item ->
+                    val job = uiState.compatibilityJobs[item.id]
+                    job?.status == com.ghoststream.core.media.CompatibilityStatus.READY || job?.preparedAsset?.isComplete == true
+                }
+                val browserPrepPendingCount = (browserPrepCandidates.size - browserPrepReadyCount).coerceAtLeast(0)
                 ActiveSessionScreen(
                     sessionState = uiState.sessionState,
+                    browserPrepTargetCount = browserPrepCandidates.size,
+                    browserPrepReadyCount = browserPrepReadyCount,
+                    browserPrepPendingCount = browserPrepPendingCount,
+                    browserPrepProgressPercent = activeBrowserPrep?.second?.progressPercent ?: 0,
+                    browserPrepActiveFileName = activeBrowserPrep?.first?.displayName,
                     hapticOnDeviceConnect = uiState.settings.hapticOnDeviceConnect,
                     showTransferSpeed = uiState.settings.showTransferSpeed,
                     onCopyLink = {

@@ -366,6 +366,7 @@ class KtorGhostStreamServer(
                         compatibilityJob = compatibilitySnapshotFor(
                             item = item,
                             triggerPreparation = item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT,
+                            prioritizePreparation = item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT,
                         ),
                         streamReady = compatibilityStreamReady(item),
                         allowDownloads = !settings.preventDownload,
@@ -399,7 +400,7 @@ class KtorGhostStreamServer(
                     call.respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_file_unavailable)))
                     return@post
                 }
-                val job = compatibilitySnapshotFor(item, triggerPreparation = true)
+                val job = compatibilitySnapshotFor(item, triggerPreparation = true, prioritizePreparation = true)
                 val ready = compatibilityStreamReady(item)
                 debugLogSink.log(
                     "WebCompat",
@@ -779,9 +780,10 @@ class KtorGhostStreamServer(
     private suspend fun compatibilitySnapshotFor(
         item: SharedItem,
         triggerPreparation: Boolean,
+        prioritizePreparation: Boolean = false,
     ): CompatibilityJob {
         return if (triggerPreparation && item.playbackDecision.mode != PlaybackMode.DIRECT) {
-            compatibilityPipeline.requestPreparation(item)
+            compatibilityPipeline.requestPreparation(item, prioritize = prioritizePreparation)
         } else {
             compatibilityPipeline.inspect(item)
         }
@@ -1112,6 +1114,7 @@ class KtorGhostStreamServer(
 
         val preparedAsset = job.preparedAsset ?: return false
         if (preparedAsset.isComplete || job.status == CompatibilityStatus.READY) return true
+        if (item.playbackDecision.mode == PlaybackMode.TRANSCODE) return true
         if (item.category != MediaCategory.VIDEO || !preparedAsset.isFragmentedMp4) return job.canServePlayback
 
         val file = File(preparedAsset.filePath)
@@ -1190,7 +1193,7 @@ class KtorGhostStreamServer(
             return null
         }
 
-        val job = compatibilitySnapshotFor(item, triggerPreparation = true)
+        val job = compatibilitySnapshotFor(item, triggerPreparation = true, prioritizePreparation = true)
         if (job.status == CompatibilityStatus.FAILED) {
             respond(HttpStatusCode.Conflict, ErrorPayload(job.message))
             return null

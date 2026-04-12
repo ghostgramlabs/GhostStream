@@ -392,6 +392,13 @@
     <string name="session_waiting_local_link">Väntar på lokal länk</string>
     <string name="session_waiting_ready">DirectServe förbereder sessionen.</string>
     <string name="session_what_happens_now">Vad händer nu</string>
+    <string name="session_browser_prep_title">FÃ¶rbereder webbfiler</string>
+    <string name="session_browser_prep_active">%1$d%% • %2$d av %3$d klara</string>
+    <string name="session_browser_prep_queued">%1$d Ã¥terstÃ¥r i bakgrunden</string>
+    <string name="session_browser_prep_ready">%1$d webbfiler klara</string>
+    <string name="session_browser_prep_message_active">Forbereder %1$s for uppspelning i webblasaren</string>
+    <string name="session_browser_prep_message_queued">Forbereder webblasaranpassade videofiler i bakgrunden</string>
+    <string name="session_browser_prep_message_ready">Forberedelsen for webblasaruppspelning ar klar</string>
     <string name="settings_app_version">Appversion</string>
     <string name="settings_approve_file_uploads">Godkänn filuppladdningar</string>
     <string name="settings_approve_file_uploads_desc">Fråga dig innan webbläsare kan ladda upp filer till den här enheten.</string>

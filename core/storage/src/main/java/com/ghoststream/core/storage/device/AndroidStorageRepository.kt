@@ -3,6 +3,7 @@ package com.ghoststream.core.storage.device
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
+import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
 import android.os.Build
@@ -25,9 +26,12 @@ import com.ghoststream.core.storage.StorageRepository
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.util.UUID
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -48,6 +52,10 @@ class AndroidStorageRepository(
     private val json: Json = Json { ignoreUnknownKeys = true },
 ) : StorageRepository {
 
+    private val addFilesDispatcher = Dispatchers.IO.limitedParallelism(
+        Runtime.getRuntime().availableProcessors().coerceIn(4, 8),
+    )
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val persistence: DataStore<Preferences> = PreferenceDataStoreFactory.create(
         scope = scope,
@@ -62,19 +70,24 @@ class AndroidStorageRepository(
         scope.launchStateRestore()
     }
 
-    override suspend fun addFiles(uris: List<Uri>): LibraryState = stateMutex.withLock {
-        val current = currentPersistedState()
-        val newItems = uris.mapNotNull { uri ->
-            withContext(Dispatchers.IO) {
-                buildSingleItemSync(uri = uri, sourceFolderId = null)
-            }
+    override suspend fun addFiles(uris: List<Uri>): LibraryState {
+        uris.forEach(::takeDocumentPermission)
+        val newItems = coroutineScope {
+            uris.map { uri ->
+                async(addFilesDispatcher) {
+                    buildSingleItemSync(uri = uri, sourceFolderId = null)
+                }
+            }.awaitAll().filterNotNull()
         }
-        val merged = mergeState(
-            items = current.items + newItems,
-            folders = current.folders,
-        )
-        persistAndPublish(merged)
-        merged
+        return stateMutex.withLock {
+            val current = currentPersistedState()
+            val merged = mergeState(
+                items = current.items + newItems,
+                folders = current.folders,
+            )
+            persistAndPublish(merged)
+            merged
+        }
     }
 
     override suspend fun addFolder(treeUri: Uri): Result<SharedFolder> = runCatching {
@@ -499,10 +512,18 @@ class AndroidStorageRepository(
     }
 
     private fun takeTreePermission(treeUri: Uri) {
-        val flags = android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION or
-            android.content.Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+        val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+            Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
         runCatching {
             context.contentResolver.takePersistableUriPermission(treeUri, flags)
+        }
+    }
+
+    private fun takeDocumentPermission(uri: Uri) {
+        val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+            Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+        runCatching {
+            context.contentResolver.takePersistableUriPermission(uri, flags)
         }
     }
 

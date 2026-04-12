@@ -18,6 +18,8 @@ const state = {
   searchTimer: null,
   compatPollToken: 0,
   compatPollTimer: null,
+  compatMountToken: 0,
+  compatPlaybackFailures: {},
 };
 
 const routes = {
@@ -311,6 +313,37 @@ function shouldUseManagedHlsPlayback(item) {
 
 function shouldUseNativeVideoPlayer(item) {
   return isMobileBrowser() || shouldUseNativeHlsPlayback(item);
+}
+
+function resolveVideoSourceUrl(item) {
+  return shouldUseNativeHlsPlayback(item) ? item.hlsUrl : item.streamUrl;
+}
+
+async function probeCompatiblePlaybackSource(item) {
+  if (item.playbackMode === "DIRECT") return true;
+  const sourceUrl = resolveVideoSourceUrl(item);
+  if (!sourceUrl) return false;
+
+  const controller = typeof AbortController === "function" ? new AbortController() : null;
+  const timeoutId = controller ? setTimeout(() => controller.abort(), 2200) : null;
+  const headers = shouldUseNativeHlsPlayback(item) ? {} : { Range: "bytes=0-1" };
+  let response = null;
+  try {
+    response = await fetch(sourceUrl, {
+      credentials: "include",
+      cache: "no-store",
+      headers,
+      signal: controller?.signal,
+    });
+    return response.ok || response.status === 206;
+  } catch (_) {
+    return false;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+    try {
+      response?.body?.cancel?.();
+    } catch (_) {}
+  }
 }
 
 function shouldStartCompatibilityPlayback(item, job = null) {
@@ -711,7 +744,12 @@ async function renderVideoPlayer(id) {
   `);
 
   if (playbackItem.streamReady) {
-    ensureCompatiblePlayerMounted(playbackItem);
+    ensureCompatiblePlayerMounted(playbackItem).then((mounted) => {
+      if (!mounted && playbackItem.playbackMode !== "DIRECT") {
+        showCompatibilityWaitingStage(playbackItem);
+        pollCompat(id, { ...playbackItem, streamReady: false });
+      }
+    });
   } else {
     hydrateVideoPlayer(playbackItem);
   }
@@ -757,6 +795,22 @@ function videoMarkup(item) {
   `;
 }
 
+function canUseManagedHlsFallback(item, managedHlsAvailable) {
+  return Boolean(managedHlsAvailable && item.playbackMode === "REMUX");
+}
+
+function showCompatibilityWaitingStage(item) {
+  destroyPlyr();
+  destroyHls();
+  const stage = document.getElementById("playerStage");
+  if (!stage) return;
+  stage.innerHTML = renderVideoStage({
+    ...item,
+    streamReady: false,
+    compatibilityComplete: false,
+  });
+}
+
 function hydrateVideoPlayer(item, options = {}) {
   const video = document.getElementById("vPlayer");
   if (!video || video.dataset.bound === "true") return;
@@ -766,6 +820,7 @@ function hydrateVideoPlayer(item, options = {}) {
   const useNativePlayer = shouldUseNativeVideoPlayer(item);
   const useManagedHls = shouldUseManagedHlsPlayback(item);
   const managedHlsAvailable = canUseManagedHls(item);
+  const allowManagedHlsFallback = canUseManagedHlsFallback(item, managedHlsAvailable);
   const errorCard = document.getElementById("vError");
   const errorText = document.getElementById("vErrorText");
   let autoRetryUsed = false;
@@ -782,8 +837,18 @@ function hydrateVideoPlayer(item, options = {}) {
     state.plyrItemId = item.id;
   }
 
+  const restartPlayback = () => {
+    if (location.pathname !== `/player/video/${item.id}`) return;
+    const stage = document.getElementById("playerStage");
+    if (!stage) return;
+    destroyPlyr();
+    destroyHls();
+    stage.innerHTML = videoMarkup(item);
+    hydrateVideoPlayer(item, { autoplay: true });
+  };
+
   const startManagedHls = () => {
-    if (!managedHlsAvailable) return false;
+    if (!allowManagedHlsFallback) return false;
     debugTrace("hls_start", `id=${item.id} url=${item.hlsUrl}`);
     destroyHls();
     video.removeAttribute("src");
@@ -863,9 +928,14 @@ function hydrateVideoPlayer(item, options = {}) {
     if (errorCard) errorCard.classList.remove("is-visible");
   };
 
-  video.addEventListener("loadedmetadata", clearVideoError);
-  video.addEventListener("canplay", clearVideoError);
-  video.addEventListener("playing", clearVideoError);
+  const markPlaybackStable = () => {
+    state.compatPlaybackFailures[item.id] = 0;
+    clearVideoError();
+  };
+
+  video.addEventListener("loadedmetadata", markPlaybackStable);
+  video.addEventListener("canplay", markPlaybackStable);
+  video.addEventListener("playing", markPlaybackStable);
   video.addEventListener("loadedmetadata", () => {
     debugTrace("video_loadedmetadata", `id=${item.id} readyState=${video.readyState} currentSrc=${video.currentSrc}`);
   });
@@ -880,7 +950,7 @@ function hydrateVideoPlayer(item, options = {}) {
       "video_error",
       `id=${item.id} mode=${item.playbackMode} code=${video.error?.code || ""} readyState=${video.readyState} currentSrc=${video.currentSrc}`,
     );
-    if (item.playbackMode !== "DIRECT" && managedHlsAvailable && !managedHlsFallbackUsed && !state.hls) {
+    if (allowManagedHlsFallback && !managedHlsFallbackUsed && !state.hls) {
       managedHlsFallbackUsed = true;
       debugTrace("video_error_hls_fallback", `id=${item.id}`);
       clearVideoError();
@@ -891,6 +961,24 @@ function hydrateVideoPlayer(item, options = {}) {
       }
       return;
     }
+    if (item.playbackMode !== "DIRECT") {
+      const failureCount = (state.compatPlaybackFailures[item.id] || 0) + 1;
+      state.compatPlaybackFailures[item.id] = failureCount;
+      if (failureCount <= 2) {
+        debugTrace("video_error_retry_compat", `id=${item.id} failures=${failureCount}`);
+        showCompatibilityWaitingStage({
+          ...item,
+          streamReady: false,
+          compatibilityComplete: false,
+        });
+        pollCompat(item.id, {
+          ...item,
+          streamReady: false,
+          compatibilityComplete: false,
+        });
+        return;
+      }
+    }
     if (errorCard) errorCard.classList.add("is-visible");
     if (errorText) {
       errorText.textContent = item.playbackMode === "DIRECT"
@@ -899,34 +987,32 @@ function hydrateVideoPlayer(item, options = {}) {
           : gsStr("web_error_video_start", "This browser could not start the video. Try again or download the original file."))
         : "This video is still opening. Try again in a moment.";
     }
-    if (item.playbackMode !== "DIRECT" && !autoRetryUsed) {
+    if (item.playbackMode === "DIRECT" && !autoRetryUsed) {
       autoRetryUsed = true;
       setTimeout(() => {
-        if (location.pathname !== `/player/video/${item.id}`) return;
         clearVideoError();
-        video.load();
+        restartPlayback();
       }, 1800);
     }
   });
   document.getElementById("retryVideoBtn")?.addEventListener("click", () => {
     debugTrace("video_retry_clicked", `id=${item.id} mode=${item.playbackMode} hasHls=${Boolean(state.hls && state.hlsItemId === item.id)}`);
     clearVideoError();
-    if (state.plyr && state.plyrItemId === item.id) {
-      state.plyr.restart();
-      state.plyr.play().catch(() => {});
-    } else if (state.hls && state.hlsItemId === item.id) {
-      video.play().catch(() => {});
-    } else if (item.playbackMode !== "DIRECT" && managedHlsAvailable) {
-      managedHlsFallbackUsed = true;
-      if (startManagedHls()) {
-        setTimeout(() => {
-          video.play().catch(() => {});
-        }, 200);
-      }
-    } else {
-      video.load();
-      video.play().catch(() => {});
+    state.compatPlaybackFailures[item.id] = 0;
+    if (item.playbackMode !== "DIRECT") {
+      showCompatibilityWaitingStage({
+        ...item,
+        streamReady: false,
+        compatibilityComplete: false,
+      });
+      pollCompat(item.id, {
+        ...item,
+        streamReady: false,
+        compatibilityComplete: false,
+      });
+      return;
     }
+    restartPlayback();
   });
 
   if (options.autoplay) {
@@ -939,7 +1025,7 @@ function hydrateVideoPlayer(item, options = {}) {
     }, 180);
   }
 
-  if (item.playbackMode !== "DIRECT" && managedHlsAvailable && !useManagedHls) {
+  if (allowManagedHlsFallback && !useManagedHls) {
     setTimeout(() => {
       if (location.pathname !== `/player/video/${item.id}`) return;
       if (managedHlsFallbackUsed || state.hls) return;
@@ -989,15 +1075,26 @@ function updateCompatElements(job, streamLive) {
   }
 }
 
-function ensureCompatiblePlayerMounted(item) {
+async function ensureCompatiblePlayerMounted(item) {
+  const mountToken = ++state.compatMountToken;
+  if (item.playbackMode !== "DIRECT") {
+    const ready = await probeCompatiblePlaybackSource(item);
+    if (mountToken !== state.compatMountToken || location.pathname !== `/player/video/${item.id}`) {
+      return false;
+    }
+    if (!ready) {
+      return false;
+    }
+  }
   if (document.getElementById("vPlayer")) {
     hydrateVideoPlayer(item);
-    return;
+    return true;
   }
   const stage = document.getElementById("playerStage");
-  if (!stage) return;
+  if (!stage) return false;
   stage.innerHTML = videoMarkup(item);
   hydrateVideoPlayer(item, { autoplay: true });
+  return true;
 }
 
 async function renderPhotoViewer(id) {
@@ -1210,9 +1307,53 @@ async function pollCompat(id, item) {
   const route = `/player/video/${id}`;
   const token = ++state.compatPollToken;
   let lastTraceKey = "";
+  const applyCompatState = async (job) => {
+    const canStartPlayback = shouldStartCompatibilityPlayback(item, job);
+    const traceKey = `${job.status}|${job.progressPercent ?? ""}|${canStartPlayback}|${job.complete}`;
+    if (traceKey !== lastTraceKey) {
+      lastTraceKey = traceKey;
+      debugTrace(
+        "compat_status",
+        `id=${id} status=${job.status} progress=${job.progressPercent ?? ""} ready=${canStartPlayback} complete=${job.complete}`,
+      );
+    }
+    const nextItem = {
+      ...item,
+      streamReady: canStartPlayback,
+      compatibilityStatus: job.status,
+      compatibilityMessage: job.message,
+      compatibilityProgressPercent: job.progressPercent,
+      compatibilityComplete: job.complete,
+    };
+
+    updateCompatElements(job, canStartPlayback);
+    if (canStartPlayback) {
+      const mounted = await ensureCompatiblePlayerMounted(nextItem);
+      if (mounted) {
+        cancelCompatPolling();
+        return true;
+      }
+      updateCompatElements(job, false);
+      return false;
+    }
+    if (job.status === "FAILED") {
+      updateCompatElements(job, false);
+      cancelCompatPolling();
+      return true;
+    }
+    if (job.complete) {
+      cancelCompatPolling();
+      return true;
+    }
+    return false;
+  };
+
   try {
     debugTrace("compat_prepare_request", `id=${id}`);
-    await api(`/api/compat/${id}/prepare`, { method: "POST" });
+    const prepareJob = await api(`/api/compat/${id}/prepare`, { method: "POST" });
+    if (token === state.compatPollToken && location.pathname === route && await applyCompatState(prepareJob)) {
+      return;
+    }
   } catch (_) {}
 
   let attempts = 0;
@@ -1224,42 +1365,15 @@ async function pollCompat(id, item) {
     try {
       const job = await api(`/api/compat/${id}`);
       if (token !== state.compatPollToken || location.pathname !== route) return;
-      const canStartPlayback = shouldStartCompatibilityPlayback(item, job);
-      const traceKey = `${job.status}|${job.progressPercent ?? ""}|${canStartPlayback}|${job.complete}`;
-      if (traceKey !== lastTraceKey) {
-        lastTraceKey = traceKey;
-        debugTrace(
-          "compat_status",
-          `id=${id} status=${job.status} progress=${job.progressPercent ?? ""} ready=${canStartPlayback} complete=${job.complete}`,
-        );
-      }
-      const nextItem = {
-        ...item,
-        streamReady: canStartPlayback,
-        compatibilityStatus: job.status,
-        compatibilityMessage: job.message,
-        compatibilityProgressPercent: job.progressPercent,
-        compatibilityComplete: job.complete,
-      };
-
-      updateCompatElements(job, canStartPlayback);
-      if (canStartPlayback) {
-        ensureCompatiblePlayerMounted(nextItem);
-      }
-      if (job.complete) {
-        cancelCompatPolling();
-        return;
-      }
-      if (job.status === "FAILED") {
-        updateCompatElements(job, false);
+      if (await applyCompatState(job)) {
         return;
       }
     } catch (_) {}
 
-    state.compatPollTimer = setTimeout(tick, 1200);
+    state.compatPollTimer = setTimeout(tick, 350);
   }
 
-  state.compatPollTimer = setTimeout(tick, 700);
+  state.compatPollTimer = setTimeout(tick, 180);
 }
 
 function cancelCompatPolling() {

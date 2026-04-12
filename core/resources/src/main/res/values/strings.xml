@@ -178,6 +178,13 @@
     <string name="session_qr_title">Scan to open in a browser</string>
     <string name="session_qr_body">Best for phones, tablets, laptops, and TVs on the same Wi-Fi or hotspot.</string>
     <string name="session_qr_preparing">Preparing QR</string>
+    <string name="session_browser_prep_title">Preparing browser files</string>
+    <string name="session_browser_prep_active">%1$d%% • %2$d of %3$d ready</string>
+    <string name="session_browser_prep_queued">%1$d remaining in background</string>
+    <string name="session_browser_prep_ready">%1$d browser files ready</string>
+    <string name="session_browser_prep_message_active">Preparing %1$s for browser playback</string>
+    <string name="session_browser_prep_message_queued">Preparing browser-ready video files in the background</string>
+    <string name="session_browser_prep_message_ready">Browser playback preparation is complete</string>
     <string name="session_waiting_local_link">Waiting for local link</string>
     <string name="session_qr_content_desc">Session QR</string>
     <string name="session_share_link">Share link</string>

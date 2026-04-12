@@ -409,7 +409,7 @@ class MainViewModel(
                 _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_file_no_longer_available)))
                 return@launch
             }
-            container.compatibilityPipeline.requestPreparation(item)
+            container.compatibilityPipeline.requestPreparation(item, prioritize = true)
             _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_preparing_browser_playback, item.displayName)))
         }
     }
@@ -423,6 +423,7 @@ class MainViewModel(
                 container.debugLogRepository.log("MainViewModel", "share started url=${startResult.url}")
                 pendingShareAfterNetworkReady.value = false
                 startSharingInProgress.value = false
+                queueSessionBrowserPlayback()
                 container.debugLogRepository.log("MainViewModel", "emitting StartSharingService")
                 _events.emit(AppEvent.StartSharingService)
                 container.debugLogRepository.log("MainViewModel", "emitting NavigateSession")
@@ -436,6 +437,23 @@ class MainViewModel(
                 _events.emit(AppEvent.ShowMessage(startResult.message))
             }
         }
+    }
+
+    private suspend fun queueSessionBrowserPlayback() {
+        val session = container.sessionManager.sessionState.value
+        if (!session.isSharing) return
+
+        session.selectedItems
+            .filter { item -> item.playbackDecision.mode != com.ghoststream.core.model.PlaybackMode.DIRECT }
+            .forEach { item ->
+                val existing = container.compatibilityPipeline.currentJob(item.id)
+                val alreadyHandled = existing?.status == com.ghoststream.core.media.CompatibilityStatus.READY ||
+                    existing?.status == com.ghoststream.core.media.CompatibilityStatus.QUEUED ||
+                    existing?.status == com.ghoststream.core.media.CompatibilityStatus.PREPARING
+                if (!alreadyHandled) {
+                    container.compatibilityPipeline.requestPreparation(item, prioritize = false)
+                }
+            }
     }
 
     companion object {
