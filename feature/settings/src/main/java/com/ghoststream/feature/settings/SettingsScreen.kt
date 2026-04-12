@@ -134,7 +134,8 @@ fun SettingsScreen(
                                 Button(
                                     onClick = { onThemeModeSelected(mode) },
                                     modifier = Modifier.heightIn(min = 48.dp),
-                                    colors = ButtonDefaults.buttonColors(),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = settingsPrimaryButtonColors(),
                                 ) {
                                     Text(mode.label(), style = MaterialTheme.typography.labelMedium)
                                 }
@@ -142,6 +143,8 @@ fun SettingsScreen(
                                 OutlinedButton(
                                     onClick = { onThemeModeSelected(mode) },
                                     modifier = Modifier.heightIn(min = 48.dp),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = settingsSecondaryButtonColors(),
                                 ) {
                                     Text(mode.label(), style = MaterialTheme.typography.labelMedium)
                                 }
@@ -224,9 +227,8 @@ fun SettingsScreen(
         item {
             SettingsGroup(title = stringResource(R.string.settings_group_help)) {
                 SettingsChoiceRow(stringResource(R.string.settings_view_onboarding), stringResource(R.string.settings_view_onboarding_desc), onViewOnboarding)
-                SettingsChoiceRow(stringResource(R.string.settings_privacy_policy), stringResource(R.string.settings_privacy_policy_desc), onOpenPrivacyPolicy)
-                SettingsChoiceRow(stringResource(R.string.settings_privacy_promise), stringResource(R.string.settings_privacy_promise_desc), onOpenHelp)
                 SettingsChoiceRow(stringResource(R.string.settings_how_it_works), stringResource(R.string.settings_how_it_works_desc), onOpenHelp)
+                SettingsChoiceRow(stringResource(R.string.settings_privacy_policy), stringResource(R.string.settings_privacy_policy_desc), onOpenPrivacyPolicy)
                 SettingsChoiceRow(stringResource(R.string.settings_app_version), appVersionLabel, onClick = {})
                 Text(
                     text = stringResource(R.string.settings_recent_shares_count, recentSessions.size),
@@ -307,6 +309,14 @@ fun HelpScreen(
                 ),
             )
             HelpSectionCard(
+                title = stringResource(R.string.help_section_browser_preparation),
+                lines = listOf(
+                    stringResource(R.string.help_line_prep_optional),
+                    stringResource(R.string.help_line_prep_control),
+                    stringResource(R.string.help_line_prep_batch),
+                ),
+            )
+            HelpSectionCard(
                 title = stringResource(R.string.help_section_receiving_files),
                 lines = listOf(
                     stringResource(R.string.help_line_receive_upload),
@@ -315,11 +325,27 @@ fun HelpScreen(
                 ),
             )
             HelpSectionCard(
+                title = stringResource(R.string.help_section_drop_zone),
+                lines = listOf(
+                    stringResource(R.string.help_line_drop_zone),
+                    stringResource(R.string.help_line_drop_zone_pick),
+                    stringResource(R.string.help_line_drop_zone_local),
+                ),
+            )
+            HelpSectionCard(
                 title = stringResource(R.string.help_section_multiple_devices),
                 lines = listOf(
                     stringResource(R.string.help_line_multi_connect),
                     stringResource(R.string.help_line_multi_live),
                     stringResource(R.string.help_line_multi_controls),
+                ),
+            )
+            HelpSectionCard(
+                title = stringResource(R.string.help_section_privacy_controls),
+                lines = listOf(
+                    stringResource(R.string.help_line_privacy_local),
+                    stringResource(R.string.help_line_privacy_session),
+                    stringResource(R.string.help_line_privacy_controls),
                 ),
             )
             HelpSectionCard(
@@ -500,16 +526,20 @@ private fun ManualPortRow(currentPort: String, onPortChanged: (String) -> Unit) 
 
 @Composable
 private fun SettingsChoiceRow(title: String, value: String, onClick: () -> Unit) {
-    Column(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .heightIn(min = 56.dp) // Matches the rest of the settings list so rows scan and tap consistently.
+            .heightIn(min = 64.dp)
             .padding(horizontal = GhostSpacing.listItem, vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title)
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(value, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(value, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+        }
     }
 }
 
@@ -519,6 +549,22 @@ private fun ThemeMode.label(): String = when (this) {
     ThemeMode.DARK -> androidx.compose.ui.res.stringResource(R.string.settings_theme_dark)
     ThemeMode.LIGHT -> androidx.compose.ui.res.stringResource(R.string.settings_theme_light)
 }
+
+@Composable
+private fun settingsPrimaryButtonColors() = ButtonDefaults.buttonColors(
+    containerColor = MaterialTheme.colorScheme.primary,
+    contentColor = MaterialTheme.colorScheme.onPrimary,
+    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+    disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f),
+)
+
+@Composable
+private fun settingsSecondaryButtonColors() = ButtonDefaults.outlinedButtonColors(
+    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
+    contentColor = MaterialTheme.colorScheme.onSurface,
+    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.44f),
+    disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.46f),
+)
 
 @Composable
 private fun ghostPanelColor(): androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.surface
