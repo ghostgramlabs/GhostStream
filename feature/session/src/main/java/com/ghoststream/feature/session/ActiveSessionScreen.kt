@@ -28,6 +28,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Block
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.StopCircle
 import androidx.compose.material3.Button
@@ -70,7 +72,10 @@ import kotlin.math.roundToInt
 @Composable
 fun ActiveSessionScreen(
     sessionState: SessionState,
+    pendingLibraryItemCount: Int,
+    pendingLibraryFolderCount: Int,
     browserPrepTargetCount: Int,
+    browserPrepQueuedCount: Int,
     browserPrepReadyCount: Int,
     browserPrepPendingCount: Int,
     browserPrepProgressPercent: Int,
@@ -81,6 +86,9 @@ fun ActiveSessionScreen(
     onShareLink: () -> Unit,
     onBack: () -> Unit,
     onTogglePinProtection: (Boolean) -> Unit,
+    onPrepareBrowserFiles: () -> Unit,
+    onStopBrowserFiles: () -> Unit,
+    onRefreshLibrary: () -> Unit,
     onStopSharing: () -> Unit,
     onBlockClient: (String) -> Unit,
     onUnblockClient: (String) -> Unit,
@@ -136,14 +144,25 @@ fun ActiveSessionScreen(
             )
         }
 
+        item {
+            SessionLibraryRefreshCard(
+                pendingItemCount = pendingLibraryItemCount,
+                pendingFolderCount = pendingLibraryFolderCount,
+                onRefreshLibrary = onRefreshLibrary,
+            )
+        }
+
         if (browserPrepTargetCount > 0) {
             item {
                 SessionBrowserPrepCard(
                     targetCount = browserPrepTargetCount,
+                    queuedCount = browserPrepQueuedCount,
                     readyCount = browserPrepReadyCount,
                     pendingCount = browserPrepPendingCount,
                     progressPercent = browserPrepProgressPercent,
                     activeFileName = browserPrepActiveFileName,
+                    onPrepareBrowserFiles = onPrepareBrowserFiles,
+                    onStopBrowserFiles = onStopBrowserFiles,
                 )
             }
         }
@@ -184,12 +203,10 @@ fun ActiveSessionScreen(
 }
 
 @Composable
-private fun SessionBrowserPrepCard(
-    targetCount: Int,
-    readyCount: Int,
-    pendingCount: Int,
-    progressPercent: Int,
-    activeFileName: String?,
+private fun SessionLibraryRefreshCard(
+    pendingItemCount: Int,
+    pendingFolderCount: Int,
+    onRefreshLibrary: () -> Unit,
 ) {
     Card(
         modifier = Modifier
@@ -203,13 +220,70 @@ private fun SessionBrowserPrepCard(
             modifier = Modifier.padding(GhostSpacing.card),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            Text(
+                text = stringResource(R.string.session_library_refresh_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = if (pendingItemCount > 0 || pendingFolderCount > 0) {
+                    stringResource(
+                        R.string.session_library_refresh_pending,
+                        pendingItemCount,
+                        pendingFolderCount,
+                    )
+                } else {
+                    stringResource(R.string.session_library_refresh_up_to_date)
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            OutlinedButton(
+                onClick = onRefreshLibrary,
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                Icon(Icons.Outlined.Refresh, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.session_refresh_library))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SessionBrowserPrepCard(
+    targetCount: Int,
+    queuedCount: Int,
+    readyCount: Int,
+    pendingCount: Int,
+    progressPercent: Int,
+    activeFileName: String?,
+    onPrepareBrowserFiles: () -> Unit,
+    onStopBrowserFiles: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .padding(horizontal = GhostSpacing.screenHorizontal)
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Column(
+            modifier = Modifier.padding(GhostSpacing.card),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            val inProgress = !activeFileName.isNullOrBlank() || queuedCount > 0
+            val showProgress = inProgress || readyCount > 0 || pendingCount <= 0
             val statusMessage = when {
                 pendingCount <= 0 -> stringResource(R.string.session_browser_prep_message_ready)
                 !activeFileName.isNullOrBlank() -> stringResource(
                     R.string.session_browser_prep_message_active,
                     activeFileName,
                 )
-                else -> stringResource(R.string.session_browser_prep_message_queued)
+                queuedCount > 0 -> stringResource(R.string.session_browser_prep_message_queued)
+                else -> stringResource(R.string.session_browser_prep_message_manual)
             }
             val progressLabel = when {
                 pendingCount <= 0 -> stringResource(R.string.session_browser_prep_ready, readyCount)
@@ -219,7 +293,8 @@ private fun SessionBrowserPrepCard(
                     readyCount,
                     targetCount,
                 )
-                else -> stringResource(R.string.session_browser_prep_queued, pendingCount)
+                queuedCount > 0 -> stringResource(R.string.session_browser_prep_queued, pendingCount)
+                else -> stringResource(R.string.session_browser_prep_ready, readyCount)
             }
             Text(
                 text = activeFileName?.takeIf { it.isNotBlank() } ?: stringResource(R.string.session_browser_prep_title),
@@ -234,22 +309,48 @@ private fun SessionBrowserPrepCard(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            LinearProgressIndicator(
-                progress = {
-                    when {
-                        targetCount <= 0 -> 0f
-                        pendingCount <= 0 -> 1f
-                        !activeFileName.isNullOrBlank() -> progressPercent.coerceIn(0, 100) / 100f
-                        else -> readyCount.toFloat() / targetCount.toFloat()
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Text(
-                text = progressLabel,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            if (showProgress) {
+                LinearProgressIndicator(
+                    progress = {
+                        when {
+                            targetCount <= 0 -> 0f
+                            pendingCount <= 0 -> 1f
+                            !activeFileName.isNullOrBlank() -> progressPercent.coerceIn(0, 100) / 100f
+                            else -> readyCount.toFloat() / targetCount.toFloat()
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    text = progressLabel,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (pendingCount > 0 && !inProgress) {
+                Text(
+                    text = stringResource(R.string.session_browser_prep_manual_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedButton(
+                    onClick = onPrepareBrowserFiles,
+                    shape = RoundedCornerShape(16.dp),
+                ) {
+                    Icon(Icons.Outlined.PlayArrow, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.session_prepare_browser_files))
+                }
+            } else if (inProgress) {
+                OutlinedButton(
+                    onClick = onStopBrowserFiles,
+                    shape = RoundedCornerShape(16.dp),
+                ) {
+                    Icon(Icons.Outlined.StopCircle, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.session_stop_browser_files))
+                }
+            }
         }
     }
 }

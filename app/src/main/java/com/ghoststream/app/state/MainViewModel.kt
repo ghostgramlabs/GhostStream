@@ -41,6 +41,7 @@ class MainViewModel(
     private val smartGroupsLoading = MutableStateFlow(false)
     private val pendingShareAfterNetworkReady = MutableStateFlow(false)
     private val startSharingInProgress = MutableStateFlow(false)
+    private val libraryImportingCount = MutableStateFlow(0)
     private val connectingNearbyDeviceId = MutableStateFlow<String?>(null)
     private val _events = MutableSharedFlow<AppEvent>(extraBufferCapacity = 8)
 
@@ -57,6 +58,7 @@ class MainViewModel(
         container.nsdDiscoveryManager.discoveryState,
         pendingShareAfterNetworkReady,
         startSharingInProgress,
+        libraryImportingCount,
         connectingNearbyDeviceId,
         container.sessionManager.pendingUploadRequest,
         container.historyRepository.allHistory,
@@ -71,9 +73,10 @@ class MainViewModel(
         val nearbyDiscoveryState = values[7] as NearbyDiscoveryState
         val pendingShare = values[8] as Boolean
         val isStartingShare = values[9] as Boolean
-        val connectingNearbyId = values[10] as String?
-        val pendingUpload = values[11] as com.ghoststream.core.model.UploadRequest?
-        val history = values[12] as List<com.ghoststream.core.model.TransferRecord>
+        val importingCount = values[10] as Int
+        val connectingNearbyId = values[11] as String?
+        val pendingUpload = values[12] as com.ghoststream.core.model.UploadRequest?
+        val history = values[13] as List<com.ghoststream.core.model.TransferRecord>
         val filteredNearbyDiscoveryState = nearbyDiscoveryState.filterCurrentSession(session, application)
         MainUiState(
             isReady = true,
@@ -92,6 +95,7 @@ class MainViewModel(
             nearbyDiscoveryState = filteredNearbyDiscoveryState,
             pendingShareAfterNetworkReady = pendingShare,
             isStartingShare = isStartingShare,
+            libraryImportingCount = importingCount,
             connectingNearbyDeviceId = connectingNearbyId,
             pendingUploadRequest = pendingUpload,
             transferHistory = history,
@@ -162,22 +166,37 @@ class MainViewModel(
 
     fun addFiles(uris: List<Uri>) {
         viewModelScope.launch {
-            container.storageRepository.addFiles(uris)
+            libraryImportingCount.value += uris.size
+            try {
+                container.storageRepository.addFiles(uris)
+            } finally {
+                libraryImportingCount.value = (libraryImportingCount.value - uris.size).coerceAtLeast(0)
+            }
         }
     }
 
     fun addFolder(uri: Uri) {
         viewModelScope.launch {
-            val result = container.storageRepository.addFolder(uri)
-            result.exceptionOrNull()?.let {
-                _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_unable_add_folder)))
+            libraryImportingCount.value += 1
+            try {
+                val result = container.storageRepository.addFolder(uri)
+                result.exceptionOrNull()?.let {
+                    _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_unable_add_folder)))
+                }
+            } finally {
+                libraryImportingCount.value = (libraryImportingCount.value - 1).coerceAtLeast(0)
             }
         }
     }
 
     fun addSmartSelection(uris: List<Uri>) {
         viewModelScope.launch {
-            container.storageRepository.addSmartSelection(uris)
+            libraryImportingCount.value += uris.size
+            try {
+                container.storageRepository.addSmartSelection(uris)
+            } finally {
+                libraryImportingCount.value = (libraryImportingCount.value - uris.size).coerceAtLeast(0)
+            }
         }
     }
 
@@ -414,6 +433,60 @@ class MainViewModel(
         }
     }
 
+    fun prepareLiveBrowserFiles() {
+        viewModelScope.launch {
+            val session = container.sessionManager.sessionState.value
+            if (!session.isSharing) {
+                _events.emit(AppEvent.ShowMessage(application.getString(R.string.main_not_sharing)))
+                return@launch
+            }
+
+            val queuedCount = queueSessionBrowserPlayback()
+            val message = if (queuedCount > 0) {
+                application.getString(R.string.message_browser_playback_queued_all, queuedCount)
+            } else {
+                application.getString(R.string.message_browser_playback_already_ready)
+            }
+            _events.emit(AppEvent.ShowMessage(message))
+        }
+    }
+
+    fun stopLiveBrowserFiles() {
+        viewModelScope.launch {
+            container.compatibilityPipeline.cancelPendingPreparations()
+            _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_browser_playback_stopped)))
+        }
+    }
+
+    fun refreshLiveLibrary() {
+        viewModelScope.launch {
+            val session = container.sessionManager.sessionState.value
+            if (!session.isSharing) {
+                _events.emit(AppEvent.ShowMessage(application.getString(R.string.main_not_sharing)))
+                return@launch
+            }
+
+            val library = container.storageRepository.libraryState.value
+            val previousItemIds = session.selectedItems.mapTo(mutableSetOf()) { it.id }
+            val previousFolderIds = session.selectedFolders.mapTo(mutableSetOf()) { it.id }
+            val newItemCount = library.items.count { it.id !in previousItemIds }
+            val newFolderCount = library.folders.count { it.id !in previousFolderIds }
+
+            container.sessionManager.refreshSelection(library.items, library.folders)
+
+            val message = if (newItemCount > 0 || newFolderCount > 0) {
+                application.getString(
+                    R.string.message_live_library_refreshed_updates,
+                    newItemCount,
+                    newFolderCount,
+                )
+            } else {
+                application.getString(R.string.message_live_library_refreshed_current)
+            }
+            _events.emit(AppEvent.ShowMessage(message))
+        }
+    }
+
     private suspend fun startSharingAfterReadyCheck() {
         container.debugLogRepository.log("MainViewModel", "startSharingAfterReadyCheck")
         when (val startResult = withContext(Dispatchers.IO) {
@@ -423,7 +496,6 @@ class MainViewModel(
                 container.debugLogRepository.log("MainViewModel", "share started url=${startResult.url}")
                 pendingShareAfterNetworkReady.value = false
                 startSharingInProgress.value = false
-                queueSessionBrowserPlayback()
                 container.debugLogRepository.log("MainViewModel", "emitting StartSharingService")
                 _events.emit(AppEvent.StartSharingService)
                 container.debugLogRepository.log("MainViewModel", "emitting NavigateSession")
@@ -439,10 +511,11 @@ class MainViewModel(
         }
     }
 
-    private suspend fun queueSessionBrowserPlayback() {
+    private suspend fun queueSessionBrowserPlayback(): Int {
         val session = container.sessionManager.sessionState.value
-        if (!session.isSharing) return
+        if (!session.isSharing) return 0
 
+        var queuedCount = 0
         session.selectedItems
             .filter { item -> item.playbackDecision.mode != com.ghoststream.core.model.PlaybackMode.DIRECT }
             .forEach { item ->
@@ -452,8 +525,10 @@ class MainViewModel(
                     existing?.status == com.ghoststream.core.media.CompatibilityStatus.PREPARING
                 if (!alreadyHandled) {
                     container.compatibilityPipeline.requestPreparation(item, prioritize = false)
+                    queuedCount += 1
                 }
             }
+        return queuedCount
     }
 
     companion object {

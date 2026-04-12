@@ -24,6 +24,7 @@ data class MainUiState(
     val nearbyDiscoveryState: NearbyDiscoveryState = NearbyDiscoveryState(),
     val pendingShareAfterNetworkReady: Boolean = false,
     val isStartingShare: Boolean = false,
+    val libraryImportingCount: Int = 0,
     val connectingNearbyDeviceId: String? = null,
     val pendingUploadRequest: com.ghoststream.core.model.UploadRequest? = null,
     val transferHistory: List<TransferRecord> = emptyList(),

@@ -1341,10 +1341,6 @@ async function pollCompat(id, item) {
       cancelCompatPolling();
       return true;
     }
-    if (job.complete) {
-      cancelCompatPolling();
-      return true;
-    }
     return false;
   };
 

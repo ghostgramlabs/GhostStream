@@ -573,30 +573,35 @@ class AndroidStorageRepository(
             return item.copy(isAvailable = false)
         }
 
-        return runCatching {
-            val meta = context.contentResolver.queryOpenableMeta(uri)
-            val resolvedMimeType = meta.mimeType ?: item.mimeType
-            val inspection = mediaAnalyzer.inspect(uri, resolvedMimeType, meta.displayName)
-            val playbackDecision = mediaAnalyzer.decidePlayback(inspection)
-            item.copy(
-                displayName = meta.displayName,
-                mimeType = resolvedMimeType,
-                category = determineCategory(resolvedMimeType, meta.displayName),
-                sizeBytes = meta.sizeBytes.takeIf { it > 0L } ?: item.sizeBytes,
-                durationMs = mediaAnalyzer.readDurationMs(uri, resolvedMimeType) ?: item.durationMs,
-                lastModifiedEpochMs = meta.lastModifiedEpochMs ?: item.lastModifiedEpochMs,
-                playbackDecision = playbackDecision,
-                isAvailable = true,
-                metadata = buildMap {
-                    put("source", uri.authority ?: "local")
-                    inspection.videoTrackMimeType?.let { put("video_codec", it) }
-                    inspection.audioTrackMimeType?.let { put("audio_codec", it) }
-                    put("browser_safe", inspection.browserSafe.toString())
-                },
-            )
-        }.getOrElse {
-            item.copy(isAvailable = false)
-        }
+        val meta = runCatching {
+            context.contentResolver.queryOpenableMeta(uri)
+        }.getOrNull() ?: return item.copy(isAvailable = true)
+
+        val resolvedMimeType = meta.mimeType ?: item.mimeType
+        val inspection = runCatching {
+            mediaAnalyzer.inspect(uri, resolvedMimeType, meta.displayName)
+        }.getOrNull()
+        val playbackDecision = inspection?.let(mediaAnalyzer::decidePlayback) ?: item.playbackDecision
+        val metadata = inspection?.let { refreshedInspection ->
+            buildMap {
+                put("source", uri.authority ?: "local")
+                refreshedInspection.videoTrackMimeType?.let { put("video_codec", it) }
+                refreshedInspection.audioTrackMimeType?.let { put("audio_codec", it) }
+                put("browser_safe", refreshedInspection.browserSafe.toString())
+            }
+        } ?: item.metadata
+
+        return item.copy(
+            displayName = meta.displayName,
+            mimeType = resolvedMimeType,
+            category = determineCategory(resolvedMimeType, meta.displayName),
+            sizeBytes = meta.sizeBytes.takeIf { it > 0L } ?: item.sizeBytes,
+            durationMs = runCatching { mediaAnalyzer.readDurationMs(uri, resolvedMimeType) }.getOrNull() ?: item.durationMs,
+            lastModifiedEpochMs = meta.lastModifiedEpochMs ?: item.lastModifiedEpochMs,
+            playbackDecision = playbackDecision,
+            isAvailable = true,
+            metadata = metadata,
+        )
     }
 
     private data class OpenableMeta(

@@ -394,6 +394,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                 SharedLibraryScreen(
                     libraryState = uiState.libraryState,
                     compatibilityJobs = uiState.compatibilityJobs,
+                    libraryImportingCount = uiState.libraryImportingCount,
                     showThumbnails = uiState.settings.showThumbnails,
                     onBack = { navController.popBackStack() },
                     onPrepareItem = viewModel::requestPrepareItem,
@@ -475,14 +476,26 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                         ?.takeIf { it.status == com.ghoststream.core.media.CompatibilityStatus.PREPARING }
                         ?.let { item to it }
                 }
+                val browserPrepQueuedCount = browserPrepCandidates.count { item ->
+                    val status = uiState.compatibilityJobs[item.id]?.status
+                    status == com.ghoststream.core.media.CompatibilityStatus.QUEUED ||
+                        status == com.ghoststream.core.media.CompatibilityStatus.PREPARING
+                }
                 val browserPrepReadyCount = browserPrepCandidates.count { item ->
                     val job = uiState.compatibilityJobs[item.id]
                     job?.status == com.ghoststream.core.media.CompatibilityStatus.READY || job?.preparedAsset?.isComplete == true
                 }
                 val browserPrepPendingCount = (browserPrepCandidates.size - browserPrepReadyCount).coerceAtLeast(0)
+                val liveLibraryItemIds = uiState.sessionState.selectedItems.mapTo(mutableSetOf()) { it.id }
+                val liveLibraryFolderIds = uiState.sessionState.selectedFolders.mapTo(mutableSetOf()) { it.id }
+                val pendingLibraryItemCount = uiState.libraryState.items.count { it.id !in liveLibraryItemIds }
+                val pendingLibraryFolderCount = uiState.libraryState.folders.count { it.id !in liveLibraryFolderIds }
                 ActiveSessionScreen(
                     sessionState = uiState.sessionState,
+                    pendingLibraryItemCount = pendingLibraryItemCount,
+                    pendingLibraryFolderCount = pendingLibraryFolderCount,
                     browserPrepTargetCount = browserPrepCandidates.size,
+                    browserPrepQueuedCount = browserPrepQueuedCount,
                     browserPrepReadyCount = browserPrepReadyCount,
                     browserPrepPendingCount = browserPrepPendingCount,
                     browserPrepProgressPercent = activeBrowserPrep?.second?.progressPercent ?: 0,
@@ -517,6 +530,9 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                         }
                     },
                     onTogglePinProtection = viewModel::updateSessionPinProtection,
+                    onPrepareBrowserFiles = viewModel::prepareLiveBrowserFiles,
+                    onStopBrowserFiles = viewModel::stopLiveBrowserFiles,
+                    onRefreshLibrary = viewModel::refreshLiveLibrary,
                     onBack = { navController.popBackStack() },
                     onStopSharing = viewModel::requestStopSharing,
                     onBlockClient = viewModel::blockClient,
