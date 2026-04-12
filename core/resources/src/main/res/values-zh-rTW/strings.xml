@@ -625,4 +625,6 @@
     <string name="common_unit_mb">MB</string>
     <string name="common_unit_gb">GB</string>
     <string name="common_unit_tb">TB</string>
+    <string name="service_file_index_pattern">%1$s (%2$d/%3$d)</string>
+    <string name="service_upload_progress_subtext_pattern">%1$s / %2$s</string>
 </resources>

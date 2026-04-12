@@ -331,8 +331,10 @@ class KtorGhostStreamServer(
                             "web_player_status_playing" to localizedContext.getString(R.string.web_player_status_playing),
                             "web_btn_back" to localizedContext.getString(R.string.web_btn_back),
                             "web_status_subtitles_available" to localizedContext.getString(R.string.web_status_subtitles_available),
+                            "web_now_playing" to localizedContext.getString(R.string.web_now_playing),
                             "common_play" to localizedContext.getString(R.string.common_play),
                             "common_pause" to localizedContext.getString(R.string.common_pause),
+                            "common_resume" to localizedContext.getString(R.string.common_resume),
                         ),
                     ),
                 )
@@ -508,7 +510,7 @@ class KtorGhostStreamServer(
                 if (!call.authorizeBrowserCall()) return@get
                 val settings = settingsRepository.settings.first()
                 if (settings.preventDownload) {
-                    call.respond(HttpStatusCode.Forbidden, ErrorPayload("Downloads are disabled for this session."))
+                    call.respond(HttpStatusCode.Forbidden, ErrorPayload(localizedContext().getString(R.string.web_error_downloads_disabled)))
                     return@get
                 }
                 call.streamItem(
@@ -522,7 +524,7 @@ class KtorGhostStreamServer(
                 if (!call.authorizeBrowserCall()) return@get
                 val itemId = call.parameters["id"]
                 val item = resolveItem(itemId) ?: run {
-                    call.respond(HttpStatusCode.NotFound, ErrorPayload("This file is no longer available on your device."))
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.browser_file_unavailable)))
                     return@get
                 }
                 val activity = when (item.category) {
@@ -547,12 +549,12 @@ class KtorGhostStreamServer(
                     requireFirstSegment = true,
                 ) ?: run {
                     debugLogSink.log("WebHls", "playlist pending id=${source.item.id}")
-                    call.respond(HttpStatusCode.Accepted, ErrorPayload("Preparing the HLS stream for iPhone playback."))
+                    call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
                     return@get
                 }
                 if (index.segments.isEmpty()) {
                     debugLogSink.log("WebHls", "playlist empty id=${source.item.id} init=${index.initSegmentLength} file=${index.fileLength}")
-                    call.respond(HttpStatusCode.Accepted, ErrorPayload("Preparing the HLS stream for iPhone playback."))
+                    call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
                     return@get
                 }
                 debugLogSink.log(
@@ -584,12 +586,12 @@ class KtorGhostStreamServer(
                     requireFirstSegment = false,
                 ) ?: run {
                     debugLogSink.log("WebHls", "init pending id=${source.item.id}")
-                    call.respond(HttpStatusCode.Accepted, ErrorPayload("Preparing the HLS stream for iPhone playback."))
+                    call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
                     return@get
                 }
                 if (index.initSegmentLength <= 0L) {
                     debugLogSink.log("WebHls", "init empty id=${source.item.id}")
-                    call.respond(HttpStatusCode.Accepted, ErrorPayload("Preparing the HLS stream for iPhone playback."))
+                    call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
                     return@get
                 }
                 debugLogSink.log("WebHls", "init served id=${source.item.id} bytes=${index.initSegmentLength}")

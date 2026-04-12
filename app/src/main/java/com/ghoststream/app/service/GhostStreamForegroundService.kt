@@ -317,7 +317,7 @@ class GhostStreamForegroundService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val fileLabel = if (progress.fileCount > 1) {
-            "${progress.currentFileName} (${progress.currentFileIndex}/${progress.fileCount})"
+            getString(SharedR.string.service_file_index_pattern, progress.currentFileName, progress.currentFileIndex, progress.fileCount)
         } else {
             progress.currentFileName
         }
@@ -332,7 +332,7 @@ class GhostStreamForegroundService : Service() {
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(getString(SharedR.string.service_upload_progress_title, fileLabel))
             .setContentText(detail)
-            .setSubText("${formatBytes(progress.transferredBytes)} / ${formatBytes(progress.totalSizeBytes)}")
+            .setSubText(getString(SharedR.string.service_upload_progress_subtext_pattern, formatBytes(progress.transferredBytes), formatBytes(progress.totalSizeBytes)))
             .setContentIntent(openAppIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
