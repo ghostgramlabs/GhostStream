@@ -553,4 +553,13 @@
     <string name="web_search_placeholder">按文件名搜索</string>
     <string name="web_selection_count">已选择 %1$d</string>
     <string name="web_status_selection_on">选择于</string>
+    <string name="service_upload_progress_title">正在接收 %1$s</string>
+    <string name="service_upload_progress_text">来自 %2$s 的 %1$d%% 到下载</string>
+    <string name="service_upload_progress_text_unknown">正在从 %1$s 接收到下载</string>
+    <string name="service_upload_success_title">%1$s 保存成功</string>
+    <string name="service_upload_success_text">已收到来自 %1$s 的文件</string>
+    <string name="service_upload_success_subtext">已保存到下载</string>
+    <string name="library_clear_all_action">清除全部</string>
+    <string name="library_clear_all_title">清除此库？</string>
+    <string name="library_clear_all_body">这将从当前库中移除所有共享的文件和文件夹。</string>
 </resources>

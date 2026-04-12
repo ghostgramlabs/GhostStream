@@ -553,4 +553,13 @@
     <string name="web_search_placeholder">Cerca per nome file</string>
     <string name="web_selection_count">%1$d selezionato</string>
     <string name="web_status_selection_on">Selezione attiva</string>
+    <string name="service_upload_progress_title">Ricezione di %1$s</string>
+    <string name="service_upload_progress_text">%1$d%% da %2$s a Download</string>
+    <string name="service_upload_progress_text_unknown">Ricezione da %1$s a Download</string>
+    <string name="service_upload_success_title">%1$s salvato con successo</string>
+    <string name="service_upload_success_text">Ricevuto da %1$s</string>
+    <string name="service_upload_success_subtext">Salvato in Download</string>
+    <string name="library_clear_all_action">Svuota tutto</string>
+    <string name="library_clear_all_title">Svuotare questa libreria?</string>
+    <string name="library_clear_all_body">Questo rimuove tutti i file e le cartelle condivisi dalla libreria corrente.</string>
 </resources>

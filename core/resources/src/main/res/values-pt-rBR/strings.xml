@@ -526,4 +526,13 @@
     <string name="web_search_placeholder">Pesquise por nome de arquivo</string>
     <string name="web_selection_count">%1$d selecionado</string>
     <string name="web_status_selection_on">Seleção ativada</string>
+    <string name="service_upload_progress_title">Recebendo %1$s</string>
+    <string name="service_upload_progress_text">%1$d%% de %2$s para Downloads</string>
+    <string name="service_upload_progress_text_unknown">Recebendo de %1$s para Downloads</string>
+    <string name="service_upload_success_title">%1$s salvo com sucesso</string>
+    <string name="service_upload_success_text">Recebido de %1$s</string>
+    <string name="service_upload_success_subtext">Salvo em Downloads</string>
+    <string name="library_clear_all_action">Limpar tudo</string>
+    <string name="library_clear_all_title">Limpar esta biblioteca?</string>
+    <string name="library_clear_all_body">Isso remove todos os arquivos e pastas compartilhados da biblioteca atual.</string>
 </resources>

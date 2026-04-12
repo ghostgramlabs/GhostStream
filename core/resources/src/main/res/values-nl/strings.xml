@@ -553,4 +553,13 @@
     <string name="web_search_placeholder">Zoek op bestandsnaam</string>
     <string name="web_selection_count">%1$d geselecteerd</string>
     <string name="web_status_selection_on">Selectie ingeschakeld</string>
+    <string name="service_upload_progress_title">Ontvangen van %1$s</string>
+    <string name="service_upload_progress_text">%1$d%% van %2$s naar Downloads</string>
+    <string name="service_upload_progress_text_unknown">Ontvangen van %1$s naar Downloads</string>
+    <string name="service_upload_success_title">%1$s succesvol opgeslagen</string>
+    <string name="service_upload_success_text">Ontvangen van %1$s</string>
+    <string name="service_upload_success_subtext">Opgeslagen in Downloads</string>
+    <string name="library_clear_all_action">Alles wissen</string>
+    <string name="library_clear_all_title">Deze bibliotheek wissen?</string>
+    <string name="library_clear_all_body">Dit verwijdert alle gedeelde bestanden en mappen uit de huidige bibliotheek.</string>
 </resources>

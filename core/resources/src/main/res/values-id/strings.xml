@@ -574,4 +574,13 @@
     <string name="web_search_placeholder">Cari berdasarkan nama file</string>
     <string name="web_selection_count">%1$d dipilih</string>
     <string name="web_status_selection_on">Seleksi aktif</string>
+    <string name="service_upload_progress_title">Menerima %1$s</string>
+    <string name="service_upload_progress_text">%1$d%% dari %2$s ke Unduhan</string>
+    <string name="service_upload_progress_text_unknown">Menerima dari %1$s ke Unduhan</string>
+    <string name="service_upload_success_title">%1$s berhasil disimpan</string>
+    <string name="service_upload_success_text">Diterima dari %1$s</string>
+    <string name="service_upload_success_subtext">Disimpan ke Unduhan</string>
+    <string name="library_clear_all_action">Hapus semua</string>
+    <string name="library_clear_all_title">Hapus perpustakaan ini?</string>
+    <string name="library_clear_all_body">Ini akan menghapus semua file dan folder yang dibagikan dari perpustakaan saat ini.</string>
 </resources>

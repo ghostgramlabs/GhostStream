@@ -574,4 +574,13 @@
     <string name="web_search_placeholder">ഫയലിൻ്റെ പേര് ഉപയോഗിച്ച് തിരയുക</string>
     <string name="web_selection_count">%1$d തിരഞ്ഞെടുത്തു</string>
     <string name="web_status_selection_on">തിരഞ്ഞെടുക്കൽ ഓണാണ്</string>
+    <string name="service_upload_progress_title">%1$s ലഭിച്ചുകൊണ്ടിരിക്കുന്നു</string>
+    <string name="service_upload_progress_text">%2$s-ൽ നിന്ന് %1$d%% ഡൗൺലോഡ്‌സിലേക്ക്</string>
+    <string name="service_upload_progress_text_unknown">%1$s-ൽ നിന്ന് ഡൗൺലോഡ്‌സിലേക്ക് ലഭിച്ചുകൊണ്ടിരിക്കുന്നു</string>
+    <string name="service_upload_success_title">%1$s വിജയകരമായി സംരക്ഷിച്ചു</string>
+    <string name="service_upload_success_text">%1$s-ൽ നിന്ന് ലഭിച്ചു</string>
+    <string name="service_upload_success_subtext">ഡൗൺലോഡ്‌സിലേക്ക് സംരക്ഷിച്ചു</string>
+    <string name="library_clear_all_action">എല്ലാം ക്ലിയർ ചെയ്യുക</string>
+    <string name="library_clear_all_title">ഈ ലൈബ്രറി ക്ലിയർ ചെയ്യണോ?</string>
+    <string name="library_clear_all_body">ഇത് നിലവിലെ ലൈബ്രറിയിൽ നിന്ന് പങ്കിട്ട എല്ലാ ഫയലുകളും ഫോൾഡറുകളും നീക്കംചെയ്യും.</string>
 </resources>

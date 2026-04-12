@@ -553,4 +553,13 @@
     <string name="web_search_placeholder">Поиск по имени файла</string>
     <string name="web_selection_count">%1$d выбрано</string>
     <string name="web_status_selection_on">Выбор включен</string>
+    <string name="service_upload_progress_title">Получение %1$s</string>
+    <string name="service_upload_progress_text">%1$d%% от %2$s в Загрузки</string>
+    <string name="service_upload_progress_text_unknown">Получение от %1$s в Загрузки</string>
+    <string name="service_upload_success_title">%1$s успешно сохранено</string>
+    <string name="service_upload_success_text">Получено от %1$s</string>
+    <string name="service_upload_success_subtext">Сохранено в Загрузки</string>
+    <string name="library_clear_all_action">Очистить всё</string>
+    <string name="library_clear_all_title">Очистить библиотеку?</string>
+    <string name="library_clear_all_body">Это удалит все общие файлы и папки из текущей библиотеки.</string>
 </resources>

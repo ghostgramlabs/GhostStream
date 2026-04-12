@@ -574,4 +574,13 @@
     <string name="web_search_placeholder">ఫైల్ పేరు ద్వారా శోధించండి</string>
     <string name="web_selection_count">%1$d ఎంచుకోబడింది</string>
     <string name="web_status_selection_on">ఎంపిక ఆన్‌లో ఉంది</string>
+    <string name="service_upload_progress_title">%1$s అందుతోంది</string>
+    <string name="service_upload_progress_text">%2$s నుండి %1$d%% డౌన్‌లోడ్‌లకు</string>
+    <string name="service_upload_progress_text_unknown">%1$s నుండి డౌన్‌లోడ్‌లకు అందుతోంది</string>
+    <string name="service_upload_success_title">%1$s విజయవంతంగా సేవ్ చేయబడింది</string>
+    <string name="service_upload_success_text">%1$s నుండి అందుకున్నారు</string>
+    <string name="service_upload_success_subtext">డౌన్‌లోడ్‌లలో సేవ్ చేయబడింది</string>
+    <string name="library_clear_all_action">అన్నీ క్లియర్ చేయి</string>
+    <string name="library_clear_all_title">ఈ లైబ్రరీని క్లియర్ చేయాలా?</string>
+    <string name="library_clear_all_body">ఇది ప్రస్తుత లైబ్రరీ నుండి షేర్ చేసిన అన్ని ఫైల్‌లు మరియు ఫోల్డర్‌లను తొలగిస్తుంది.</string>
 </resources>

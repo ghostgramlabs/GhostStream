@@ -553,4 +553,13 @@
     <string name="web_search_placeholder">파일 이름으로 검색</string>
     <string name="web_selection_count">%1$d 선택됨</string>
     <string name="web_status_selection_on">선택 항목</string>
+    <string name="service_upload_progress_title">%1$s 수신 중</string>
+    <string name="service_upload_progress_text">%2$s로부터 다운로드로 %1$d%%</string>
+    <string name="service_upload_progress_text_unknown">%1$s로부터 다운로드로 수신 중</string>
+    <string name="service_upload_success_title">%1$s을(를) 성공적으로 저장했습니다</string>
+    <string name="service_upload_success_text">%1$s로부터 수신됨</string>
+    <string name="service_upload_success_subtext">다운로드에 저장됨</string>
+    <string name="library_clear_all_action">모두 지우기</string>
+    <string name="library_clear_all_title">이 라이브러리를 지우시겠습니까?</string>
+    <string name="library_clear_all_body">현재 라이브러리에서 공유된 모든 파일과 폴더를 삭제합니다.</string>
 </resources>

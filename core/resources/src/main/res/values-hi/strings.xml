@@ -553,4 +553,13 @@
     <string name="web_search_placeholder">फ़ाइल नाम से खोजें</string>
     <string name="web_selection_count">%1$d चयनित</string>
     <string name="web_status_selection_on">चयन चालू</string>
+    <string name="service_upload_progress_title">%1$s प्राप्त हो रहा है</string>
+    <string name="service_upload_progress_text">%2$s से %1$d%% डाउनलोड में</string>
+    <string name="service_upload_progress_text_unknown">%1$s से डाउनलोड में प्राप्त हो रहा है</string>
+    <string name="service_upload_success_title">%1$s सफलतापूर्वक सहेजा गया</string>
+    <string name="service_upload_success_text">%1$s से प्राप्त हुआ</string>
+    <string name="service_upload_success_subtext">डाउनलोड में सहेजा गया</string>
+    <string name="library_clear_all_action">सभी साफ़ करें</string>
+    <string name="library_clear_all_title">क्या इस लाइब्रेरी को साफ़ करें?</string>
+    <string name="library_clear_all_body">यह वर्तमान लाइब्रेरी से सभी साझा की गई फ़ाइलों और फ़ोल्डरों को हटा देता है।</string>
 </resources>

@@ -310,6 +310,7 @@ class KtorGhostStreamServer(
                             "web_library_desc_browse" to localizedContext.getString(R.string.web_library_desc_browse),
                             "web_search_placeholder" to localizedContext.getString(R.string.web_search_placeholder),
                             "web_library_empty" to localizedContext.getString(R.string.web_library_empty),
+                            "library_title" to localizedContext.getString(R.string.library_title),
                         ),
                     ),
                 )

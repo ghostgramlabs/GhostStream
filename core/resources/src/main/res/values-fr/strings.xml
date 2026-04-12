@@ -573,4 +573,13 @@
     <string name="web_search_placeholder">Recherche par nom de fichier</string>
     <string name="web_selection_count">%1$d sélectionné</string>
     <string name="web_status_selection_on">Sélection sur</string>
+    <string name="service_upload_progress_title">Réception de %1$s</string>
+    <string name="service_upload_progress_text">%1$d%% de %2$s vers Téléchargements</string>
+    <string name="service_upload_progress_text_unknown">Réception de %1$s vers Téléchargements</string>
+    <string name="service_upload_success_title">%1$s enregistré avec succès</string>
+    <string name="service_upload_success_text">Reçu de %1$s</string>
+    <string name="service_upload_success_subtext">Enregistré dans Téléchargements</string>
+    <string name="library_clear_all_action">Tout effacer</string>
+    <string name="library_clear_all_title">Effacer cette bibliothèque ?</string>
+    <string name="library_clear_all_body">Cela supprime tous les fichiers et dossiers partagés de la bibliothèque actuelle.</string>
 </resources>

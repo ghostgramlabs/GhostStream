@@ -529,4 +529,10 @@
     <string name="web_search_placeholder">Sök efter filnamn</string>
     <string name="web_selection_count">%1$d vald</string>
     <string name="web_status_selection_on">Urval på</string>
+    <string name="service_upload_progress_title">Tar emot %1$s</string>
+    <string name="service_upload_progress_text">%1$d%% fran %2$s till Hamtade filer</string>
+    <string name="service_upload_progress_text_unknown">Tar emot fran %1$s till Hamtade filer</string>
+    <string name="service_upload_success_title">%1$s sparades framgangsrikt</string>
+    <string name="service_upload_success_text">Mottaget fran %1$s</string>
+    <string name="service_upload_success_subtext">Sparad i Hamtade filer</string>
 </resources>

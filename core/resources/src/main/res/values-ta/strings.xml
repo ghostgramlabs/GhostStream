@@ -574,4 +574,13 @@
     <string name="web_search_placeholder">கோப்பு பெயர் மூலம் தேடவும்</string>
     <string name="web_selection_count">%1$d தேர்ந்தெடுக்கப்பட்டது</string>
     <string name="web_status_selection_on">தேர்வு ஆன்</string>
+    <string name="service_upload_progress_title">%1$s பெறப்படுகிறது</string>
+    <string name="service_upload_progress_text">%2$s இடமிருந்து %1$d%% பதிவிறக்கங்களுக்கு</string>
+    <string name="service_upload_progress_text_unknown">%1$s இடமிருந்து பதிவிறக்கங்களுக்குப் பெறப்படுகிறது</string>
+    <string name="service_upload_success_title">%1$s வெற்றிகரமாக சேமிக்கப்பட்டது</string>
+    <string name="service_upload_success_text">%1$s இடமிருந்து பெறப்பட்டது</string>
+    <string name="service_upload_success_subtext">பதிவிறக்கங்களில் சேமிக்கப்பட்டது</string>
+    <string name="library_clear_all_action">அனைத்தையும் அழி</string>
+    <string name="library_clear_all_title">இந்த நூலகத்தை அழிக்கவா?</string>
+    <string name="library_clear_all_body">இது தற்போதைய நூலகத்திலிருந்து பகிரப்பட்ட அனைத்து கோப்புகள் மற்றும் கோப்புறைகளை அகற்றும்.</string>
 </resources>

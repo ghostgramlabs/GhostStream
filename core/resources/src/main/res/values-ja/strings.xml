@@ -553,4 +553,13 @@
     <string name="web_search_placeholder">ファイル名で検索</string>
     <string name="web_selection_count">%1$d が選択されました</string>
     <string name="web_status_selection_on">選択範囲</string>
+    <string name="service_upload_progress_title">% Japanese %1$s を受信中</string>
+    <string name="service_upload_progress_text">%2$s からダウンロードへ %1$d%%</string>
+    <string name="service_upload_progress_text_unknown">%1$s からダウンロードへ受信中</string>
+    <string name="service_upload_success_title">%1 Japanese %1$s を正常に保存しました</string>
+    <string name="service_upload_success_text">%1$s から受信しました</string>
+    <string name="service_upload_success_subtext">ダウンロードに保存されました</string>
+    <string name="library_clear_all_action">すべてクリア</string>
+    <string name="library_clear_all_title">このライブラリをクリアしますか？</string>
+    <string name="library_clear_all_body">これにより、現在のライブラリからすべての共有ファイルとフォルダが削除されます。</string>
 </resources>

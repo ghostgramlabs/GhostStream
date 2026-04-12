@@ -553,4 +553,13 @@
     <string name="web_search_placeholder">Suche nach Dateinamen</string>
     <string name="web_selection_count">%1$d ausgewählt</string>
     <string name="web_status_selection_on">Auswahl an</string>
+    <string name="service_upload_progress_title">Empfange %1$s</string>
+    <string name="service_upload_progress_text">%1$d%% von %2$s nach Downloads</string>
+    <string name="service_upload_progress_text_unknown">Empfange von %1$s nach Downloads</string>
+    <string name="service_upload_success_title">%1$s erfolgreich gespeichert</string>
+    <string name="service_upload_success_text">Erhalten von %1$s</string>
+    <string name="service_upload_success_subtext">In Downloads gespeichert</string>
+    <string name="library_clear_all_action">Alles leeren</string>
+    <string name="library_clear_all_title">Diese Bibliothek leeren?</string>
+    <string name="library_clear_all_body">Dies entfernt alle freigegebenen Dateien und Ordner aus der aktuellen Bibliothek.</string>
 </resources>

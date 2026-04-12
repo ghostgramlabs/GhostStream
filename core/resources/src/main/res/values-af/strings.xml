@@ -526,4 +526,13 @@
     <string name="web_search_placeholder">Soek volgens lêernaam</string>
     <string name="web_selection_count">%1$d gekies</string>
     <string name="web_status_selection_on">Seleksie aan</string>
+    <string name="service_upload_progress_title">Ontvang momenteel %1$s</string>
+    <string name="service_upload_progress_text">%1$d%% van %2$s na Aflaaisels</string>
+    <string name="service_upload_progress_text_unknown">Ontvang momenteel van %1$s na Aflaaisels</string>
+    <string name="service_upload_success_title">%1$s suksesvol gestoor</string>
+    <string name="service_upload_success_text">Ontvang van %1$s</string>
+    <string name="service_upload_success_subtext">Gestoor na Aflaaisels</string>
+    <string name="library_clear_all_action">Maak alles skoon</string>
+    <string name="library_clear_all_title">Maak hierdie biblioteek skoon?</string>
+    <string name="library_clear_all_body">Dit verwyder elke gedeelde lêer en vouer uit die huidige biblioteek.</string>
 </resources>

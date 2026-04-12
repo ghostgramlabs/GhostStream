@@ -551,4 +551,13 @@
     <string name="web_search_placeholder">Dosya adına göre ara</string>
     <string name="web_selection_count">%1$d seçildi</string>
     <string name="web_status_selection_on">Seçim açık</string>
+    <string name="service_upload_progress_title">%1$s alınıyor</string>
+    <string name="service_upload_progress_text">%2$s kullanıcısından %% %1$d İndirilenler'e</string>
+    <string name="service_upload_progress_text_unknown">%1$s kullanıcısından İndirilenler'e alınıyor</string>
+    <string name="service_upload_success_title">%1$s başarıyla kaydedildi</string>
+    <string name="service_upload_success_text">%1$s kullanıcısından alındı</string>
+    <string name="service_upload_success_subtext">İndirilenler'e kaydedildi</string>
+    <string name="library_clear_all_action">Hepsini temizle</string>
+    <string name="library_clear_all_title">Bu kütüphaneyi temizle?</string>
+    <string name="library_clear_all_body">Bu, mevcut kütüphanedeki tüm paylaşılan dosyaları ve klasörleri kaldırır.</string>
 </resources>

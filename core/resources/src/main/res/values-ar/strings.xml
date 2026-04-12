@@ -553,4 +553,13 @@
     <string name="web_search_placeholder">البحث حسب اسم الملف</string>
     <string name="web_selection_count">تم تحديد %1$d</string>
     <string name="web_status_selection_on">الاختيار قيد التشغيل</string>
+    <string name="service_upload_progress_title">جاري استلام %1$s</string>
+    <string name="service_upload_progress_text">%1$d%% من %2$s إلى التنزيلات</string>
+    <string name="service_upload_progress_text_unknown">جاري الاستلام من %1$s إلى التنزيلات</string>
+    <string name="service_upload_success_title">تم حفظ %1$s بنجاح</string>
+    <string name="service_upload_success_text">تم الاستلام من %1$s</string>
+    <string name="service_upload_success_subtext">تم الحفظ في التنزيلات</string>
+    <string name="library_clear_all_action">مسح الكل</string>
+    <string name="library_clear_all_title">مسح هذه المكتبة؟</string>
+    <string name="library_clear_all_body">سيؤدي هذا إلى إزالة جميع الملفات والمجلدات المشتركة من المكتبة الحالية.</string>
 </resources>

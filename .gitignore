@@ -25,3 +25,7 @@ Thumbs.db
 Desktop.ini
 _github_check/
 _release_build/
+bin/
+out/
+.DS_Store
+*.tmp
