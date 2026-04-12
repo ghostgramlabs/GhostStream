@@ -102,7 +102,7 @@ fun SettingsScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back))
                 }
                 Spacer(modifier = Modifier.width(4.dp))
                 Column {
@@ -267,7 +267,7 @@ fun HelpScreen(
         Column(verticalArrangement = Arrangement.spacedBy(GhostSpacing.section)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back))
                 }
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(stringResource(R.string.help_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)

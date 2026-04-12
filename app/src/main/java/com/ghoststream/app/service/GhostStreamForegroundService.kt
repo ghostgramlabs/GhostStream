@@ -418,8 +418,14 @@ class GhostStreamForegroundService : Service() {
     }
 
     private fun formatBytes(bytes: Long): String {
-        if (bytes <= 0L) return "0 B"
-        val units = listOf("B", "KB", "MB", "GB", "TB")
+        if (bytes <= 0L) return "0 ${getString(SharedR.string.common_unit_b)}"
+        val units = listOf(
+            getString(SharedR.string.common_unit_b),
+            getString(SharedR.string.common_unit_kb),
+            getString(SharedR.string.common_unit_mb),
+            getString(SharedR.string.common_unit_gb),
+            getString(SharedR.string.common_unit_tb)
+        )
         var value = bytes.toDouble()
         var unitIndex = 0
         while (value >= 1024 && unitIndex < units.lastIndex) {

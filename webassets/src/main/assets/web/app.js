@@ -107,8 +107,8 @@ async function handleFilesUpload(files, hooks = {}) {
   const mainFileName = fileCount === 1 ? files[0].name : `${fileCount} files`;
 
   showOverlay(true);
-  title.textContent = "Requesting permission";
-  status.innerHTML = `<span class="gs-upload-waiting-dots">Waiting for DirectServe</span>`;
+  title.textContent = gsStr("web_upload_requesting", "Requesting permission");
+  status.innerHTML = `<span class="gs-upload-waiting-dots">${gsStr("web_upload_waiting", "Waiting for DirectServe")}</span>`;
   setProgress(0);
 
   let requestId = null;
@@ -143,8 +143,8 @@ async function handleFilesUpload(files, hooks = {}) {
       throw new Error("Upload transfer was denied by the device owner.");
     }
 
-    title.textContent = fileCount === 1 ? `Sending ${files[0].name}` : `Sending ${fileCount} files`;
-    status.textContent = "0%";
+    title.textContent = fileCount === 1 ? gsStr("web_upload_selection_single", `Sending ${files[0].name}`, files[0].name) : gsStr("web_upload_selection_multiple", `Sending ${fileCount} files`, fileCount);
+    status.textContent = gsStr("web_status_init_progress", "0%");
     
     currentUploadXhr = new XMLHttpRequest();
     currentUploadXhr.open("POST", "/api/upload/execute/" + requestId);
@@ -183,8 +183,8 @@ async function handleFilesUpload(files, hooks = {}) {
 
     await uploadPromise;
     
-    title.textContent = "Success!";
-    status.textContent = fileCount === 1 ? "File is ready on DirectServe." : "Files are ready on DirectServe.";
+    title.textContent = gsStr("web_upload_success_title", "Success!");
+    status.textContent = fileCount === 1 ? gsStr("web_upload_success_detail_single", "File is ready on DirectServe.") : gsStr("web_upload_success_detail_multiple", "Files are ready on DirectServe.");
     setProgress(100);
     hooks.onSuccess?.({ files, fileCount, totalSize });
     
@@ -197,8 +197,8 @@ async function handleFilesUpload(files, hooks = {}) {
     }, 1500);
 
   } catch (error) {
-    title.textContent = "Transfer failed";
-    status.textContent = error.message || "Upload request was denied or failed.";
+    title.textContent = gsStr("web_upload_failed_title", "Transfer failed");
+    status.textContent = error.message || gsStr("web_upload_failed_detail", "Upload request was denied or failed.");
     hooks.onError?.(error);
     setTimeout(() => showOverlay(false), 3000);
   } finally {
@@ -370,15 +370,15 @@ function shouldStartCompatibilityPlayback(item, job = null) {
 
 function compatibilityHeadline(item, streamLive = item.streamReady) {
   if (item.compatibilityStatus === "FAILED") {
-    return "This video could not be opened";
+    return gsStr("web_player_error_open", "This video could not be opened");
   }
   if (!streamLive) {
-    return "Opening video...";
+    return gsStr("web_player_opening", "Opening video...");
   }
   if (item.compatibilityComplete || item.compatibilityStatus === "READY") {
-    return "Video is ready";
+    return gsStr("web_player_ready", "Video is ready");
   }
-  return "Starting playback...";
+  return gsStr("web_player_starting", "Starting playback...");
 }
 
 function compatibilityBody(item, streamLive = item.streamReady) {
@@ -386,25 +386,25 @@ function compatibilityBody(item, streamLive = item.streamReady) {
     return gsStr("web_error_streaming_codec", "This file's codec is not supported by the Android server for streaming. Please download.");
   }
   if (!streamLive) {
-    return "This browser needs a moment to open the video. Keep this page open.";
+    return gsStr("web_player_wait_desc", "This browser needs a moment to open the video. Keep this page open.");
   }
   if (item.compatibilityComplete || item.compatibilityStatus === "READY") {
-    return "Playback is ready on this device.";
+    return gsStr("web_player_ready_desc", "Playback is ready on this device.");
   }
-  return "The video is starting now. If it pauses, wait a moment or try again.";
+  return gsStr("web_player_starting_desc", "The video is starting now. If it pauses, wait a moment or try again.");
 }
 
 function compatibilityBadgeLabel(item, streamLive = item.streamReady) {
   if (item.compatibilityStatus === "FAILED") {
-    return "Try again";
+    return gsStr("web_player_try_again", "Try again");
   }
   if (!streamLive) {
-    return "Opening";
+    return gsStr("web_player_status_opening", "Opening");
   }
   if (item.compatibilityComplete || item.compatibilityStatus === "READY") {
-    return "Ready";
+    return gsStr("web_player_status_ready", "Ready");
   }
-  return "Playing";
+  return gsStr("web_player_status_playing", "Playing");
 }
 
 async function api(url, options = {}) {
@@ -486,8 +486,8 @@ function shell(content, options = {}) {
         <div class="gs-drop-indicator-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         </div>
-        <h2>Drop files to upload</h2>
-        <p>Upload files to the host device.</p>
+        <h2>${gsStr("web_upload_prompt_title", "Drop files to upload")}</h2>
+        <p>${gsStr("web_upload_subtitle", "Upload files to the host device.")}</p>
       </div>
 
       <div class="gs-upload-overlay" id="uploadOverlay">
@@ -726,7 +726,7 @@ async function renderVideoPlayer(id) {
   const shouldMountReadyPlayer = shouldStartCompatibilityPlayback(item);
   const playbackItem = shouldMountReadyPlayer ? { ...item, streamReady: true } : { ...item, streamReady: false };
   const playerBadges = [
-    playbackItem.subtitleUrl ? '<span class="gs-badge">Subtitles available</span>' : "",
+    playbackItem.subtitleUrl ? '<span class="gs-badge">' + gsStr("web_status_subtitles_available", "Subtitles available") + '</span>' : "",
   ].filter(Boolean).join("");
   shell(`
     <section class="gs-section">
@@ -737,7 +737,7 @@ async function renderVideoPlayer(id) {
             <div class="gs-meta">${fmtBytes(item.sizeBytes)}${item.durationMs ? ` | ${fmtDur(item.durationMs)}` : ""}</div>
           </div>
           <div class="gs-toolbar-actions">
-            <a class="gs-btn gs-btn-sm" data-link href="/videos">Back to videos</a>
+            <a class="gs-btn gs-btn-sm" data-link href="/videos">${gsStr("web_btn_back", "Back to videos")}</a>
             ${allowDownloads ? `<a class="gs-btn gs-btn-download" href="${item.downloadUrl}">${gsStr("web_btn_download_original", "Download original")}</a>` : ""}
           </div>
         </div>
@@ -1280,9 +1280,9 @@ function attachMusicPlayers() {
         }
       });
       document.querySelectorAll(".music-play-btn").forEach((element) => {
-        element.textContent = "Play";
+        element.textContent = gsStr("common_play", "Play");
       });
-      if (button) button.textContent = "Pause";
+      if (button) button.textContent = gsStr("common_pause", "Pause");
       setNowPlaying({
         type: "Music",
         title,
@@ -1293,12 +1293,12 @@ function attachMusicPlayers() {
 
     mediaElement.addEventListener("pause", () => {
       if (mediaElement.ended) return;
-      if (button) button.textContent = "Play";
+      if (button) button.textContent = gsStr("common_play", "Play");
       clearNowPlaying(mediaElement);
     });
 
     mediaElement.addEventListener("ended", () => {
-      if (button) button.textContent = "Play";
+      if (button) button.textContent = gsStr("common_play", "Play");
       clearNowPlaying(mediaElement);
     });
 
@@ -1499,13 +1499,13 @@ function renderNowPlayingBar() {
   bar.className = "gs-now is-visible";
   bar.innerHTML = `
     <div>
-      <div class="gs-now-label">Now playing</div>
+      <div class="gs-now-label">${gsStr("web_now_playing", "Now playing")}</div>
       <strong>${esc(state.nowPlaying.title)}</strong>
       <div class="gs-meta">${esc(state.nowPlaying.type)}</div>
     </div>
     <div class="gs-toolbar-actions">
-      <button class="gs-btn gs-btn-sm" id="nowPlayingToggleBtn">${state.nowPlaying.element?.paused ? "Resume" : "Pause"}</button>
-      ${state.nowPlaying.route ? `<a class="gs-btn gs-btn-sm" data-link href="${state.nowPlaying.route}">Open</a>` : ""}
+      <button class="gs-btn gs-btn-sm" id="nowPlayingToggleBtn">${state.nowPlaying.element?.paused ? gsStr("common_resume", "Resume") : gsStr("common_pause", "Pause")}</button>
+      ${state.nowPlaying.route ? `<a class="gs-btn gs-btn-sm" data-link href="${state.nowPlaying.route}">${gsStr("common_open", "Open")}</a>` : ""}
     </div>`;
 
   document.getElementById("nowPlayingToggleBtn")?.addEventListener("click", () => {
@@ -1543,8 +1543,13 @@ function titleForPath(path) {
 }
 
 function fmtBytes(bytes) {
-  if (!bytes) return "0 B";
-  const units = ["B", "KB", "MB", "GB"];
+  if (!bytes) return `0 ${gsStr("common_unit_b", "B")}`;
+  const units = [
+    gsStr("common_unit_b", "B"),
+    gsStr("common_unit_kb", "KB"),
+    gsStr("common_unit_mb", "MB"),
+    gsStr("common_unit_gb", "GB")
+  ];
   let value = bytes;
   let index = 0;
   while (value >= 1024 && index < units.length - 1) {

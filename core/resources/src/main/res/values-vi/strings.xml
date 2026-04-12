@@ -12,7 +12,6 @@
     <string name="common_dismiss">Đóng</string>
     <string name="common_remove">Gỡ bỏ</string>
     <string name="common_search">Tìm kiếm</string>
-
     <string name="onboarding_skip">Bỏ qua</string>
     <string name="onboarding_title">Phát trực tiếp và chia sẻ tệp</string>
     <string name="onboarding_subtitle">Biến điện thoại thành trung tâm dữ liệu cục bộ để truy cập từ TV, máy tính và máy tính bảng.</string>
@@ -31,7 +30,6 @@
     <string name="onboarding_page_counter">%1$d / %2$d</string>
     <string name="onboarding_next">Tiếp theo</string>
     <string name="onboarding_get_started">Bắt đầu ngay</string>
-
     <string name="settings_title">Cài đặt</string>
     <string name="settings_subtitle">Tùy chỉnh giao diện và cách DirectServe hoạt động.</string>
     <string name="settings_group_general">Chung</string>
@@ -109,7 +107,6 @@
     <string name="settings_share_debug_log">Chia sẻ nhật ký lỗi</string>
     <string name="settings_share_debug_log_desc">Gửi nhật ký phiên làm việc qua email.</string>
     <string name="settings_clear_debug_log">Xóa nhật ký lỗi</string>
-
     <string name="help_title">Trợ giúp</string>
     <string name="help_about_title">Về DirectServe</string>
     <string name="help_about_1">DirectServe cho phép các thiết bị gần đó mở tệp chia sẻ của bạn qua trình duyệt mà không cần đám mây hay tài khoản.</string>
@@ -141,7 +138,6 @@
     <string name="help_line_flow_2">2. Bắt đầu phiên chia sẻ.</string>
     <string name="help_line_flow_3">3. Mở liên kết hoặc quét mã QR trên thiết bị kia.</string>
     <string name="help_line_flow_4">4. Duyệt, phát hoặc tải tệp lên dựa theo quyền hạn của bạn.</string>
-
     <string name="home_brand_title">DirectServe</string>
     <string name="home_brand_subtitle">Chia sẻ riêng tư qua Wi-Fi hoặc điểm phát sóng</string>
     <string name="home_chip_local_session">Phiên cục bộ</string>
@@ -158,7 +154,6 @@
     <string name="home_button_open_session">Mở phiên</string>
     <string name="home_button_starting">Đang khởi động...</string>
     <string name="home_no_network">Không tìm thấy Wi-Fi hoặc điểm phát sóng</string>
-
     <string name="network_setup_title">Cần mạng cục bộ</string>
     <string name="network_setup_body">DirectServe hoạt động khi cả hai thiết bị dùng chung Wi-Fi hoặc điểm phát sóng di động.</string>
     <string name="network_setup_trouble_title">Gặp sự cố với Wi-Fi công cộng?</string>
@@ -167,7 +162,6 @@
     <string name="network_setup_switch_hotspot">Chuyển sang điểm phát sóng</string>
     <string name="network_setup_retry">Thử lại</string>
     <string name="network_setup_footer">Điểm phát sóng là lựa chọn lý tưởng khi đi du lịch hoặc không có router.</string>
-
     <string name="session_title">Phiên trực tiếp</string>
     <string name="session_stop_sharing">Dừng chia sẻ</string>
     <string name="session_live_now">Đang hoạt động</string>
@@ -218,7 +212,6 @@
     <string name="session_network_wifi">Wi-Fi</string>
     <string name="session_network_local">Cục bộ</string>
     <string name="session_network_offline">Ngoại tuyến</string>
-
     <string name="history_title">Lịch sử truyền tải</string>
     <string name="history_tab_all">Tất cả hoạt động</string>
     <string name="history_tab_received">Đã nhận</string>
@@ -229,17 +222,14 @@
     <string name="history_open">Mở</string>
     <string name="history_delete">Xóa</string>
     <string name="history_delete_desc">Xóa khỏi lịch sử</string>
-
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">Chia sẻ cục bộ riêng tư</string>
-
     <string name="privacy_policy_title">Chính sách quyền riêng tư</string>
     <string name="privacy_policy_intro">DirectServe được thiết kế để chia sẻ cục bộ riêng tư. Tệp của bạn nằm trên máy trừ khi bạn chọn chia sẻ với các thiết bị cùng mạng.</string>
     <string name="privacy_policy_line_1">DirectServe không yêu cầu tạo tài khoản.</string>
     <string name="privacy_policy_line_2">DirectServe không tải tệp lên dịch vụ đám mây.</string>
     <string name="privacy_policy_line_3">Thiết bị lân cận chỉ có thể truy cập khi phiên hoạt động và chỉ xem được tệp bạn chọn.</string>
     <string name="privacy_policy_line_4">Bạn có thể dừng chia sẻ, dùng PIN hoặc chặn thiết bị bất kỳ lúc nào.</string>
-
     <string name="main_service_background_protection_failed">Đang chia sẻ, nhưng bảo vệ chạy ngầm bị lỗi. Hãy giữ ứng dụng luôn mở.</string>
     <string name="main_notification_permission_warning">Đang chia sẻ, nhưng thông báo có thể bị ẩn nếu không được cấp quyền.</string>
     <string name="main_batch_media_access_needed">Hãy cấp quyền truy cập để dùng Gợi ý thông minh. Bạn vẫn có thể thêm tệp thủ công.</string>
@@ -254,7 +244,6 @@
     <string name="main_share_link_chooser">Chia sẻ liên kết DirectServe</string>
     <string name="main_link_not_ready">Liên kết chưa sẵn sàng. Hãy kiểm tra Wi-Fi.</string>
     <string name="main_not_sharing">Không chia sẻ</string>
-
     <string name="service_start_failed">Không thể khởi động dịch vụ chia sẻ chạy ngầm.</string>
     <string name="service_auto_stop_message">Đã dừng chia sẻ do không hoạt động.</string>
     <string name="service_upload_request_title">Yêu cầu nhận tệp</string>
@@ -272,7 +261,6 @@
     <string name="service_channel_requests_desc">Thông báo khi có tệp gửi đến</string>
     <string name="service_channel_connections_name">Kết nối thiết bị</string>
     <string name="service_channel_connections_desc">Thông báo khi có người tham gia phiên</string>
-
     <string name="library_title">Thư viện</string>
     <string name="library_header_title">Thư viện chia sẻ</string>
     <string name="library_header_body">Đây là các tệp mọi người có thể xem qua liên kết của bạn.</string>
@@ -348,7 +336,6 @@
     <string name="library_compat_ready">Sẵn sàng</string>
     <string name="library_compat_unavailable">Không khả dụng</string>
     <string name="library_compat_message">%1$s | %2$s</string>
-
     <string name="selection_add_files_title">Thêm tệp</string>
     <string name="selection_add_files_body">Chọn một hoặc nhiều tệp để chia sẻ.</string>
     <string name="selection_add_selected">Thêm tệp đã chọn</string>
@@ -374,7 +361,6 @@
     <string name="selection_no_groups_body">Thử làm mới nếu bạn vừa cấp quyền, hoặc tự thêm tệp thủ công.</string>
     <string name="selection_refresh_groups">Làm mới gợi ý</string>
     <string name="selection_add_group">Thêm nhóm</string>
-
     <string name="browser_title">DirectServe</string>
     <string name="browser_subtitle">Phát và chia sẻ ngoại tuyến</string>
     <string name="browser_file_unavailable">Tệp này không còn trên thiết bị gốc.</string>
@@ -388,8 +374,6 @@
     <string name="browser_video_part_unavailable">Phần video này không khả dụng.</string>
     <string name="browser_hls_not_needed">Video này không cần phát qua HLS.</string>
     <string name="browser_hls_not_ready">Luồng tương thích chưa sẵn sàng cho HLS.</string>
-
-    
     <string name="home_action_add_to_share_title">Thêm vào chia sẻ</string>
     <string name="home_action_add_to_share_subtitle">Chọn các tệp bạn muốn gửi.</string>
     <string name="home_action_files">Tệp</string>
@@ -398,8 +382,6 @@
     <string name="home_action_folder_desc">Quét</string>
     <string name="home_action_library">Thư viện</string>
     <string name="home_action_library_desc">Duyệt</string>
-
-    
     <string name="home_nearby_title">Lân cận &amp; mạng</string>
     <string name="home_nearby_subtitle">Đảm bảo mạng cục bộ của bạn đã sẵn sàng, sau đó tìm kiếm một thiết bị DirectServe khác nếu bạn muốn mở nó trong ứng dụng.</string>
     <string name="home_nearby_refresh_status">Làm mới trạng thái</string>
@@ -418,8 +400,6 @@
     <string name="home_nearby_action_open">Mở</string>
     <string name="home_nearby_device_available">Có sẵn</string>
     <string name="home_nearby_device_pin">Cần mã PIN</string>
-
-    
     <string name="web_hero_eyebrow">Chế độ xem bộ thu riêng tư</string>
     <string name="web_hero_title">Phát trực tuyến &amp; chia sẻ tệp ngoại tuyến</string>
     <string name="web_hero_desc1">Duyệt, phát, xem trước</string>
@@ -454,8 +434,6 @@
     <string name="web_security_pin">Được bảo vệ bằng mã PIN</string>
     <string name="web_security_open">Mở trên mạng cục bộ</string>
     <string name="web_status_unknown">Không xác định</string>
-
-    
     <string name="home_connected_devices">Thiết bị được kết nối</string>
     <string name="home_rename_device">Đổi tên thiết bị</string>
     <string name="home_rename_device_subtitle">Thiết bị: %1$s • %2$s</string>
@@ -485,7 +463,26 @@
     <string name="home_saved_shares_delete">Xóa</string>
     <string name="home_saved_shares_items_count">%1$d mục</string>
     <string name="library_date_group_label">%1$s </string>
-<string name="web_upload_title">Gửi tới thiết bị</string><string name="web_upload_subtitle">Tải tập tin lên thiết bị chủ qua mạng.</string><string name="web_upload_prompt_title">Chọn tập tin để gửi</string><string name="web_upload_prompt_desktop">Kéo và thả vào đây hoặc nhấn vào nút bên dưới</string><string name="web_upload_prompt_mobile">Nhấn vào nút để chọn tệp từ thư viện của bạn</string><string name="web_upload_button_browse">Duyệt tập tin</string><string name="web_upload_target_kicker">Thiết bị mục tiêu</string><string name="web_upload_target_status">Trạng thái: Đã kết nối và sẵn sàng chuyển</string><string name="web_upload_how_kicker">Nó hoạt động như thế nào</string><string name="web_upload_how_title">Phê duyệt an toàn</string><string name="web_upload_how_body"><![CDATA[Khi bạn gửi file, một thông báo sẽ xuất hiện trên điện thoại. Chủ sở hữu thiết bị phải <strong>Chấp nhận</strong> để quá trình chuyển bắt đầu.]]></string><string name="web_action_download">Tải xuống</string><string name="web_photo_view">Xem</string><string name="web_btn_download_all">Tải xuống tất cả</string><string name="web_btn_download_selected">Đã chọn tải xuống</string><string name="web_btn_download_original">Tải xuống bản gốc</string><string name="web_error_streaming_codec">Codec của tệp này không được máy chủ Android hỗ trợ để phát trực tuyến. Xin vui lòng tải về.</string><string name="web_error_downloads_disabled">Việc tải xuống bị chủ sở hữu thiết bị vô hiệu hóa.</string><string name="web_error_video_decode">Trình duyệt này không thể giải mã luồng video. Hãy thử tải xuống tập tin gốc.</string><string name="web_error_video_start">Trình duyệt này không thể bắt đầu video. Hãy thử lại hoặc tải xuống tệp gốc.</string>
+    <string name="web_upload_title">Gửi tới thiết bị</string>
+    <string name="web_upload_subtitle">Tải tập tin lên thiết bị chủ qua mạng.</string>
+    <string name="web_upload_prompt_title">Chọn tập tin để gửi</string>
+    <string name="web_upload_prompt_desktop">Kéo và thả vào đây hoặc nhấn vào nút bên dưới</string>
+    <string name="web_upload_prompt_mobile">Nhấn vào nút để chọn tệp từ thư viện của bạn</string>
+    <string name="web_upload_button_browse">Duyệt tập tin</string>
+    <string name="web_upload_target_kicker">Thiết bị mục tiêu</string>
+    <string name="web_upload_target_status">Trạng thái: Đã kết nối và sẵn sàng chuyển</string>
+    <string name="web_upload_how_kicker">Nó hoạt động như thế nào</string>
+    <string name="web_upload_how_title">Phê duyệt an toàn</string>
+    <string name="web_upload_how_body"><![CDATA[Khi bạn gửi file, một thông báo sẽ xuất hiện trên điện thoại. Chủ sở hữu thiết bị phải <strong>Chấp nhận</strong> để quá trình chuyển bắt đầu.]]></string>
+    <string name="web_action_download">Tải xuống</string>
+    <string name="web_photo_view">Xem</string>
+    <string name="web_btn_download_all">Tải xuống tất cả</string>
+    <string name="web_btn_download_selected">Đã chọn tải xuống</string>
+    <string name="web_btn_download_original">Tải xuống bản gốc</string>
+    <string name="web_error_streaming_codec">Codec của tệp này không được máy chủ Android hỗ trợ để phát trực tuyến. Xin vui lòng tải về.</string>
+    <string name="web_error_downloads_disabled">Việc tải xuống bị chủ sở hữu thiết bị vô hiệu hóa.</string>
+    <string name="web_error_video_decode">Trình duyệt này không thể giải mã luồng video. Hãy thử tải xuống tập tin gốc.</string>
+    <string name="web_error_video_start">Trình duyệt này không thể bắt đầu video. Hãy thử lại hoặc tải xuống tệp gốc.</string>
     <string name="discovery_nsd_unavailable">NSD không có sẵn</string>
     <string name="discovery_ready_to_open">Các thiết bị DirectServe gần đó đã sẵn sàng mở.</string>
     <string name="discovery_searching">Đang tìm kiếm các thiết bị DirectServe lân cận trên mạng này...</string>
@@ -537,7 +534,6 @@
     <string name="sharing_same_wifi_needed">Kết nối cả hai thiết bị với cùng một Wi-Fi hoặc điểm phát sóng.</string>
     <string name="sharing_server_start_failed">Máy chủ không khởi động được: %1$s</string>
     <string name="sharing_stopped">Đã dừng chia sẻ</string>
-
     <string name="web_btn_clear_selection">Xóa</string>
     <string name="web_btn_select_all">Chọn tất cả</string>
     <string name="web_btn_select_files">Chọn tập tin</string>
@@ -557,4 +553,76 @@
     <string name="library_clear_all_action">Xóa tất cả</string>
     <string name="library_clear_all_title">Xóa thư viện này?</string>
     <string name="library_clear_all_body">Thao tác này sẽ xóa tất cả các tệp và thư mục được chia sẻ khỏi thư viện hiện tại.</string>
+    <string name="session_browser_prep_title">Preparing browser files</string>
+    <string name="session_browser_prep_active">%1$d%% • %2$d of %3$d ready</string>
+    <string name="session_browser_prep_queued">%1$d remaining in background</string>
+    <string name="session_browser_prep_ready">%1$d browser files ready</string>
+    <string name="session_browser_prep_message_active">Preparing %1$s for browser playback</string>
+    <string name="session_browser_prep_message_queued">Preparing browser-ready video files in the background</string>
+    <string name="session_browser_prep_message_ready">Browser playback preparation is complete</string>
+    <string name="session_browser_prep_message_manual">Browser prep is optional and only helps on videos that need conversion.</string>
+    <string name="session_browser_prep_manual_note">Playback can still start without this. Large batches may warm the phone a little, so you can start or stop preparation whenever you want.</string>
+    <string name="session_prepare_browser_files">Prepare browser files</string>
+    <string name="session_stop_browser_files">Stop browser prep</string>
+    <string name="session_library_refresh_title">Live library updates</string>
+    <string name="session_library_refresh_pending">%1$d new files and %2$d new folders are ready to add to this live server.</string>
+    <string name="session_library_refresh_up_to_date">This live server already matches your current library.</string>
+    <string name="session_refresh_library">Refresh live library</string>
+    <string name="message_live_library_refreshed_updates">Live server refreshed with %1$d new files and %2$d new folders.</string>
+    <string name="message_live_library_refreshed_current">Live server refreshed. It was already up to date.</string>
+    <string name="message_browser_playback_queued_all">Started browser preparation for %1$d files.</string>
+    <string name="message_browser_playback_already_ready">Browser files are already ready, already queued, or not needed.</string>
+    <string name="message_browser_playback_stopped">Stopped browser file preparation.</string>
+    <string name="library_importing_title">Adding files to library</string>
+    <string name="library_importing_body">%1$d selected items are still being added in the background.</string>
+    <string name="web_upload_selection_empty">No files selected yet.</string>
+    <string name="web_upload_selection_single">Ready to send %1$s</string>
+    <string name="web_upload_selection_multiple">Ready to send %1$d files</string>
+    <string name="web_upload_button_send">Upload</string>
+    <string name="common_quick_filters">Quick filters</string>
+    <string name="common_edit_nickname">Edit nickname</string>
+    <string name="home_quick_filters_desc">Add files from a specific date. Open library to see all your files.</string>
+    <string name="home_date_range_body">Choose files from a specific date range.</string>
+    <string name="help_section_browser_preparation">Browser Preparation</string>
+    <string name="help_section_drop_zone">Drop Zone</string>
+    <string name="help_section_privacy_controls">Privacy Controls</string>
+    <string name="help_line_prep_optional">Preparation is optional but recommended for older devices to ensure smooth playback.</string>
+    <string name="help_line_prep_control">You can control preparation per-file from the library management screen.</string>
+    <string name="help_line_prep_batch">You can also batch-prepare files from the session status screen.</string>
+    <string name="help_line_drop_zone">The web interface includes a \'Drop Zone\' for receiving files.</string>
+    <string name="help_line_drop_zone_pick">Recipients can pick files or drag and drop them to send to your device.</string>
+    <string name="help_line_drop_zone_local">Transfers happen entirely over your local network and never touch the cloud.</string>
+    <string name="help_line_privacy_local">DirectServe is local-only; files are shared directly between devices.</string>
+    <string name="help_line_privacy_session">Access is only possible while your session is active on the host phone.</string>
+    <string name="web_upload_requesting">Requesting permission</string>
+    <string name="web_upload_waiting">Waiting for DirectServe</string>
+    <string name="web_upload_success_title">Success!</string>
+    <string name="web_upload_success_detail_single">File is ready on DirectServe.</string>
+    <string name="web_upload_success_detail_multiple">Files are ready on DirectServe.</string>
+    <string name="web_upload_failed_title">Transfer failed</string>
+    <string name="web_upload_failed_detail">Upload request was denied or failed.</string>
+    <string name="web_player_error_open">This video could not be opened</string>
+    <string name="web_player_opening">Opening video...</string>
+    <string name="web_player_ready">Video is ready</string>
+    <string name="web_player_starting">Starting playback...</string>
+    <string name="web_player_wait_desc">This browser needs a moment to open the video. Keep this page open.</string>
+    <string name="web_player_ready_desc">Playback is ready on this device.</string>
+    <string name="web_player_starting_desc">The video is starting now. If it pauses, wait a moment or try again.</string>
+    <string name="web_player_try_again">Try again</string>
+    <string name="web_player_status_opening">Opening</string>
+    <string name="web_player_status_ready">Ready</string>
+    <string name="web_player_status_playing">Playing</string>
+    <string name="web_btn_back">Back to videos</string>
+    <string name="web_status_subtitles_available">Subtitles available</string>
+    <string name="help_line_privacy_controls">Use PIN access and device blocking for extra security.</string>
+    <string name="web_now_playing">Now playing</string>
+    <string name="common_resume">Resume</string>
+    <string name="web_status_init_progress">0%</string>
+    <string name="common_play">Play</string>
+    <string name="common_pause">Pause</string>
+    <string name="common_unit_b">B</string>
+    <string name="common_unit_kb">KB</string>
+    <string name="common_unit_mb">MB</string>
+    <string name="common_unit_gb">GB</string>
+    <string name="common_unit_tb">TB</string>
 </resources>

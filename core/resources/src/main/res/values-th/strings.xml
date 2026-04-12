@@ -12,7 +12,6 @@
     <string name="common_dismiss">ปิด</string>
     <string name="common_remove">เอาออก</string>
     <string name="common_search">ค้นหา</string>
-
     <string name="onboarding_skip">ข้าม</string>
     <string name="onboarding_title">สตรีมมิ่งและแชร์ไฟล์โดยตรง</string>
     <string name="onboarding_subtitle">เปลี่ยนมือถือของคุณให้เป็นศูนย์กลางส่วนตัวสำหรับส่งเนื้อหาไปยังทีวี แล็ปท็อป และแท็บเล็ต</string>
@@ -31,7 +30,6 @@
     <string name="onboarding_page_counter">%1$d จาก %2$d</string>
     <string name="onboarding_next">ถัดไป</string>
     <string name="onboarding_get_started">เริ่มต้นใช้งาน</string>
-
     <string name="settings_title">ตั้งค่า</string>
     <string name="settings_subtitle">ปรับแต่งรูปแบบและการทำงานของ DirectServe</string>
     <string name="settings_group_general">ทั่วไป</string>
@@ -109,7 +107,6 @@
     <string name="settings_share_debug_log">แชร์บันทึกการดีบัก</string>
     <string name="settings_share_debug_log_desc">ส่งประวัติการทำงานของระบบทางอีเมล</string>
     <string name="settings_clear_debug_log">ลบข้อมูลดีบัก</string>
-
     <string name="help_title">ช่วยเหลือ</string>
     <string name="help_about_title">เกี่ยวกับ DirectServe</string>
     <string name="help_about_1">DirectServe ช่วยให้อุปกรณ์รอบข้างเปิดไฟล์ที่คุณแชร์ผ่านเบราว์เซอร์ได้ทันที โดยไม่ต้องใช้คลาวด์หรือสร้างบัญชี</string>
@@ -141,7 +138,6 @@
     <string name="help_line_flow_2">2. กดเริ่มเซสชัน</string>
     <string name="help_line_flow_3">3. เปิดลิงก์ที่แสดงอยู่หรือสแกน QR ด้วยเครื่องอื่น</string>
     <string name="help_line_flow_4">4. เริ่มดูไฟล์ เล่นวิดีโอ หรืออัปโหลดไฟล์ตามที่อนุญาต</string>
-
     <string name="home_brand_title">DirectServe</string>
     <string name="home_brand_subtitle">แชร์ไฟล์เป็นส่วนตัวผ่าน Wi-Fi หรือฮอตสปอต</string>
     <string name="home_chip_local_session">เซสชันท้องถิ่น</string>
@@ -158,7 +154,6 @@
     <string name="home_button_open_session">เปิดเซสชัน</string>
     <string name="home_button_starting">กำลังเริ่มต้น...</string>
     <string name="home_no_network">ไม่พบการเชื่อมต่อ Wi-Fi หรือฮอตสปอต</string>
-
     <string name="network_setup_title">ต้องเชื่อมต่อเครือข่ายท้องถิ่น</string>
     <string name="network_setup_body">DirectServe จะทำงานได้เมื่ออุปกรณ์ทั้งสองเชื่อมต่อ Wi-Fi เดียวกัน หรือใช้ฮอตสปอตมือถือของคุณ</string>
     <string name="network_setup_trouble_title">มีปัญหากับ Wi-Fi สาธารณะใช่ไหม?</string>
@@ -167,7 +162,6 @@
     <string name="network_setup_switch_hotspot">เปลี่ยนไปใช้ฮอตสปอต</string>
     <string name="network_setup_retry">ลองอีกครั้ง</string>
     <string name="network_setup_footer">การใช้ฮอตสปอตเหมาะที่สุดสำหรับการเดินทางหรือในที่ที่ไม่มีเราเตอร์</string>
-
     <string name="session_title">เซสชันสด</string>
     <string name="session_stop_sharing">หยุดแชร์</string>
     <string name="session_live_now">กำลังออนไลน์</string>
@@ -218,7 +212,6 @@
     <string name="session_network_wifi">Wi-Fi</string>
     <string name="session_network_local">เครือข่ายท้องถิ่น</string>
     <string name="session_network_offline">ออฟไลน์</string>
-
     <string name="history_title">ประวัติการส่งไฟล์</string>
     <string name="history_tab_all">ทั้งหมด</string>
     <string name="history_tab_received">ที่ได้รับ</string>
@@ -229,17 +222,14 @@
     <string name="history_open">เปิด</string>
     <string name="history_delete">ลบ</string>
     <string name="history_delete_desc">ลบจากประวัติ</string>
-
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">แชร์ไฟล์ในพื้นที่อย่างเป็นส่วนตัว</string>
-
     <string name="privacy_policy_title">นโยบายความเป็นส่วนตัว</string>
     <string name="privacy_policy_intro">DirectServe ออกแบบมาเพื่อการแชร์ไฟล์ในเครือข่ายท้องถิ่นแบบส่วนตัว ไฟล์ของคุณจะอยู่แค่ในเครื่อง ยกเว้นเมื่อคุณเลือกแชร์กับอุปกรณ์เครื่องอื่นที่อยู่ในเครือข่ายเดียวกันเท่านั้น</string>
     <string name="privacy_policy_line_1">DirectServe ไม่จำเป็นต้องสมัครสมาชิก</string>
     <string name="privacy_policy_line_2">DirectServe ไม่อัปโหลดไฟล์ของคุณขึ้นคลาวด์</string>
     <string name="privacy_policy_line_3">อุปกรณ์รอบข้างเข้าถึงไฟล์ได้เฉพาะตอนที่คุณเปิดเซสชัน และเข้าถึงได้เฉพาะไฟล์ที่คุณเลือกเท่านั้น</string>
     <string name="privacy_policy_line_4">คุณสามารถหยุดแชร์ ตั้งรหัส PIN บล็อกเครื่องอื่น หรือลบไฟล์ชั่วคราวได้ทุกเมื่อ</string>
-
     <string name="main_service_background_protection_failed">เริ่มการแชร์แล้ว แต่การทำงานเบื้องหลังอาจติดขัด กรุณาเปิดแอปทิ้งไว้ขณะใช้งาน</string>
     <string name="main_notification_permission_warning">การแชร์ยังทำงานอยู่ แต่อาจไม่เห็นการแจ้งเตือนหากคุณยังไม่กดอนุญาต</string>
     <string name="main_batch_media_access_needed">กรุณาอนุญาตการเข้าถึงรูปภาพ วิดีโอ หรือเพลง เพื่อใช้ฟีเจอร์ "แนะนำอัจฉริยะ" (คุณยังเพิ่มไฟล์เองได้ปกติ)</string>
@@ -254,7 +244,6 @@
     <string name="main_share_link_chooser">แชร์ลิงก์ DirectServe</string>
     <string name="main_link_not_ready">ลิงก์ยังไม่พร้อม ตรวจสอบ Wi-Fi หรือฮอตสปอตแล้วลองอีกครั้ง</string>
     <string name="main_not_sharing">ไม่ได้กำลังแชร์</string>
-
     <string name="service_start_failed">ไม่สามารถเริ่มบริการแชร์ไฟล์เบื้องหลังได้</string>
     <string name="service_auto_stop_message">หยุดแชร์ไฟล์แล้วเนื่องจากไม่มีกิจกรรมใดๆ</string>
     <string name="service_upload_request_title">มีไฟล์ส่งเข้ามา</string>
@@ -272,7 +261,6 @@
     <string name="service_channel_requests_desc">การแจ้งเตือนเมื่อมีไฟล์ส่งมาจากเครื่องอื่น</string>
     <string name="service_channel_connections_name">การเชื่อมต่ออุปกรณ์</string>
     <string name="service_channel_connections_desc">การแจ้งเตือนเมื่อมีคนเข้าร่วมแชร์ไฟล์</string>
-
     <string name="library_title">คลังไฟล์</string>
     <string name="library_header_title">ไฟล์ที่แชร์อยู่</string>
     <string name="library_header_body">นี่คือไฟล์ที่คนอื่นสามารถดูได้ผ่านลิงก์ของคุณ</string>
@@ -348,7 +336,6 @@
     <string name="library_compat_ready">พร้อม</string>
     <string name="library_compat_unavailable">ไม่รองรับ</string>
     <string name="library_compat_message">%1$s | %2$s</string>
-
     <string name="selection_add_files_title">เพิ่มไฟล์</string>
     <string name="selection_add_files_body">เลือกไฟล์ที่ต้องการเปิดแชร์ในเซสชันของคุณ</string>
     <string name="selection_add_selected">เพิ่มรายการที่เลือก</string>
@@ -374,7 +361,6 @@
     <string name="selection_no_groups_body">ลองกดรีเฟรชหากเพิ่งให้สิทธิ์เข้าถึง หรือเพิ่มไฟล์เองด้วยมือ</string>
     <string name="selection_refresh_groups">รีเฟรชรายการแนะนำ</string>
     <string name="selection_add_group">เพิ่มทั้งกลุ่ม</string>
-
     <string name="browser_title">DirectServe</string>
     <string name="browser_subtitle">สตรีมและแชร์ไฟล์แบบออฟไลน์</string>
     <string name="browser_file_unavailable">ไฟล์นี้ไม่มีให้ใช้งานบนเครื่องหลักแล้ว</string>
@@ -388,7 +374,6 @@
     <string name="browser_video_part_unavailable">วิดีโอส่วนนี้ไม่สามารถเปิดได้</string>
     <string name="browser_hls_not_needed">วิดีโอนี้ไม่จำเป็นต้องใช้ HLS</string>
     <string name="browser_hls_not_ready">ระบบสตรีมยังไม่พร้อมรองรับ HLS</string>
-
     <string name="home_upload_request_title">คำขอส่งไฟล์</string>
     <string name="home_upload_request_single">ไฟล์ 1 รายการ</string>
     <string name="home_upload_request_files">ไฟล์จำนวน %1$d รายการ</string>
@@ -398,7 +383,6 @@
     <string name="home_settings_content_desc">ตั้งค่า</string>
     <string name="home_network_required_title">ต้องการการเชื่อมต่อเครือข่าย</string>
     <string name="home_network_required_body">กรุณาเชื่อมต่อ Wi-Fi หรือเปิดฮอตสปอตเพื่อเริ่มเซสชัน (ไม่สามารถใช้เน็ตมือถือเพียงอย่างเดียวเพื่อแชร์ในพื้นที่ได้)</string>
-
     <string name="message_unable_add_folder">ไม่สามารถเพิ่มโฟลเดอร์นี้ได้</string>
     <string name="message_saved_share_named">บันทึกกลุ่มการแชร์ "%1$s" แล้ว</string>
     <string name="message_unable_save_share">ไม่สามารถบันทึกการแชร์นี้ได้ในขณะนี้</string>
@@ -415,14 +399,12 @@
     <string name="message_preparing_browser_playback">กำลังปรับปรุง %1$s ให้เล่นบนเว็บได้ราบรื่นขึ้น...</string>
     <string name="nearby_helper_tap_session">แตะเซสชันที่พบเพื่อเปิดในเบราว์เซอร์ของคุณ</string>
     <string name="nearby_helper_open_on_other_device">เปิด DirectServe บนอุปกรณ์อื่นที่อยู่ในเครือข่ายเดียวกันเพื่อแสดงรายการที่นี่</string>
-
     <string name="share_preset_enter_name">กรุณาตั้งชื่อกลุ่มก่อน</string>
     <string name="share_preset_add_content_first">เพิ่มไฟล์ที่ต้องการแชร์ก่อนบันทึก</string>
     <string name="share_preset_select_file_first">กรุณาเลือกไฟล์อย่างน้อยหนึ่งไฟล์</string>
     <string name="share_preset_files_unavailable">ไฟล์เหล่านี้ไม่มีอยู่ในคลังแล้ว</string>
     <string name="share_preset_collection_unavailable">ไม่พบกลุ่มไฟล์นี้แล้ว</string>
     <string name="share_preset_restore_failed">กู้คืนไม่สำเร็จ ไฟล์หรือสิทธิ์การเข้าถึงอาจไม่ครบ</string>
-
     <string name="sharing_preflight_failed">การตรวจสอบเบื้องต้นล้มเหลว: %1$s</string>
     <string name="sharing_add_content_first">เพิ่มไฟล์ที่ต้องการก่อนเริ่มการแชร์</string>
     <string name="sharing_same_wifi_needed">เชื่อมต่ออุปกรณ์ทั้งสองเครื่องเข้ากับ Wi-Fi หรือฮอตสปอตเดียวกัน</string>
@@ -430,7 +412,6 @@
     <string name="sharing_server_start_failed">เซิร์ฟเวอร์เริ่มการทำงานไม่สำเร็จ: %1$s</string>
     <string name="sharing_stopped">หยุดการแชร์แล้ว</string>
     <string name="sharing_device_android">Android</string>
-
     <string name="network_helper_wifi_ready">อุปกรณ์รอบข้างเข้า Wi-Fi เดียวกันแล้วเปิดลิงก์นี้ได้เลย หาก Wi-Fi สาธารณะบล็อกการเชื่อมต่อ ให้เปิดฮอตสปอตแทน</string>
     <string name="network_helper_local_ready">เครือข่ายท้องถิ่นพร้อมสำหรับการเข้าใช้งานผ่านเว็บแล้ว</string>
     <string name="network_helper_wifi_found">ตรวจพบที่อยู่ Wi-Fi อุปกรณ์ในเครือข่ายเดียวกันควรจะเปิดลิงก์ได้</string>
@@ -438,15 +419,12 @@
     <string name="network_helper_mobile_only">เน็ตมือถือแชร์ไฟล์ในพื้นที่ไม่ได้ กรุณาใช้ Wi-Fi หรือฮอตสปอต</string>
     <string name="network_helper_local_address_ready">พบที่อยู่เครือข่ายท้องถิ่น อุปกรณ์รอบข้างสามารถเชื่อมต่อได้แล้ว</string>
     <string name="network_helper_connect_both">เชื่อมต่ออุปกรณ์ทั้งสองเข้ากับ Wi-Fi หรือฮอตสปอตเดียวกัน</string>
-
     <string name="discovery_unavailable_device">อุปกรณ์นี้ไม่รองรับการค้นหาเครื่องใกล้เคียง</string>
     <string name="discovery_nsd_unavailable">ไม่สามารถใช้งาน NSD ได้</string>
     <string name="discovery_searching">กำลังค้นหาอุปกรณ์ DirectServe ในเครือข่ายเดียวกัน...</string>
     <string name="discovery_unavailable_now">ขณะนี้ไม่สามารถค้นหาเครื่องใกล้เคียงได้ คุณยังสามารถใช้ QR หรือลิงก์โดยตรงได้</string>
     <string name="discovery_start_failed">เริ่มทำงานไม่สำเร็จ (%1$d)</string>
     <string name="discovery_ready_to_open">พบอุปกรณ์ DirectServe พร้อมสำหรับการเชื่อมต่อ</string>
-
-    
     <string name="home_action_add_to_share_title">เพิ่มเพื่อแชร์</string>
     <string name="home_action_add_to_share_subtitle">เลือกไฟล์ที่คุณต้องการส่ง</string>
     <string name="home_action_files">ไฟล์</string>
@@ -455,8 +433,6 @@
     <string name="home_action_folder_desc">สแกน</string>
     <string name="home_action_library">คลัง</string>
     <string name="home_action_library_desc">เรียกดู</string>
-
-    
     <string name="home_nearby_title">ใกล้เคียง &amp; เครือข่าย</string>
     <string name="home_nearby_subtitle">ตรวจสอบให้แน่ใจว่าเครือข่ายท้องถิ่นของคุณพร้อมแล้ว จากนั้นมองหาอุปกรณ์ DirectServe อื่น หากคุณต้องการเปิดในแอป</string>
     <string name="home_nearby_refresh_status">รีเฟรชสถานะ</string>
@@ -475,8 +451,6 @@
     <string name="home_nearby_action_open">เปิด</string>
     <string name="home_nearby_device_available">พร้อมใช้งาน</string>
     <string name="home_nearby_device_pin">ต้องใช้ PIN</string>
-
-    
     <string name="web_hero_eyebrow">มุมมองผู้รับส่วนตัว</string>
     <string name="web_hero_title">สตรีม &amp; แชร์ไฟล์แบบออฟไลน์</string>
     <string name="web_hero_desc1">เรียกดู เริ่มเล่น ดูตัวอย่าง</string>
@@ -511,8 +485,6 @@
     <string name="web_security_pin">ได้รับการปกป้องด้วย PIN</string>
     <string name="web_security_open">เปิดแชร์บนเครือข่ายท้องถิ่น</string>
     <string name="web_status_unknown">ไม่ทราบ</string>
-
-    
     <string name="home_connected_devices">อุปกรณ์ที่เชื่อมต่อ</string>
     <string name="home_rename_device">เปลี่ยนชื่ออุปกรณ์</string>
     <string name="home_rename_device_subtitle">อุปกรณ์: %1$s • %2$s</string>
@@ -542,7 +514,26 @@
     <string name="home_saved_shares_delete">ลบ</string>
     <string name="home_saved_shares_items_count">%1$d รายการ</string>
     <string name="library_date_group_label">%1$s </string>
-<string name="web_upload_title">ส่งไปยังอุปกรณ์</string><string name="web_upload_subtitle">อัปโหลดไฟล์ไปยังอุปกรณ์โฮสต์ผ่านเครือข่าย</string><string name="web_upload_prompt_title">เลือกไฟล์ที่จะส่ง</string><string name="web_upload_prompt_desktop">ลากและวางที่นี่ หรือแตะปุ่มด้านล่าง</string><string name="web_upload_prompt_mobile">แตะปุ่มเพื่อเลือกไฟล์จากไลบรารีของคุณ</string><string name="web_upload_button_browse">เรียกดูไฟล์</string><string name="web_upload_target_kicker">อุปกรณ์เป้าหมาย</string><string name="web_upload_target_status">สถานะ: เชื่อมต่อแล้วและพร้อมสำหรับการโอน</string><string name="web_upload_how_kicker">มันทำงานอย่างไร</string><string name="web_upload_how_title">การอนุมัติที่ปลอดภัย</string><string name="web_upload_how_body"><![CDATA[เมื่อคุณส่งไฟล์ การแจ้งเตือนจะปรากฏขึ้นบนโทรศัพท์ เจ้าของอุปกรณ์ต้อง<strong>ยอมรับ</strong>จึงจะเริ่มการโอนได้]]></string><string name="web_action_download">ดาวน์โหลด</string><string name="web_photo_view">ดู</string><string name="web_btn_download_all">ดาวน์โหลดทั้งหมด</string><string name="web_btn_download_selected">ดาวน์โหลดที่เลือกแล้ว</string><string name="web_btn_download_original">ดาวน์โหลดต้นฉบับ</string><string name="web_error_streaming_codec">เซิร์ฟเวอร์ Android ไม่รองรับตัวแปลงสัญญาณของไฟล์นี้สำหรับการสตรีม กรุณาดาวน์โหลด</string><string name="web_error_downloads_disabled">การดาวน์โหลดถูกปิดใช้งานโดยเจ้าของอุปกรณ์</string><string name="web_error_video_decode">เบราว์เซอร์นี้ไม่สามารถถอดรหัสสตรีมวิดีโอได้ ลองดาวน์โหลดไฟล์ต้นฉบับ</string><string name="web_error_video_start">เบราว์เซอร์นี้ไม่สามารถเริ่มวิดีโอได้ ลองอีกครั้งหรือดาวน์โหลดไฟล์ต้นฉบับ</string>
+    <string name="web_upload_title">ส่งไปยังอุปกรณ์</string>
+    <string name="web_upload_subtitle">อัปโหลดไฟล์ไปยังอุปกรณ์โฮสต์ผ่านเครือข่าย</string>
+    <string name="web_upload_prompt_title">เลือกไฟล์ที่จะส่ง</string>
+    <string name="web_upload_prompt_desktop">ลากและวางที่นี่ หรือแตะปุ่มด้านล่าง</string>
+    <string name="web_upload_prompt_mobile">แตะปุ่มเพื่อเลือกไฟล์จากไลบรารีของคุณ</string>
+    <string name="web_upload_button_browse">เรียกดูไฟล์</string>
+    <string name="web_upload_target_kicker">อุปกรณ์เป้าหมาย</string>
+    <string name="web_upload_target_status">สถานะ: เชื่อมต่อแล้วและพร้อมสำหรับการโอน</string>
+    <string name="web_upload_how_kicker">มันทำงานอย่างไร</string>
+    <string name="web_upload_how_title">การอนุมัติที่ปลอดภัย</string>
+    <string name="web_upload_how_body"><![CDATA[เมื่อคุณส่งไฟล์ การแจ้งเตือนจะปรากฏขึ้นบนโทรศัพท์ เจ้าของอุปกรณ์ต้อง<strong>ยอมรับ</strong>จึงจะเริ่มการโอนได้]]></string>
+    <string name="web_action_download">ดาวน์โหลด</string>
+    <string name="web_photo_view">ดู</string>
+    <string name="web_btn_download_all">ดาวน์โหลดทั้งหมด</string>
+    <string name="web_btn_download_selected">ดาวน์โหลดที่เลือกแล้ว</string>
+    <string name="web_btn_download_original">ดาวน์โหลดต้นฉบับ</string>
+    <string name="web_error_streaming_codec">เซิร์ฟเวอร์ Android ไม่รองรับตัวแปลงสัญญาณของไฟล์นี้สำหรับการสตรีม กรุณาดาวน์โหลด</string>
+    <string name="web_error_downloads_disabled">การดาวน์โหลดถูกปิดใช้งานโดยเจ้าของอุปกรณ์</string>
+    <string name="web_error_video_decode">เบราว์เซอร์นี้ไม่สามารถถอดรหัสสตรีมวิดีโอได้ ลองดาวน์โหลดไฟล์ต้นฉบับ</string>
+    <string name="web_error_video_start">เบราว์เซอร์นี้ไม่สามารถเริ่มวิดีโอได้ ลองอีกครั้งหรือดาวน์โหลดไฟล์ต้นฉบับ</string>
     <string name="web_btn_clear_selection">ล้าง</string>
     <string name="web_btn_select_all">เลือกทั้งหมด</string>
     <string name="web_btn_select_files">เลือกไฟล์</string>
@@ -562,4 +553,76 @@
     <string name="library_clear_all_action">ล้างทั้งหมด</string>
     <string name="library_clear_all_title">ล้างไลบรารีนี้หรือไม่</string>
     <string name="library_clear_all_body">การดำเนินการนี้จะลบไฟล์และโฟลเดอร์ที่แชร์ทั้งหมดออกจากไลบรารีปัจจุบัน</string>
+    <string name="session_browser_prep_title">Preparing browser files</string>
+    <string name="session_browser_prep_active">%1$d%% • %2$d of %3$d ready</string>
+    <string name="session_browser_prep_queued">%1$d remaining in background</string>
+    <string name="session_browser_prep_ready">%1$d browser files ready</string>
+    <string name="session_browser_prep_message_active">Preparing %1$s for browser playback</string>
+    <string name="session_browser_prep_message_queued">Preparing browser-ready video files in the background</string>
+    <string name="session_browser_prep_message_ready">Browser playback preparation is complete</string>
+    <string name="session_browser_prep_message_manual">Browser prep is optional and only helps on videos that need conversion.</string>
+    <string name="session_browser_prep_manual_note">Playback can still start without this. Large batches may warm the phone a little, so you can start or stop preparation whenever you want.</string>
+    <string name="session_prepare_browser_files">Prepare browser files</string>
+    <string name="session_stop_browser_files">Stop browser prep</string>
+    <string name="session_library_refresh_title">Live library updates</string>
+    <string name="session_library_refresh_pending">%1$d new files and %2$d new folders are ready to add to this live server.</string>
+    <string name="session_library_refresh_up_to_date">This live server already matches your current library.</string>
+    <string name="session_refresh_library">Refresh live library</string>
+    <string name="message_live_library_refreshed_updates">Live server refreshed with %1$d new files and %2$d new folders.</string>
+    <string name="message_live_library_refreshed_current">Live server refreshed. It was already up to date.</string>
+    <string name="message_browser_playback_queued_all">Started browser preparation for %1$d files.</string>
+    <string name="message_browser_playback_already_ready">Browser files are already ready, already queued, or not needed.</string>
+    <string name="message_browser_playback_stopped">Stopped browser file preparation.</string>
+    <string name="library_importing_title">Adding files to library</string>
+    <string name="library_importing_body">%1$d selected items are still being added in the background.</string>
+    <string name="web_upload_selection_empty">No files selected yet.</string>
+    <string name="web_upload_selection_single">Ready to send %1$s</string>
+    <string name="web_upload_selection_multiple">Ready to send %1$d files</string>
+    <string name="web_upload_button_send">Upload</string>
+    <string name="common_quick_filters">Quick filters</string>
+    <string name="common_edit_nickname">Edit nickname</string>
+    <string name="home_quick_filters_desc">Add files from a specific date. Open library to see all your files.</string>
+    <string name="home_date_range_body">Choose files from a specific date range.</string>
+    <string name="help_section_browser_preparation">Browser Preparation</string>
+    <string name="help_section_drop_zone">Drop Zone</string>
+    <string name="help_section_privacy_controls">Privacy Controls</string>
+    <string name="help_line_prep_optional">Preparation is optional but recommended for older devices to ensure smooth playback.</string>
+    <string name="help_line_prep_control">You can control preparation per-file from the library management screen.</string>
+    <string name="help_line_prep_batch">You can also batch-prepare files from the session status screen.</string>
+    <string name="help_line_drop_zone">The web interface includes a \'Drop Zone\' for receiving files.</string>
+    <string name="help_line_drop_zone_pick">Recipients can pick files or drag and drop them to send to your device.</string>
+    <string name="help_line_drop_zone_local">Transfers happen entirely over your local network and never touch the cloud.</string>
+    <string name="help_line_privacy_local">DirectServe is local-only; files are shared directly between devices.</string>
+    <string name="help_line_privacy_session">Access is only possible while your session is active on the host phone.</string>
+    <string name="web_upload_requesting">Requesting permission</string>
+    <string name="web_upload_waiting">Waiting for DirectServe</string>
+    <string name="web_upload_success_title">Success!</string>
+    <string name="web_upload_success_detail_single">File is ready on DirectServe.</string>
+    <string name="web_upload_success_detail_multiple">Files are ready on DirectServe.</string>
+    <string name="web_upload_failed_title">Transfer failed</string>
+    <string name="web_upload_failed_detail">Upload request was denied or failed.</string>
+    <string name="web_player_error_open">This video could not be opened</string>
+    <string name="web_player_opening">Opening video...</string>
+    <string name="web_player_ready">Video is ready</string>
+    <string name="web_player_starting">Starting playback...</string>
+    <string name="web_player_wait_desc">This browser needs a moment to open the video. Keep this page open.</string>
+    <string name="web_player_ready_desc">Playback is ready on this device.</string>
+    <string name="web_player_starting_desc">The video is starting now. If it pauses, wait a moment or try again.</string>
+    <string name="web_player_try_again">Try again</string>
+    <string name="web_player_status_opening">Opening</string>
+    <string name="web_player_status_ready">Ready</string>
+    <string name="web_player_status_playing">Playing</string>
+    <string name="web_btn_back">Back to videos</string>
+    <string name="web_status_subtitles_available">Subtitles available</string>
+    <string name="help_line_privacy_controls">Use PIN access and device blocking for extra security.</string>
+    <string name="web_now_playing">Now playing</string>
+    <string name="common_resume">Resume</string>
+    <string name="web_status_init_progress">0%</string>
+    <string name="common_play">Play</string>
+    <string name="common_pause">Pause</string>
+    <string name="common_unit_b">B</string>
+    <string name="common_unit_kb">KB</string>
+    <string name="common_unit_mb">MB</string>
+    <string name="common_unit_gb">GB</string>
+    <string name="common_unit_tb">TB</string>
 </resources>

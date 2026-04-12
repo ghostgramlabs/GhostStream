@@ -12,7 +12,6 @@
     <string name="common_dismiss">Tutup</string>
     <string name="common_remove">Hapus</string>
     <string name="common_search">Cari</string>
-
     <string name="onboarding_skip">Lewati</string>
     <string name="onboarding_title">Streaming langsung dan berbagi berkas</string>
     <string name="onboarding_subtitle">Ubah ponselmu jadi hub lokal pribadi untuk akses TV, laptop, ponsel, tablet, dan browser.</string>
@@ -31,7 +30,6 @@
     <string name="onboarding_page_counter">%1$d dari %2$d</string>
     <string name="onboarding_next">Lanjut</string>
     <string name="onboarding_get_started">Mulai</string>
-
     <string name="settings_title">Pengaturan</string>
     <string name="settings_subtitle">Atur tampilan dan cara kerja DirectServe.</string>
     <string name="settings_group_general">Umum</string>
@@ -109,7 +107,6 @@
     <string name="settings_share_debug_log">Bagikan log debug</string>
     <string name="settings_share_debug_log_desc">Email log startup dan sesi terbaru.</string>
     <string name="settings_clear_debug_log">Hapus log debug</string>
-
     <string name="help_title">Bantuan</string>
     <string name="help_about_title">Tentang DirectServe</string>
     <string name="help_about_1">DirectServe memungkinkan perangkat sekitar membuka berkas yang kamu bagikan di browser tanpa perlu penyimpanan cloud atau akun.</string>
@@ -141,7 +138,6 @@
     <string name="help_line_flow_2">2. Mulai sesi.</string>
     <string name="help_line_flow_3">3. Buka tautan atau pindai kode QR di perangkat lain.</string>
     <string name="help_line_flow_4">4. Telusuri, putar, atau unggah berkas sesuai izin host.</string>
-
     <string name="home_brand_title">DirectServe</string>
     <string name="home_brand_subtitle">Berbagi pribadi lewat Wi-Fi atau hotspot-mu</string>
     <string name="home_chip_local_session">Sesi lokal</string>
@@ -158,7 +154,6 @@
     <string name="home_button_open_session">Buka sesi</string>
     <string name="home_button_starting">Memulai...</string>
     <string name="home_no_network">Wi-Fi atau hotspot tidak ditemukan</string>
-
     <string name="network_setup_title">Jaringan lokal diperlukan</string>
     <string name="network_setup_body">DirectServe bekerja saat kedua perangkat terhubung ke Wi-Fi atau hotspot ponselmu.</string>
     <string name="network_setup_trouble_title">Kesulitan di Wi-Fi publik?</string>
@@ -167,7 +162,6 @@
     <string name="network_setup_switch_hotspot">Ganti ke Hotspot</string>
     <string name="network_setup_retry">Coba lagi</string>
     <string name="network_setup_footer">Hotspot paling pas saat bepergian atau tidak ada router.</string>
-
     <string name="session_title">Sesi Live</string>
     <string name="session_stop_sharing">Berhenti berbagi</string>
     <string name="session_live_now">Sedang live</string>
@@ -218,7 +212,6 @@
     <string name="session_network_wifi">Wi-Fi</string>
     <string name="session_network_local">Lokal</string>
     <string name="session_network_offline">Luring</string>
-
     <string name="history_title">Riwayat Transfer</string>
     <string name="history_tab_all">Semua Aktivitas</string>
     <string name="history_tab_received">Diterima</string>
@@ -229,17 +222,14 @@
     <string name="history_open">Buka</string>
     <string name="history_delete">Hapus</string>
     <string name="history_delete_desc">Hapus dari riwayat</string>
-
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">Berbagi lokal pribadi</string>
-
     <string name="privacy_policy_title">Kebijakan Privasi</string>
     <string name="privacy_policy_intro">DirectServe dibuat untuk berbagi lokal secara pribadi. Berkasmu tetap di perangkat ini kecuali kamu memilih untuk membagikannya.</string>
     <string name="privacy_policy_line_1">DirectServe tidak memerlukan akun.</string>
     <string name="privacy_policy_line_2">DirectServe tidak mengunggah berkasmu ke layanan cloud.</string>
     <string name="privacy_policy_line_3">Akses hanya tersedia saat sesi aktif dan terbatas pada berkas yang kamu pilih.</string>
     <string name="privacy_policy_line_4">Kamu bisa berhenti berbagi, menggunakan PIN, atau memblokir perangkat kapan saja.</string>
-
     <string name="main_service_background_protection_failed">Berbagi dimulai, tapi perlindungan latar belakang gagal. Biarkan DirectServe tetap terbuka selama digunakan.</string>
     <string name="main_notification_permission_warning">Berbagi tetap jalan, tapi notifikasi mungkin tidak muncul tanpa izin.</string>
     <string name="main_batch_media_access_needed">Izinkan akses media untuk menggunakan Smart Picks. Kamu tetap bisa tambah berkas manual.</string>
@@ -254,7 +244,6 @@
     <string name="main_share_link_chooser">Bagikan tautan DirectServe</string>
     <string name="main_link_not_ready">Tautan lokal belum siap. Cek Wi-Fi atau hotspot.</string>
     <string name="main_not_sharing">Tidak sedang berbagi</string>
-
     <string name="service_start_failed">Gagal memulai berbagi di latar belakang.</string>
     <string name="service_auto_stop_message">Berbagi berhenti karena tidak ada aktivitas.</string>
     <string name="service_upload_request_title">Transfer Masuk</string>
@@ -272,7 +261,6 @@
     <string name="service_channel_requests_desc">Notifikasi transfer masuk dari perangkat lain</string>
     <string name="service_channel_connections_name">Koneksi Perangkat</string>
     <string name="service_channel_connections_desc">Notifikasi saat perangkat baru bergabung ke sesimu</string>
-
     <string name="library_title">Perpustakaan</string>
     <string name="library_header_title">Perpustakaan Bersama</string>
     <string name="library_header_body">Ini berkas yang bisa dilihat orang lewat tautanmu.</string>
@@ -348,7 +336,6 @@
     <string name="library_compat_ready">Siap</string>
     <string name="library_compat_unavailable">Tidak tersedia</string>
     <string name="library_compat_message">%1$s | %2$s</string>
-
     <string name="selection_add_files_title">Tambah Berkas</string>
     <string name="selection_add_files_body">Pilih berkas untuk tersedia di sesimu.</string>
     <string name="selection_add_selected">Tambah Terpilih</string>
@@ -374,7 +361,6 @@
     <string name="selection_no_groups_body">Ketuk Segarkan jika izin baru diberikan, atau tambah berkas secara manual.</string>
     <string name="selection_refresh_groups">Segarkan grup pintar</string>
     <string name="selection_add_group">Tambah Grup</string>
-
     <string name="home_upload_request_title">Permintaan transfer</string>
     <string name="home_upload_request_single">sebuah berkas</string>
     <string name="home_upload_request_files">%1$d berkas</string>
@@ -384,7 +370,6 @@
     <string name="home_settings_content_desc">Pengaturan</string>
     <string name="home_network_required_title">Koneksi Jaringan Diperlukan</string>
     <string name="home_network_required_body">Hubungkan ke Wi-Fi atau hotspot untuk mulai.\n\nData seluler tidak bisa dipakai untuk sesi lokal. Pastikan kedua perangkat di jaringan yang sama.</string>
-
     <string name="message_unable_add_folder">Gagal menambahkan folder.</string>
     <string name="message_saved_share_named">Koleksi \"%1$s\" disimpan.</string>
     <string name="message_unable_save_share">Gagal menyimpan koleksi ini.</string>
@@ -401,14 +386,12 @@
     <string name="message_preparing_browser_playback">Menyiapkan %1$s agar lancar diputar di browser.</string>
     <string name="nearby_helper_tap_session">Ketuk sesi sekitar untuk membukanya di browser.</string>
     <string name="nearby_helper_open_on_other_device">Buka DirectServe di perangkat lain dalam jaringan yang sama.</string>
-
     <string name="share_preset_enter_name">Beri nama koleksi dulu.</string>
     <string name="share_preset_add_content_first">Tambah konten dulu sebelum disimpan.</string>
     <string name="share_preset_select_file_first">Pilih minimal satu berkas.</string>
     <string name="share_preset_files_unavailable">Berkas tidak lagi tersedia di perpustakaan.</string>
     <string name="share_preset_collection_unavailable">Koleksi ini sudah tidak ada.</string>
     <string name="share_preset_restore_failed">Gagal memulihkan koleksi.</string>
-
     <string name="sharing_preflight_failed">Cek awal gagal: %1$s</string>
     <string name="sharing_add_content_first">Tambah konten dulu untuk mulai berbagi.</string>
     <string name="sharing_same_wifi_needed">Kedua perangkat harus di Wi-Fi atau hotspot yang sama.</string>
@@ -416,7 +399,6 @@
     <string name="sharing_server_start_failed">Server gagal mulai: %1$s</string>
     <string name="sharing_stopped">Berbagi berhenti</string>
     <string name="sharing_device_android">Android</string>
-
     <string name="network_helper_wifi_ready">Perangkat sekitar bisa buka tautan ini di Wi-Fi yang sama. Jika Wi-Fi publik memblokir akses, pakai hotspot.</string>
     <string name="network_helper_local_ready">Jaringan lokal siap untuk akses browser.</string>
     <string name="network_helper_wifi_found">Alamat Wi-Fi ditemukan. Perangkat lain harusnya bisa buka tautan.</string>
@@ -424,14 +406,12 @@
     <string name="network_helper_mobile_only">Data seluler tidak bisa buat sesi lokal. Pakai Wi-Fi atau hotspot.</string>
     <string name="network_helper_local_address_ready">Alamat lokal ditemukan. Perangkat lain di jaringan yang sama bisa terhubung.</string>
     <string name="network_helper_connect_both">Hubungkan kedua perangkat ke Wi-Fi atau hotspot yang sama.</string>
-
     <string name="discovery_unavailable_device">Pencarian perangkat tidak didukung ponsel ini.</string>
     <string name="discovery_nsd_unavailable">NSD tidak tersedia</string>
     <string name="discovery_searching">Mencari perangkat DirectServe di jaringan ini...</string>
     <string name="discovery_unavailable_now">Pencarian tidak tersedia. Pakai QR atau tautan saja.</string>
     <string name="discovery_start_failed">Gagal memulai (%1$d)</string>
     <string name="discovery_ready_to_open">Perangkat DirectServe ditemukan.</string>
-
     <string name="browser_title">DirectServe</string>
     <string name="browser_subtitle">Putar &amp; bagikan berkas luring</string>
     <string name="browser_file_unavailable">Berkas sudah tidak ada di ponsel host.</string>
@@ -445,8 +425,6 @@
     <string name="browser_video_part_unavailable">Bagian video sudah tidak tersedia.</string>
     <string name="browser_hls_not_needed">Video tidak butuh HLS.</string>
     <string name="browser_hls_not_ready">Stream ini belum siap untuk HLS.</string>
-
-    <!-- Action Shelf (Add to share) -->
     <string name="home_action_add_to_share_title">Tambahkan ke berbagi</string>
     <string name="home_action_add_to_share_subtitle">Pilih file yang ingin Anda kirim.</string>
     <string name="home_action_files">File</string>
@@ -455,8 +433,6 @@
     <string name="home_action_folder_desc">Pindai</string>
     <string name="home_action_library">Pustaka</string>
     <string name="home_action_library_desc">Jelajahi</string>
-
-    <!-- Support Panel (Nearby & network) -->
     <string name="home_nearby_title">Di sekitar &amp; jaringan</string>
     <string name="home_nearby_subtitle">Pastikan jaringan lokal Anda siap, lalu cari perangkat DirectServe lain jika Anda ingin membukanya di aplikasi.</string>
     <string name="home_nearby_refresh_status">Perbarui status</string>
@@ -475,8 +451,6 @@
     <string name="home_nearby_action_open">Buka</string>
     <string name="home_nearby_device_available">Tersedia</string>
     <string name="home_nearby_device_pin">Diperlukan PIN</string>
-
-    <!-- Web UI -->
     <string name="web_hero_eyebrow">Tampilan penerima pribadi</string>
     <string name="web_hero_title">Streaming &amp; bagikan file secara offline</string>
     <string name="web_hero_desc1">Jelajahi, putar, pratinjau</string>
@@ -511,8 +485,6 @@
     <string name="web_security_pin">Dilindungi PIN</string>
     <string name="web_security_open">Buka di jaringan lokal</string>
     <string name="web_status_unknown">Tidak diketahui</string>
-
-    <!-- Misc Native UI -->
     <string name="home_connected_devices">Perangkat terhubung</string>
     <string name="home_rename_device">Ganti nama perangkat</string>
     <string name="home_rename_device_subtitle">Perangkat: %1$s • %2$s</string>
@@ -542,7 +514,6 @@
     <string name="home_saved_shares_delete">Hapus</string>
     <string name="home_saved_shares_items_count">%1$d item</string>
     <string name="library_date_group_label">%1$s </string>
-
     <string name="web_action_download">Unduh</string>
     <string name="web_btn_download_all">Unduh semuanya</string>
     <string name="web_btn_download_original">Unduh yang asli</string>
@@ -553,7 +524,7 @@
     <string name="web_error_video_start">Browser ini tidak dapat memulai video. Coba lagi atau unduh file aslinya.</string>
     <string name="web_photo_view">Melihat</string>
     <string name="web_upload_button_browse">Jelajahi File</string>
-        <string name="web_upload_how_body"><![CDATA[Saat Anda mengirim file, notifikasi akan muncul di ponsel. Pemilik perangkat harus <strong>Menerima</strong> agar transfer dimulai.]]></string>
+    <string name="web_upload_how_body"><![CDATA[Saat Anda mengirim file, notifikasi akan muncul di ponsel. Pemilik perangkat harus <strong>Menerima</strong> agar transfer dimulai.]]></string>
     <string name="web_upload_how_kicker">Bagaimana cara kerjanya</string>
     <string name="web_upload_how_title">Persetujuan Aman</string>
     <string name="web_upload_prompt_desktop">Seret dan lepas di sini, atau ketuk tombol di bawah</string>
@@ -563,7 +534,6 @@
     <string name="web_upload_target_kicker">Perangkat Sasaran</string>
     <string name="web_upload_target_status">Status: Terhubung dan siap untuk transfer</string>
     <string name="web_upload_title">Kirim ke Perangkat</string>
-
     <string name="web_btn_clear_selection">Hapus</string>
     <string name="web_btn_select_all">Pilih semua</string>
     <string name="web_btn_select_files">Pilih file</string>
@@ -583,4 +553,76 @@
     <string name="library_clear_all_action">Hapus semua</string>
     <string name="library_clear_all_title">Hapus perpustakaan ini?</string>
     <string name="library_clear_all_body">Ini akan menghapus semua file dan folder yang dibagikan dari perpustakaan saat ini.</string>
+    <string name="session_browser_prep_title">Preparing browser files</string>
+    <string name="session_browser_prep_active">%1$d%% • %2$d of %3$d ready</string>
+    <string name="session_browser_prep_queued">%1$d remaining in background</string>
+    <string name="session_browser_prep_ready">%1$d browser files ready</string>
+    <string name="session_browser_prep_message_active">Preparing %1$s for browser playback</string>
+    <string name="session_browser_prep_message_queued">Preparing browser-ready video files in the background</string>
+    <string name="session_browser_prep_message_ready">Browser playback preparation is complete</string>
+    <string name="session_browser_prep_message_manual">Browser prep is optional and only helps on videos that need conversion.</string>
+    <string name="session_browser_prep_manual_note">Playback can still start without this. Large batches may warm the phone a little, so you can start or stop preparation whenever you want.</string>
+    <string name="session_prepare_browser_files">Prepare browser files</string>
+    <string name="session_stop_browser_files">Stop browser prep</string>
+    <string name="session_library_refresh_title">Live library updates</string>
+    <string name="session_library_refresh_pending">%1$d new files and %2$d new folders are ready to add to this live server.</string>
+    <string name="session_library_refresh_up_to_date">This live server already matches your current library.</string>
+    <string name="session_refresh_library">Refresh live library</string>
+    <string name="message_live_library_refreshed_updates">Live server refreshed with %1$d new files and %2$d new folders.</string>
+    <string name="message_live_library_refreshed_current">Live server refreshed. It was already up to date.</string>
+    <string name="message_browser_playback_queued_all">Started browser preparation for %1$d files.</string>
+    <string name="message_browser_playback_already_ready">Browser files are already ready, already queued, or not needed.</string>
+    <string name="message_browser_playback_stopped">Stopped browser file preparation.</string>
+    <string name="library_importing_title">Adding files to library</string>
+    <string name="library_importing_body">%1$d selected items are still being added in the background.</string>
+    <string name="web_upload_selection_empty">No files selected yet.</string>
+    <string name="web_upload_selection_single">Ready to send %1$s</string>
+    <string name="web_upload_selection_multiple">Ready to send %1$d files</string>
+    <string name="web_upload_button_send">Upload</string>
+    <string name="common_quick_filters">Quick filters</string>
+    <string name="common_edit_nickname">Edit nickname</string>
+    <string name="home_quick_filters_desc">Add files from a specific date. Open library to see all your files.</string>
+    <string name="home_date_range_body">Choose files from a specific date range.</string>
+    <string name="help_section_browser_preparation">Browser Preparation</string>
+    <string name="help_section_drop_zone">Drop Zone</string>
+    <string name="help_section_privacy_controls">Privacy Controls</string>
+    <string name="help_line_prep_optional">Preparation is optional but recommended for older devices to ensure smooth playback.</string>
+    <string name="help_line_prep_control">You can control preparation per-file from the library management screen.</string>
+    <string name="help_line_prep_batch">You can also batch-prepare files from the session status screen.</string>
+    <string name="help_line_drop_zone">The web interface includes a \'Drop Zone\' for receiving files.</string>
+    <string name="help_line_drop_zone_pick">Recipients can pick files or drag and drop them to send to your device.</string>
+    <string name="help_line_drop_zone_local">Transfers happen entirely over your local network and never touch the cloud.</string>
+    <string name="help_line_privacy_local">DirectServe is local-only; files are shared directly between devices.</string>
+    <string name="help_line_privacy_session">Access is only possible while your session is active on the host phone.</string>
+    <string name="web_upload_requesting">Requesting permission</string>
+    <string name="web_upload_waiting">Waiting for DirectServe</string>
+    <string name="web_upload_success_title">Success!</string>
+    <string name="web_upload_success_detail_single">File is ready on DirectServe.</string>
+    <string name="web_upload_success_detail_multiple">Files are ready on DirectServe.</string>
+    <string name="web_upload_failed_title">Transfer failed</string>
+    <string name="web_upload_failed_detail">Upload request was denied or failed.</string>
+    <string name="web_player_error_open">This video could not be opened</string>
+    <string name="web_player_opening">Opening video...</string>
+    <string name="web_player_ready">Video is ready</string>
+    <string name="web_player_starting">Starting playback...</string>
+    <string name="web_player_wait_desc">This browser needs a moment to open the video. Keep this page open.</string>
+    <string name="web_player_ready_desc">Playback is ready on this device.</string>
+    <string name="web_player_starting_desc">The video is starting now. If it pauses, wait a moment or try again.</string>
+    <string name="web_player_try_again">Try again</string>
+    <string name="web_player_status_opening">Opening</string>
+    <string name="web_player_status_ready">Ready</string>
+    <string name="web_player_status_playing">Playing</string>
+    <string name="web_btn_back">Back to videos</string>
+    <string name="web_status_subtitles_available">Subtitles available</string>
+    <string name="help_line_privacy_controls">Use PIN access and device blocking for extra security.</string>
+    <string name="web_now_playing">Now playing</string>
+    <string name="common_resume">Resume</string>
+    <string name="web_status_init_progress">0%</string>
+    <string name="common_play">Play</string>
+    <string name="common_pause">Pause</string>
+    <string name="common_unit_b">B</string>
+    <string name="common_unit_kb">KB</string>
+    <string name="common_unit_mb">MB</string>
+    <string name="common_unit_gb">GB</string>
+    <string name="common_unit_tb">TB</string>
 </resources>
