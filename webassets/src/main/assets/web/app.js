@@ -1091,7 +1091,8 @@ function updateCompatElements(job, streamLive) {
 
 async function ensureCompatiblePlayerMounted(item) {
   const mountToken = ++state.compatMountToken;
-  if (item.playbackMode !== "DIRECT") {
+  const alreadyReady = Boolean(item.compatibilityComplete || item.compatibilityStatus === "READY");
+  if (item.playbackMode !== "DIRECT" && !alreadyReady) {
     const ready = await probeCompatiblePlaybackSource(item);
     if (mountToken !== state.compatMountToken || location.pathname !== `/player/video/${item.id}`) {
       return false;

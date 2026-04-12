@@ -595,17 +595,6 @@
     <string name="common_edit_nickname">Edit nickname</string>
     <string name="home_quick_filters_desc">Add files from a specific date. Open library to see all your files.</string>
     <string name="home_date_range_body">Choose files from a specific date range.</string>
-    <string name="help_section_browser_preparation">Browser Preparation</string>
-    <string name="help_section_drop_zone">Drop Zone</string>
-    <string name="help_section_privacy_controls">Privacy Controls</string>
-    <string name="help_line_prep_optional">Preparation is optional but recommended for older devices to ensure smooth playback.</string>
-    <string name="help_line_prep_control">You can control preparation per-file from the library management screen.</string>
-    <string name="help_line_prep_batch">You can also batch-prepare files from the session status screen.</string>
-    <string name="help_line_drop_zone">The web interface includes a \'Drop Zone\' for receiving files.</string>
-    <string name="help_line_drop_zone_pick">Recipients can pick files or drag and drop them to send to your device.</string>
-    <string name="help_line_drop_zone_local">Transfers happen entirely over your local network and never touch the cloud.</string>
-    <string name="help_line_privacy_local">DirectServe is local-only; files are shared directly between devices.</string>
-    <string name="help_line_privacy_session">Access is only possible while your session is active on the host phone.</string>
     <string name="web_upload_requesting">Requesting permission</string>
     <string name="web_upload_waiting">Waiting for DirectServe</string>
     <string name="web_upload_success_title">Success!</string>
@@ -626,7 +615,6 @@
     <string name="web_player_status_playing">Playing</string>
     <string name="web_btn_back">Back to videos</string>
     <string name="web_status_subtitles_available">Subtitles available</string>
-    <string name="help_line_privacy_controls">Use PIN access and device blocking for extra security.</string>
     <string name="web_now_playing">Now playing</string>
     <string name="common_resume">Resume</string>
     <string name="web_status_init_progress">0%</string>
