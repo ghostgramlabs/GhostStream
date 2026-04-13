@@ -28,6 +28,8 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -43,6 +45,7 @@ class MainViewModel(
     private val startSharingInProgress = MutableStateFlow(false)
     private val libraryImportingCount = MutableStateFlow(0)
     private val connectingNearbyDeviceId = MutableStateFlow<String?>(null)
+    private val _browserPrepManuallyTriggered = MutableStateFlow(false)
     private val _events = MutableSharedFlow<AppEvent>(extraBufferCapacity = 8)
 
     val events = _events.asSharedFlow()
@@ -62,6 +65,7 @@ class MainViewModel(
         connectingNearbyDeviceId,
         container.sessionManager.pendingUploadRequest,
         container.historyRepository.allHistory,
+        _browserPrepManuallyTriggered,
     ) { values ->
         val settings = values[0] as AppSettings
         val library = values[1] as LibraryState
@@ -77,6 +81,7 @@ class MainViewModel(
         val connectingNearbyId = values[11] as String?
         val pendingUpload = values[12] as com.ghoststream.core.model.UploadRequest?
         val history = values[13] as List<com.ghoststream.core.model.TransferRecord>
+        val manuallyTriggered = values[14] as Boolean
         val filteredNearbyDiscoveryState = nearbyDiscoveryState.filterCurrentSession(session, application)
         MainUiState(
             isReady = true,
@@ -99,6 +104,7 @@ class MainViewModel(
             connectingNearbyDeviceId = connectingNearbyId,
             pendingUploadRequest = pendingUpload,
             transferHistory = history,
+            browserPrepManuallyTriggered = manuallyTriggered,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -109,6 +115,20 @@ class MainViewModel(
     init {
         refreshNetwork()
         container.debugLogRepository.log("MainViewModel", "initialized")
+        // Auto-reset the manual trigger flag once all queued/active compatibility jobs finish.
+        container.compatibilityPipeline.jobs
+            .onEach { jobs ->
+                if (_browserPrepManuallyTriggered.value) {
+                    val hasActiveJobs = jobs.values.any { job ->
+                        job.status == com.ghoststream.core.media.CompatibilityStatus.QUEUED ||
+                            job.status == com.ghoststream.core.media.CompatibilityStatus.PREPARING
+                    }
+                    if (!hasActiveJobs) {
+                        _browserPrepManuallyTriggered.value = false
+                    }
+                }
+            }
+            .launchIn(viewModelScope)
     }
 
     fun completeOnboarding() {
@@ -443,6 +463,7 @@ class MainViewModel(
 
             val queuedCount = queueSessionBrowserPlayback()
             val message = if (queuedCount > 0) {
+                _browserPrepManuallyTriggered.value = true
                 application.getString(R.string.message_browser_playback_queued_all, queuedCount)
             } else {
                 application.getString(R.string.message_browser_playback_already_ready)
@@ -453,6 +474,7 @@ class MainViewModel(
 
     fun stopLiveBrowserFiles() {
         viewModelScope.launch {
+            _browserPrepManuallyTriggered.value = false
             container.compatibilityPipeline.cancelPendingPreparations()
             _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_browser_playback_stopped)))
         }

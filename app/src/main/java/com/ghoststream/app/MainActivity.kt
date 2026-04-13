@@ -500,6 +500,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     browserPrepPendingCount = browserPrepPendingCount,
                     browserPrepProgressPercent = activeBrowserPrep?.second?.progressPercent ?: 0,
                     browserPrepActiveFileName = activeBrowserPrep?.first?.displayName,
+                    browserPrepManuallyTriggered = uiState.browserPrepManuallyTriggered,
                     hapticOnDeviceConnect = uiState.settings.hapticOnDeviceConnect,
                     showTransferSpeed = uiState.settings.showTransferSpeed,
                     onCopyLink = {

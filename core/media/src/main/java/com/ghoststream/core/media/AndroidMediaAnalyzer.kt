@@ -30,10 +30,18 @@ class AndroidMediaAnalyzer(
         val trackInspection = inspectTracks(uri)
         val container = detectContainer(normalizedMimeType = normalizedMimeType, lowerCaseName = lower)
         val browserSafe = isBrowserSafe(normalizedMimeType = normalizedMimeType, lowerCaseName = lower)
-        val browserVideoCompatible = trackInspection.videoTrackMimeType == null || trackInspection.videoTrackMimeType == "video/avc"
+        // H.264 (AVC), VP8, and VP9 are natively playable in Chrome, Firefox, Edge, and most Android
+        // browsers without transcoding. VP8/VP9 in WebM containers will be served DIRECT.
+        val browserVideoCompatible = trackInspection.videoTrackMimeType == null ||
+            trackInspection.videoTrackMimeType == "video/avc" ||
+            trackInspection.videoTrackMimeType == "video/x-vnd.on2.vp8" ||
+            trackInspection.videoTrackMimeType == "video/x-vnd.on2.vp9"
+        // AAC-LC, MP3, Vorbis (WebM), and Opus (WebM) are universally browser-compatible.
         val browserAudioCompatible = trackInspection.audioTrackMimeType == null ||
             trackInspection.audioTrackMimeType == "audio/mp4a-latm" ||
-            trackInspection.audioTrackMimeType == "audio/mpeg"
+            trackInspection.audioTrackMimeType == "audio/mpeg" ||
+            trackInspection.audioTrackMimeType == "audio/vorbis" ||
+            trackInspection.audioTrackMimeType == "audio/opus"
         val likelyContainerOnlyIssue = (container == MediaContainer.MATROSKA || container == MediaContainer.QUICKTIME) &&
             browserVideoCompatible &&
             browserAudioCompatible

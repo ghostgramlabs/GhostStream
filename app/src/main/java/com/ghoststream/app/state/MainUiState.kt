@@ -28,6 +28,7 @@ data class MainUiState(
     val connectingNearbyDeviceId: String? = null,
     val pendingUploadRequest: com.ghoststream.core.model.UploadRequest? = null,
     val transferHistory: List<TransferRecord> = emptyList(),
+    val browserPrepManuallyTriggered: Boolean = false,
 )
 
 sealed interface AppEvent {

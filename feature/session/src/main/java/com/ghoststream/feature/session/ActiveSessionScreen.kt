@@ -80,6 +80,7 @@ fun ActiveSessionScreen(
     browserPrepPendingCount: Int,
     browserPrepProgressPercent: Int,
     browserPrepActiveFileName: String?,
+    browserPrepManuallyTriggered: Boolean,
     hapticOnDeviceConnect: Boolean,
     showTransferSpeed: Boolean,
     onCopyLink: () -> Unit,
@@ -161,6 +162,7 @@ fun ActiveSessionScreen(
                     pendingCount = browserPrepPendingCount,
                     progressPercent = browserPrepProgressPercent,
                     activeFileName = browserPrepActiveFileName,
+                    manuallyTriggered = browserPrepManuallyTriggered,
                     onPrepareBrowserFiles = onPrepareBrowserFiles,
                     onStopBrowserFiles = onStopBrowserFiles,
                 )
@@ -259,6 +261,7 @@ private fun SessionBrowserPrepCard(
     pendingCount: Int,
     progressPercent: Int,
     activeFileName: String?,
+    manuallyTriggered: Boolean,
     onPrepareBrowserFiles: () -> Unit,
     onStopBrowserFiles: () -> Unit,
 ) {
@@ -341,7 +344,7 @@ private fun SessionBrowserPrepCard(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(stringResource(R.string.session_prepare_browser_files))
                 }
-            } else if (inProgress) {
+            } else if (inProgress && manuallyTriggered) {
                 OutlinedButton(
                     onClick = onStopBrowserFiles,
                     shape = RoundedCornerShape(16.dp),
