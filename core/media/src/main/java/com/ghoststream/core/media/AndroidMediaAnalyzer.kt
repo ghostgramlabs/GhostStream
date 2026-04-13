@@ -274,8 +274,10 @@ class AndroidMediaAnalyzer(
                         durationMs = maxOf(durationMs ?: 0L, trackDuration)
                     }
                     when {
-                        videoTrackMimeType == null && mimeType?.startsWith("video/") == true -> videoTrackMimeType = mimeType
-                        audioTrackMimeType == null && mimeType?.startsWith("audio/") == true -> audioTrackMimeType = mimeType
+                        videoTrackMimeType == null && mimeType?.startsWith("video/") == true ->
+                            videoTrackMimeType = normalizeVideoCodec(mimeType)
+                        audioTrackMimeType == null && mimeType?.startsWith("audio/") == true ->
+                            audioTrackMimeType = normalizeAudioCodec(mimeType)
                     }
                 }
                 TrackInspection(
@@ -287,6 +289,95 @@ class AndroidMediaAnalyzer(
                 extractor.release()
             }
         }.getOrDefault(TrackInspection())
+    }
+
+
+    /**
+     * Normalises video codec MIME strings returned by [android.media.MediaExtractor] into
+     * the canonical set expected by [SmartPlaybackDecisionEngine].
+     *
+     * Different Android versions and OEM ROMs report the same codec with slightly different
+     * strings.  For example H.264 can appear as "video/avc", "video/h264", "video/x-264",
+     * or "video/avc-baseline".  Without normalisation these fall through every explicit
+     * check and end up routed incorrectly.
+     */
+    private fun normalizeVideoCodec(mime: String): String = when {
+        // H.264 / AVC — canonical: "video/avc"
+        mime == "video/avc" ||
+        mime.contains("h264", ignoreCase = true) ||
+        mime.contains("x-264", ignoreCase = true) ||
+        mime.contains("avc", ignoreCase = true) -> "video/avc"
+
+        // HEVC / H.265 — canonical: "video/hevc"
+        mime == "video/hevc" || mime == "video/hvc1" || mime == "video/hev1" ||
+        mime.contains("h265", ignoreCase = true) ||
+        mime.contains("hevc", ignoreCase = true) ||
+        mime.contains("hvc", ignoreCase = true) -> "video/hevc"
+
+        // VP9 — canonical: "video/x-vnd.on2.vp9"
+        mime == "video/x-vnd.on2.vp9" || mime == "video/vp9" ||
+        mime.contains("vp9", ignoreCase = true) -> "video/x-vnd.on2.vp9"
+
+        // VP8 — canonical: "video/x-vnd.on2.vp8"
+        mime == "video/x-vnd.on2.vp8" || mime == "video/vp8" ||
+        mime.contains("vp8", ignoreCase = true) -> "video/x-vnd.on2.vp8"
+
+        // AV1
+        mime == "video/av01" || mime == "video/av1" ||
+        mime.contains("av1", ignoreCase = true) ||
+        mime.contains("av01", ignoreCase = true) -> "video/av01"
+
+        // MPEG-4 Part 2 (DivX / Xvid)
+        mime == "video/mp4v-es" || mime == "video/mpeg4" ||
+        mime.contains("mp4v", ignoreCase = true) ||
+        mime.contains("divx", ignoreCase = true) ||
+        mime.contains("xvid", ignoreCase = true) -> "video/mp4v-es"
+
+        else -> mime
+    }
+
+    /**
+     * Normalises audio codec MIME strings from [android.media.MediaExtractor].
+     *
+     * AAC in particular is reported as "audio/mp4a-latm", "audio/mp4a",
+     * "audio/mpeg4-generic", "audio/aac", or "audio/aac-latm" depending on the
+     * Android version, ROM, and container.  All of these mean the same AAC-LC track
+     * and must normalise to "audio/mp4a-latm" so the browser-compatibility checks work.
+     */
+    private fun normalizeAudioCodec(mime: String): String = when {
+        // AAC-LC variants — canonical: "audio/mp4a-latm"
+        mime == "audio/mp4a-latm" || mime == "audio/mp4a" ||
+        mime == "audio/aac" || mime == "audio/aac-latm" ||
+        mime == "audio/mpeg4-generic" ||
+        mime.startsWith("audio/mp4a") -> "audio/mp4a-latm"
+
+        // MP3 variants — canonical: "audio/mpeg"
+        mime == "audio/mpeg" || mime == "audio/mp3" || mime == "audio/x-mp3" ||
+        mime == "audio/mpeg3" || mime == "audio/x-mpeg" -> "audio/mpeg"
+
+        // AC-3 / Dolby Digital
+        mime == "audio/ac3" || mime == "audio/a52" ||
+        mime.contains("dolby", ignoreCase = true) && !mime.contains("e-ac") -> "audio/ac3"
+
+        // E-AC-3 / Dolby Digital Plus
+        mime == "audio/eac3" || mime == "audio/ec3" ||
+        mime == "audio/e-ac3" -> "audio/eac3"
+
+        // DTS variants
+        mime == "audio/vnd.dts" || mime == "audio/vnd.dts.hd" ||
+        mime == "audio/dtshd-ma" || mime == "audio/dts" ||
+        mime.contains("dts", ignoreCase = true) -> "audio/vnd.dts"
+
+        // TrueHD / Dolby Atmos lossless
+        mime == "audio/truehd" || mime.contains("truehd", ignoreCase = true) -> "audio/truehd"
+
+        // Vorbis (WebM)
+        mime == "audio/vorbis" -> "audio/vorbis"
+
+        // Opus
+        mime == "audio/opus" -> "audio/opus"
+
+        else -> mime
     }
 
     private data class TrackInspection(
