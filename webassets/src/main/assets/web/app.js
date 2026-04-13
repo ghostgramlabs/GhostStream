@@ -438,23 +438,18 @@ function shouldStartCompatibilityPlayback(item, job = null) {
   // Direct compat MP4 path: the server only populates preparedMp4Url when status=READY,
   // so the presence of that URL means we can start immediately.
   if (shouldUseDirectCompatMp4(item)) return true;
-  // For all HLS modes (native Apple/TV and managed hls.js), wait for the server to
-  // confirm segments are ready. The server only sets job.ready=true once
-  // MIN_SEGMENTS_BEFORE_PLAY segments exist, preventing immediate stalls.
-  if (shouldUseNativeHlsPlayback(item) || shouldUseManagedHlsPlayback(item)) {
-    // If the page loaded after a prior transcode completed, item already carries
-    // compatibilityComplete=true / compatibilityStatus="READY" — trust those flags
-    // directly so the player mounts immediately without waiting for a poll round-trip.
-    if (item.compatibilityComplete || item.compatibilityStatus === "READY") return true;
-    if (!job) return false;
-    return Boolean(job.ready || job.complete || job.status === "READY");
-  }
-  // Progressive MP4 fallback (DIRECT on unsupported browsers, or when HLS is not available).
-  const complete = job ? Boolean(job.complete) : Boolean(item.compatibilityComplete);
-  const ready = job
-    ? Boolean(job.ready || job.status === "READY")
-    : Boolean(item.streamReady || item.compatibilityStatus === "READY");
-  return ready || complete;
+  // For all other paths, wait for the job to be fully complete before starting playback.
+  //
+  // We deliberately do NOT trigger on job.ready (partial segments written) because:
+  //   • Partial in-progress HLS via MSE (hls.js) fails with bufferAppendError due to
+  //     TFHD base-data-offset issues — the "stream while transcoding" path is broken.
+  //   • Once job.complete=true, applyCompatState injects preparedMp4Url and the direct
+  //     MP4 path takes over, so there is no benefit in starting HLS early.
+  //
+  // The result is: show progress UI the whole time, auto-play the moment READY.
+  if (item.compatibilityComplete || item.compatibilityStatus === "READY") return true;
+  if (!job) return false;
+  return Boolean(job.complete || job.status === "READY");
 }
 
 function compatibilityHeadline(item, streamLive = item.streamReady) {
