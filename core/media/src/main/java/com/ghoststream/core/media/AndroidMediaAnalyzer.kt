@@ -30,25 +30,26 @@ class AndroidMediaAnalyzer(
         val trackInspection = inspectTracks(uri)
         val container = detectContainer(normalizedMimeType = normalizedMimeType, lowerCaseName = lower)
         val browserSafe = isBrowserSafe(normalizedMimeType = normalizedMimeType, lowerCaseName = lower)
-        // H.264 (AVC), VP8, and VP9 are natively playable in Chrome, Firefox, Edge, and most Android
-        // browsers without transcoding. VP8/VP9 in WebM containers will be served DIRECT.
+        // Only H.264 / AVC is universally browser-safe for all target platforms (Chrome,
+        // Firefox, Safari, Android WebView). HEVC, VP9, AV1, VP8 are excluded because
+        // they are not supported on all devices — HEVC is Safari-only in Chrome context,
+        // VP9/AV1 fail on older Android WebViews, and none guarantee universal reach.
         val browserVideoCompatible = trackInspection.videoTrackMimeType == null ||
-            trackInspection.videoTrackMimeType == "video/avc" ||
-            trackInspection.videoTrackMimeType == "video/hevc" ||
-            trackInspection.videoTrackMimeType == "video/hvc1" ||
-            trackInspection.videoTrackMimeType == "video/x-vnd.on2.vp8" ||
-            trackInspection.videoTrackMimeType == "video/x-vnd.on2.vp9"
-        // AAC-LC, MP3, Vorbis (WebM), and Opus (WebM) are universally browser-compatible.
+            trackInspection.videoTrackMimeType == "video/avc"
+
+        // AAC-LC and MP3 are universally browser-safe. Opus is excluded because it
+        // fails in Safari and some Android WebViews even when in an MP4 container.
         val browserAudioCompatible = trackInspection.audioTrackMimeType == null ||
             trackInspection.audioTrackMimeType == "audio/mp4a-latm" ||
             trackInspection.audioTrackMimeType == "audio/mpeg" ||
-            trackInspection.audioTrackMimeType == "audio/vorbis" ||
-            trackInspection.audioTrackMimeType == "audio/opus" ||
             trackInspection.audioTrackMimeType == "audio/x-mp3"
+        // True when only the container needs rewrapping — codecs are already H.264 + AAC/MP3.
+        // TS is included because H.264+AAC in .ts is a very common "container-only" case.
         val likelyContainerOnlyIssue = (
             container == MediaContainer.MATROSKA ||
                 container == MediaContainer.QUICKTIME ||
-                container == MediaContainer.MP4
+                container == MediaContainer.MP4 ||
+                container == MediaContainer.TS
             ) &&
             browserVideoCompatible &&
             browserAudioCompatible
@@ -242,6 +243,8 @@ class AndroidMediaAnalyzer(
         return normalizedMimeType == "video/mp4" ||
             lowerCaseName.endsWith(".mp4") ||
             lowerCaseName.endsWith(".m4v") ||
+            // MOV + H.264 + AAC is browser-playable in Chrome, Firefox, and Safari directly.
+            lowerCaseName.endsWith(".mov") ||
             normalizedMimeType == "audio/mpeg" ||
             lowerCaseName.endsWith(".mp3") ||
             normalizedMimeType == "audio/mp4" ||
