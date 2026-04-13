@@ -58,6 +58,7 @@ import java.net.ServerSocket
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -540,13 +541,68 @@ class KtorGhostStreamServer(
                 )
             }
 
+            // Master playlist — advertises the stream with an explicit CODECS hint.
+            // The codec string is read dynamically from the fMP4 moov box so it exactly
+            // matches what the Android encoder produced.  A hardcoded Baseline string
+            // caused bufferAppendError when the hardware encoder used Main/High Profile
+            // or when DefaultEncoderFactory fallback produced HEVC instead of H.264.
+            get("/hls/{id}/master.m3u8") {
+                if (!call.authorizeBrowserCall()) return@get
+                val source = call.resolveHlsSource(call.parameters["id"]) ?: return@get
+                val ua = call.request.header(HttpHeaders.UserAgent) ?: ""
+                // Read the video codec string from the fMP4 init segment (fast, non-blocking —
+                // the moov box is only a few KB).  Returns null if the file is not yet written
+                // or the codec cannot be determined; buildHlsMasterPlaylist falls back gracefully.
+                val hlsIndex = withContext(Dispatchers.IO) {
+                    runCatching {
+                        FragmentedMp4HlsIndexer.read(
+                            source.file,
+                            fragmentDurationSeconds = HLS_SEGMENT_DURATION_SECONDS,
+                        )
+                    }.getOrNull()
+                }
+                val detectedVideoCodec = hlsIndex?.videoCodecString
+                // ── DEBUG ────────────────────────────────────────────────────────────────
+                debugLogSink.log(
+                    "WebHls/master",
+                    "id=${source.item.id} " +
+                        "mode=${source.item.playbackDecision.mode} " +
+                        "file=${source.file.name} " +
+                        "fileBytes=${source.file.length()} " +
+                        "detectedCodec=${detectedVideoCodec ?: "NULL→fallback:avc1.640028"} " +
+                        "initBytes=${hlsIndex?.initSegmentLength ?: "n/a"} " +
+                        "segments=${hlsIndex?.segments?.size ?: "n/a"}",
+                )
+                val masterPlaylist = buildHlsMasterPlaylist(
+                    itemId = source.item.id,
+                    detectedVideoCodec = detectedVideoCodec,
+                )
+                debugLogSink.log("WebHls/master", "serving:\n$masterPlaylist")
+                // ────────────────────────────────────────────────────────────────────────
+                // Both Apple-style and IANA content types are accepted by all HLS players.
+                val hlsContentType = if (ua.contains("Safari", ignoreCase = true) && !ua.contains("Chrome", ignoreCase = true)) {
+                    "application/vnd.apple.mpegurl"
+                } else {
+                    "application/x-mpegURL"
+                }
+                call.response.headers.append(HttpHeaders.CacheControl, "no-store")
+                call.respondText(
+                    text = masterPlaylist,
+                    contentType = ContentType.parse(hlsContentType),
+                )
+            }
+
             get("/hls/{id}/playlist.m3u8") {
                 if (!call.authorizeBrowserCall()) return@get
                 val source = call.resolveHlsSource(call.parameters["id"]) ?: return@get
+                // Require a minimum number of segments before serving the playlist.
+                // This prevents the player from starting with too little buffer and
+                // immediately stalling on devices where transcoding lags behind.
                 val index = awaitHlsIndex(
                     itemId = source.item.id,
                     file = source.file,
                     requireFirstSegment = true,
+                    requiredSegmentIndex = MIN_SEGMENTS_BEFORE_PLAY - 1,
                 ) ?: run {
                     debugLogSink.log("WebHls", "playlist pending id=${source.item.id}")
                     call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
@@ -566,6 +622,12 @@ class KtorGhostStreamServer(
                     call.request.header(HttpHeaders.UserAgent),
                     ClientActivity.WATCHING_VIDEO,
                 )
+                val ua = call.request.header(HttpHeaders.UserAgent) ?: ""
+                val hlsContentType = if (ua.contains("Safari", ignoreCase = true) && !ua.contains("Chrome", ignoreCase = true)) {
+                    "application/vnd.apple.mpegurl"
+                } else {
+                    "application/x-mpegURL"
+                }
                 call.response.headers.append(HttpHeaders.CacheControl, "no-store")
                 call.respondText(
                     text = buildHlsPlaylist(
@@ -573,7 +635,7 @@ class KtorGhostStreamServer(
                         index = index,
                         complete = source.job.preparedAsset?.isComplete == true || source.job.status == CompatibilityStatus.READY,
                     ),
-                    contentType = ContentType.parse("application/vnd.apple.mpegurl"),
+                    contentType = ContentType.parse(hlsContentType),
                 )
             }
 
@@ -594,7 +656,14 @@ class KtorGhostStreamServer(
                     call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
                     return@get
                 }
-                debugLogSink.log("WebHls", "init served id=${source.item.id} bytes=${index.initSegmentLength}")
+                debugLogSink.log(
+                    "WebHls/init",
+                    "id=${source.item.id} " +
+                        "initBytes=${index.initSegmentLength} " +
+                        "detectedCodec=${index.videoCodecString ?: "NULL"} " +
+                        "fileBytes=${source.file.length()} " +
+                        "segments=${index.segments.size}",
+                )
                 call.streamFileSlice(
                     file = source.file,
                     mimeType = "video/mp4",
@@ -628,13 +697,113 @@ class KtorGhostStreamServer(
                     call.respond(status, ErrorPayload(message))
                     return@get
                 }
-                debugLogSink.log("WebHls", "segment served id=${source.item.id} index=$segmentIndex bytes=${segment.length}")
-                call.streamFileSlice(
-                    file = source.file,
-                    mimeType = "video/mp4",
-                    byteRange = segment.offset until (segment.offset + segment.length),
-                    activity = ClientActivity.WATCHING_VIDEO,
+                // Read the raw segment bytes so we can patch the TFHD box before serving.
+                // Media3 InAppMuxer writes tfhd.base-data-offset as an absolute file offset,
+                // which MSE forbids.  MseTfhdPatcher rewrites it to use default-base-is-moof.
+                val rawSegmentBytes = withContext(Dispatchers.IO) {
+                    runCatching {
+                        java.io.RandomAccessFile(source.file, "r").use { raf ->
+                            raf.seek(segment.offset)
+                            ByteArray(segment.length.toInt()).also { raf.readFully(it) }
+                        }
+                    }.getOrNull()
+                }
+                if (rawSegmentBytes == null) {
+                    call.respond(HttpStatusCode.InternalServerError, ErrorPayload("Could not read segment."))
+                    return@get
+                }
+                val segmentBytes = MseTfhdPatcher.patch(rawSegmentBytes, segment.offset)
+                val patched = segmentBytes !== rawSegmentBytes  // reference equality: did the patcher allocate?
+                debugLogSink.log(
+                    "WebHls",
+                    "segment served id=${source.item.id} index=$segmentIndex " +
+                        "bytes=${segment.length} patchedForMse=$patched",
                 )
+                call.response.headers.append(HttpHeaders.AcceptRanges, "bytes")
+                call.response.headers.append(HttpHeaders.CacheControl, "no-store")
+                call.respondBytes(
+                    bytes = segmentBytes,
+                    contentType = ContentType.parse("video/mp4"),
+                    status = HttpStatusCode.OK,
+                )
+            }
+
+            // Serves the fully-prepared (READY) compat MP4 directly — no HLS, no MSE.
+            // The prepared asset is an fMP4 produced by Media3 InAppMuxer; browsers play it
+            // natively via <video src> without needing MSE SourceBuffer, so the TFHD
+            // base-data-offset field that blocks hls.js is harmless here.
+            // Supports byte-range requests (needed for video seeking in the browser).
+            get("/compat-mp4/{id}") {
+                if (!call.authorizeBrowserCall()) return@get
+                val item = resolveItem(call.parameters["id"]) ?: run {
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.browser_file_unavailable)))
+                    return@get
+                }
+                if (!item.isAvailable) {
+                    call.respond(HttpStatusCode.Gone, ErrorPayload(localizedContext().getString(R.string.browser_file_unavailable)))
+                    return@get
+                }
+                val job = compatibilitySnapshotFor(item, triggerPreparation = false)
+                val isReady = job.status == CompatibilityStatus.READY || job.preparedAsset?.isComplete == true
+                if (!isReady) {
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.browser_optimized_unavailable)))
+                    return@get
+                }
+                val preparedAsset = job.preparedAsset ?: run {
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.browser_optimized_unavailable)))
+                    return@get
+                }
+                val file = File(preparedAsset.filePath)
+                if (!file.exists()) {
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.browser_optimized_unavailable)))
+                    return@get
+                }
+                val totalLength = file.length()
+                val range = parseRange(call.request.header(HttpHeaders.Range), totalLength)
+                val start = range?.first ?: 0L
+                val end = range?.last ?: (totalLength - 1)
+                val lengthToSend = end - start + 1
+                debugLogSink.log(
+                    "WebCompatMp4",
+                    "serving id=${item.id} file=${file.name} bytes=$totalLength " +
+                        "range=${if (range != null) "${range.first}-${range.last}" else "none"}",
+                )
+                val callerHost = call.remoteHost()
+                sessionManager.onTransferStarted(callerHost, ClientActivity.WATCHING_VIDEO, isDownload = false)
+                try {
+                    call.respond(object : OutgoingContent.WriteChannelContent() {
+                        override val status = if (range != null) HttpStatusCode.PartialContent else HttpStatusCode.OK
+                        override val contentType = ContentType.parse("video/mp4")
+                        override val contentLength = lengthToSend
+                        override val headers = io.ktor.http.Headers.build {
+                            append(HttpHeaders.AcceptRanges, "bytes")
+                            append(HttpHeaders.CacheControl, "no-store")
+                            if (range != null) {
+                                append(HttpHeaders.ContentRange, "bytes ${range.first}-${range.last}/$totalLength")
+                            }
+                        }
+                        override suspend fun writeTo(channel: ByteWriteChannel) {
+                            withContext(Dispatchers.IO) {
+                                RandomAccessFile(file, "r").use { raf ->
+                                    raf.seek(start)
+                                    val buffer = ByteArray(STREAMING_BUFFER_SIZE)
+                                    var remaining = lengthToSend
+                                    while (remaining > 0) {
+                                        val toRead = minOf(buffer.size.toLong(), remaining).toInt()
+                                        val read = raf.read(buffer, 0, toRead)
+                                        if (read <= 0) break
+                                        channel.writeFully(buffer, 0, read)
+                                        channel.flush()
+                                        remaining -= read
+                                        sessionManager.onTransferProgress(callerHost, read.toLong(), ClientActivity.WATCHING_VIDEO)
+                                    }
+                                }
+                            }
+                        }
+                    })
+                } finally {
+                    sessionManager.onTransferCompleted(callerHost, ClientActivity.WATCHING_VIDEO, wasDownload = false)
+                }
             }
 
             get("/subtitle/{id}") {
@@ -1134,17 +1303,45 @@ class KtorGhostStreamServer(
     private fun compatibilityStreamReady(item: SharedItem): Boolean {
         val job = compatibilityPipeline.currentJob(item.id) ?: return item.playbackDecision.mode == PlaybackMode.DIRECT
         if (item.playbackDecision.mode == PlaybackMode.DIRECT) return true
-        if (!job.canServePlayback) return false
 
+        // Fully complete: always ready regardless of how we got here.
+        if (job.status == CompatibilityStatus.READY || job.preparedAsset?.isComplete == true) return true
+
+        // Not started or permanently failed: not ready.
+        if (job.status == CompatibilityStatus.FAILED || job.status == CompatibilityStatus.IDLE) return false
+
+        // If no output file has been recorded yet (job is QUEUED or just started), not ready.
         val preparedAsset = job.preparedAsset ?: return false
-        if (preparedAsset.isComplete || job.status == CompatibilityStatus.READY) return true
-        if (item.playbackDecision.mode == PlaybackMode.TRANSCODE) return true
-        if (item.category != MediaCategory.VIDEO || !preparedAsset.isFragmentedMp4) return job.canServePlayback
 
+        // For non-video or non-fMP4 (e.g. audio remux) fall back to the old canServePlayback
+        // gate, which uses the raw byte-count threshold.
+        if (item.category != MediaCategory.VIDEO || !preparedAsset.isFragmentedMp4) {
+            return job.canServePlayback
+        }
+
+        // For in-progress fragmented MP4 video we bypass the 4 MB byte-count threshold
+        // (which previously caused 16+ seconds of waiting before playback started) and
+        // instead check the HLS index directly.  As soon as MIN_SEGMENTS_BEFORE_PLAY
+        // complete moof+mdat fragments exist in the growing file the player can start —
+        // hls.js will continue fetching new segments as transcoding writes them,
+        // and the EVENT playlist keeps growing until #EXT-X-ENDLIST is appended on
+        // completion.
         val file = File(preparedAsset.filePath)
         if (!file.exists()) return false
-        val index = FragmentedMp4HlsIndexer.read(file, fragmentDurationSeconds = HLS_SEGMENT_DURATION_SECONDS)
-        return index?.initSegmentLength?.let { it > 0L } == true && index.segments.isNotEmpty()
+        val index = runCatching {
+            FragmentedMp4HlsIndexer.read(file, fragmentDurationSeconds = HLS_SEGMENT_DURATION_SECONDS)
+        }.getOrNull()
+        val hlsSegmentsReady = index?.initSegmentLength?.let { it > 0L } == true &&
+            index.segments.size >= MIN_SEGMENTS_BEFORE_PLAY
+        if (hlsSegmentsReady) return true
+
+        // Safety fallback: if the HLS indexer cannot yet detect MIN_SEGMENTS_BEFORE_PLAY
+        // complete segments (e.g. the fMP4 hasn't written its first fragment yet or the
+        // indexer returned an unexpected structure), fall back to the old byte-count gate.
+        // awaitHlsIndex in the playlist endpoint will keep polling until real segments
+        // appear, so this only moves the "green light" to the client earlier — it doesn't
+        // bypass the actual segment requirement for serving the playlist.
+        return job.canServePlayback
     }
 
     private suspend fun io.ktor.server.application.ApplicationCall.streamFileSlice(
@@ -1242,33 +1439,93 @@ class KtorGhostStreamServer(
         )
     }
 
-    private fun awaitHlsIndex(
+    // Suspend version — replaces Thread.sleep with coroutine-friendly delay so we
+    // never block a Ktor dispatcher thread while waiting for the next segment to
+    // be written to the growing fMP4 output file.
+    //
+    // ROBUSTNESS: All calls to FragmentedMp4HlsIndexer.read() are wrapped in
+    // runCatching so that an I/O exception or unexpected file format never propagates
+    // as an unhandled exception that would cause the Ktor route handler to return 500.
+    //
+    // FINALIZED JOBS: When a job is complete (status=READY / isComplete=true) but the
+    // index is still null or doesn't have the required segment, we do NOT immediately
+    // return null (which would cause a 202 "not ready" response that confuses hls.js).
+    // Instead we retry up to HLS_FINALIZED_RETRY_COUNT times with a short delay to
+    // account for file-system flush latency or transient I/O errors.
+    private suspend fun awaitHlsIndex(
         itemId: String,
         file: File,
         requireFirstSegment: Boolean,
         requiredSegmentIndex: Int? = null,
     ): FragmentedMp4HlsIndex? {
+        fun readIndex() = runCatching {
+            FragmentedMp4HlsIndexer.read(file, fragmentDurationSeconds = HLS_SEGMENT_DURATION_SECONDS)
+        }.getOrNull()
+
+        fun FragmentedMp4HlsIndex?.meetsRequirements(): Boolean {
+            val hasInitSegment = this?.initSegmentLength?.let { it > 0L } == true
+            val hasFirstSegment = !requireFirstSegment || (this?.segments?.isNotEmpty() == true)
+            val hasRequiredSegment = requiredSegmentIndex == null ||
+                (this?.segments?.getOrNull(requiredSegmentIndex) != null)
+            return hasInitSegment && hasFirstSegment && hasRequiredSegment
+        }
+
         var idlePolls = 0
         while (idlePolls < MAX_HLS_INDEX_IDLE_POLLS) {
-            val index = FragmentedMp4HlsIndexer.read(file, fragmentDurationSeconds = HLS_SEGMENT_DURATION_SECONDS)
-            val hasInitSegment = index?.initSegmentLength?.let { it > 0L } == true
-            val hasFirstSegment = !requireFirstSegment || (index?.segments?.isNotEmpty() == true)
-            val hasRequiredSegment = requiredSegmentIndex == null || (index?.segments?.getOrNull(requiredSegmentIndex) != null)
-            if (hasInitSegment && hasFirstSegment && hasRequiredSegment) {
-                return index
-            }
+            val index = withContext(Dispatchers.IO) { readIndex() }
+            if (index.meetsRequirements()) return index
 
             val job = compatibilityPipeline.currentJob(itemId)
             val finalized = job?.preparedAsset?.isComplete == true || job?.status == CompatibilityStatus.READY
             val failed = job?.status == CompatibilityStatus.FAILED
             if (finalized || failed) {
-                return index
+                // The job is done. The segments must exist — do a few extra retries to
+                // handle OS file-flush latency or transient read errors before giving up.
+                // Returning null here would cause the endpoint to send 202, which hls.js
+                // treats as a fatal network error.
+                repeat(HLS_FINALIZED_RETRY_COUNT) { attempt ->
+                    delay(HLS_FINALIZED_RETRY_INTERVAL_MS)
+                    val retryIndex = withContext(Dispatchers.IO) { readIndex() }
+                    if (retryIndex.meetsRequirements()) return retryIndex
+                    debugLogSink.log(
+                        "WebHls",
+                        "awaitHlsIndex retry ${attempt + 1}/$HLS_FINALIZED_RETRY_COUNT id=$itemId " +
+                            "finalized=$finalized failed=$failed segments=${retryIndex?.segments?.size ?: -1}",
+                    )
+                }
+                // Return whatever we have as a last resort; the endpoint will decide
+                // whether to serve it or return 202.
+                return withContext(Dispatchers.IO) { readIndex() }
             }
 
             idlePolls += 1
-            Thread.sleep(HLS_INDEX_POLL_INTERVAL_MS)
+            delay(HLS_INDEX_POLL_INTERVAL_MS)
         }
-        return FragmentedMp4HlsIndexer.read(file, fragmentDurationSeconds = HLS_SEGMENT_DURATION_SECONDS)
+        return withContext(Dispatchers.IO) { readIndex() }
+    }
+
+    /**
+     * HLS Master Playlist — contains an explicit CODECS string so that hls.js and native
+     * HLS players configure MSE / hardware decoders with the correct codec, avoiding the
+     * bufferAppendError that occurs when the codec is guessed from the raw segment bytes.
+     *
+     * The video codec string is read directly from the fMP4 init segment's moov box so it
+     * exactly matches what the Android encoder produced — Android hardware encoders typically
+     * output Main or High Profile H.264, not Baseline, and may produce HEVC via fallback.
+     * A hardcoded "avc1.42E028" would mismatch and cause bufferAppendError in hls.js.
+     */
+    private fun buildHlsMasterPlaylist(itemId: String, detectedVideoCodec: String?): String {
+        // Use the codec detected from the fMP4 moov box.
+        // Fall back to High Profile L4.0 which covers the broadest range of Android encoder output.
+        val videoCodec = detectedVideoCodec ?: "avc1.640028"
+        // mp4a.40.2 = MPEG-4 Audio Object Type 2 = AAC-LC (universally supported)
+        val audioCodec = "mp4a.40.2"
+        return buildString {
+            appendLine("#EXTM3U")
+            appendLine("#EXT-X-VERSION:7")
+            appendLine("#EXT-X-STREAM-INF:BANDWIDTH=2000000,CODECS=\"$videoCodec,$audioCodec\"")
+            appendLine("/hls/$itemId/playlist.m3u8")
+        }
     }
 
     private fun buildHlsPlaylist(
@@ -1316,6 +1573,9 @@ class KtorGhostStreamServer(
         )
     }
 
+    // Called inside Ktor's respondOutputStream lambda which already runs on a blocking
+    // IO thread, so Thread.sleep is safe here (it does not block a coroutine scheduler
+    // thread — it blocks the dedicated IO thread that Ktor allocated for the response).
     private fun waitForGrowingFileOffset(
         itemId: String,
         file: File,
@@ -1556,6 +1816,10 @@ class KtorGhostStreamServer(
         val compatibilityProgressPercent: Int? = null,
         val compatibilityComplete: Boolean = true,
         val streamReady: Boolean = true,
+        // Non-null when the prepared MP4 is fully ready and can be played directly
+        // via <video src> without going through HLS or MSE.  The browser plays it
+        // natively so the TFHD base-data-offset field is not a problem.
+        val preparedMp4Url: String? = null,
     ) {
         companion object {
             fun from(
@@ -1569,8 +1833,11 @@ class KtorGhostStreamServer(
                 mimeType = item.mimeType,
                 category = item.category.name.lowercase(),
                 streamUrl = "/stream/${item.id}",
+                // Point to the master playlist so hls.js and native HLS players receive
+                // the CODECS hint before loading any segments. The master playlist
+                // redirects to /hls/{id}/playlist.m3u8 with the correct codec declaration.
                 hlsUrl = if (item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT) {
-                    "/hls/${item.id}/playlist.m3u8"
+                    "/hls/${item.id}/master.m3u8"
                 } else {
                     null
                 },
@@ -1586,6 +1853,12 @@ class KtorGhostStreamServer(
                 compatibilityProgressPercent = compatibilityJob.progressPercent,
                 compatibilityComplete = compatibilityJob.status == CompatibilityStatus.READY || compatibilityJob.preparedAsset?.isComplete == true,
                 streamReady = streamReady,
+                // Expose a direct-playback URL when the prepared asset is complete.
+                // The browser can load this as a plain <video src> without HLS/MSE.
+                preparedMp4Url = if (
+                    item.playbackDecision.mode != PlaybackMode.DIRECT &&
+                    (compatibilityJob.status == CompatibilityStatus.READY || compatibilityJob.preparedAsset?.isComplete == true)
+                ) "/compat-mp4/${item.id}" else null,
             )
         }
     }
@@ -1631,5 +1904,14 @@ class KtorGhostStreamServer(
         const val HLS_SEGMENT_DURATION_SECONDS = 2.0
         const val HLS_TARGET_DURATION_SECONDS = 3
         const val STREAMING_BUFFER_SIZE = 64 * 1024
+        // Require this many segments to be ready before serving the first playlist.
+        // At 2 seconds per segment (FRAGMENT_DURATION_MS), MIN=1 gives ~2 seconds of
+        // start buffer — hls.js buffers ahead while playing so one segment is enough.
+        const val MIN_SEGMENTS_BEFORE_PLAY = 1
+        // How many times awaitHlsIndex retries after a job is finalized but the
+        // index doesn't yet meet requirements (handles OS file-flush latency).
+        const val HLS_FINALIZED_RETRY_COUNT = 5
+        // Delay between each finalized-job retry in awaitHlsIndex.
+        const val HLS_FINALIZED_RETRY_INTERVAL_MS = 400L
     }
 }

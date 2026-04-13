@@ -284,6 +284,14 @@ function isMobileBrowser() {
   return Boolean(mobileUa || (coarsePointer && narrowViewport));
 }
 
+// ---------------------------------------------------------------------------
+// Device / capability detection
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns true for Apple handheld devices and iPad in desktop mode.
+ * Used as the legacy name; prefer isAppleDevice() for broader Apple detection.
+ */
 function isAppleMobileReceiver() {
   const ua = navigator.userAgent || "";
   const appleHandheld = /iPhone|iPad|iPod/i.test(ua);
@@ -291,19 +299,67 @@ function isAppleMobileReceiver() {
   return Boolean(appleHandheld || iPadDesktopMode);
 }
 
-function shouldUseHlsPlayback(item) {
-  return shouldUseNativeHlsPlayback(item) || shouldUseManagedHlsPlayback(item);
+/**
+ * Returns true for any Apple device that uses Safari's native HLS engine:
+ * iPhone, iPad, iPod (iOS/iPadOS), macOS Safari, and Apple TV.
+ */
+function isAppleDevice() {
+  const ua = navigator.userAgent || "";
+  const appleHandheld = /iPhone|iPad|iPod/i.test(ua);
+  const iPadDesktopMode = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+  // macOS Safari: has "Macintosh" + "Safari" but NOT "Chrome" or "Firefox"
+  const macSafari = /Macintosh/i.test(ua) && /Safari/i.test(ua) && !/Chrome/i.test(ua) && !/Firefox/i.test(ua);
+  const appleTV = /AppleTV/i.test(ua);
+  return Boolean(appleHandheld || iPadDesktopMode || macSafari || appleTV);
 }
 
+/**
+ * Returns true for Smart TV browsers that have a native HLS player but limited
+ * JavaScript capabilities (no hls.js Web Workers, limited MSE support, etc.).
+ */
+function isTvBrowser() {
+  const ua = navigator.userAgent || "";
+  // Samsung Tizen, LG webOS, HbbTV (European broadcast TVs), Roku, Amazon Fire TV,
+  // Android TV, Chromecast, and generic "SmartTV" / "SMART-TV" identifiers.
+  return /Tizen|webOS|Web0S|HbbTV|SmartTV|SMART-TV|NetCast|DLNA|Roku|AFTB|AFTS|AFTN|AFTT|FireTV|CrKey|OPR\/.*TV|ANT_/i.test(ua)
+    || (/\bTV\b/i.test(ua) && !/iPhone|iPad|AppleTV/i.test(ua));
+}
+
+/**
+ * Returns true when the prepared compat MP4 is ready for direct <video src> playback.
+ * This is the primary path for REMUX/TRANSCODE videos once the job reaches READY.
+ * No hls.js and no MSE are involved — the browser plays the file natively, bypassing
+ * the TFHD base-data-offset restriction that caused bufferAppendError via MSE/hls.js.
+ */
+function shouldUseDirectCompatMp4(item) {
+  return Boolean(item.preparedMp4Url && item.playbackMode !== "DIRECT");
+}
+
+/**
+ * Returns true when the device should use its native HLS engine via a plain
+ * <video src="..."> tag rather than hls.js.
+ * Covers: all Apple devices (Safari native HLS) and Smart TV browsers.
+ * NOT used when a direct compat MP4 is available — all browsers can play that natively.
+ */
 function shouldUseNativeHlsPlayback(item) {
-  return Boolean(item.hlsUrl && item.playbackMode !== "DIRECT" && isAppleMobileReceiver());
+  // If the prepared MP4 is ready, skip HLS entirely — the browser plays it directly.
+  if (shouldUseDirectCompatMp4(item)) return false;
+  return Boolean(item.hlsUrl && item.playbackMode !== "DIRECT" && (isAppleDevice() || isTvBrowser()));
 }
 
+/**
+ * Returns true when hls.js should manage HLS playback (non-Apple, non-TV).
+ * Only used while the compat job is still in progress (preparedMp4Url is null).
+ * Once READY, shouldUseDirectCompatMp4 takes over and hls.js is not started.
+ */
 function canUseManagedHls(item) {
+  // Direct MP4 is available — no need for hls.js.
+  if (shouldUseDirectCompatMp4(item)) return false;
   return Boolean(
     item.hlsUrl &&
     item.playbackMode !== "DIRECT" &&
-    !isAppleMobileReceiver() &&
+    !isAppleDevice() &&
+    !isTvBrowser() &&
     typeof window.Hls !== "undefined" &&
     typeof window.Hls.isSupported === "function" &&
     window.Hls.isSupported()
@@ -311,31 +367,53 @@ function canUseManagedHls(item) {
 }
 
 function shouldUseManagedHlsPlayback(item) {
-  // TRANSCODE mode produces H.264/AAC fMP4 via Media3's InAppMuxer.
-  // Chrome's MSE rejects those fMP4 segments with bufferAppendError due to
-  // codec signaling issues in the init segment. Progressive MP4 streaming
-  // via item.streamUrl works correctly with native byte-range seeking.
-  // HLS remains the safer path for REMUX, including Apple devices.
-  if (item.playbackMode === "TRANSCODE") return false;
+  // Both REMUX and TRANSCODE use hls.js on supported browsers while transcoding is
+  // in progress (preparedMp4Url is null).  Once the job is READY, the direct MP4
+  // path takes over and hls.js is no longer started.
   return canUseManagedHls(item);
 }
 
+/**
+ * Returns true when the native <video> element controls should be used (no Plyr).
+ * This is only true for Apple devices and TVs that use native HLS —
+ * their video players don't need or benefit from the Plyr overlay.
+ * Android Chrome, desktop browsers etc. all get Plyr + hls.js.
+ */
 function shouldUseNativeVideoPlayer(item) {
-  return isMobileBrowser() || shouldUseNativeHlsPlayback(item);
+  return shouldUseNativeHlsPlayback(item);
 }
 
+function shouldUseHlsPlayback(item) {
+  return shouldUseNativeHlsPlayback(item) || shouldUseManagedHlsPlayback(item);
+}
+
+/**
+ * Returns the URL to probe when checking if a stream is ready.
+ * For direct compat MP4 (READY), probe the compat-mp4 URL with a Range header.
+ * For HLS paths (native or managed), probe the HLS playlist URL (no Range).
+ * For direct/progressive, probe the stream URL with a Range header.
+ */
 function resolveVideoSourceUrl(item) {
-  return shouldUseNativeHlsPlayback(item) ? item.hlsUrl : item.streamUrl;
+  if (shouldUseDirectCompatMp4(item)) return item.preparedMp4Url;
+  if (shouldUseNativeHlsPlayback(item)) return item.hlsUrl;
+  if (shouldUseManagedHlsPlayback(item)) return item.hlsUrl; // probe the playlist
+  return item.streamUrl;
 }
 
 async function probeCompatiblePlaybackSource(item) {
   if (item.playbackMode === "DIRECT") return true;
+  // Direct compat MP4: always available when preparedMp4Url is set (server only exposes
+  // it when status=READY), so skip the probe round-trip.
+  if (shouldUseDirectCompatMp4(item)) return true;
   const sourceUrl = resolveVideoSourceUrl(item);
   if (!sourceUrl) return false;
 
   const controller = typeof AbortController === "function" ? new AbortController() : null;
   const timeoutId = controller ? setTimeout(() => controller.abort(), 2200) : null;
-  const headers = shouldUseNativeHlsPlayback(item) ? {} : { Range: "bytes=0-1" };
+  // HLS playlist URLs (native or managed) must NOT use a Range header — they return
+  // the full playlist text. Only progressive MP4 streams support byte-range requests.
+  const useHls = shouldUseNativeHlsPlayback(item) || shouldUseManagedHlsPlayback(item);
+  const headers = useHls ? {} : { Range: "bytes=0-1" };
   let response = null;
   try {
     response = await fetch(sourceUrl, {
@@ -357,10 +435,21 @@ async function probeCompatiblePlaybackSource(item) {
 
 function shouldStartCompatibilityPlayback(item, job = null) {
   if (item.playbackMode === "DIRECT") return true;
-  if (shouldUseNativeHlsPlayback(item)) {
+  // Direct compat MP4 path: the server only populates preparedMp4Url when status=READY,
+  // so the presence of that URL means we can start immediately.
+  if (shouldUseDirectCompatMp4(item)) return true;
+  // For all HLS modes (native Apple/TV and managed hls.js), wait for the server to
+  // confirm segments are ready. The server only sets job.ready=true once
+  // MIN_SEGMENTS_BEFORE_PLAY segments exist, preventing immediate stalls.
+  if (shouldUseNativeHlsPlayback(item) || shouldUseManagedHlsPlayback(item)) {
+    // If the page loaded after a prior transcode completed, item already carries
+    // compatibilityComplete=true / compatibilityStatus="READY" — trust those flags
+    // directly so the player mounts immediately without waiting for a poll round-trip.
+    if (item.compatibilityComplete || item.compatibilityStatus === "READY") return true;
     if (!job) return false;
     return Boolean(job.ready || job.complete || job.status === "READY");
   }
+  // Progressive MP4 fallback (DIRECT on unsupported browsers, or when HLS is not available).
   const complete = job ? Boolean(job.complete) : Boolean(item.compatibilityComplete);
   const ready = job
     ? Boolean(job.ready || job.status === "READY")
@@ -721,7 +810,7 @@ async function renderVideoPlayer(id) {
   const allowDownloads = !state.bootstrap?.preventDownload && Boolean(item.downloadUrl);
   debugTrace(
     "video_item_loaded",
-    `id=${item.id} mode=${item.playbackMode} mime=${item.mimeType || ""} hls=${Boolean(item.hlsUrl)} streamReady=${item.streamReady}`,
+    `id=${item.id} mode=${item.playbackMode} mime=${item.mimeType || ""} hls=${Boolean(item.hlsUrl)} directMp4=${Boolean(item.preparedMp4Url)} streamReady=${item.streamReady}`,
   );
   const shouldMountReadyPlayer = shouldStartCompatibilityPlayback(item);
   const playbackItem = shouldMountReadyPlayer ? { ...item, streamReady: true } : { ...item, streamReady: false };
@@ -788,9 +877,20 @@ function renderVideoStage(item) {
 
 function videoMarkup(item) {
   const allowDownloads = !state.bootstrap?.preventDownload && Boolean(item.downloadUrl);
-  const nativeClass = shouldUseNativeVideoPlayer(item) ? " gs-native-video" : "";
-  const preload = shouldUseNativeVideoPlayer(item) ? "metadata" : "auto";
-  const sourceUrl = shouldUseNativeHlsPlayback(item) ? item.hlsUrl : item.streamUrl;
+  const useNativePlayer = shouldUseNativeVideoPlayer(item);
+  const nativeClass = useNativePlayer ? " gs-native-video" : "";
+  // Native HLS (Apple/TV): preload=metadata so the platform fetches stream info early.
+  // Managed HLS / DIRECT on other devices: preload=auto lets hls.js or the browser decide.
+  const preload = useNativePlayer ? "metadata" : "auto";
+  // Direct compat MP4 (READY): point straight to the prepared MP4 file — no hls.js needed.
+  // Native HLS (Apple/TV): point directly to the master.m3u8 HLS URL.
+  // Managed HLS (hls.js, e.g. Android Chrome, desktop Chrome/Firefox): leave src empty —
+  //   hls.js attaches its own source after the element is inserted into the DOM.
+  // DIRECT / progressive (no HLS): use the raw stream URL.
+  const sourceUrl = shouldUseDirectCompatMp4(item) ? item.preparedMp4Url
+    : shouldUseNativeHlsPlayback(item) ? item.hlsUrl
+    : shouldUseManagedHlsPlayback(item) ? null
+    : item.streamUrl;
   const sourceAttribute = sourceUrl ? ` src="${sourceUrl}"` : "";
   return `
     <div class="gs-video-wrap">
@@ -810,7 +910,9 @@ function videoMarkup(item) {
 }
 
 function canUseManagedHlsFallback(item, managedHlsAvailable) {
-  return Boolean(managedHlsAvailable && item.playbackMode === "REMUX");
+  // Allow hls.js fallback for both REMUX and TRANSCODE if the initial native/progressive
+  // attempt fails. Both modes produce fMP4 with an HLS playlist.
+  return Boolean(managedHlsAvailable && (item.playbackMode === "REMUX" || item.playbackMode === "TRANSCODE"));
 }
 
 function showCompatibilityWaitingStage(item) {
@@ -832,6 +934,7 @@ function hydrateVideoPlayer(item, options = {}) {
   destroyHls();
   video.dataset.bound = "true";
   const useNativePlayer = shouldUseNativeVideoPlayer(item);
+  const useDirectMp4 = shouldUseDirectCompatMp4(item);
   const useManagedHls = shouldUseManagedHlsPlayback(item);
   const managedHlsAvailable = canUseManagedHls(item);
   const allowManagedHlsFallback = canUseManagedHlsFallback(item, managedHlsAvailable);
@@ -841,7 +944,7 @@ function hydrateVideoPlayer(item, options = {}) {
   let managedHlsFallbackUsed = false;
   debugTrace(
     "player_hydrate",
-    `id=${item.id} mode=${item.playbackMode} nativePlayer=${useNativePlayer} managedHls=${useManagedHls} nativeHls=${shouldUseNativeHlsPlayback(item)} managedHlsAvailable=${managedHlsAvailable}`,
+    `id=${item.id} mode=${item.playbackMode} directMp4=${useDirectMp4} nativePlayer=${useNativePlayer} managedHls=${useManagedHls} nativeHls=${shouldUseNativeHlsPlayback(item)} managedHlsAvailable=${managedHlsAvailable}`,
   );
 
   if (!useNativePlayer && typeof window.Plyr === "function") {
@@ -869,9 +972,36 @@ function hydrateVideoPlayer(item, options = {}) {
     video.load();
     const hls = new window.Hls({
       enableWorker: true,
-      backBufferLength: 90,
       lowLatencyMode: false,
-      maxBufferLength: 30,
+
+      // Buffer settings — build up a comfortable buffer before playback starts,
+      // and keep a back-buffer for seeking backwards without re-requesting segments.
+      maxBufferLength: 30,          // target 30 s ahead
+      maxMaxBufferLength: 90,       // allow up to 90 s when the network is fast
+      backBufferLength: 30,         // keep 30 s behind for seeking
+
+      // Retry settings tuned for a local-only server writing segments in real time.
+      // Faster retry delay means the player recovers from "segment not yet written"
+      // situations without a noticeable stall on the screen.
+      fragLoadingMaxRetry: 8,
+      fragLoadingRetryDelay: 400,       // retry quickly (default 1000 ms is too slow)
+      fragLoadingMaxRetryTimeout: 4000,
+      manifestLoadingMaxRetry: 6,
+      manifestLoadingRetryDelay: 400,
+      levelLoadingMaxRetry: 6,
+      levelLoadingRetryDelay: 400,
+
+      // Generous fragment-load timeout — on slow Android devices the transcoder can
+      // take a moment to finish writing a segment.
+      fragLoadingTimeOut: 20000,
+      manifestLoadingTimeOut: 10000,
+
+      // We only ever have one quality level (no ABR needed).
+      startLevel: 0,
+      autoLevelEnabled: false,
+
+      // Don't switch between quality levels to avoid unnecessary playlist refreshes.
+      capLevelToPlayerSize: false,
     });
     state.hls = hls;
     state.hlsItemId = item.id;
@@ -898,7 +1028,37 @@ function hydrateVideoPlayer(item, options = {}) {
       }
     });
     hls.on(window.Hls.Events.ERROR, (_, data) => {
-      debugTrace("hls_error", `id=${item.id} fatal=${Boolean(data?.fatal)} type=${data?.type || ""} details=${data?.details || ""}`);
+      // ── DETAILED DEBUG LOG ────────────────────────────────────────────────────
+      // Capture everything hls.js knows about the error so codec/MSE issues can
+      // be diagnosed from the browser console (F12 → Console tab).
+      const errMsg   = data?.error?.message || "";
+      const errName  = data?.error?.name    || "";
+      const fragUrl  = data?.frag?.url      || "";
+      const fragSn   = data?.frag?.sn       ?? "";
+      const bufType  = data?.buffer         || "";
+      const mediaErr = video?.error ? `MediaError(${video.error.code}: ${video.error.message})` : "none";
+      const mseState = video?.readyState    ?? "";
+      console.group?.(`[GhostStream HLS] ${data?.details || "error"}`);
+      console.log?.("fatal:", Boolean(data?.fatal));
+      console.log?.("type:", data?.type || "");
+      console.log?.("details:", data?.details || "");
+      console.log?.("error name:", errName);
+      console.log?.("error message:", errMsg);
+      console.log?.("fragment url:", fragUrl);
+      console.log?.("fragment seq:", fragSn);
+      console.log?.("buffer type:", bufType);
+      console.log?.("video.error:", mediaErr);
+      console.log?.("video.readyState:", mseState);
+      console.log?.("full data:", data);
+      console.groupEnd?.();
+      // Also send to server debug endpoint so it appears in the app's debug log.
+      debugTrace(
+        "hls_error",
+        `id=${item.id} fatal=${Boolean(data?.fatal)} type=${data?.type || ""} ` +
+        `details=${data?.details || ""} errName=${errName} errMsg=${errMsg} ` +
+        `fragUrl=${fragUrl} fragSn=${fragSn} bufType=${bufType} mediaErr=${mediaErr}`,
+      );
+      // ─────────────────────────────────────────────────────────────────────────
 
       // Track non-fatal buffer append errors — these signal MSE codec incompatibility.
       // hls.js will eventually escalate them to fatal, but the cycle of recoverMediaError()
@@ -910,6 +1070,18 @@ function hydrateVideoPlayer(item, options = {}) {
           bufferAppendErrors += 1;
           if (bufferAppendErrors >= MAX_BUFFER_APPEND_ERRORS) {
             debugTrace("hls_error", `id=${item.id} fatal=true type=bufferAppend_threshold details=exceeded`);
+            // If the server has already finished transcoding, switch to direct MP4
+            // playback immediately — no HLS/MSE involved, so no TFHD or codec issues.
+            if (item.preparedMp4Url) {
+              debugTrace("hls_error_direct_mp4_fallback", `id=${item.id} url=${item.preparedMp4Url}`);
+              destroyHls();
+              video.src = item.preparedMp4Url;
+              video.load();
+              if (options.autoplay) {
+                video.play().catch(() => {});
+              }
+              return;
+            }
             showHlsError(
               state.bootstrap?.preventDownload
                 ? "This browser could not decode the video stream."
@@ -1091,7 +1263,11 @@ function updateCompatElements(job, streamLive) {
 
 async function ensureCompatiblePlayerMounted(item) {
   const mountToken = ++state.compatMountToken;
-  const alreadyReady = Boolean(item.compatibilityComplete || item.compatibilityStatus === "READY");
+  const alreadyReady = Boolean(
+    item.compatibilityComplete ||
+    item.compatibilityStatus === "READY" ||
+    item.preparedMp4Url  // server only sets this when status=READY
+  );
   if (item.playbackMode !== "DIRECT" && !alreadyReady) {
     const ready = await probeCompatiblePlaybackSource(item);
     if (mountToken !== state.compatMountToken || location.pathname !== `/player/video/${item.id}`) {
@@ -1339,6 +1515,10 @@ async function pollCompat(id, item) {
       compatibilityMessage: job.message,
       compatibilityProgressPercent: job.progressPercent,
       compatibilityComplete: job.complete,
+      // Expose the direct-playback URL as soon as the job is complete so the player
+      // switches from HLS to plain <video src> without needing a page reload.
+      // The server endpoint /compat-mp4/{id} is only accessible when status=READY.
+      preparedMp4Url: job.complete ? `/compat-mp4/${id}` : item.preparedMp4Url,
     };
 
     updateCompatElements(job, canStartPlayback);
