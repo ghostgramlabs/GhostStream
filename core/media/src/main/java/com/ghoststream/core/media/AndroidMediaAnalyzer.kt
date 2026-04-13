@@ -34,6 +34,8 @@ class AndroidMediaAnalyzer(
         // browsers without transcoding. VP8/VP9 in WebM containers will be served DIRECT.
         val browserVideoCompatible = trackInspection.videoTrackMimeType == null ||
             trackInspection.videoTrackMimeType == "video/avc" ||
+            trackInspection.videoTrackMimeType == "video/hevc" ||
+            trackInspection.videoTrackMimeType == "video/hvc1" ||
             trackInspection.videoTrackMimeType == "video/x-vnd.on2.vp8" ||
             trackInspection.videoTrackMimeType == "video/x-vnd.on2.vp9"
         // AAC-LC, MP3, Vorbis (WebM), and Opus (WebM) are universally browser-compatible.
@@ -41,19 +43,23 @@ class AndroidMediaAnalyzer(
             trackInspection.audioTrackMimeType == "audio/mp4a-latm" ||
             trackInspection.audioTrackMimeType == "audio/mpeg" ||
             trackInspection.audioTrackMimeType == "audio/vorbis" ||
-            trackInspection.audioTrackMimeType == "audio/opus"
-        val likelyContainerOnlyIssue = (container == MediaContainer.MATROSKA || container == MediaContainer.QUICKTIME) &&
+            trackInspection.audioTrackMimeType == "audio/opus" ||
+            trackInspection.audioTrackMimeType == "audio/x-mp3"
+        val likelyContainerOnlyIssue = (
+            container == MediaContainer.MATROSKA ||
+                container == MediaContainer.QUICKTIME ||
+                container == MediaContainer.MP4
+            ) &&
             browserVideoCompatible &&
             browserAudioCompatible
+
         val likelyNeedsTranscode = trackInspection.videoTrackMimeType != null &&
             (
                 !browserVideoCompatible ||
                     !browserAudioCompatible ||
-                    (
-                        !browserSafe &&
-                            container != MediaContainer.MATROSKA &&
-                            container != MediaContainer.QUICKTIME
-                        )
+                    // If it's not browser-safe (e.g. not a fragmented MP4) AND
+                    // we can't just remux it (not indexed yet), then we need transcode.
+                    (!browserSafe && !likelyContainerOnlyIssue)
                 )
         return MediaInspection(
             originalMimeType = mimeType,
@@ -66,6 +72,7 @@ class AndroidMediaAnalyzer(
             browserSafe = browserSafe,
             likelyContainerOnlyIssue = likelyContainerOnlyIssue,
             likelyNeedsTranscode = likelyNeedsTranscode,
+            durationMs = trackInspection.durationMs,
         )
     }
 
@@ -77,7 +84,7 @@ class AndroidMediaAnalyzer(
         if (mimeType?.startsWith("video/") != true && mimeType?.startsWith("audio/") != true) {
             return null
         }
-        return runCatching {
+        val metadataDuration = runCatching {
             val retriever = MediaMetadataRetriever()
             try {
                 retriever.setDataSource(context, uri)
@@ -86,6 +93,13 @@ class AndroidMediaAnalyzer(
                 retriever.release()
             }
         }.getOrNull()
+
+        if (metadataDuration != null && metadataDuration > 0) {
+            return metadataDuration
+        }
+
+        // Fallback: MediaExtractor is often more reliable for containers like MKV/WEBM on some Android versions.
+        return inspectTracks(uri).durationMs
     }
 
     override suspend fun loadThumbnailBytes(item: SharedItem, maxSizePx: Int): ByteArray? {
@@ -193,8 +207,11 @@ class AndroidMediaAnalyzer(
             mimeType == "video/x-msvideo" || lowerCaseName.endsWith(".avi") -> "video/x-msvideo"
             mimeType == "video/webm" || lowerCaseName.endsWith(".webm") -> "video/webm"
             mimeType == "video/x-ms-wmv" || lowerCaseName.endsWith(".wmv") -> "video/x-ms-wmv"
-            mimeType == "video/x-flv" || lowerCaseName.endsWith(".flv") -> "video/x-flv"
             mimeType == "video/mp2t" || lowerCaseName.endsWith(".ts") -> "video/mp2t"
+            mimeType == "video/mpeg" || lowerCaseName.endsWith(".mpeg") || lowerCaseName.endsWith(".mpg") -> "video/mpeg"
+            mimeType == "video/3gpp" || lowerCaseName.endsWith(".3gp") || lowerCaseName.endsWith(".3gpp") -> "video/3gpp"
+            mimeType == "video/dvd" || lowerCaseName.endsWith(".vob") -> "video/mpeg"
+            mimeType == "video/ogg" || lowerCaseName.endsWith(".ogv") -> "video/ogg"
             else -> mimeType
         }
     }
@@ -213,6 +230,10 @@ class AndroidMediaAnalyzer(
             normalizedMimeType == "video/x-ms-wmv" || lowerCaseName.endsWith(".wmv") -> MediaContainer.WMV
             normalizedMimeType == "video/x-flv" || lowerCaseName.endsWith(".flv") -> MediaContainer.FLV
             normalizedMimeType == "video/mp2t" || lowerCaseName.endsWith(".ts") -> MediaContainer.TS
+            normalizedMimeType == "video/mpeg" || lowerCaseName.endsWith(".mpeg") || lowerCaseName.endsWith(".mpg") -> MediaContainer.MPEG
+            normalizedMimeType == "video/3gpp" || lowerCaseName.endsWith(".3gp") -> MediaContainer.THREE_GP
+            normalizedMimeType == "video/ogg" || lowerCaseName.endsWith(".ogv") -> MediaContainer.OGG_VIDEO
+            lowerCaseName.endsWith(".vob") -> MediaContainer.VOB
             else -> MediaContainer.OTHER
         }
     }
@@ -241,8 +262,14 @@ class AndroidMediaAnalyzer(
                 extractor.setDataSource(context, uri, emptyMap())
                 var videoTrackMimeType: String? = null
                 var audioTrackMimeType: String? = null
+                var durationMs: Long? = null
                 for (index in 0 until extractor.trackCount) {
-                    val mimeType = extractor.getTrackFormat(index).getString(MediaFormat.KEY_MIME)
+                    val format = extractor.getTrackFormat(index)
+                    val mimeType = format.getString(MediaFormat.KEY_MIME)
+                    if (format.containsKey(MediaFormat.KEY_DURATION)) {
+                        val trackDuration = format.getLong(MediaFormat.KEY_DURATION) / 1000L
+                        durationMs = maxOf(durationMs ?: 0L, trackDuration)
+                    }
                     when {
                         videoTrackMimeType == null && mimeType?.startsWith("video/") == true -> videoTrackMimeType = mimeType
                         audioTrackMimeType == null && mimeType?.startsWith("audio/") == true -> audioTrackMimeType = mimeType
@@ -251,6 +278,7 @@ class AndroidMediaAnalyzer(
                 TrackInspection(
                     videoTrackMimeType = videoTrackMimeType,
                     audioTrackMimeType = audioTrackMimeType,
+                    durationMs = durationMs,
                 )
             } finally {
                 extractor.release()
@@ -261,5 +289,6 @@ class AndroidMediaAnalyzer(
     private data class TrackInspection(
         val videoTrackMimeType: String? = null,
         val audioTrackMimeType: String? = null,
+        val durationMs: Long? = null,
     )
 }

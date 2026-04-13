@@ -32,6 +32,7 @@ data class CompatibilityJob(
     val progressPercent: Int? = null,
     val preparedAsset: CachedPlaybackAsset? = null,
     val streamable: Boolean = status == CompatibilityStatus.READY,
+    val startOffsetMs: Long = 0L,
     val updatedAtEpochMs: Long = System.currentTimeMillis(),
 ) {
     val canServePlayback: Boolean

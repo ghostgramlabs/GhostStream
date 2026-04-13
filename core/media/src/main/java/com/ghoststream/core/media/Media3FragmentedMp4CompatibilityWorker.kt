@@ -2,10 +2,12 @@ package com.ghoststream.core.media
 
 import android.content.Context
 import android.media.MediaExtractor
+import android.media.MediaMuxer
 import android.net.Uri
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Process
+import java.nio.ByteBuffer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
@@ -38,6 +40,7 @@ class Media3FragmentedMp4CompatibilityWorker(
     override suspend fun prepare(
         item: SharedItem,
         cache: PlaybackCache,
+        startOffsetMs: Long,
         onUpdate: (CompatibilityWorkerUpdate) -> Unit,
     ): CompatibilityWorkerResult = withContext(Dispatchers.IO) {
         if (item.playbackDecision.mode == PlaybackMode.DIRECT) {
@@ -124,6 +127,10 @@ class Media3FragmentedMp4CompatibilityWorker(
                     }
                 }
 
+                // Configure the muxer for High-Speed Streaming Fragmentation.
+                // Using setOutputFragmentedMp4(true) ensures that Media3 writes moof/mdat atoms
+                // continuously to disk, allowing the HLS Indexer to see the first segment
+                // in <1s for near-instant playback.
                 val builder = Transformer.Builder(context)
                     .setLooper(thread.looper)
                     .setMuxerFactory(
@@ -138,17 +145,26 @@ class Media3FragmentedMp4CompatibilityWorker(
                 // audio re-encoding (passthrough/transmux).  Re-encoding AAC→AAC wastes
                 // CPU and slightly degrades quality with no benefit to the browser.
                 val sourceAudioMimeType = runCatching { detectAudioMimeType(item) }.getOrNull()
-                val sourceAudioIsAac = sourceAudioMimeType == MimeTypes.AUDIO_AAC ||
-                    sourceAudioMimeType == "audio/mp4a-latm"
+                val isNativeAudio = sourceAudioMimeType == MimeTypes.AUDIO_AAC ||
+                    sourceAudioMimeType == "audio/mp4a-latm" ||
+                    sourceAudioMimeType == MimeTypes.AUDIO_MPEG ||
+                    sourceAudioMimeType == "audio/mpeg" ||
+                    sourceAudioMimeType == "audio/x-mp3"
 
+                // Video configuration: force H.264 if we are in TRANSCODE mode.
                 if (item.playbackDecision.mode == PlaybackMode.TRANSCODE) {
-                    // Always encode video to H.264 for browser MSE compatibility.
                     builder.setVideoMimeType(MimeTypes.VIDEO_H264)
-                    // Only re-encode audio if the source isn't already AAC-LC.
-                    // Transmuxing existing AAC is free; re-encoding adds ~10-20% overhead.
-                    if (!sourceAudioIsAac) {
-                        builder.setAudioMimeType(MimeTypes.AUDIO_AAC)
-                    }
+                }
+
+                // Audio configuration: MUST be browser-compatible (AAC/MP3) for MSE.
+                // We do this for both TRANSCODE and REMUX modes.
+                // Transmuxing (isNativeAudio) is near-instant; re-encoding (AAC) adds slight CPU overhead.
+                if (!isNativeAudio) {
+                    builder.setAudioMimeType(MimeTypes.AUDIO_AAC)
+                }
+
+                // If we are doing any encoding (video or audio), we need an encoder factory.
+                if (item.playbackDecision.mode == PlaybackMode.TRANSCODE || !isNativeAudio) {
                     val encoderFactory = runCatching {
                         DefaultEncoderFactory.Builder(context)
                             .setEnableFallback(true)
@@ -159,11 +175,14 @@ class Media3FragmentedMp4CompatibilityWorker(
                     }
                 }
 
-                // Build the EditedMediaItem. For TRANSCODE we add a Presentation effect to
-                // cap output resolution at 1080p — transcoding 4K is ~4× slower than 1080p
-                // with no benefit since browsers render at display resolution anyway.
-                // For REMUX we add no effects so Media3 can fast-path transmux the video.
-                val mediaItem = MediaItem.fromUri(Uri.parse(item.uri))
+                val mediaItem = MediaItem.Builder()
+                    .setUri(Uri.parse(item.uri))
+                    .setClippingConfiguration(
+                        MediaItem.ClippingConfiguration.Builder()
+                            .setStartPositionMs(startOffsetMs)
+                            .build()
+                    )
+                    .build()
                 val editedMediaItem = if (item.playbackDecision.mode == PlaybackMode.TRANSCODE) {
                     EditedMediaItem.Builder(mediaItem)
                         .setEffects(
@@ -189,6 +208,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                     cancelled = cancelled,
                     onUpdate = onUpdate,
                 )
+            } catch (error: Exception) {
             } catch (error: Exception) {
                 completion.complete(
                     CompatibilityWorkerResult.Failure(

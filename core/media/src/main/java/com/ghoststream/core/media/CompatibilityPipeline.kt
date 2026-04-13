@@ -18,6 +18,7 @@ interface CompatibilityPipeline {
 
     suspend fun inspect(item: SharedItem): CompatibilityJob
     suspend fun requestPreparation(item: SharedItem, prioritize: Boolean = false): CompatibilityJob
+    suspend fun requestSeek(item: SharedItem, offsetMs: Long): CompatibilityJob
     suspend fun resolvePlayback(item: SharedItem): PlaybackResolution
     fun currentJob(itemId: String): CompatibilityJob?
     suspend fun cancelPendingPreparations()
@@ -81,7 +82,6 @@ class QueuedCompatibilityPipeline(
         }
         return upsert(job)
     }
-
     override suspend fun requestPreparation(item: SharedItem, prioritize: Boolean): CompatibilityJob {
         val current = inspect(item)
         if (current.status == CompatibilityStatus.READY || current.status == CompatibilityStatus.PREPARING) {
@@ -112,6 +112,47 @@ class QueuedCompatibilityPipeline(
                 preemptedItemId = preemptActiveLocked(item.id)
             }
             enqueueLocked(PreparationRequest(item = item, prioritizePlayback = prioritize))
+            if (!queueProcessorRunning) {
+                queueProcessorRunning = true
+                startProcessor = true
+            }
+        }
+
+        preemptedItemId?.let(worker::cancel)
+
+        if (startProcessor) {
+            scope.launch {
+                drainQueue()
+            }
+        }
+        return queued
+    }
+
+    override suspend fun requestSeek(item: SharedItem, offsetMs: Long): CompatibilityJob {
+        val current = inspect(item)
+        if (item.playbackDecision.mode == PlaybackMode.DIRECT) return current
+
+        // Update UI immediately and reset job state for the new offset.
+        // We MUST clear preparedAsset so that the HLS Indexer and server stop
+        // trying to serve segments from the previous offset/file.
+        val queued = upsert(
+            current.copy(
+                status = CompatibilityStatus.QUEUED,
+                message = "Seeking to requested position...",
+                progressPercent = 0,
+                preparedAsset = null,
+                streamable = false,
+                startOffsetMs = offsetMs,
+                updatedAtEpochMs = System.currentTimeMillis(),
+            ),
+        )
+
+        var startProcessor = false
+        var preemptedItemId: String? = null
+        queueMutex.withLock {
+            // Seek requests ALWAYS prioritize and preempt.
+            preemptedItemId = preemptActiveLocked(item.id)
+            enqueueLocked(PreparationRequest(item = item, prioritizePlayback = true, startOffsetMs = offsetMs))
             if (!queueProcessorRunning) {
                 queueProcessorRunning = true
                 startProcessor = true
@@ -240,7 +281,7 @@ class QueuedCompatibilityPipeline(
                 if (current?.status == CompatibilityStatus.READY || current?.status == CompatibilityStatus.PREPARING) {
                     continue
                 }
-                process(nextRequest.item)
+                process(nextRequest)
             } finally {
                 queueMutex.withLock {
                     if (activeRequest?.item?.id == nextRequest.item.id) {
@@ -251,7 +292,8 @@ class QueuedCompatibilityPipeline(
         }
     }
 
-    private suspend fun process(item: SharedItem) {
+    private suspend fun process(request: PreparationRequest) {
+        val item = request.item
         val preparing = upsert(
             (currentJob(item.id) ?: inspect(item)).copy(
                 status = CompatibilityStatus.PREPARING,
@@ -262,6 +304,7 @@ class QueuedCompatibilityPipeline(
                 },
                 progressPercent = 12,
                 streamable = false,
+                startOffsetMs = request.startOffsetMs,
                 updatedAtEpochMs = System.currentTimeMillis(),
             ),
         )
@@ -280,6 +323,7 @@ class QueuedCompatibilityPipeline(
                 val result = worker.prepare(
                     item = item,
                     cache = cache,
+                    startOffsetMs = request.startOffsetMs,
                     onUpdate = { update ->
                         val current = currentJob(item.id) ?: preparing
                         upsert(
@@ -388,5 +432,6 @@ class QueuedCompatibilityPipeline(
     private data class PreparationRequest(
         val item: SharedItem,
         val prioritizePlayback: Boolean,
+        val startOffsetMs: Long = 0L,
     )
 }

@@ -9,59 +9,47 @@ interface SmartPlaybackDecisionEngine {
 
 class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
     override fun decide(inspection: MediaInspection): PlaybackDecision {
-        val videoLike = inspection.videoTrackMimeType != null ||
+        val hasVideo = inspection.videoTrackMimeType != null
+        val hasAudio = inspection.audioTrackMimeType != null
+        
+        // Browsers universally support H.264 (AVC).
+        // HEVC (H.265) is supported by Safari and modern Chrome/Edge with hardware acceleration.
+        val isBrowserCompatibleVideo = inspection.videoTrackMimeType == "video/avc" ||
+            inspection.videoTrackMimeType == "video/hevc" ||
+            inspection.videoTrackMimeType == "video/hvc1"
+
+        // AAC-LC is the standard for browser-compatible MP4.
+        val isBrowserCompatibleAudio = inspection.audioTrackMimeType == "audio/mp4a-latm" ||
+            inspection.audioTrackMimeType == "audio/mpeg" || // MP3 is safe
+            inspection.audioTrackMimeType == "audio/opus"   // Supported in fMP4
+
+        val videoLike = hasVideo ||
             inspection.originalMimeType?.startsWith("video/") == true ||
-            inspection.normalizedMimeType?.startsWith("video/") == true ||
-            inspection.container == MediaContainer.MP4 ||
-            inspection.container == MediaContainer.MATROSKA ||
-            inspection.container == MediaContainer.QUICKTIME ||
-            inspection.container == MediaContainer.AVI ||
-            inspection.container == MediaContainer.FLV ||
-            inspection.container == MediaContainer.WMV ||
-            inspection.container == MediaContainer.WEBM ||
-            inspection.container == MediaContainer.TS
-        // Keep this in sync with AndroidMediaAnalyzer so the decision engine operates
-        // on the same codec set.  VP8/VP9 are browser-native in WebM containers on
-        // Chrome, Firefox, and Edge; Vorbis/Opus are the corresponding audio codecs.
-        // Including them here means WebM+VP8/VP9 files are served DIRECT (no remux/
-        // transcode) via the first branch in the when block below.
-        val browserVideoCompatible = inspection.videoTrackMimeType == null ||
-            inspection.videoTrackMimeType == "video/avc" ||
-            inspection.videoTrackMimeType == "video/x-vnd.on2.vp8" ||
-            inspection.videoTrackMimeType == "video/x-vnd.on2.vp9"
-        val browserAudioCompatible = inspection.audioTrackMimeType == null ||
-            inspection.audioTrackMimeType == "audio/mp4a-latm" ||
-            inspection.audioTrackMimeType == "audio/mpeg" ||
-            inspection.audioTrackMimeType == "audio/vorbis" ||
-            inspection.audioTrackMimeType == "audio/opus"
+            inspection.normalizedMimeType?.startsWith("video/") == true
 
         return when {
-            // MP4/AAC/MP3 and WebM/VP8+Vorbis/VP9+Opus — all browser-native, serve directly.
-            inspection.browserSafe && browserVideoCompatible && browserAudioCompatible -> PlaybackDecision(
+            // 1. Direct Play: MP4 container + Perfectly compatible streams.
+            inspection.container == MediaContainer.MP4 && isBrowserCompatibleVideo && (!hasAudio || isBrowserCompatibleAudio) -> PlaybackDecision(
                 mode = PlaybackMode.DIRECT,
-                browserMimeType = inspection.normalizedMimeType ?: inspection.originalMimeType,
-                reason = "Ready for browser playback",
+                browserMimeType = "video/mp4",
+                reason = "Ready for direct browser playback (MP4 container with compatible tracks)",
             )
 
-            inspection.likelyContainerOnlyIssue && browserVideoCompatible && browserAudioCompatible -> PlaybackDecision(
+            // 2. Remux: Compatible video stream but needs container adjustment or audio re-encoding.
+            // If the video is compatible, we can use "Video Passthrough" which is near-instant.
+            isBrowserCompatibleVideo -> PlaybackDecision(
                 mode = PlaybackMode.REMUX,
                 browserMimeType = "video/mp4",
-                compatibilityLabel = "Fragmented playback available",
-                reason = "Container can be optimized for browser playback without re-encoding",
+                compatibilityLabel = "Lightning-fast optimization available",
+                reason = "Video track is browser-compatible; will copy video and optimize if needed",
             )
 
-            inspection.likelyNeedsTranscode -> PlaybackDecision(
-                mode = PlaybackMode.TRANSCODE,
-                browserMimeType = "video/mp4",
-                compatibilityLabel = "Compatibility conversion available",
-                reason = "This format needs compatibility conversion for browser playback",
-            )
-
+            // 3. Transcode: Incompatible video stream (e.g., VP9 in MKV, MPEG2, AV1 on older devices).
             videoLike -> PlaybackDecision(
                 mode = PlaybackMode.TRANSCODE,
                 browserMimeType = "video/mp4",
                 compatibilityLabel = "Compatibility conversion available",
-                reason = "Preparing this video for broader browser playback is recommended",
+                reason = "This format needs full conversion for browser playback",
             )
 
             inspection.container == MediaContainer.PDF -> PlaybackDecision(

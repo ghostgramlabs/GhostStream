@@ -87,6 +87,8 @@
     <string name="settings_clear_temporary_files_desc">Remove prepared playback files when sharing stops.</string>
     <string name="settings_prevent_downloads">Prevent downloads</string>
     <string name="settings_prevent_downloads_desc">Disable download button in browser access.</string>
+    <string name="settings_auto_optimize_library">Optimize library in background</string>
+    <string name="settings_auto_optimize_library_desc">Proactively prepare all videos for lightning-fast playback. High battery usage.</string>
     <string name="settings_sharing_port">Sharing port</string>
     <string name="settings_sharing_port_placeholder">43183</string>
     <string name="settings_sharing_port_help">Most people can leave this alone.</string>

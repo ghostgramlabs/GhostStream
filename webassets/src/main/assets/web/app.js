@@ -22,6 +22,7 @@ const state = {
   compatPollTimer: null,
   compatMountToken: 0,
   compatPlaybackFailures: {},
+  compatItem: null,
 };
 
 const routes = {
@@ -438,18 +439,13 @@ function shouldStartCompatibilityPlayback(item, job = null) {
   // Direct compat MP4 path: the server only populates preparedMp4Url when status=READY,
   // so the presence of that URL means we can start immediately.
   if (shouldUseDirectCompatMp4(item)) return true;
-  // For all other paths, wait for the job to be fully complete before starting playback.
-  //
-  // We deliberately do NOT trigger on job.ready (partial segments written) because:
-  //   • Partial in-progress HLS via MSE (hls.js) fails with bufferAppendError due to
-  //     TFHD base-data-offset issues — the "stream while transcoding" path is broken.
-  //   • Once job.complete=true, applyCompatState injects preparedMp4Url and the direct
-  //     MP4 path takes over, so there is no benefit in starting HLS early.
-  //
-  // The result is: show progress UI the whole time, auto-play the moment READY.
-  if (item.compatibilityComplete || item.compatibilityStatus === "READY") return true;
+
+  // For all other paths, allow playback as soon as the stream is ready.
+  // The 'streamReady' flag (calculated by the server) indicates that at least
+  // MIN_SEGMENTS_BEFORE_PLAY (usually 1) segments have been written to disk for fMP4.
+  if (item.streamReady || item.compatibilityComplete || item.compatibilityStatus === "READY") return true;
   if (!job) return false;
-  return Boolean(job.complete || job.status === "READY");
+  return Boolean(job.ready || job.complete || job.status === "READY");
 }
 
 function compatibilityHeadline(item, streamLive = item.streamReady) {
@@ -803,15 +799,15 @@ function downloadItems(items) {
 async function renderVideoPlayer(id) {
   const item = await api(`/api/item/${id}`);
   const allowDownloads = !state.bootstrap?.preventDownload && Boolean(item.downloadUrl);
-  debugTrace(
-    "video_item_loaded",
-    `id=${item.id} mode=${item.playbackMode} mime=${item.mimeType || ""} hls=${Boolean(item.hlsUrl)} directMp4=${Boolean(item.preparedMp4Url)} streamReady=${item.streamReady}`,
-  );
-  const shouldMountReadyPlayer = shouldStartCompatibilityPlayback(item);
-  const playbackItem = shouldMountReadyPlayer ? { ...item, streamReady: true } : { ...item, streamReady: false };
-  const playerBadges = [
-    playbackItem.subtitleUrl ? '<span class="gs-badge">' + gsStr("web_status_subtitles_available", "Subtitles available") + '</span>' : "",
-  ].filter(Boolean).join("");
+  
+  // Decide the initial view state
+  const isDirect = item.playbackMode === "DIRECT";
+  const isPreparedReady = Boolean(item.preparedMp4Url);
+  const isStreamLive = Boolean(item.streamReady);
+
+  // If even the original isn't ready, we must poll first.
+  const showPlayerImmediately = isDirect || isPreparedReady || isStreamLive;
+  
   shell(`
     <section class="gs-section">
       <div class="gs-player">
@@ -825,47 +821,41 @@ async function renderVideoPlayer(id) {
             ${allowDownloads ? `<a class="gs-btn gs-btn-download" href="${item.downloadUrl}">${gsStr("web_btn_download_original", "Download original")}</a>` : ""}
           </div>
         </div>
-        ${playerBadges ? `<div class="gs-badges">${playerBadges}</div>` : ""}
-        <div id="playerStage">${renderVideoStage(playbackItem)}</div>
-        ${playbackItem.playbackMode !== "DIRECT" ? `
-          <div class="gs-compat-inline${playbackItem.streamReady ? " is-visible" : ""}" id="compatInline">
-            <span class="gs-badge" data-compat-badge>${compatibilityBadgeLabel(playbackItem)}</span>
+        <div id="playerStage">${renderVideoStage(item, showPlayerImmediately)}</div>
+        ${!isDirect ? `
+          <div class="gs-compat-inline${isStreamLive ? " is-visible" : ""}" id="compatInline">
+            <span class="gs-badge" data-compat-badge>${compatibilityBadgeLabel(item, isStreamLive)}</span>
             <div class="gs-compat-inline-copy">
-              <strong data-compat-title>${compatibilityHeadline(playbackItem)}</strong>
-              <p class="gs-meta" data-compat-message>${esc(compatibilityBody(playbackItem))}</p>
+              <strong data-compat-title>${compatibilityHeadline(item, isStreamLive)}</strong>
+              <p class="gs-meta" data-compat-message>${esc(compatibilityBody(item, isStreamLive))}</p>
             </div>
-            <span class="gs-meta" data-compat-progress>${playbackItem.compatibilityProgressPercent != null ? `${playbackItem.compatibilityProgressPercent}%` : (playbackItem.streamReady ? "Playing" : "Opening")}</span>
+            <span class="gs-meta" data-compat-progress>${item.compatibilityProgressPercent != null ? `${item.compatibilityProgressPercent}%` : (isStreamLive ? "Playing" : "Opening")}</span>
           </div>
         ` : ""}
       </div>
     </section>
   `);
 
-  if (playbackItem.streamReady) {
-    ensureCompatiblePlayerMounted(playbackItem).then((mounted) => {
-      if (!mounted && playbackItem.playbackMode !== "DIRECT") {
-        showCompatibilityWaitingStage(playbackItem);
-        pollCompat(id, { ...playbackItem, streamReady: false });
-      }
-    });
+  if (showPlayerImmediately) {
+    ensureCompatiblePlayerMounted(item);
   } else {
-    hydrateVideoPlayer(playbackItem);
-  }
-
-  if (playbackItem.playbackMode !== "DIRECT" && !playbackItem.streamReady) {
-    pollCompat(id, playbackItem);
+    pollCompat(id, item);
   }
 }
 
-function renderVideoStage(item) {
-  return item.streamReady
+function renderVideoStage(item, showPlayer) {
+  return showPlayer
     ? videoMarkup(item)
     : `
       <div class="gs-compat-card" id="compatStageCard">
+        <div class="gs-logo-mark gs-spinner"></div>
         <span class="gs-badge" data-compat-badge>${compatibilityBadgeLabel(item, false)}</span>
         <h3 data-compat-title>${compatibilityHeadline(item, false)}</h3>
         <p data-compat-message>${esc(compatibilityBody(item, false))}</p>
         <p class="gs-meta" data-compat-progress>${item.compatibilityProgressPercent != null ? `${item.compatibilityProgressPercent}%` : "Opening"}</p>
+        <div class="gs-toolbar-actions gs-mt-2">
+          ${!state.bootstrap?.preventDownload ? `<a class="gs-btn gs-btn-sm" href="${item.downloadUrl}">Try original (may fail)</a>` : ""}
+        </div>
       </div>
     `;
 }
@@ -874,19 +864,19 @@ function videoMarkup(item) {
   const allowDownloads = !state.bootstrap?.preventDownload && Boolean(item.downloadUrl);
   const useNativePlayer = shouldUseNativeVideoPlayer(item);
   const nativeClass = useNativePlayer ? " gs-native-video" : "";
-  // Native HLS (Apple/TV): preload=metadata so the platform fetches stream info early.
-  // Managed HLS / DIRECT on other devices: preload=auto lets hls.js or the browser decide.
   const preload = useNativePlayer ? "metadata" : "auto";
-  // Direct compat MP4 (READY): point straight to the prepared MP4 file — no hls.js needed.
-  // Native HLS (Apple/TV): point directly to the master.m3u8 HLS URL.
-  // Managed HLS (hls.js, e.g. Android Chrome, desktop Chrome/Firefox): leave src empty —
-  //   hls.js attaches its own source after the element is inserted into the DOM.
-  // DIRECT / progressive (no HLS): use the raw stream URL.
-  const sourceUrl = shouldUseDirectCompatMp4(item) ? item.preparedMp4Url
-    : shouldUseNativeHlsPlayback(item) ? item.hlsUrl
-    : shouldUseManagedHlsPlayback(item) ? null
-    : item.streamUrl;
+
+  // Priority Source Logic:
+  // 1. Direct Compat MP4 (Ready)
+  // 2. Native HLS (Apple/TV)
+  // 3. Managed HLS (Chrome/Android) - Source attached by hls.js
+  // 4. Original Stream URL (Direct play)
+  const sourceUrl = item.preparedMp4Url 
+    ? item.preparedMp4Url 
+    : (shouldUseNativeHlsPlayback(item) ? item.hlsUrl : (shouldUseManagedHlsPlayback(item) ? null : item.streamUrl));
+  
   const sourceAttribute = sourceUrl ? ` src="${sourceUrl}"` : "";
+
   return `
     <div class="gs-video-wrap">
       <video id="vPlayer" class="gs-plyr-target${nativeClass}" controls playsinline webkit-playsinline="true" x-webkit-airplay="allow" preload="${preload}"${sourceAttribute}>
@@ -961,6 +951,7 @@ function hydrateVideoPlayer(item, options = {}) {
 
   const startManagedHls = () => {
     if (!allowManagedHlsFallback) return false;
+    state.compatItem = item;
     debugTrace("hls_start", `id=${item.id} url=${item.hlsUrl}`);
     destroyHls();
     video.removeAttribute("src");
@@ -1067,11 +1058,21 @@ function hydrateVideoPlayer(item, options = {}) {
             debugTrace("hls_error", `id=${item.id} fatal=true type=bufferAppend_threshold details=exceeded`);
             // If the server has already finished transcoding, switch to direct MP4
             // playback immediately — no HLS/MSE involved, so no TFHD or codec issues.
-            if (item.preparedMp4Url) {
-              debugTrace("hls_error_direct_mp4_fallback", `id=${item.id} url=${item.preparedMp4Url}`);
+            // We use state.compatItem to ensure we have the LATEST updated URL from polling.
+            const currentItem = state.compatItem || item;
+            if (currentItem.preparedMp4Url) {
+              debugTrace("hls_error_direct_mp4_fallback", `id=${item.id} url=${currentItem.preparedMp4Url}`);
               destroyHls();
-              video.src = item.preparedMp4Url;
-              video.load();
+              const plyrObj = state.plyr;
+              if (plyrObj) {
+                plyrObj.source = {
+                  type: "video",
+                  sources: [{ src: currentItem.preparedMp4Url, type: "video/mp4" }]
+                };
+              } else {
+                video.src = currentItem.preparedMp4Url;
+                video.load();
+              }
               if (options.autoplay) {
                 video.play().catch(() => {});
               }
@@ -1102,7 +1103,11 @@ function hydrateVideoPlayer(item, options = {}) {
   };
 
   if (useManagedHls) {
-    startManagedHls();
+    if (!startManagedHls()) {
+      // If HLS failed to initialize, try to fall back to the original URL
+      video.src = item.streamUrl;
+      video.load();
+    }
   }
 
   const clearVideoError = () => {
@@ -1112,6 +1117,43 @@ function hydrateVideoPlayer(item, options = {}) {
   const markPlaybackStable = () => {
     state.compatPlaybackFailures[item.id] = 0;
     clearVideoError();
+  };
+
+  // Keyboard Shortcuts (Desktop-only experience)
+  const handleKeydown = (e) => {
+    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+    const player = state.plyr || video;
+    switch (e.code) {
+      case "Space":
+        e.preventDefault();
+        player.paused ? player.play() : player.pause();
+        break;
+      case "ArrowLeft":
+        e.preventDefault();
+        player.currentTime = Math.max(0, player.currentTime - 10);
+        break;
+      case "ArrowRight":
+        e.preventDefault();
+        player.currentTime = Math.min(player.duration || Infinity, player.currentTime + 10);
+        break;
+      case "KeyF":
+        e.preventDefault();
+        if (state.plyr) state.plyr.fullscreen.toggle();
+        else if (video.requestFullscreen) video.requestFullscreen();
+        break;
+      case "KeyM":
+        e.preventDefault();
+        player.muted = !player.muted;
+        break;
+    }
+  };
+  window.addEventListener("keydown", handleKeydown);
+  
+  // Clean up keydown listener on next navigation
+  const oldCancel = cancelCompatPolling;
+  cancelCompatPolling = () => {
+    window.removeEventListener("keydown", handleKeydown);
+    oldCancel();
   };
 
   video.addEventListener("loadedmetadata", markPlaybackStable);
@@ -1125,6 +1167,44 @@ function hydrateVideoPlayer(item, options = {}) {
   });
   video.addEventListener("playing", () => {
     debugTrace("video_playing", `id=${item.id} currentTime=${video.currentTime.toFixed(2)}`);
+  });
+
+  video.addEventListener("seeked", async () => {
+    // Only handle seeks if we are using the HLS compatibility pipeline.
+    // Native MP4 (DIRECT) already supports byte-range seeking out of the box.
+    if (item.playbackMode === "DIRECT" || !state.hls || state.hlsItemId !== item.id) return;
+
+    const currentTime = video.currentTime;
+    // We check if the target time is already within the browser's buffer.
+    // If it's not, it means the transcoder hasn't reached this point yet.
+    let isBuffered = false;
+    for (let i = 0; i < video.buffered.length; i++) {
+      if (currentTime >= video.buffered.start(i) && currentTime <= video.buffered.end(i) + 1) {
+        isBuffered = true;
+        break;
+      }
+    }
+
+    if (!isBuffered) {
+      debugTrace("video_seek_restart", `id=${item.id} offset=${currentTime.toFixed(1)}s`);
+      // Temporarily show the 'Opening video...' message while the transcoder jumps.
+      showCompatibilityWaitingStage({ ...item, streamReady: false });
+      
+      try {
+        const url = `/api/compat/${item.id}/seek?offsetMs=${Math.floor(currentTime * 1000)}`;
+        const resp = await fetch(url, { method: "POST" });
+        if (resp.ok) {
+          // Tell hls.js to reload the manifest to find the new segments at the offset.
+          state.hls.loadSource(item.hlsUrl);
+          // Standard hls.js behavior will start from the beginning of the manifest,
+          // so we ensure the video element stays at our target time.
+          video.currentTime = currentTime;
+          video.play().catch(() => {});
+        }
+      } catch (err) {
+        console.error("Seeking failed:", err);
+      }
+    }
   });
   video.addEventListener("error", () => {
     debugTrace(
@@ -1259,6 +1339,7 @@ function updateCompatElements(job, streamLive) {
 async function ensureCompatiblePlayerMounted(item) {
   const mountToken = ++state.compatMountToken;
   const alreadyReady = Boolean(
+    item.streamReady || // New: support instant start
     item.compatibilityComplete ||
     item.compatibilityStatus === "READY" ||
     item.preparedMp4Url  // server only sets this when status=READY
@@ -1513,10 +1594,22 @@ async function pollCompat(id, item) {
       // Expose the direct-playback URL as soon as the job is complete so the player
       // switches from HLS to plain <video src> without needing a page reload.
       // The server endpoint /compat-mp4/{id} is only accessible when status=READY.
-      preparedMp4Url: job.complete ? `/compat-mp4/${id}` : item.preparedMp4Url,
+      preparedMp4Url: job.fileUrl,
+      hlsUrl: job.hlsUrl || item.hlsUrl,
     };
 
+    state.compatItem = nextItem;
     updateCompatElements(job, canStartPlayback);
+    
+    // Auto-switch: if the remux task just finished (complete=true) AND we are currently in HLS mode,
+    // force a switch to Direct MP4 immediately to resolve any MSE-level HLS glitches.
+    if (job.complete && nextItem.preparedMp4Url && (state.hls || state.plyr?.source?.includes("m3u8"))) {
+      debugTrace("poll_compat_complete_switch", `id=${id} switching to direct mp4`);
+      forceDirectPlayback(nextItem);
+      cancelCompatPolling();
+      return true;
+    }
+
     if (canStartPlayback) {
       const mounted = await ensureCompatiblePlayerMounted(nextItem);
       if (mounted) {
@@ -1560,6 +1653,22 @@ async function pollCompat(id, item) {
   }
 
   state.compatPollTimer = setTimeout(tick, 180);
+}
+
+function forceDirectPlayback(item) {
+  const video = document.getElementById("vPlayer");
+  if (!video || !item.preparedMp4Url) return;
+  
+  destroyHls();
+  if (state.plyr) {
+    state.plyr.source = {
+      type: "video",
+      sources: [{ src: item.preparedMp4Url, type: "video/mp4" }]
+    };
+  } else {
+    video.src = item.preparedMp4Url;
+    video.load();
+  }
 }
 
 function cancelCompatPolling() {

@@ -9,6 +9,10 @@ enum class MediaContainer {
     WMV,
     WEBM,
     TS,
+    MPEG,
+    THREE_GP,
+    OGG_VIDEO,
+    VOB,
     MPEG_AUDIO,
     AAC_AUDIO,
     IMAGE,
@@ -27,4 +31,5 @@ data class MediaInspection(
     val browserSafe: Boolean,
     val likelyContainerOnlyIssue: Boolean,
     val likelyNeedsTranscode: Boolean,
+    val durationMs: Long? = null,
 )

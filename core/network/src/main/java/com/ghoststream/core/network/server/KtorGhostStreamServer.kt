@@ -381,19 +381,26 @@ class KtorGhostStreamServer(
                     call.respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_file_unavailable)))
                     return@get
                 }
+
+                val job = compatibilitySnapshotFor(
+                    item = item,
+                    triggerPreparation = item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT,
+                    prioritizePreparation = item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT,
+                )
+                val streamReady = compatibilityStreamReady(item)
+
                 debugLogSink.log(
                     "WebItem",
-                    "details id=${item.id} name=${item.displayName} mode=${item.playbackDecision.mode} category=${item.category} mime=${item.mimeType} available=${item.isAvailable}",
+                    "details id=${item.id} name=${item.displayName} mode=${item.playbackDecision.mode} " +
+                        "status=${job.status} streamReady=$streamReady complete=${job.status == CompatibilityStatus.READY || job.preparedAsset?.isComplete == true} " +
+                        "asset=${job.preparedAsset?.filePath?.substringAfterLast('/') ?: "NONE"}",
                 )
+
                 call.respond(
                     BrowserItemDetails.from(
                         item = item,
-                        compatibilityJob = compatibilitySnapshotFor(
-                            item = item,
-                            triggerPreparation = item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT,
-                            prioritizePreparation = item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT,
-                        ),
-                        streamReady = compatibilityStreamReady(item),
+                        compatibilityJob = job,
+                        streamReady = streamReady,
                         allowDownloads = !settings.preventDownload,
                     ),
                 )
@@ -436,6 +443,61 @@ class KtorGhostStreamServer(
                         job = job,
                         ready = ready,
                     ),
+                )
+            }
+
+            post("/api/compat/{id}/seek") {
+                if (!call.authorizeBrowserCall()) return@post
+                val offsetMs = call.request.queryParameters["offsetMs"]?.toLongOrNull() ?: run {
+                    call.respond(HttpStatusCode.BadRequest, ErrorPayload("Missing offsetMs parameter."))
+                    return@post
+                }
+                val item = resolveItem(call.parameters["id"]) ?: run {
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_file_unavailable)))
+                    return@post
+                }
+                
+                val job = compatibilityPipeline.requestSeek(item, offsetMs)
+                val ready = compatibilityStreamReady(item)
+                debugLogSink.log(
+                    "WebSeek",
+                    "seek id=${item.id} offsetMs=$offsetMs status=${job.status} ready=$ready",
+                )
+                call.respond(
+                    CompatibilityStatusPayload.from(
+                        job = job,
+                        ready = ready,
+                    ),
+                )
+            }
+
+            get("/api/compat/{id}/file") {
+                if (!call.authorizeBrowserCall()) return@get
+                val itemId = call.parameters["id"]
+                val item = resolveItem(itemId) ?: run {
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.browser_file_unavailable)))
+                    return@get
+                }
+                val job = compatibilityPipeline.currentJob(item.id) ?: run {
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.browser_optimized_unavailable)))
+                    return@get
+                }
+                val preparedAsset = job.preparedAsset ?: run {
+                    call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_video_part_preparing)))
+                    return@get
+                }
+
+                call.streamCachedFile(
+                    item = item,
+                    playbackSource = PlaybackSource.CachedFile(
+                        filePath = preparedAsset.filePath,
+                        mimeType = "video/mp4",
+                        sizeBytes = preparedAsset.sizeBytes,
+                        isComplete = preparedAsset.isComplete,
+                        allowGrowing = true,
+                    ),
+                    asAttachment = false,
+                    activity = ClientActivity.WATCHING_VIDEO,
                 )
             }
 
@@ -728,83 +790,6 @@ class KtorGhostStreamServer(
                 )
             }
 
-            // Serves the fully-prepared (READY) compat MP4 directly — no HLS, no MSE.
-            // The prepared asset is an fMP4 produced by Media3 InAppMuxer; browsers play it
-            // natively via <video src> without needing MSE SourceBuffer, so the TFHD
-            // base-data-offset field that blocks hls.js is harmless here.
-            // Supports byte-range requests (needed for video seeking in the browser).
-            get("/compat-mp4/{id}") {
-                if (!call.authorizeBrowserCall()) return@get
-                val item = resolveItem(call.parameters["id"]) ?: run {
-                    call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.browser_file_unavailable)))
-                    return@get
-                }
-                if (!item.isAvailable) {
-                    call.respond(HttpStatusCode.Gone, ErrorPayload(localizedContext().getString(R.string.browser_file_unavailable)))
-                    return@get
-                }
-                val job = compatibilitySnapshotFor(item, triggerPreparation = false)
-                val isReady = job.status == CompatibilityStatus.READY || job.preparedAsset?.isComplete == true
-                if (!isReady) {
-                    call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.browser_optimized_unavailable)))
-                    return@get
-                }
-                val preparedAsset = job.preparedAsset ?: run {
-                    call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.browser_optimized_unavailable)))
-                    return@get
-                }
-                val file = File(preparedAsset.filePath)
-                if (!file.exists()) {
-                    call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.browser_optimized_unavailable)))
-                    return@get
-                }
-                val totalLength = file.length()
-                val range = parseRange(call.request.header(HttpHeaders.Range), totalLength)
-                val start = range?.first ?: 0L
-                val end = range?.last ?: (totalLength - 1)
-                val lengthToSend = end - start + 1
-                debugLogSink.log(
-                    "WebCompatMp4",
-                    "serving id=${item.id} file=${file.name} bytes=$totalLength " +
-                        "range=${if (range != null) "${range.first}-${range.last}" else "none"}",
-                )
-                val callerHost = call.remoteHost()
-                sessionManager.onTransferStarted(callerHost, ClientActivity.WATCHING_VIDEO, isDownload = false)
-                try {
-                    call.respond(object : OutgoingContent.WriteChannelContent() {
-                        override val status = if (range != null) HttpStatusCode.PartialContent else HttpStatusCode.OK
-                        override val contentType = ContentType.parse("video/mp4")
-                        override val contentLength = lengthToSend
-                        override val headers = io.ktor.http.Headers.build {
-                            append(HttpHeaders.AcceptRanges, "bytes")
-                            append(HttpHeaders.CacheControl, "no-store")
-                            if (range != null) {
-                                append(HttpHeaders.ContentRange, "bytes ${range.first}-${range.last}/$totalLength")
-                            }
-                        }
-                        override suspend fun writeTo(channel: ByteWriteChannel) {
-                            withContext(Dispatchers.IO) {
-                                RandomAccessFile(file, "r").use { raf ->
-                                    raf.seek(start)
-                                    val buffer = ByteArray(STREAMING_BUFFER_SIZE)
-                                    var remaining = lengthToSend
-                                    while (remaining > 0) {
-                                        val toRead = minOf(buffer.size.toLong(), remaining).toInt()
-                                        val read = raf.read(buffer, 0, toRead)
-                                        if (read <= 0) break
-                                        channel.writeFully(buffer, 0, read)
-                                        channel.flush()
-                                        remaining -= read
-                                        sessionManager.onTransferProgress(callerHost, read.toLong(), ClientActivity.WATCHING_VIDEO)
-                                    }
-                                }
-                            }
-                        }
-                    })
-                } finally {
-                    sessionManager.onTransferCompleted(callerHost, ClientActivity.WATCHING_VIDEO, wasDownload = false)
-                }
-            }
 
             get("/subtitle/{id}") {
                 if (!call.authorizeBrowserCall()) return@get
@@ -1126,6 +1111,7 @@ class KtorGhostStreamServer(
         playbackSource: PlaybackSource.CachedFile,
         asAttachment: Boolean,
         activity: ClientActivity,
+        expectedTotalSize: Long? = null,
     ) {
         val file = File(playbackSource.filePath)
         if (!file.exists()) {
@@ -1139,10 +1125,11 @@ class KtorGhostStreamServer(
                 mimeType = playbackSource.mimeType ?: item.playbackDecision.browserMimeType ?: "application/octet-stream",
                 asAttachment = asAttachment,
                 activity = activity,
+                expectedTotalSize = expectedTotalSize ?: playbackSource.sizeBytes.takeIf { it > 0 },
             )
             return
         }
-        val totalLength = file.length()
+        val totalLength = if (expectedTotalSize != null && expectedTotalSize > file.length()) expectedTotalSize else file.length()
         val range = parseRange(request.header(HttpHeaders.Range), totalLength)
         val lengthToSend = range?.let { (it.last - it.first + 1).coerceAtLeast(0) } ?: totalLength
         val mimeType = playbackSource.mimeType ?: item.playbackDecision.browserMimeType ?: "application/octet-stream"
@@ -1200,6 +1187,7 @@ class KtorGhostStreamServer(
         mimeType: String,
         asAttachment: Boolean,
         activity: ClientActivity,
+        expectedTotalSize: Long? = null,
     ) {
         val requestedRange = parseRequestedGrowingRange(request.header(HttpHeaders.Range))
         if (requestedRange != null) {
@@ -1217,8 +1205,9 @@ class KtorGhostStreamServer(
                 return
             }
 
+            val totalSizeForHeader = expectedTotalSize ?: availableLength
             val range = requestedRange.start..minOf(
-                requestedRange.endInclusive ?: (availableLength - 1),
+                requestedRange.endInclusive ?: (totalSizeForHeader - 1),
                 availableLength - 1,
             )
             val callerHost = remoteHost()
@@ -1231,7 +1220,7 @@ class KtorGhostStreamServer(
                     override val headers = io.ktor.http.Headers.build {
                         append(HttpHeaders.AcceptRanges, "bytes")
                         append(HttpHeaders.CacheControl, "no-store")
-                        append(HttpHeaders.ContentRange, "bytes ${range.first}-${range.last}/$availableLength")
+                        append(HttpHeaders.ContentRange, "bytes ${range.first}-${range.last}/$totalSizeForHeader")
                         if (asAttachment) {
                             append(
                                 HttpHeaders.ContentDisposition,
@@ -1362,12 +1351,13 @@ class KtorGhostStreamServer(
         sessionManager.onTransferStarted(callerHost, activity, isDownload = false)
         try {
             respond(object : OutgoingContent.WriteChannelContent() {
-                override val status: HttpStatusCode = HttpStatusCode.OK
+                override val status: HttpStatusCode = HttpStatusCode.PartialContent
                 override val contentType: ContentType = ContentType.parse(mimeType)
                 override val contentLength: Long = lengthToSend
                 override val headers = io.ktor.http.Headers.build {
                     append(HttpHeaders.AcceptRanges, "bytes")
                     append(HttpHeaders.CacheControl, "no-store")
+                    append(HttpHeaders.ContentRange, "bytes $start-$endInclusive/${file.length()}")
                 }
 
                 override suspend fun writeTo(channel: ByteWriteChannel) {
@@ -1533,21 +1523,53 @@ class KtorGhostStreamServer(
         index: FragmentedMp4HlsIndex,
         complete: Boolean,
     ): String {
+        val item = storageRepository.findItemById(itemId)
+        var durationMs = item?.durationMs ?: 0L
+
+        // Fallback: If duration is missing (e.g. indexed before the fix), try to read it now.
+        if (durationMs <= 0L && item != null) {
+            runCatching {
+                val uri = android.net.Uri.parse(item.uri)
+                mediaAnalyzer.readDurationMs(uri, item.mimeType)?.let {
+                    durationMs = it
+                }
+            }
+        }
+
+        debugLogSink.log(
+            "KtorGhostStreamServer",
+            "building hls playlist id=$itemId name=${item?.displayName} durationMs=$durationMs segments=${index.segments.size} complete=$complete"
+        )
+
         return buildString {
             appendLine("#EXTM3U")
             appendLine("#EXT-X-VERSION:7")
             appendLine("#EXT-X-TARGETDURATION:$HLS_TARGET_DURATION_SECONDS")
             appendLine("#EXT-X-MEDIA-SEQUENCE:0")
-            appendLine("#EXT-X-PLAYLIST-TYPE:EVENT")
+            // We use VOD type even if growing to ensure the browser shows the full timeline immediately.
+            // For segments that aren't ready yet, the server will block in awaitHlsIndex until they appear.
+            appendLine("#EXT-X-PLAYLIST-TYPE:VOD")
             appendLine("#EXT-X-INDEPENDENT-SEGMENTS")
             appendLine("#EXT-X-MAP:URI=\"/hls/$itemId/init.mp4\"")
-            index.segments.forEach { segment ->
-                appendLine("#EXTINF:${"%.3f".format(java.util.Locale.US, segment.durationSeconds)},")
-                appendLine("/hls/$itemId/segment/${segment.index}.m4s")
+
+            // Determine how many segments will exist in total based on metadata duration.
+            // This ensures the timeline in the browser is accurate from the very start.
+            val totalExpectedSegments = if (durationMs > 0) {
+                (java.lang.Math.ceil(durationMs / 1000.0 / HLS_SEGMENT_DURATION_SECONDS)).toInt()
+            } else {
+                index.segments.size
             }
-            if (complete) {
-                appendLine("#EXT-X-ENDLIST")
+
+            // Fill the playlist with all segments (indexed ones first, then virtual ones).
+            repeat(totalExpectedSegments) { segmentIndex ->
+                // Use the indexed duration if available, else use the default target duration.
+                val duration = index.segments.getOrNull(segmentIndex)?.durationSeconds ?: HLS_SEGMENT_DURATION_SECONDS.toDouble()
+                appendLine("#EXTINF:${"%.3f".format(java.util.Locale.US, duration)},")
+                appendLine("/hls/$itemId/segment/$segmentIndex.m4s")
             }
+
+            // Always add ENDLIST for VOD style playlists.
+            appendLine("#EXT-X-ENDLIST")
         }
     }
 
@@ -1827,39 +1849,44 @@ class KtorGhostStreamServer(
                 compatibilityJob: CompatibilityJob,
                 streamReady: Boolean,
                 allowDownloads: Boolean,
-            ): BrowserItemDetails = BrowserItemDetails(
-                id = item.id,
-                title = item.displayName,
-                mimeType = item.mimeType,
-                category = item.category.name.lowercase(),
-                streamUrl = "/stream/${item.id}",
-                // Point to the master playlist so hls.js and native HLS players receive
-                // the CODECS hint before loading any segments. The master playlist
-                // redirects to /hls/{id}/playlist.m3u8 with the correct codec declaration.
-                hlsUrl = if (item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT) {
-                    "/hls/${item.id}/master.m3u8"
-                } else {
-                    null
-                },
-                downloadUrl = if (allowDownloads) "/download/${item.id}" else null,
-                subtitleUrl = item.subtitleMatch?.let { "/subtitle/${item.id}" },
-                durationMs = item.durationMs,
-                sizeBytes = item.sizeBytes,
-                compatibility = item.playbackDecision.compatibilityLabel,
-                reason = item.playbackDecision.reason,
-                playbackMode = item.playbackDecision.mode,
-                compatibilityStatus = compatibilityJob.status.takeIf { item.playbackDecision.mode != PlaybackMode.DIRECT },
-                compatibilityMessage = compatibilityJob.message.takeIf { item.playbackDecision.mode != PlaybackMode.DIRECT },
-                compatibilityProgressPercent = compatibilityJob.progressPercent,
-                compatibilityComplete = compatibilityJob.status == CompatibilityStatus.READY || compatibilityJob.preparedAsset?.isComplete == true,
-                streamReady = streamReady,
-                // Expose a direct-playback URL when the prepared asset is complete.
-                // The browser can load this as a plain <video src> without HLS/MSE.
-                preparedMp4Url = if (
-                    item.playbackDecision.mode != PlaybackMode.DIRECT &&
-                    (compatibilityJob.status == CompatibilityStatus.READY || compatibilityJob.preparedAsset?.isComplete == true)
-                ) "/compat-mp4/${item.id}" else null,
-            )
+            ): BrowserItemDetails {
+                val isComplete = compatibilityJob.status == CompatibilityStatus.READY || compatibilityJob.preparedAsset?.isComplete == true
+                val hasProgressedAsset = compatibilityJob.preparedAsset != null
+
+                return BrowserItemDetails(
+                    id = item.id,
+                    title = item.displayName,
+                    mimeType = item.mimeType,
+                    category = item.category.name.lowercase(),
+                    streamUrl = "/stream/${item.id}",
+                    // Force native direct playback if already finished.
+                    // This eliminates the HLS-to-MP4 switch delay for completed optimizations.
+                    hlsUrl = if (item.category == MediaCategory.VIDEO && !isComplete && item.playbackDecision.mode != PlaybackMode.DIRECT) {
+                        "/hls/${item.id}/master.m3u8"
+                    } else {
+                        null
+                    },
+                    downloadUrl = if (allowDownloads) "/download/${item.id}" else null,
+                    subtitleUrl = item.subtitleMatch?.let { "/subtitle/${item.id}" },
+                    durationMs = item.durationMs,
+                    sizeBytes = item.sizeBytes,
+                    compatibility = item.playbackDecision.compatibilityLabel,
+                    reason = item.playbackDecision.reason,
+                    playbackMode = item.playbackDecision.mode,
+                    compatibilityStatus = compatibilityJob.status.takeIf { item.playbackDecision.mode != PlaybackMode.DIRECT },
+                    compatibilityMessage = compatibilityJob.message.takeIf { item.playbackDecision.mode != PlaybackMode.DIRECT },
+                    compatibilityProgressPercent = compatibilityJob.progressPercent,
+                    compatibilityComplete = isComplete,
+                    streamReady = streamReady,
+                    // Only advertise the direct MP4 URL when the file is 100% finished AND
+                    // it is not already a DIRECT play item (which uses the original /stream URL).
+                    preparedMp4Url = if (isComplete && item.playbackDecision.mode != PlaybackMode.DIRECT) {
+                        "/api/compat/${item.id}/file"
+                    } else {
+                        null
+                    },
+                )
+            }
         }
     }
 
@@ -1871,16 +1898,25 @@ class KtorGhostStreamServer(
         val progressPercent: Int? = null,
         val ready: Boolean,
         val complete: Boolean,
+        val fileUrl: String? = null,
+        val hlsUrl: String? = null,
     ) {
         companion object {
-            fun from(job: CompatibilityJob, ready: Boolean): CompatibilityStatusPayload = CompatibilityStatusPayload(
-                itemId = job.itemId,
-                status = job.status,
-                message = job.message,
-                progressPercent = job.progressPercent,
-                ready = ready,
-                complete = job.status == CompatibilityStatus.READY || job.preparedAsset?.isComplete == true,
-            )
+            fun from(job: CompatibilityJob, ready: Boolean): CompatibilityStatusPayload {
+                val isComplete = job.status == CompatibilityStatus.READY || job.preparedAsset?.isComplete == true
+                return CompatibilityStatusPayload(
+                    itemId = job.itemId,
+                    status = job.status,
+                    message = job.message,
+                    progressPercent = job.progressPercent,
+                    ready = ready,
+                    complete = isComplete,
+                    // Only provide the direct file URL when the file is 100% finished AND
+                    // it is not already a DIRECT play item.
+                    fileUrl = if (isComplete && job.decision.mode != PlaybackMode.DIRECT) "/api/compat/${job.itemId}/file" else null,
+                    hlsUrl = if (job.preparedAsset?.isFragmentedMp4 == true && !isComplete) "/hls/${job.itemId}/master.m3u8" else null,
+                )
+            }
         }
     }
 
@@ -1895,7 +1931,7 @@ class KtorGhostStreamServer(
         val endInclusive: Long?,
     )
 
-    private companion object {
+    companion object {
         const val COOKIE_NAME = "ghost_session"
         const val GROWING_FILE_POLL_INTERVAL_MS = 300L
         const val MAX_GROWING_FILE_IDLE_POLLS = 300

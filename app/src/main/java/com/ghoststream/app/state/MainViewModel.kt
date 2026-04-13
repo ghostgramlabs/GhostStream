@@ -129,6 +129,34 @@ class MainViewModel(
                 }
             }
             .launchIn(viewModelScope)
+
+        // ── PRE-EMPTIVE WARMUP ───────────────────────────────────────────────────
+        // Proactively start remuxing/transcoding for the most recent library items
+        // so they are ready before the user clicks Play.
+        container.storageRepository.libraryState
+            .onEach { library ->
+                val settings = container.settingsRepository.settings.first()
+                val videosToWarmup = library.items
+                    .filter { it.category == com.ghoststream.core.model.MediaCategory.VIDEO && it.playbackDecision.mode != com.ghoststream.core.model.PlaybackMode.DIRECT }
+                    .filter { item ->
+                        val job = container.compatibilityPipeline.currentJob(item.id)
+                        job == null || (job.status == com.ghoststream.core.media.CompatibilityStatus.IDLE && job.preparedAsset == null)
+                    }
+                    .let { items ->
+                        if (settings.autoOptimizeLibrary) {
+                            items // No limit when full auto-optimize is enabled
+                        } else {
+                            items.take(2) // Default to top 2 to preserve resources
+                        }
+                    }
+
+                videosToWarmup.forEach { item ->
+                    container.debugLogRepository.log("MainViewModel", "auto-warmup: requestPreparation id=${item.id}")
+                    container.compatibilityPipeline.requestPreparation(item, prioritize = false)
+                }
+            }
+            .launchIn(viewModelScope)
+        // ────────────────────────────────────────────────────────────────────────
     }
 
     fun completeOnboarding() {

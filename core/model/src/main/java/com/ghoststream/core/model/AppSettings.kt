@@ -43,6 +43,7 @@ data class AppSettings(
     val notifyOnUploadRequest: Boolean = true,
     val requireDeviceApproval: Boolean = false,
     val preventDownload: Boolean = false,
+    val autoOptimizeLibrary: Boolean = false,
     val deviceNicknames: Map<String, String> = emptyMap(), // ipAddress -> nickname
 )
 
