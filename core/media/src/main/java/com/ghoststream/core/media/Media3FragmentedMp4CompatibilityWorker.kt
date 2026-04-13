@@ -47,11 +47,14 @@ class Media3FragmentedMp4CompatibilityWorker(
             return@withContext CompatibilityWorkerResult.Failure(item.playbackDecision.reason)
         }
 
-        val outputFile = cache.newOutputFile(item, "mp4")
-        runCatching { outputFile.parentFile?.mkdirs() }
-        if (outputFile.exists()) {
-            runCatching { outputFile.delete() }
-        }
+        val tmpOutputFile = cache.newOutputFile(item, "tmp")
+        val finalOutputFile = cache.newOutputFile(item, "mp4")
+        runCatching { tmpOutputFile.parentFile?.mkdirs() }
+        // Delete any leftover .tmp from a previous interrupted transcode (safe to remove since
+        // TempPlaybackCache.lookup ignores .tmp files — a partial .tmp is never treated as READY).
+        if (tmpOutputFile.exists()) runCatching { tmpOutputFile.delete() }
+        // Delete any stale .mp4 that might have been left over as well.
+        if (finalOutputFile.exists()) runCatching { finalOutputFile.delete() }
 
         // Boost the encoder thread to foreground priority so the OS scheduler gives it
         // more CPU slices, reducing transcode latency when the user is actively waiting.
@@ -64,7 +67,8 @@ class Media3FragmentedMp4CompatibilityWorker(
         val cancelled = AtomicBoolean(false)
         val transform = ActiveTransform(
             itemId = item.id,
-            outputFile = outputFile,
+            outputFile = tmpOutputFile,
+            finalFile = finalOutputFile,
             handler = handler,
             thread = thread,
             completion = completion,
@@ -76,9 +80,13 @@ class Media3FragmentedMp4CompatibilityWorker(
                 val listener = object : Transformer.Listener {
                     override fun onCompleted(composition: Composition, exportResult: ExportResult) {
                         val message = completedMessage(item, exportResult)
+                        // Atomic rename: .tmp → .mp4 ensures PlaybackCache.lookup never returns
+                        // a partial file. If the rename fails (e.g. no space left), record the
+                        // tmp file itself so streaming still works.
+                        val completedFile = if (tmpOutputFile.renameTo(finalOutputFile)) finalOutputFile else tmpOutputFile
                         val asset = cache.record(
                             itemId = item.id,
-                            file = outputFile,
+                            file = completedFile,
                             mimeType = "video/mp4",
                             isComplete = true,
                             isFragmentedMp4 = true,
@@ -105,7 +113,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                         exportResult: ExportResult,
                         exportException: ExportException,
                     ) {
-                        runCatching { outputFile.delete() }
+                        runCatching { tmpOutputFile.delete() }
                         completion.complete(
                             CompatibilityWorkerResult.Failure(
                                 message = exportException.message
@@ -200,7 +208,7 @@ class Media3FragmentedMp4CompatibilityWorker(
 
                 val transformer = builder.build()
                 transform.transformer = transformer
-                transformer.start(editedMediaItem, outputFile.absolutePath)
+                transformer.start(editedMediaItem, tmpOutputFile.absolutePath)
                 scheduleProgressUpdates(
                     item = item,
                     cache = cache,
@@ -208,7 +216,6 @@ class Media3FragmentedMp4CompatibilityWorker(
                     cancelled = cancelled,
                     onUpdate = onUpdate,
                 )
-            } catch (error: Exception) {
             } catch (error: Exception) {
                 completion.complete(
                     CompatibilityWorkerResult.Failure(
@@ -334,6 +341,7 @@ class Media3FragmentedMp4CompatibilityWorker(
     private data class ActiveTransform(
         val itemId: String,
         val outputFile: File,
+        val finalFile: File,
         val handler: Handler,
         val thread: HandlerThread,
         val completion: CompletableDeferred<CompatibilityWorkerResult>,
@@ -343,6 +351,7 @@ class Media3FragmentedMp4CompatibilityWorker(
             handler.post {
                 transformer?.cancel()
             }
+            // Delete the .tmp file on cancel; .mp4 only exists if already renamed on success
             runCatching { outputFile.delete() }
             completion.complete(
                 CompatibilityWorkerResult.Failure(

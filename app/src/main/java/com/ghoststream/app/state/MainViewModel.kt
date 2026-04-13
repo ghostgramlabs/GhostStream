@@ -48,6 +48,11 @@ class MainViewModel(
     private val _browserPrepManuallyTriggered = MutableStateFlow(false)
     private val _events = MutableSharedFlow<AppEvent>(extraBufferCapacity = 8)
 
+    // Session-level dedup set: tracks item IDs that have already been submitted for background
+    // warmup this session.  Prevents the library-state observer from re-queuing the same
+    // item every time the StorageRepository emits a new state (e.g. on each file scan tick).
+    private val warmupRequestedIds = mutableSetOf<String>()
+
     val events = _events.asSharedFlow()
 
     val uiState: StateFlow<MainUiState> = combine(
@@ -150,8 +155,10 @@ class MainViewModel(
                         }
                     }
 
-                videosToWarmup.forEach { item ->
-                    container.debugLogRepository.log("MainViewModel", "auto-warmup: requestPreparation id=${item.id}")
+                // Only submit items that haven't been queued this session (dedup).
+                val newItems = videosToWarmup.filterNot { item -> warmupRequestedIds.contains(item.id) }
+                newItems.forEach { item ->
+                    warmupRequestedIds.add(item.id)
                     container.compatibilityPipeline.requestPreparation(item, prioritize = false)
                 }
             }
@@ -575,47 +582,4 @@ class MainViewModel(
                     existing?.status == com.ghoststream.core.media.CompatibilityStatus.PREPARING
                 if (!alreadyHandled) {
                     container.compatibilityPipeline.requestPreparation(item, prioritize = false)
-                    queuedCount += 1
-                }
-            }
-        return queuedCount
-    }
-
-    companion object {
-        fun factory(container: AppContainer): ViewModelProvider.Factory {
-            return object : ViewModelProvider.Factory {
-                @Suppress("UNCHECKED_CAST")
-                override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                    val application = container.application
-                    return MainViewModel(application, container) as T
-                }
-            }
-        }
-    }
-}
-
-private fun NearbyDiscoveryState.filterCurrentSession(sessionState: SessionState, application: Application): NearbyDiscoveryState {
-    val sessionHost = sessionState.sessionUrl?.let(Uri::parse)?.host?.lowercase()
-    val sessionAddress = sessionState.networkAvailability.localAddress?.lowercase()
-    val sessionHostname = sessionState.hostname?.lowercase()
-    val sessionPort = sessionState.serverPort
-    val sessionId = sessionState.sessionId
-
-    val filteredDevices = devices.filterNot { device ->
-        val sameSessionId = sessionId != null && device.sessionId == sessionId
-        val sameAddress = sessionAddress != null && device.address.lowercase() == sessionAddress
-        val sameHost = listOfNotNull(device.hostname?.lowercase(), device.friendlyUrl?.let(Uri::parse)?.host?.lowercase())
-            .any { it == sessionHost || it == sessionHostname }
-        val samePort = sessionPort != null && device.port == sessionPort
-        sameSessionId || (samePort && (sameAddress || sameHost))
-    }
-
-    return copy(
-        devices = filteredDevices,
-        helperText = when {
-            lastError != null -> helperText
-            filteredDevices.isNotEmpty() -> application.getString(R.string.nearby_helper_tap_session)
-            else -> application.getString(R.string.nearby_helper_open_on_other_device)
-        },
-    )
-}
+                 

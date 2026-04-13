@@ -382,10 +382,13 @@ class KtorGhostStreamServer(
                     return@get
                 }
 
+                // Only inspect — do not auto-trigger preparation here.
+                // The browser explicitly requests preparation via POST /api/compat/{id}/prepare,
+                // which prevents duplicate transcode jobs when the library state updates.
                 val job = compatibilitySnapshotFor(
                     item = item,
-                    triggerPreparation = item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT,
-                    prioritizePreparation = item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT,
+                    triggerPreparation = false,
+                    prioritizePreparation = false,
                 )
                 val streamReady = compatibilityStreamReady(item)
 
@@ -1878,9 +1881,15 @@ class KtorGhostStreamServer(
                     compatibilityProgressPercent = compatibilityJob.progressPercent,
                     compatibilityComplete = isComplete,
                     streamReady = streamReady,
-                    // Only advertise the direct MP4 URL when the file is 100% finished AND
-                    // it is not already a DIRECT play item (which uses the original /stream URL).
-                    preparedMp4Url = if (isComplete && item.playbackDecision.mode != PlaybackMode.DIRECT) {
+                    // Advertise the direct MP4 URL as soon as streamReady is true AND a prepared
+                    // asset exists — not just when the job is 100% complete.
+                    // The /api/compat/{id}/file endpoint streams the growing fMP4 via
+                    // streamGrowingCachedFile, so the browser can start before transcoding finishes.
+                    preparedMp4Url = if (
+                        streamReady &&
+                        hasProgressedAsset &&
+                        item.playbackDecision.mode != PlaybackMode.DIRECT
+                    ) {
                         "/api/compat/${item.id}/file"
                     } else {
                         null
@@ -1911,9 +1920,11 @@ class KtorGhostStreamServer(
                     progressPercent = job.progressPercent,
                     ready = ready,
                     complete = isComplete,
-                    // Only provide the direct file URL when the file is 100% finished AND
-                    // it is not already a DIRECT play item.
-                    fileUrl = if (isComplete && job.decision.mode != PlaybackMode.DIRECT) "/api/compat/${job.itemId}/file" else null,
+                    // Provide the direct file URL as soon as the job is "ready" (enough data
+                    // to start playback) and a prepared asset exists — not just when complete.
+                    // The /api/compat/{id}/file endpoint handles both growing and complete files
+                    // via streamGrowingCachedFile, so streaming starts immediately.
+                    fileUrl = if (ready && job.decision.mode != PlaybackMode.DIRECT && job.preparedAsset != null) "/api/compat/${job.itemId}/file" else null,
                     hlsUrl = if (job.preparedAsset?.isFragmentedMp4 == true && !isComplete) "/hls/${job.itemId}/master.m3u8" else null,
                 )
             }
@@ -1934,20 +1945,4 @@ class KtorGhostStreamServer(
     companion object {
         const val COOKIE_NAME = "ghost_session"
         const val GROWING_FILE_POLL_INTERVAL_MS = 300L
-        const val MAX_GROWING_FILE_IDLE_POLLS = 300
-        const val HLS_INDEX_POLL_INTERVAL_MS = 250L
-        const val MAX_HLS_INDEX_IDLE_POLLS = 80
-        const val HLS_SEGMENT_DURATION_SECONDS = 2.0
-        const val HLS_TARGET_DURATION_SECONDS = 3
-        const val STREAMING_BUFFER_SIZE = 64 * 1024
-        // Require this many segments to be ready before serving the first playlist.
-        // At 2 seconds per segment (FRAGMENT_DURATION_MS), MIN=1 gives ~2 seconds of
-        // start buffer — hls.js buffers ahead while playing so one segment is enough.
-        const val MIN_SEGMENTS_BEFORE_PLAY = 1
-        // How many times awaitHlsIndex retries after a job is finalized but the
-        // index doesn't yet meet requirements (handles OS file-flush latency).
-        const val HLS_FINALIZED_RETRY_COUNT = 5
-        // Delay between each finalized-job retry in awaitHlsIndex.
-        const val HLS_FINALIZED_RETRY_INTERVAL_MS = 400L
-    }
-}
+        const val MAX_GROWING_FILE_IDLE_P

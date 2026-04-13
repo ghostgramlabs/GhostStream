@@ -27,7 +27,14 @@ class TempPlaybackCache(
 
     override fun lookup(itemId: String): CachedPlaybackAsset? {
         val file = rootDir.listFiles()
-            ?.firstOrNull { candidate -> candidate.name.startsWith(itemId) && candidate.isFile }
+            // Ignore .tmp files: they represent in-progress or interrupted transcodes.
+            // Only return completed files (.mp4, .m4a, etc.) so a crash mid-transcode
+            // never causes lookup() to return a partial file as "READY".
+            ?.firstOrNull { candidate ->
+                candidate.name.startsWith(itemId) &&
+                candidate.isFile &&
+                !candidate.name.endsWith(".tmp")
+            }
             ?: return null
         return CachedPlaybackAsset(
             itemId = itemId,
