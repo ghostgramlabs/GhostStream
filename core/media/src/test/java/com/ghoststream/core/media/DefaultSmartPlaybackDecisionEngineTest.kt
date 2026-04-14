@@ -13,6 +13,7 @@ class DefaultSmartPlaybackDecisionEngineTest {
         audio: String? = "audio/mp4a-latm",
         mime: String = "video/mp4",
         name: String = "movie.mp4",
+        hasFaststart: Boolean? = null,
     ) = MediaInspection(
         originalMimeType = mime,
         normalizedMimeType = mime,
@@ -24,15 +25,22 @@ class DefaultSmartPlaybackDecisionEngineTest {
         browserSafe = container == MediaContainer.MP4,
         likelyContainerOnlyIssue = false,
         likelyNeedsTranscode = false,
+        hasFaststart = hasFaststart,
     )
 
-    // ── Tier 0: DIRECT ───────────────────────────────────────────────────────
+    // ── Tier 0: DIRECT ──────────────────────────────────────────────────────
 
     @Test
     fun `MP4 + H264 + AAC resolves to DIRECT`() {
         val d = engine.decide(inspect(MediaContainer.MP4))
         assertEquals(PlaybackMode.DIRECT, d.mode)
         assertEquals("video/mp4", d.browserMimeType)
+    }
+
+    @Test
+    fun `MP4 + H264 + AAC + faststart resolves to DIRECT`() {
+        val d = engine.decide(inspect(MediaContainer.MP4, hasFaststart = true))
+        assertEquals(PlaybackMode.DIRECT, d.mode)
     }
 
     @Test
@@ -60,23 +68,22 @@ class DefaultSmartPlaybackDecisionEngineTest {
         assertEquals(PlaybackMode.DIRECT, d.mode)
     }
 
-    // ── Tier 0 exclusions: things that must NOT be DIRECT ────────────────────
+    // ── Tier 1: REMUX (browser container, needs layout or audio fix) ────────
 
     @Test
-    fun `MP4 + HEVC + AAC resolves to TRANSCODE (HEVC not universally supported)`() {
-        val d = engine.decide(inspect(MediaContainer.MP4, video = "video/hevc"))
-        assertEquals(PlaybackMode.TRANSCODE, d.mode)
+    fun `MP4 + H264 + AAC + bad faststart resolves to REMUX`() {
+        val d = engine.decide(inspect(MediaContainer.MP4, hasFaststart = false))
+        assertEquals(PlaybackMode.REMUX, d.mode)
     }
 
     @Test
-    fun `MP4 + HEVC + AAC (hvc1 tag) resolves to TRANSCODE`() {
-        val d = engine.decide(inspect(MediaContainer.MP4, video = "video/hvc1"))
-        assertEquals(PlaybackMode.TRANSCODE, d.mode)
+    fun `MOV + H264 + AAC + bad faststart resolves to REMUX`() {
+        val d = engine.decide(inspect(MediaContainer.QUICKTIME, mime = "video/quicktime", name = "movie.mov", hasFaststart = false))
+        assertEquals(PlaybackMode.REMUX, d.mode)
     }
 
     @Test
     fun `MP4 + H264 + Opus resolves to REMUX (Opus excluded from DIRECT)`() {
-        // Opus fails in Safari and some Android WebViews — remux to transcode audio to AAC.
         val d = engine.decide(inspect(MediaContainer.MP4, audio = "audio/opus"))
         assertEquals(PlaybackMode.REMUX, d.mode)
     }
@@ -93,46 +100,60 @@ class DefaultSmartPlaybackDecisionEngineTest {
         assertEquals(PlaybackMode.REMUX, d.mode)
     }
 
-    // ── Tier 1 & 2: REMUX ────────────────────────────────────────────────────
-
-    @Test
-    fun `MKV + H264 + AAC resolves to REMUX (container-only issue)`() {
-        val d = engine.decide(inspect(MediaContainer.MATROSKA, mime = "video/x-matroska", name = "movie.mkv"))
-        assertEquals(PlaybackMode.REMUX, d.mode)
-        assertEquals("video/mp4", d.browserMimeType)
-    }
-
-    @Test
-    fun `TS + H264 + AAC resolves to REMUX`() {
-        val d = engine.decide(inspect(MediaContainer.TS, mime = "video/mp2t", name = "movie.ts"))
-        assertEquals(PlaybackMode.REMUX, d.mode)
-    }
-
-    @Test
-    fun `AVI + H264 + AAC resolves to REMUX`() {
-        val d = engine.decide(inspect(MediaContainer.AVI, mime = "video/x-msvideo", name = "movie.avi"))
-        assertEquals(PlaybackMode.REMUX, d.mode)
-    }
-
-    @Test
-    fun `MKV + H264 + DTS resolves to REMUX (video copy + audio transcode)`() {
-        val d = engine.decide(inspect(MediaContainer.MATROSKA, audio = "audio/dtshd-ma", name = "movie.mkv"))
-        assertEquals(PlaybackMode.REMUX, d.mode)
-    }
-
-    @Test
-    fun `MKV + H264 + EAC3 resolves to REMUX`() {
-        val d = engine.decide(inspect(MediaContainer.MATROSKA, audio = "audio/eac3", name = "movie.mkv"))
-        assertEquals(PlaybackMode.REMUX, d.mode)
-    }
-
     @Test
     fun `MOV + H264 + AC3 resolves to REMUX (audio needs transcoding)`() {
         val d = engine.decide(inspect(MediaContainer.QUICKTIME, audio = "audio/ac3", name = "movie.mov"))
         assertEquals(PlaybackMode.REMUX, d.mode)
     }
 
-    // ── Tier 3 & 4: TRANSCODE ────────────────────────────────────────────────
+    // ── Tier 2: TRANSMUX (wrong container, codecs are ok) ───────────────────
+
+    @Test
+    fun `MKV + H264 + AAC resolves to TRANSMUX (container-only issue)`() {
+        val d = engine.decide(inspect(MediaContainer.MATROSKA, mime = "video/x-matroska", name = "movie.mkv"))
+        assertEquals(PlaybackMode.TRANSMUX, d.mode)
+        assertEquals("video/mp4", d.browserMimeType)
+    }
+
+    @Test
+    fun `TS + H264 + AAC resolves to TRANSMUX`() {
+        val d = engine.decide(inspect(MediaContainer.TS, mime = "video/mp2t", name = "movie.ts"))
+        assertEquals(PlaybackMode.TRANSMUX, d.mode)
+    }
+
+    @Test
+    fun `AVI + H264 + AAC resolves to TRANSMUX`() {
+        val d = engine.decide(inspect(MediaContainer.AVI, mime = "video/x-msvideo", name = "movie.avi"))
+        assertEquals(PlaybackMode.TRANSMUX, d.mode)
+    }
+
+    @Test
+    fun `MKV + H264 + DTS resolves to TRANSMUX (video copy + audio transcode)`() {
+        val d = engine.decide(inspect(MediaContainer.MATROSKA, audio = "audio/dtshd-ma", name = "movie.mkv"))
+        assertEquals(PlaybackMode.TRANSMUX, d.mode)
+    }
+
+    @Test
+    fun `MKV + H264 + EAC3 resolves to TRANSMUX`() {
+        val d = engine.decide(inspect(MediaContainer.MATROSKA, audio = "audio/eac3", name = "movie.mkv"))
+        assertEquals(PlaybackMode.TRANSMUX, d.mode)
+    }
+
+    // ── Tier 0 exclusions: things that must NOT be DIRECT ───────────────────
+
+    @Test
+    fun `MP4 + HEVC + AAC resolves to TRANSCODE (HEVC not universally supported)`() {
+        val d = engine.decide(inspect(MediaContainer.MP4, video = "video/hevc"))
+        assertEquals(PlaybackMode.TRANSCODE, d.mode)
+    }
+
+    @Test
+    fun `MP4 + HEVC + AAC (hvc1 tag) resolves to TRANSCODE`() {
+        val d = engine.decide(inspect(MediaContainer.MP4, video = "video/hvc1"))
+        assertEquals(PlaybackMode.TRANSCODE, d.mode)
+    }
+
+    // ── Tier 3: TRANSCODE (incompatible video codec) ────────────────────────
 
     @Test
     fun `MKV + HEVC + AAC resolves to TRANSCODE`() {
@@ -170,7 +191,7 @@ class DefaultSmartPlaybackDecisionEngineTest {
         assertEquals(PlaybackMode.TRANSCODE, d.mode)
     }
 
-    // ── Non-video files ────────────────────────────────────────────────────────
+    // ── Non-video files ─────────────────────────────────────────────────────
 
     @Test
     fun `MP3 audio file resolves to DIRECT`() {

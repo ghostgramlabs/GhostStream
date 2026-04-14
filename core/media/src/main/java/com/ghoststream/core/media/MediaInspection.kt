@@ -32,4 +32,11 @@ data class MediaInspection(
     val likelyContainerOnlyIssue: Boolean,
     val likelyNeedsTranscode: Boolean,
     val durationMs: Long? = null,
+    /**
+     * True if the MP4/MOV file has the moov atom before mdat (faststart-ready).
+     * Null if not applicable (non-MP4/MOV container) or if detection failed.
+     * When false, browser playback may require downloading the entire file before
+     * seeking works, so a REMUX pass to relocate moov is recommended.
+     */
+    val hasFaststart: Boolean? = null,
 )

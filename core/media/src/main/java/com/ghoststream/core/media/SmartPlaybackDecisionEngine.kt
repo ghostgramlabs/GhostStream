@@ -8,27 +8,31 @@ interface SmartPlaybackDecisionEngine {
 }
 
 /**
- * Chooses the cheapest valid playback path for each file, following a strict tier hierarchy:
+ * Chooses the cheapest valid playback path for each file, following a strict 4-tier hierarchy:
  *
- *  Tier 0 – DIRECT:  serve the original file unchanged.  Zero processing cost.
- *                    Requires (MP4 or MOV) + H.264 video + (AAC-LC or MP3) audio.
+ *  Tier 0 – DIRECT:     Serve the original file unchanged. Zero processing cost.
+ *                        Requires browser-safe container (MP4/MOV) + H.264 video +
+ *                        (AAC-LC or MP3) audio + moov-before-mdat (faststart).
  *
- *  Tier 1 – REMUX:   video is H.264 (safe to copy), but container is wrong.
- *                    Media3 copies the video track as-is.  Very fast (~1–5× real-time).
+ *  Tier 1 – REMUX:      Codecs are browser-safe, but container needs light fixing.
+ *                        Copies video/audio as-is, rewrites container structure.
+ *                        Very fast (~1–5× real-time). No quality loss.
+ *                        Cases: bad moov placement in MP4, or incompatible audio
+ *                        in an otherwise browser-safe file.
  *
- *  Tier 2 – REMUX:   video is H.264 (safe to copy), but audio is not AAC/MP3.
- *                    Media3 copies video, re-encodes only audio to AAC.
- *                    Still uses REMUX mode — the worker detects this case internally.
+ *  Tier 2 – TRANSMUX:   Video codec is browser-safe (H.264), but container is wrong
+ *                        (MKV, TS, AVI, etc.). Repackage into browser-friendly fMP4/HLS
+ *                        without re-encoding video. Audio may be transcoded to AAC if needed.
+ *                        Fast, no video quality loss.
  *
- *  Tier 3 – TRANSCODE: video codec is NOT H.264 (HEVC, VP9, AV1, MPEG-2, etc.).
- *                    Video must be re-encoded to H.264.  Audio is copied if already AAC/MP3,
- *                    transcoded to AAC otherwise.  Slowest path.
+ *  Tier 3 – TRANSCODE:  Video codec is NOT browser-safe (HEVC, VP9, AV1, MPEG-2, etc.).
+ *                        Full re-encode to H.264 + AAC. Slowest, most CPU-intensive path.
+ *                        Only used when no cheaper path is available.
  *
- * The guiding principle is: never use a slower tier when a faster one is safe.
+ * The guiding principle: never use a slower tier when a faster one is safe.
  * "Safe" for DIRECT means universally playable in Chrome, Firefox, Safari, and Android
- * WebView without any codec negotiation — specifically H.264 video + AAC-LC or MP3 audio.
- * HEVC, VP9, AV1, Opus, and AC3/DTS are deliberately excluded from the DIRECT allowlist
- * because they are not universally supported across all target browsers/devices.
+ * WebView without any codec negotiation — specifically H.264 video + AAC-LC or MP3 audio
+ * inside a properly structured MP4/MOV container with faststart moov placement.
  */
 class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
     override fun decide(inspection: MediaInspection): PlaybackDecision {
@@ -37,7 +41,6 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
             inspection.originalMimeType?.startsWith("video/") == true ||
             inspection.normalizedMimeType?.startsWith("video/") == true
 
-        // ── Tier 0 & 1: DIRECT-safe codecs ──────────────────────────────────────
         // Only H.264 / AVC is universally supported in every target browser.
         val isAvc = inspection.videoTrackMimeType == "video/avc"
         // AAC-LC and MP3 are universally safe.
@@ -46,14 +49,15 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
             inspection.audioTrackMimeType == "audio/mpeg" ||
             inspection.audioTrackMimeType == "audio/x-mp3"
 
+        val isBrowserContainer = inspection.container == MediaContainer.MP4 ||
+            inspection.container == MediaContainer.QUICKTIME
+
         return when {
-            // ── Tier 0 & 1: DIRECT/REMUX (MP4/MOV) ────────────────────────────────
-            // For MP4 containers with compatible codecs, we prefer direct serving.
-            (inspection.container == MediaContainer.MP4 ||
-                inspection.container == MediaContainer.QUICKTIME) &&
-                (!hasVideo || isAvc) && isAacOrMp3 -> {
-                // Future: add a check for 'fast-start' metadata to choose between
-                // DIRECT and REMUX. For now, we prefer DIRECT unless the file is huge.
+            // ── Tier 0: DIRECT ──────────────────────────────────────────────────
+            // Browser-safe container + codecs + faststart moov placement.
+            // Serve the original file as-is with HTTP range support.
+            isBrowserContainer && (!hasVideo || isAvc) && isAacOrMp3 &&
+                inspection.hasFaststart != false -> {
                 PlaybackDecision(
                     mode = PlaybackMode.DIRECT,
                     browserMimeType = "video/mp4",
@@ -61,44 +65,68 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
                 )
             }
 
-            // ── Tier 2: TRANSMUX (Compatible Codecs, Wrong Container) ─────────────
-            // Video is H.264, but container is MKV, TS, AVI, etc.
-            // We repackage into HLS without re-encoding video.
+            // ── Tier 1a: REMUX (Bad faststart in MP4/MOV) ───────────────────────
+            // Codecs are fine but moov atom is at the end of the file.
+            // Rewrite as faststart MP4 — no codec re-encode, just container fix.
+            isBrowserContainer && (!hasVideo || isAvc) && isAacOrMp3 &&
+                inspection.hasFaststart == false -> {
+                PlaybackDecision(
+                    mode = PlaybackMode.REMUX,
+                    browserMimeType = "video/mp4",
+                    compatibilityLabel = "Quick optimization needed",
+                    reason = "Relocating metadata for instant browser playback (faststart fix)",
+                )
+            }
+
+            // ── Tier 1b: REMUX (MP4/MOV container, incompatible audio) ──────────
+            // Video is H.264 (safe), container is MP4/MOV, but audio needs re-encode.
+            // Copy video as-is, transcode only audio to AAC. Still fast.
+            isBrowserContainer && hasVideo && isAvc && !isAacOrMp3 -> {
+                PlaybackDecision(
+                    mode = PlaybackMode.REMUX,
+                    browserMimeType = "video/mp4",
+                    compatibilityLabel = "Quick audio fix needed",
+                    reason = "Re-encoding audio to AAC; video stays unchanged",
+                )
+            }
+
+            // ── Tier 2a: TRANSMUX (H.264 + compatible audio, wrong container) ───
+            // Video is H.264, audio is AAC/MP3, but container is MKV, TS, AVI, etc.
+            // Repackage into browser-friendly fMP4. No codec re-encode.
             hasVideo && isAvc && isAacOrMp3 -> PlaybackDecision(
                 mode = PlaybackMode.TRANSMUX,
                 browserMimeType = "video/mp4",
                 compatibilityLabel = "Lightning-fast optimization available",
-                reason = "Repackaging container for browser (H.264 copy)",
+                reason = "Repackaging ${inspection.container.name} container for browser (H.264 copy)",
             )
 
-            // ── Tier 2.5: TRANSMUX (Compatible Video, Incompatible Audio) ─────────
-            // We can still copy the video track, but must transcode audio to AAC.
-            // This still hits the TRANSMUX path in the worker (video copy).
+            // ── Tier 2b: TRANSMUX (H.264, incompatible audio, wrong container) ──
+            // Copy video, transcode audio, repackage container.
             hasVideo && isAvc -> PlaybackDecision(
                 mode = PlaybackMode.TRANSMUX,
                 browserMimeType = "video/mp4",
-                compatibilityLabel = "Fast audio optimization available",
-                reason = "Encoding browser-safe audio; video will be copied",
+                compatibilityLabel = "Fast optimization available",
+                reason = "Repackaging container and encoding browser-safe audio; video will be copied",
             )
 
-            // ── Tier 3: TRANSCODE (Incompatible Video) ────────────────────────────
+            // ── Tier 3: TRANSCODE (Incompatible Video Codec) ────────────────────
             // Video codec is NOT H.264 (HEVC, VP9, AV1, MPEG-2, etc.).
-            // Full re-encode to H.264 required.
+            // Full re-encode to H.264 required. Last resort.
             videoLike -> PlaybackDecision(
                 mode = PlaybackMode.TRANSCODE,
                 browserMimeType = "video/mp4",
-                compatibilityLabel = "Compatibility conversion available",
-                reason = "Video codec needs conversion to H.264 for browser playback",
+                compatibilityLabel = "Compatibility conversion needed",
+                reason = "Video codec (${inspection.videoTrackMimeType ?: "unknown"}) needs conversion to H.264 for browser",
             )
 
-            // ── Non-video: PDF ───────────────────────────────────────────────────
+            // ── Non-video: PDF ──────────────────────────────────────────────────
             inspection.container == MediaContainer.PDF -> PlaybackDecision(
                 mode = PlaybackMode.DIRECT,
                 browserMimeType = "application/pdf",
                 reason = "Browser preview is available",
             )
 
-            // ── Everything else: serve directly ───────────────────────────────────
+            // ── Everything else: serve directly ─────────────────────────────────
             // Audio files, images, documents — serve the original.
             else -> PlaybackDecision(
                 mode = PlaybackMode.DIRECT,

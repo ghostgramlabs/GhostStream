@@ -31,6 +31,14 @@ class AndroidMediaAnalyzer(
         val trackInspection = inspectTracks(uri)
         val container = detectContainer(normalizedMimeType = normalizedMimeType, lowerCaseName = lower)
         val browserSafe = isBrowserSafe(normalizedMimeType = normalizedMimeType, lowerCaseName = lower)
+
+        // Detect moov atom position for MP4/MOV files.
+        // Browser playback with HTTP range requests requires moov before mdat (faststart).
+        val hasFaststart = if (container == MediaContainer.MP4 || container == MediaContainer.QUICKTIME) {
+            detectFaststart(uri)
+        } else {
+            null
+        }
         // Only H.264 / AVC is universally browser-safe for all target platforms (Chrome,
         // Firefox, Safari, Android WebView). HEVC, VP9, AV1, VP8 are excluded because
         // they are not supported on all devices — HEVC is Safari-only in Chrome context,
@@ -75,6 +83,7 @@ class AndroidMediaAnalyzer(
             likelyContainerOnlyIssue = likelyContainerOnlyIssue,
             likelyNeedsTranscode = likelyNeedsTranscode,
             durationMs = trackInspection.durationMs,
+            hasFaststart = hasFaststart,
         )
     }
 
@@ -292,6 +301,94 @@ class AndroidMediaAnalyzer(
             lowerCaseName.endsWith(".pdf")
     }
 
+    /**
+     * Detects whether an MP4/MOV file has the moov atom before the mdat atom (faststart).
+     *
+     * MP4 files consist of top-level "boxes" (atoms). For browser streaming with HTTP range
+     * requests, the moov atom (which contains the sample table / index) must appear before
+     * the mdat atom (which contains the actual media data). If moov is at the end, the
+     * browser must download the entire file before it can begin playback or seek.
+     *
+     * This method reads only the first few KB of the file to scan for the atom headers,
+     * so it is fast even for very large files.
+     *
+     * Returns true if moov comes before mdat, false if mdat comes first, or null if
+     * detection failed (e.g. the file is not a valid MP4/MOV).
+     */
+    private fun detectFaststart(uri: Uri): Boolean? {
+        return runCatching {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                val buf = ByteArray(8)
+                var offset = 0L
+                var foundMoov = false
+                var foundMdat = false
+                // Scan top-level boxes. We only need to find moov and mdat.
+                // Limit scan to first 256 MB to avoid reading entire huge files.
+                val maxScan = 256L * 1024L * 1024L
+                while (offset < maxScan) {
+                    val bytesRead = readFully(input, buf, 8)
+                    if (bytesRead < 8) break
+                    val size = ((buf[0].toLong() and 0xFF) shl 24) or
+                        ((buf[1].toLong() and 0xFF) shl 16) or
+                        ((buf[2].toLong() and 0xFF) shl 8) or
+                        (buf[3].toLong() and 0xFF)
+                    val type = String(buf, 4, 4, Charsets.US_ASCII)
+
+                    when (type) {
+                        "moov" -> {
+                            foundMoov = true
+                            if (!foundMdat) return@use true // moov before mdat = faststart
+                            return@use false // moov after mdat = not faststart
+                        }
+                        "mdat" -> {
+                            foundMdat = true
+                            if (!foundMoov) return@use false // mdat before moov = not faststart
+                            return@use true // mdat after moov = faststart
+                        }
+                    }
+
+                    // Skip to the next box
+                    val boxSize = when {
+                        size == 1L -> {
+                            // Extended size: next 8 bytes are the real 64-bit size
+                            val extBuf = ByteArray(8)
+                            if (readFully(input, extBuf, 8) < 8) return@use null
+                            val extSize = ((extBuf[0].toLong() and 0xFF) shl 56) or
+                                ((extBuf[1].toLong() and 0xFF) shl 48) or
+                                ((extBuf[2].toLong() and 0xFF) shl 40) or
+                                ((extBuf[3].toLong() and 0xFF) shl 32) or
+                                ((extBuf[4].toLong() and 0xFF) shl 24) or
+                                ((extBuf[5].toLong() and 0xFF) shl 16) or
+                                ((extBuf[6].toLong() and 0xFF) shl 8) or
+                                (extBuf[7].toLong() and 0xFF)
+                            extSize - 16 // Already read 8+8 bytes
+                        }
+                        size == 0L -> return@use null // Box extends to end of file, can't continue
+                        else -> size - 8 // Already read 8 bytes of header
+                    }
+
+                    if (boxSize <= 0) break
+                    val skipped = input.skip(boxSize)
+                    if (skipped < boxSize) break
+                    offset += 8 + boxSize
+                }
+                // If we found moov but no mdat in our scan window, assume faststart
+                if (foundMoov && !foundMdat) true else null
+            }
+        }.getOrNull()
+    }
+
+    /** Read exactly [count] bytes into [buf], returning the number of bytes actually read. */
+    private fun readFully(input: java.io.InputStream, buf: ByteArray, count: Int): Int {
+        var total = 0
+        while (total < count) {
+            val n = input.read(buf, total, count - total)
+            if (n < 0) break
+            total += n
+        }
+        return total
+    }
+
     private fun inspectTracks(uri: Uri): TrackInspection {
         return runCatching {
             val extractor = MediaExtractor()
@@ -412,15 +509,6 @@ class AndroidMediaAnalyzer(
         mime == "audio/opus" -> "audio/opus"
 
         else -> mime
-    }
-
-    private fun Bitmap.toJpegBytes(quality: Int = 85): ByteArray? {
-        val out = ByteArrayOutputStream()
-        return if (compress(Bitmap.CompressFormat.JPEG, quality, out)) {
-            out.toByteArray()
-        } else {
-            null
-        }
     }
 
     private data class TrackInspection(

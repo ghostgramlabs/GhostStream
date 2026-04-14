@@ -2,6 +2,7 @@ package com.ghoststream.core.media
 
 import com.ghoststream.core.model.PlaybackMode
 import com.ghoststream.core.model.SharedItem
+import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -64,7 +65,7 @@ class QueuedCompatibilityPipeline(
         // If existing job is READY with a valid preparedAsset, verify the file still exists on disk.
         // This catches the case where the file was deleted externally or by clearTemporaryOutputs().
         if (existing != null && existing.status == CompatibilityStatus.READY && existing.preparedAsset != null) {
-            val assetFile = java.io.File(existing.preparedAsset!!.filePath)
+            val assetFile = File(existing.preparedAsset.filePath)
             if (assetFile.exists() && assetFile.length() > 0) {
                 return existing // Reuse: file is valid on disk
             }

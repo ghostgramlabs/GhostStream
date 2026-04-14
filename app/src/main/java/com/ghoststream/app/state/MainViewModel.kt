@@ -143,21 +143,21 @@ class MainViewModel(
         container.storageRepository.libraryState
             .onEach { library ->
                 val settings = container.settingsRepository.settings.first()
-                val videosToWarmup = library.items
+                // Build warmup candidates using suspend-compatible loop.
+                // inspect() is suspend (it checks disk cache), so we can't use .filter{}.
+                val candidates = library.items
                     .filter { it.category == com.ghoststream.core.model.MediaCategory.VIDEO && it.playbackDecision.mode != com.ghoststream.core.model.PlaybackMode.DIRECT }
-                    .filter { item ->
-                        // Use inspect() to check both in-memory state AND disk cache.
-                        // This prevents re-queuing items whose prepared .mp4 still exists on disk.
-                        val job = container.compatibilityPipeline.inspect(item)
-                        job.status == com.ghoststream.core.media.CompatibilityStatus.IDLE && job.preparedAsset == null
+                val videosToWarmup = mutableListOf<com.ghoststream.core.model.SharedItem>()
+                val limit = if (settings.autoOptimizeLibrary) Int.MAX_VALUE else 2
+                for (item in candidates) {
+                    if (videosToWarmup.size >= limit) break
+                    // Use inspect() to check both in-memory state AND disk cache.
+                    // This prevents re-queuing items whose prepared .mp4 still exists on disk.
+                    val job = container.compatibilityPipeline.inspect(item)
+                    if (job.status == com.ghoststream.core.media.CompatibilityStatus.IDLE && job.preparedAsset == null) {
+                        videosToWarmup.add(item)
                     }
-                    .let { items ->
-                        if (settings.autoOptimizeLibrary) {
-                            items // No limit when full auto-optimize is enabled
-                        } else {
-                            items.take(2) // Default to top 2 to preserve resources
-                        }
-                    }
+                }
 
                 // Only submit items that haven't been queued this session (dedup).
                 val newItems = videosToWarmup.filterNot { item -> warmupRequestedIds.contains(item.id) }

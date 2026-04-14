@@ -51,6 +51,7 @@ class QueuedCompatibilityPipelineTest {
                 override suspend fun prepare(
                     item: SharedItem,
                     cache: PlaybackCache,
+                    startOffsetMs: Long,
                     onUpdate: (CompatibilityWorkerUpdate) -> Unit,
                 ): CompatibilityWorkerResult {
                     return CompatibilityWorkerResult.Failure("Compatibility conversion failed.")
@@ -78,6 +79,7 @@ class QueuedCompatibilityPipelineTest {
                 override suspend fun prepare(
                     item: SharedItem,
                     cache: PlaybackCache,
+                    startOffsetMs: Long,
                     onUpdate: (CompatibilityWorkerUpdate) -> Unit,
                 ): CompatibilityWorkerResult {
                     val outputFile = cache.newOutputFile(item, "mp4").apply {
@@ -161,6 +163,7 @@ class QueuedCompatibilityPipelineTest {
         override suspend fun prepare(
             item: SharedItem,
             cache: PlaybackCache,
+            startOffsetMs: Long,
             onUpdate: (CompatibilityWorkerUpdate) -> Unit,
         ): CompatibilityWorkerResult {
             val outputFile = cache.newOutputFile(item, "mp4").apply {
@@ -184,8 +187,8 @@ class QueuedCompatibilityPipelineTest {
         private val rootDir = Files.createTempDirectory("ghoststream-compat-test").toFile()
         private val assets = linkedMapOf<String, CachedPlaybackAsset>()
 
-        override fun lookup(itemId: String): CachedPlaybackAsset? {
-            val asset = assets[itemId] ?: return null
+        override fun lookup(item: SharedItem): CachedPlaybackAsset? {
+            val asset = assets[item.id] ?: return null
             return asset.takeIf { File(it.filePath).exists() }
         }
 
