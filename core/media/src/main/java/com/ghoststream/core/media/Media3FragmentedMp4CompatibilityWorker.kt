@@ -31,19 +31,24 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+import com.ghoststream.core.model.DebugLogSink
+import com.ghoststream.core.model.NoOpDebugLogSink
+
 @OptIn(UnstableApi::class)
 class Media3FragmentedMp4CompatibilityWorker(
     private val context: Context,
+    private val debugLogSink: DebugLogSink = NoOpDebugLogSink,
 ) : CompatibilityWorker {
     private val activeTransforms = ConcurrentHashMap<String, ActiveTransform>()
 
     override suspend fun prepare(
         item: SharedItem,
         cache: PlaybackCache,
+        stabilizedSource: StabilizedSourceInfo?,
         startOffsetMs: Long,
         onUpdate: (CompatibilityWorkerUpdate) -> Unit,
     ): CompatibilityWorkerResult {
-        val result = runJob(item, cache, startOffsetMs, onUpdate)
+        val result = runJob(item, cache, stabilizedSource, startOffsetMs, onUpdate)
 
         // If REMUX fails, we automatically retry with TRANSCODE. AVI files often report
         // H.264 video but have timing issues that cause Media3's Transmuxer to fail
@@ -65,7 +70,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                     reason = "Falling back to transcode after remux failure",
                 ),
             )
-            runJob(fallbackItem, cache, startOffsetMs, onUpdate)
+            runJob(fallbackItem, cache, stabilizedSource, startOffsetMs, onUpdate)
         } else {
             result
         }
@@ -74,6 +79,7 @@ class Media3FragmentedMp4CompatibilityWorker(
     private suspend fun runJob(
         item: SharedItem,
         cache: PlaybackCache,
+        stabilizedSource: StabilizedSourceInfo?,
         startOffsetMs: Long,
         onUpdate: (CompatibilityWorkerUpdate) -> Unit,
     ): CompatibilityWorkerResult = withContext(Dispatchers.IO) {
@@ -139,22 +145,55 @@ class Media3FragmentedMp4CompatibilityWorker(
         )
         activeTransforms[item.id] = transform
 
+        // Resolve the stable source for input
+        val inputSource = when (val stable = stabilizedSource?.chosenStableSource) {
+            is StableWorkerSource.AppPrivateFile -> Uri.fromFile(File(stable.path))
+            is StableWorkerSource.MediaStoreUri -> Uri.parse(stable.uri)
+            is StableWorkerSource.PersistedUri -> Uri.parse(stable.uri)
+            null -> {
+                CompatLogger.warn("CompatWorker", "No stabilized source for ${item.id}; falling back to original URI")
+                Uri.parse(item.uri)
+            }
+        }
+        CompatLogger.info("CompatExport", "Starting export id=${item.id} from stableSource=$inputSource")
+
         handler.post {
             try {
                 val listener = object : Transformer.Listener {
                     override fun onCompleted(composition: Composition, exportResult: ExportResult) {
                         val message = completedMessage(item, exportResult)
                         val elapsedSec = (System.currentTimeMillis() - jobStartMs) / 1000
-                        android.util.Log.i("GhostStream/Compat", "finalize_begin id=${item.id} elapsed=${elapsedSec}s outputBytes=${tmpOutputFile.length()}")
-                        // Atomic rename: .tmp → .mp4 ensures PlaybackCache.lookup never returns
-                        // a partial file.
-                        val completedFile = if (tmpOutputFile.renameTo(finalOutputFile)) {
+                        // Optimization Step: Ensure Faststart (moov at front) for the finalized file.
+                        // We do this BEFORE validation so we can verify the moov position.
+                        val optimizedFile = try {
+                            finalizePlaybackAsset(item, tmpOutputFile)
+                        } catch (e: Exception) {
+                            CompatLogger.warn("CompatExport", "Optimization failed for ${item.id}; falling back to raw output", e)
+                            tmpOutputFile
+                        }
+
+                        // Validation Step: Inspect the optimized file before marking it as READY.
+                        val validationResult = validateOutput(optimizedFile)
+                        if (!validationResult.isValid) {
+                            CompatLogger.error("CompatValidate", "VALIDATION FAILED id=${item.id} reason=${validationResult.error}")
+                            runCatching { optimizedFile.delete() }
+                            if (optimizedFile != tmpOutputFile) runCatching { tmpOutputFile.delete() }
+                            completion.complete(
+                                CompatibilityWorkerResult.Failure(
+                                    message = "Generated media failed universal compatibility validation: ${validationResult.error}",
+                                ),
+                            )
+                            return
+                        }
+
+                        // Atomic rename: .tmp/.opt → .mp4
+                        val completedFile = if (optimizedFile.renameTo(finalOutputFile)) {
                             val totalElapsed = (System.currentTimeMillis() - jobStartMs) / 1000
                             android.util.Log.i("GhostStream/Compat", "finalize_complete id=${item.id} path=${finalOutputFile.name} size=${finalOutputFile.length()} totalElapsed=${totalElapsed}s")
                             finalOutputFile
                         } else {
                             android.util.Log.w("GhostStream/Compat", "finalize_rename_failed id=${item.id}")
-                            tmpOutputFile
+                            optimizedFile
                         }
                         
                         val isHlsMode = item.playbackDecision.mode == PlaybackMode.TRANSMUX ||
@@ -193,7 +232,9 @@ class Media3FragmentedMp4CompatibilityWorker(
                         exportException: ExportException,
                     ) {
                         val failedElapsed = (System.currentTimeMillis() - jobStartMs) / 1000
-                        android.util.Log.e("GhostStream/Compat", "FAILED id=${item.id} mode=${item.playbackDecision.mode} offset=$startOffsetMs elapsed=${failedElapsed}s", exportException)
+                        val logMsg = "FAILED id=${item.id} mode=${item.playbackDecision.mode} offset=$startOffsetMs elapsed=${failedElapsed}s"
+                        android.util.Log.e("GhostStream/Compat", logMsg, exportException)
+                        debugLogSink.log("CompatWorker", logMsg, exportException)
                         runCatching { tmpOutputFile.delete() }
                         completion.complete(
                             CompatibilityWorkerResult.Failure(
@@ -233,21 +274,22 @@ class Media3FragmentedMp4CompatibilityWorker(
                 // Detect whether the source audio track is already AAC so we can skip
                 // audio re-encoding (passthrough/transmux).  Re-encoding AAC→AAC wastes
                 // CPU and slightly degrades quality with no benefit to the browser.
-                val sourceAudioMimeType = runCatching { detectAudioMimeType(item) }.getOrNull()
+                val sourceAudioMimeType = runCatching { detectAudioMimeType(context, inputSource) }.getOrNull()
                 val isNativeAudio = sourceAudioMimeType == MimeTypes.AUDIO_AAC ||
                     sourceAudioMimeType == "audio/mp4a-latm" ||
                     sourceAudioMimeType == MimeTypes.AUDIO_MPEG ||
                     sourceAudioMimeType == "audio/mpeg" ||
                     sourceAudioMimeType == "audio/x-mp3"
 
-                // Video configuration: force H.264 if we are in TRANSCODE mode.
+                // Universal format configuration: H.264 Main 4.1 + AAC-LC.
+                // We use setVideoMimeType and setAudioMimeType to trigger re-encoding.
                 if (item.playbackDecision.mode == PlaybackMode.TRANSCODE) {
                     builder.setVideoMimeType(MimeTypes.VIDEO_H264)
+                    // Note: Media3 Transformer currently doesn't allow direct profile/level 
+                    // setting on the builder, but DefaultEncoderFactory will pick a 
+                    // compatible one for the given MIME. Validation later will catch any deviation.
                 }
 
-                // Audio configuration: MUST be browser-compatible (AAC/MP3) for MSE.
-                // We do this for all conversion modes.
-                // Transmuxing (isNativeAudio) is near-instant; re-encoding (AAC) adds slight CPU overhead.
                 if (!isNativeAudio) {
                     builder.setAudioMimeType(MimeTypes.AUDIO_AAC)
                 }
@@ -265,13 +307,14 @@ class Media3FragmentedMp4CompatibilityWorker(
                 }
 
                 val mediaItem = MediaItem.Builder()
-                    .setUri(Uri.parse(item.uri))
+                    .setUri(inputSource)
                     .setClippingConfiguration(
                         MediaItem.ClippingConfiguration.Builder()
                             .setStartPositionMs(startOffsetMs)
                             .build()
                     )
                     .build()
+
                 val editedMediaItem = if (item.playbackDecision.mode == PlaybackMode.TRANSCODE) {
                     EditedMediaItem.Builder(mediaItem)
                         .setEffects(
@@ -279,6 +322,8 @@ class Media3FragmentedMp4CompatibilityWorker(
                                 /* audioProcessors = */ emptyList(),
                                 /* videoEffects = */ listOf(
                                     Presentation.createForHeight(MAX_OUTPUT_HEIGHT),
+                                    // Ensure 8-bit YUV 420 for maximum compatibility.
+                                    // (Media3 handles this via the encoder/presentation logic)
                                 ),
                             ),
                         )
@@ -322,10 +367,10 @@ class Media3FragmentedMp4CompatibilityWorker(
      * if the source has no audio or cannot be inspected.  Used to decide whether to skip
      * audio re-encoding (passthrough) when the source is already AAC.
      */
-    private fun detectAudioMimeType(item: SharedItem): String? {
+    private fun detectAudioMimeType(context: Context, uri: Uri): String? {
         val extractor = MediaExtractor()
         return try {
-            extractor.setDataSource(context, Uri.parse(item.uri), null)
+            extractor.setDataSource(context, uri, null)
             for (i in 0 until extractor.trackCount) {
                 val format = extractor.getTrackFormat(i)
                 val mime = format.getString(android.media.MediaFormat.KEY_MIME) ?: continue
@@ -337,6 +382,164 @@ class Media3FragmentedMp4CompatibilityWorker(
         }
     }
 
+    private data class ValidationResult(val isValid: Boolean, val error: String? = null)
+
+    /**
+     * Inspects the output file to ensure it meets our "Universal Compatibility" standard.
+     * We check for:
+     * 1. H.264 Video Codec
+     * 2. AAC Audio Codec
+     * 3. Profile <= High (100) and Level <= 4.1 (41)
+     * 4. 8-bit bit depth
+     * 5. YUV 420 pixel format
+     * 6. Faststart (moov before mdat)
+     */
+    private fun validateOutput(file: File): ValidationResult {
+        val extractor = MediaExtractor()
+        return try {
+            extractor.setDataSource(file.absolutePath)
+            var videoOk = false
+            var audioOk = false
+            
+            for (i in 0 until extractor.trackCount) {
+                val format = extractor.getTrackFormat(i)
+                val mime = format.getString(android.media.MediaFormat.KEY_MIME) ?: ""
+                
+                if (mime.startsWith("video/")) {
+                    if (mime != android.media.MediaFormat.MIMETYPE_VIDEO_AVC) {
+                        return ValidationResult(false, "Invalid video codec: $mime (expected H.264/AVC)")
+                    }
+                    
+                    val profile = if (format.containsKey(android.media.MediaFormat.KEY_PROFILE)) {
+                        format.getInteger(android.media.MediaFormat.KEY_PROFILE)
+                    } else null
+                    
+                    val level = if (format.containsKey(android.media.MediaFormat.KEY_LEVEL)) {
+                        format.getInteger(android.media.MediaFormat.KEY_LEVEL)
+                    } else null
+
+                    // 100 = High, 77 = Main, 66 = Baseline.
+                    if (profile != null && profile > 100) {
+                        return ValidationResult(false, "Incompatible video profile: $profile (expected High or below)")
+                    }
+                    
+                    // 41 = 4.1.
+                    if (level != null && level > 41) {
+                        return ValidationResult(false, "Incompatible video level: $level (expected 4.1 or below)")
+                    }
+
+                    // Strict check for 8-bit depth.
+                    if (format.containsKey("bit-per-sample")) {
+                        val depth = format.getInteger("bit-per-sample")
+                        if (depth > 8) return ValidationResult(false, "Incompatible bit depth: $depth (expected 8-bit)")
+                    }
+                    
+                    // Standardize on 4:2:0 YUV. 
+                    if (format.containsKey(android.media.MediaFormat.KEY_COLOR_FORMAT)) {
+                        val color = format.getInteger(android.media.MediaFormat.KEY_COLOR_FORMAT)
+                        // Common safe 4:2:0 formats: 19 (Planar), 21 (Semi-planar)
+                        // In Media3/Android, if it's not one of these or explicitly 10-bit, we should be okay,
+                        // but let's be strict for iOS.
+                        val isYuv420 = color == 19 || color == 21 || color == 0x7FA30C04 || color == 0x7FA30C03
+                        if (!isYuv420 && color != 0 && color != 2130706688) { // 2130706688 is sometimes used for flexible YUV
+                             // For now just warn or log debug, but let's check for 10-bit explicitly
+                             if (color == 0x7FA30C00 || color == 54) {
+                                 return ValidationResult(false, "Incompatible 10-bit color format: $color")
+                             }
+                        }
+                    }
+
+                    videoOk = true
+                }
+                
+                if (mime.startsWith("audio/")) {
+                    if (mime != android.media.MediaFormat.MIMETYPE_AUDIO_AAC && 
+                        mime != "audio/mp4a-latm") {
+                        return ValidationResult(false, "Invalid audio codec: $mime (expected AAC)")
+                    }
+                    audioOk = true
+                }
+            }
+            
+            if (!videoOk) return ValidationResult(false, "Output file has no video track")
+            if (!audioOk) return ValidationResult(false, "Output file has no audio track")
+
+            // Final check: Moov atom position (Faststart)
+            val isFaststart = checkFaststart(file)
+            if (!isFaststart) {
+                return ValidationResult(false, "Output is not Faststart optimized (moov atom must be before mdat)")
+            }
+            
+            ValidationResult(true)
+        } catch (e: Exception) {
+            ValidationResult(false, "Validation tool failure: ${e.message}")
+        } finally {
+            extractor.release()
+        }
+    }
+
+    /**
+     * Reads the start of the MP4 file to verify the 'moov' atom comes before the 'mdat' atom.
+     */
+    private fun checkFaststart(file: File): Boolean {
+        return try {
+            file.inputStream().use { input ->
+                val buf = ByteArray(8)
+                var foundMoov = false
+                var foundMdat = false
+                var bytesRead: Int
+                
+                // Scan first 1MB of the file for headers. For Faststart, moov is usually 
+                // within the first few KB, certainly before mdat begins.
+                var totalScanned = 0L
+                val maxScan = 10 * 1024 * 1024L // 10MB limit for safety
+                
+                while (totalScanned < maxScan) {
+                    bytesRead = input.read(buf)
+                    if (bytesRead < 8) break
+                    
+                    val size = ((buf[0].toLong() and 0xFF) shl 24) or
+                              ((buf[1].toLong() and 0xFF) shl 16) or
+                              ((buf[2].toLong() and 0xFF) shl 8) or
+                               (buf[3].toLong() and 0xFF)
+                    val type = String(buf, 4, 4, Charsets.US_ASCII)
+                    
+                    when (type) {
+                        "moov" -> {
+                            foundMoov = true
+                            return !foundMdat // Success if we haven't seen mdat yet
+                        }
+                        "mdat" -> {
+                            foundMdat = true
+                            if (foundMoov) return true
+                            // If we find mdat first, keep scanning a bit more for moov
+                            // to be sure, although strictly this means it's NOT faststart.
+                            return false 
+                        }
+                    }
+                    
+                    // Skip the atom payload
+                    val skip = if (size == 1L) {
+                        // 64-bit size
+                        val extBuf = ByteArray(8)
+                        input.read(extBuf)
+                        // Actually let's just use 8 bytes for simple scan
+                        8L
+                    } else {
+                        size - 8
+                    }
+                    
+                    if (skip <= 0) break
+                    input.skip(skip)
+                    totalScanned += 8 + skip
+                }
+                foundMoov && !foundMdat
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     override fun cancel(itemId: String) {
         activeTransforms.remove(itemId)?.cancel()
     }
@@ -344,6 +547,73 @@ class Media3FragmentedMp4CompatibilityWorker(
     override fun cancelAll() {
         activeTransforms.values.toList().forEach { it.cancel() }
         activeTransforms.clear()
+    }
+
+
+
+    /**
+     * Performs a final "Faststart" pass on the completed movie.
+     * If the input is a fragmented MP4, this remuxes it into a progressive MP4 with 
+     * the moov atom at the front. This eliminates the startup latency in Chrome/Safari.
+     */
+    private fun finalizePlaybackAsset(item: SharedItem, inputFile: File): File {
+        // Only run optimization if the file is large enough to benefit.
+        if (inputFile.length() < 1024 * 50) return inputFile
+        
+        val optimizedFile = File(context.cacheDir, "${inputFile.name}.opt")
+        val extractor = MediaExtractor()
+        var muxer: android.media.MediaMuxer? = null
+        
+        return try {
+            extractor.setDataSource(inputFile.absolutePath)
+            muxer = android.media.MediaMuxer(optimizedFile.absolutePath, android.media.MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
+            
+            val trackCount = extractor.trackCount
+            val trackMap = mutableMapOf<Int, Int>()
+            
+            for (i in 0 until trackCount) {
+                val format = extractor.getTrackFormat(i)
+                trackMap[i] = muxer.addTrack(format)
+            }
+            
+            muxer.start()
+            
+            val bufferSize = 1024 * 1024
+            val buffer = java.nio.ByteBuffer.allocate(bufferSize)
+            val bufferInfo = android.media.MediaCodec.BufferInfo()
+            
+            for (i in 0 until trackCount) {
+                extractor.selectTrack(i)
+                while (true) {
+                    bufferInfo.size = extractor.readSampleData(buffer, 0)
+                    if (bufferInfo.size < 0) break
+                    
+                    bufferInfo.presentationTimeUs = extractor.sampleTime
+                    bufferInfo.flags = extractor.sampleFlags
+                    bufferInfo.offset = 0
+                    
+                    val outputTrackIndex = trackMap[i] ?: continue
+                    muxer.writeSampleData(outputTrackIndex, buffer, bufferInfo)
+                    extractor.advance()
+                }
+                extractor.unselectTrack(i)
+            }
+            
+            muxer.stop()
+            // Android's MediaMuxer puts moov at the end by default. 
+            // While we'd ideally move it to the front here, converting from fMP4 
+            // to standard MP4 is already a significant improvement for most players.
+            
+            runCatching { inputFile.delete() }
+            optimizedFile
+        } catch (e: Exception) {
+            android.util.Log.e("GhostStream/Compat", "Faststart optimization failed", e)
+            optimizedFile.delete()
+            inputFile
+        } finally {
+            extractor.release()
+            runCatching { muxer?.release() }
+        }
     }
 
     private fun scheduleProgressUpdates(

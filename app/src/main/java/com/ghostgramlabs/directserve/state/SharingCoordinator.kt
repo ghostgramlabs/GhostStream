@@ -103,7 +103,7 @@ class SharingCoordinator(
         }
         val nearbyDeviceLabel = formatGeneratedNameWithIp(network.localAddress!!)
 
-        return runCatching {
+        return try {
             debugLogSink.log("SharingCoordinator", "starting embedded server")
             val preferredPort = settings.preferredPort.coerceIn(1024, 65535)
             val binding = server.start(port = preferredPort)
@@ -157,8 +157,8 @@ class SharingCoordinator(
                 }
             }
             ShareStartResult.Started(sessionUrl)
-        }.getOrElse { e ->
-            debugLogSink.log("SharingCoordinator", "server failed to start", e)
+        } catch (e: Exception) {
+            debugLogSink.log("SharingCoordinator", "beginSharing failed", e)
             ShareStartResult.Failure(application.getString(R.string.sharing_server_start_failed, e.message ?: e.javaClass.simpleName))
         }
     }

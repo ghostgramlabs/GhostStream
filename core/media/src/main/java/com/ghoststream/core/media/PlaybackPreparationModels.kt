@@ -44,6 +44,7 @@ data class CompatibilityJob(
     val lastProgressValue: Int = 0,
     val lastOutputBytesAt: Long = System.currentTimeMillis(),
     val stallCheckCount: Int = 0,
+    val stabilizedSource: StabilizedSourceInfo? = null,
 ) {
     val canServePlayback: Boolean
         get() = status == CompatibilityStatus.READY || hlsReady || directReady

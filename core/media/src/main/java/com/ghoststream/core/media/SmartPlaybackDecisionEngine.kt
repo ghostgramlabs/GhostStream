@@ -43,6 +43,22 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
 
         // Only H.264 / AVC is universally supported in every target browser.
         val isAvc = inspection.videoTrackMimeType == "video/avc"
+
+        /**
+         * "Strict" compatibility checks for universal reach (Android, iOS, TV, Desktop).
+         * We target H.264 Main Profile @ Level 4.1 as the upper bound for non-transcode paths.
+         * Profile 66=Baseline, 77=Main, 100=High.
+         * Level 41 = 4.1 (supports 1080p @ 30fps).
+         */
+        val isSafeProfile = inspection.videoProfile == null || 
+            inspection.videoProfile <= 100 // High profile and below
+        
+        val isSafeLevel = inspection.videoLevel == null ||
+            inspection.videoLevel <= 41 // Level 4.1 and below
+
+        // 8-bit is universal. 10-bit (HDR) requires transcoding for most web decoders.
+        val is8Bit = inspection.bitDepth == null || inspection.bitDepth <= 8
+
         // AAC-LC and MP3 are universally safe.
         val isAacOrMp3 = inspection.audioTrackMimeType == null ||
             inspection.audioTrackMimeType == "audio/mp4a-latm" ||
@@ -52,23 +68,23 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
         val isBrowserContainer = inspection.container == MediaContainer.MP4 ||
             inspection.container == MediaContainer.QUICKTIME
 
+        val isFullyUniversal = isAvc && isSafeProfile && isSafeLevel && is8Bit
+
         return when {
             // ── Tier 0: DIRECT ──────────────────────────────────────────────────
-            // Browser-safe container + codecs + faststart moov placement.
-            // Serve the original file as-is with HTTP range support.
-            isBrowserContainer && (!hasVideo || isAvc) && isAacOrMp3 &&
+            // Browser-safe container + codecs + profiles + bit-depth + faststart.
+            isBrowserContainer && (!hasVideo || isFullyUniversal) && isAacOrMp3 &&
                 inspection.hasFaststart != false -> {
                 PlaybackDecision(
                     mode = PlaybackMode.DIRECT,
                     browserMimeType = "video/mp4",
-                    reason = "Ready for direct browser playback (MP4/H.264 native)",
+                    reason = "Ready for universal browser playback (Native H.264/AAC)",
                 )
             }
 
             // ── Tier 1a: REMUX (Bad faststart in MP4/MOV) ───────────────────────
             // Codecs are fine but moov atom is at the end of the file.
-            // Rewrite as faststart MP4 — no codec re-encode, just container fix.
-            isBrowserContainer && (!hasVideo || isAvc) && isAacOrMp3 &&
+            isBrowserContainer && (!hasVideo || isFullyUniversal) && isAacOrMp3 &&
                 inspection.hasFaststart == false -> {
                 PlaybackDecision(
                     mode = PlaybackMode.REMUX,
@@ -79,9 +95,8 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
             }
 
             // ── Tier 1b: REMUX (MP4/MOV container, incompatible audio) ──────────
-            // Video is H.264 (safe), container is MP4/MOV, but audio needs re-encode.
-            // Copy video as-is, transcode only audio to AAC. Still fast.
-            isBrowserContainer && hasVideo && isAvc && !isAacOrMp3 -> {
+            // Video is safe, but audio needs re-encode.
+            isBrowserContainer && hasVideo && isFullyUniversal && !isAacOrMp3 -> {
                 PlaybackDecision(
                     mode = PlaybackMode.REMUX,
                     browserMimeType = "video/mp4",
@@ -90,34 +105,40 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
                 )
             }
 
-            // ── Tier 2a: TRANSMUX (H.264 + compatible audio, wrong container) ───
-            // Video is H.264, audio is AAC/MP3, but container is MKV, TS, AVI, etc.
-            // Repackage into browser-friendly fMP4. No codec re-encode.
-            hasVideo && isAvc && isAacOrMp3 -> PlaybackDecision(
+            // ── Tier 2a: TRANSMUX (Safe H.264 + audio, wrong container) ────────
+            // Codecs are fine, but container is MKV/TS/AVI etc.
+            hasVideo && isFullyUniversal && isAacOrMp3 -> PlaybackDecision(
                 mode = PlaybackMode.TRANSMUX,
                 browserMimeType = "video/mp4",
                 compatibilityLabel = "Lightning-fast optimization available",
                 reason = "Repackaging ${inspection.container.name} container for browser (H.264 copy)",
             )
 
-            // ── Tier 2b: TRANSMUX (H.264, incompatible audio, wrong container) ──
-            // Copy video, transcode audio, repackage container.
-            hasVideo && isAvc -> PlaybackDecision(
+            // ── Tier 2b: TRANSMUX (Safe H.264, incompatible audio, wrong container)
+            hasVideo && isFullyUniversal -> PlaybackDecision(
                 mode = PlaybackMode.TRANSMUX,
                 browserMimeType = "video/mp4",
                 compatibilityLabel = "Fast optimization available",
                 reason = "Repackaging container and encoding browser-safe audio; video will be copied",
             )
 
-            // ── Tier 3: TRANSCODE (Incompatible Video Codec) ────────────────────
-            // Video codec is NOT H.264 (HEVC, VP9, AV1, MPEG-2, etc.).
-            // Full re-encode to H.264 required. Last resort.
-            videoLike -> PlaybackDecision(
-                mode = PlaybackMode.TRANSCODE,
-                browserMimeType = "video/mp4",
-                compatibilityLabel = "Compatibility conversion needed",
-                reason = "Video codec (${inspection.videoTrackMimeType ?: "unknown"}) needs conversion to H.264 for browser",
-            )
+            // ── Tier 3: TRANSCODE (Incompatible Video Codec or Profile/Level) ───
+            // Full re-encode to Universal Standard (H.264 Main 4.1, 8-bit).
+            videoLike -> {
+                val reason = when {
+                    !isAvc -> "Video codec (${inspection.videoTrackMimeType ?: "unknown"}) needs conversion to H.264"
+                    !is8Bit -> "10-bit video (HDR) needs conversion to 8-bit for browser compatibility"
+                    !isSafeProfile -> "Video profile (${inspection.videoProfile}) exceeds mobile/TV hardware limits"
+                    !isSafeLevel -> "Video level (${inspection.videoLevel}) exceeds mobile/TV hardware limits"
+                    else -> "Re-encoding for universal browser compatibility"
+                }
+                PlaybackDecision(
+                    mode = PlaybackMode.TRANSCODE,
+                    browserMimeType = "video/mp4",
+                    compatibilityLabel = "Universal conversion needed",
+                    reason = reason,
+                )
+            }
 
             // ── Non-video: PDF ──────────────────────────────────────────────────
             inspection.container == MediaContainer.PDF -> PlaybackDecision(

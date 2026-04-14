@@ -381,37 +381,42 @@ class KtorGhostStreamServer(
 
             get("/api/item/{id}") {
                 if (!call.authorizeBrowserCall()) return@get
-                val settings = settingsRepository.settings.first()
-                val item = resolveItem(call.parameters["id"]) ?: run {
-                    call.respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_file_unavailable)))
-                    return@get
-                }
+                try {
+                    val settings = settingsRepository.settings.first()
+                    val item = resolveItem(call.parameters["id"]) ?: run {
+                        call.respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_file_unavailable)))
+                        return@get
+                    }
 
-                // Only inspect — do not auto-trigger preparation here.
-                // The browser explicitly requests preparation via POST /api/compat/{id}/prepare,
-                // which prevents duplicate transcode jobs when the library state updates.
-                val job = compatibilitySnapshotFor(
-                    item = item,
-                    triggerPreparation = false,
-                    prioritizePreparation = false,
-                )
-                val streamReady = compatibilityStreamReady(item)
-
-                debugLogSink.log(
-                    "WebBrowser",
-                    "details id=${item.id} name=${item.displayName} mode=${item.playbackDecision.mode} " +
-                        "status=${job.status} streamReady=$streamReady complete=${job.directReady} " +
-                        "asset=${job.preparedAsset?.filePath?.substringAfterLast('/') ?: "NONE"}",
-                )
-
-                call.respond(
-                    BrowserItemDetails.from(
+                    // Only inspect — do not auto-trigger preparation here.
+                    // The browser explicitly requests preparation via POST /api/compat/{id}/prepare,
+                    // which prevents duplicate transcode jobs when the library state updates.
+                    val job = compatibilitySnapshotFor(
                         item = item,
-                        compatibilityJob = job,
-                        streamReady = streamReady,
-                        allowDownloads = !settings.preventDownload,
-                    ),
-                )
+                        triggerPreparation = false,
+                        prioritizePreparation = false,
+                    )
+                    val streamReady = compatibilityStreamReady(item)
+
+                    debugLogSink.log(
+                        "WebBrowser",
+                        "details id=${item.id} name=${item.displayName} mode=${item.playbackDecision.mode} " +
+                                "status=${job.status} streamReady=$streamReady complete=${job.directReady} " +
+                                "asset=${job.preparedAsset?.filePath?.substringAfterLast('/') ?: "NONE"}",
+                    )
+
+                    call.respond(
+                        BrowserItemDetails.from(
+                            item = item,
+                            compatibilityJob = job,
+                            streamReady = streamReady,
+                            allowDownloads = !settings.preventDownload,
+                        ),
+                    )
+                } catch (e: Exception) {
+                    debugLogSink.log("WebBrowser/details", "CRITICAL ERROR id=${call.parameters["id"]}", e)
+                    call.respond(HttpStatusCode.InternalServerError, ErrorPayload("Internal server error."))
+                }
             }
 
             get("/api/compat/{id}") {
@@ -522,6 +527,27 @@ class KtorGhostStreamServer(
                     asAttachment = false,
                     activity = ClientActivity.WATCHING_VIDEO,
                 )
+            }
+
+            post("/api/compat/{id}/report_error") {
+                if (!call.authorizeBrowserCall()) return@post
+                val itemId = call.parameters["id"] ?: return@post
+                val item = resolveItem(itemId) ?: run {
+                    call.respond(HttpStatusCode.NotFound)
+                    return@post
+                }
+                
+                debugLogSink.log("WebCompat/Error", "Client reported playback failure for id=${item.id} name=${item.displayName}")
+                
+                // Invalidate the current asset. This will clear the cache and reset the job.
+                compatibilityPipeline.invalidate(item.id)
+                
+                // Re-inspect to trigger a fresh decision. 
+                // The decision engine will see the source again and the next check will
+                // start a new prep job if needed.
+                compatibilityPipeline.inspect(item)
+                
+                call.respond(HttpStatusCode.NoContent)
             }
 
             post("/api/debug/browser") {
@@ -674,199 +700,232 @@ class KtorGhostStreamServer(
             // or when DefaultEncoderFactory fallback produced HEVC instead of H.264.
             get("/hls/{id}/master.m3u8") {
                 if (!call.authorizeBrowserCall()) return@get
-                val source = call.resolveHlsSource(call.parameters["id"]) ?: return@get
-                val ua = call.request.header(HttpHeaders.UserAgent) ?: ""
-                // Read the video codec string from the fMP4 init segment (fast, non-blocking —
-                // the moov box is only a few KB).  Returns null if the file is not yet written
-                // or the codec cannot be determined; buildHlsMasterPlaylist falls back gracefully.
-                val hlsIndex = withContext(Dispatchers.IO) {
-                    runCatching {
-                        FragmentedMp4HlsIndexer.read(
-                            source.file,
-                            fragmentDurationSeconds = HLS_SEGMENT_DURATION_SECONDS,
-                        )
-                    }.getOrNull()
+                try {
+                    val source = call.resolveHlsSource(call.parameters["id"]) ?: return@get
+                    val ua = call.request.header(HttpHeaders.UserAgent) ?: ""
+                    // Read the video codec string from the fMP4 init segment (fast, non-blocking —
+                    // the moov box is only a few KB).  Returns null if the file is not yet written
+                    // or the codec cannot be determined; buildHlsMasterPlaylist falls back gracefully.
+                    val hlsIndex = withContext(Dispatchers.IO) {
+                        try {
+                            FragmentedMp4HlsIndexer.read(
+                                source.file,
+                                fragmentDurationSeconds = HLS_SEGMENT_DURATION_SECONDS,
+                            )
+                        } catch (e: Exception) {
+                            debugLogSink.log("WebHls/master", "Failed to index moov for id=${source.item.id}", e)
+                            null
+                        }
+                    }
+                    val detectedVideoCodec = hlsIndex?.videoCodecString
+                    // ── DEBUG ────────────────────────────────────────────────────────────────
+                    debugLogSink.log(
+                        "WebHls/master",
+                        "id=${source.item.id} " +
+                                "mode=${source.item.playbackDecision.mode} " +
+                                "file=${source.file.name} " +
+                                "fileBytes=${source.file.length()} " +
+                                "detectedCodec=${detectedVideoCodec ?: "NULL→fallback:avc1.640028"} " +
+                                "initBytes=${hlsIndex?.initSegmentLength ?: "n/a"} " +
+                                "segments=${hlsIndex?.segments?.size ?: "n/a"}",
+                    )
+                    val masterPlaylist = buildHlsMasterPlaylist(
+                        itemId = source.item.id,
+                        detectedVideoCodec = detectedVideoCodec,
+                        width = hlsIndex?.width,
+                        height = hlsIndex?.height,
+                    )
+                    debugLogSink.log("WebHls/master", "serving:\n$masterPlaylist")
+                    // ────────────────────────────────────────────────────────────────────────
+                    // Both Apple-style and IANA content types are accepted by all HLS players.
+                    val hlsContentType = if (ua.contains("Safari", ignoreCase = true) && !ua.contains("Chrome", ignoreCase = true)) {
+                        "application/vnd.apple.mpegurl"
+                    } else {
+                        "application/x-mpegURL"
+                    }
+                    call.response.headers.append(HttpHeaders.CacheControl, "no-store")
+                    call.respondText(
+                        text = masterPlaylist,
+                        contentType = ContentType.parse(hlsContentType),
+                    )
+                } catch (e: Exception) {
+                    debugLogSink.log("WebHls/master", "CRITICAL ERROR id=${call.parameters["id"]}", e)
+                    call.respond(HttpStatusCode.InternalServerError, ErrorPayload("Internal server error."))
                 }
-                val detectedVideoCodec = hlsIndex?.videoCodecString
-                // ── DEBUG ────────────────────────────────────────────────────────────────
-                debugLogSink.log(
-                    "WebHls/master",
-                    "id=${source.item.id} " +
-                        "mode=${source.item.playbackDecision.mode} " +
-                        "file=${source.file.name} " +
-                        "fileBytes=${source.file.length()} " +
-                        "detectedCodec=${detectedVideoCodec ?: "NULL→fallback:avc1.640028"} " +
-                        "initBytes=${hlsIndex?.initSegmentLength ?: "n/a"} " +
-                        "segments=${hlsIndex?.segments?.size ?: "n/a"}",
-                )
-                val masterPlaylist = buildHlsMasterPlaylist(
-                    itemId = source.item.id,
-                    detectedVideoCodec = detectedVideoCodec,
-                )
-                debugLogSink.log("WebHls/master", "serving:\n$masterPlaylist")
-                // ────────────────────────────────────────────────────────────────────────
-                // Both Apple-style and IANA content types are accepted by all HLS players.
-                val hlsContentType = if (ua.contains("Safari", ignoreCase = true) && !ua.contains("Chrome", ignoreCase = true)) {
-                    "application/vnd.apple.mpegurl"
-                } else {
-                    "application/x-mpegURL"
-                }
-                call.response.headers.append(HttpHeaders.CacheControl, "no-store")
-                call.respondText(
-                    text = masterPlaylist,
-                    contentType = ContentType.parse(hlsContentType),
-                )
             }
 
             get("/hls/{id}/playlist.m3u8") {
                 if (!call.authorizeBrowserCall()) return@get
-                val source = call.resolveHlsSource(call.parameters["id"]) ?: return@get
-                // Require a minimum number of segments before serving the playlist.
-                // This prevents the player from starting with too little buffer and
-                // immediately stalling on devices where transcoding lags behind.
-                val index = awaitHlsIndex(
-                    itemId = source.item.id,
-                    file = source.file,
-                    requireFirstSegment = true,
-                    requiredSegmentIndex = MIN_SEGMENTS_BEFORE_PLAY - 1,
-                ) ?: run {
-                    debugLogSink.log("WebHls", "playlist pending id=${source.item.id}")
-                    call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
-                    return@get
-                }
-                if (index.segments.isEmpty()) {
-                    debugLogSink.log("WebHls", "playlist empty id=${source.item.id} init=${index.initSegmentLength} file=${index.fileLength}")
-                    call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
-                    return@get
-                }
-                debugLogSink.log(
-                    "WebHls",
-                    "playlist served id=${source.item.id} segments=${index.segments.size} init=${index.initSegmentLength} complete=${source.job.directReady}",
-                )
-                sessionManager.observeClient(
-                    call.remoteHost(),
-                    call.request.header(HttpHeaders.UserAgent),
-                    ClientActivity.WATCHING_VIDEO,
-                )
-                val ua = call.request.header(HttpHeaders.UserAgent) ?: ""
-                val hlsContentType = if (ua.contains("Safari", ignoreCase = true) && !ua.contains("Chrome", ignoreCase = true)) {
-                    "application/vnd.apple.mpegurl"
-                } else {
-                    "application/x-mpegURL"
-                }
-                call.response.headers.append(HttpHeaders.CacheControl, "no-store")
-                call.respondText(
-                    text = buildHlsPlaylist(
+                try {
+                    val source = call.resolveHlsSource(call.parameters["id"]) ?: return@get
+                    // Require a minimum number of segments before serving the playlist.
+                    // This prevents the player from starting with too little buffer and
+                    // immediately stalling on devices where transcoding lags behind.
+                    val index = awaitHlsIndex(
                         itemId = source.item.id,
-                        index = index,
-                        complete = source.job.preparedAsset?.isComplete == true || source.job.status == CompatibilityStatus.READY,
-                    ),
-                    contentType = ContentType.parse(hlsContentType),
-                )
+                        file = source.file,
+                        requireFirstSegment = true,
+                        requiredSegmentIndex = MIN_SEGMENTS_BEFORE_PLAY - 1,
+                    ) ?: run {
+                        debugLogSink.log("WebHls", "playlist pending id=${source.item.id}")
+                        call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
+                        return@get
+                    }
+                    if (index.segments.isEmpty()) {
+                        debugLogSink.log("WebHls", "playlist empty id=${source.item.id} init=${index.initSegmentLength} file=${index.fileLength}")
+                        call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
+                        return@get
+                    }
+                    debugLogSink.log(
+                        "WebHls",
+                        "playlist served id=${source.item.id} segments=${index.segments.size} init=${index.initSegmentLength} complete=${source.job.directReady}",
+                    )
+                    sessionManager.observeClient(
+                        call.remoteHost(),
+                        call.request.header(HttpHeaders.UserAgent),
+                        ClientActivity.WATCHING_VIDEO,
+                    )
+                    val ua = call.request.header(HttpHeaders.UserAgent) ?: ""
+                    val hlsContentType = if (ua.contains("Safari", ignoreCase = true) && !ua.contains("Chrome", ignoreCase = true)) {
+                        "application/vnd.apple.mpegurl"
+                    } else {
+                        "application/x-mpegURL"
+                    }
+                    call.response.headers.append(HttpHeaders.CacheControl, "no-store")
+                    call.respondText(
+                        text = buildHlsPlaylist(
+                            itemId = source.item.id,
+                            index = index,
+                            complete = source.job.preparedAsset?.isComplete == true || source.job.status == CompatibilityStatus.READY,
+                        ),
+                        contentType = ContentType.parse(hlsContentType),
+                    )
+                } catch (e: Exception) {
+                    debugLogSink.log("WebHls/playlist", "CRITICAL ERROR id=${call.parameters["id"]}", e)
+                    call.respond(HttpStatusCode.InternalServerError, ErrorPayload("Internal server error."))
+                }
             }
 
             get("/hls/{id}/init.mp4") {
                 if (!call.authorizeBrowserCall()) return@get
-                val source = call.resolveHlsSource(call.parameters["id"]) ?: return@get
-                val index = awaitHlsIndex(
-                    itemId = source.item.id,
-                    file = source.file,
-                    requireFirstSegment = false,
-                ) ?: run {
-                    debugLogSink.log("WebHls", "init pending id=${source.item.id}")
-                    call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
-                    return@get
+                try {
+                    val source = call.resolveHlsSource(call.parameters["id"]) ?: return@get
+                    val index = awaitHlsIndex(
+                        itemId = source.item.id,
+                        file = source.file,
+                        requireFirstSegment = false,
+                    ) ?: run {
+                        debugLogSink.log("WebHls", "init pending id=${source.item.id}")
+                        call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
+                        return@get
+                    }
+                    if (index.initSegmentLength <= 0L) {
+                        debugLogSink.log("WebHls", "init empty id=${source.item.id}")
+                        call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
+                        return@get
+                    }
+                    debugLogSink.log(
+                        "WebHls/init",
+                        "id=${source.item.id} " +
+                                "initBytes=${index.initSegmentLength} " +
+                                "detectedCodec=${index.videoCodecString ?: "NULL"} " +
+                                "fileBytes=${source.file.length()} " +
+                                "segments=${index.segments.size}",
+                    )
+                    call.streamFileSlice(
+                        file = source.file,
+                        mimeType = "video/mp4",
+                        byteRange = 0L until index.initSegmentLength,
+                        activity = ClientActivity.WATCHING_VIDEO,
+                    )
+                } catch (e: Exception) {
+                    debugLogSink.log("WebHls/init", "CRITICAL ERROR id=${call.parameters["id"]}", e)
+                    call.respond(HttpStatusCode.InternalServerError, ErrorPayload("Internal server error."))
                 }
-                if (index.initSegmentLength <= 0L) {
-                    debugLogSink.log("WebHls", "init empty id=${source.item.id}")
-                    call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
-                    return@get
-                }
-                debugLogSink.log(
-                    "WebHls/init",
-                    "id=${source.item.id} " +
-                        "initBytes=${index.initSegmentLength} " +
-                        "detectedCodec=${index.videoCodecString ?: "NULL"} " +
-                        "fileBytes=${source.file.length()} " +
-                        "segments=${index.segments.size}",
-                )
-                call.streamFileSlice(
-                    file = source.file,
-                    mimeType = "video/mp4",
-                    byteRange = 0L until index.initSegmentLength,
-                    activity = ClientActivity.WATCHING_VIDEO,
-                )
             }
 
             get("/hls/{id}/segment/{index}.m4s") {
                 if (!call.authorizeBrowserCall()) return@get
-                val source = call.resolveHlsSource(call.parameters["id"]) ?: return@get
-                val indexInManifest = call.parameters["index"]?.toIntOrNull() ?: run {
-                    call.respond(HttpStatusCode.BadRequest, ErrorPayload("That video segment is invalid."))
-                    return@get
-                }
+                try {
+                    val source = call.resolveHlsSource(call.parameters["id"]) ?: return@get
+                    val indexInManifest = call.parameters["index"]?.toIntOrNull() ?: run {
+                        call.respond(HttpStatusCode.BadRequest, ErrorPayload("That video segment is invalid."))
+                        return@get
+                    }
 
-                // Map the manifest segment index to the actual segment index in the
-                // current fragmented MP4 file (which may have been started at an offset).
-                val jobStartSegIndex = (source.job.startOffsetMs / 1000.0 / HLS_SEGMENT_DURATION_SECONDS).toInt()
-                val targetFileSegIndex = indexInManifest - jobStartSegIndex
+                    // Map the manifest segment index to the actual segment index in the
+                    // current fragmented MP4 file (which may have been started at an offset).
+                    val jobStartSegIndex = (source.job.startOffsetMs / 1000.0 / HLS_SEGMENT_DURATION_SECONDS).toInt()
+                    val targetFileSegIndex = indexInManifest - jobStartSegIndex
 
-                if (targetFileSegIndex < 0) {
-                    // This segment belongs to the portion of the video BEFORE the current
-                    // seek point. Since the transcoder has jumped ahead, we cannot
-                    // serve these segments from the current job.
-                    call.respond(HttpStatusCode.NotFound, ErrorPayload("Segment is before seek point"))
-                    return@get
-                }
+                    if (targetFileSegIndex < 0) {
+                        // This segment belongs to the portion of the video BEFORE the current
+                        // seek point. Since the transcoder has jumped ahead, we cannot
+                        // serve these segments from the current job.
+                        call.respond(HttpStatusCode.NotFound, ErrorPayload("Segment is before seek point"))
+                        return@get
+                    }
 
-                val index = awaitHlsIndex(
-                    itemId = source.item.id,
-                    file = source.file,
-                    requireFirstSegment = true,
-                    requiredSegmentIndex = indexInManifest,
-                ) ?: run {
-                    debugLogSink.log("WebHls", "segment pending id=${source.item.id} index=$indexInManifest")
-                    call.respond(HttpStatusCode.Accepted, ErrorPayload("Preparing the next HLS segment."))
-                    return@get
-                }
-                val segment = index.segments.getOrNull(targetFileSegIndex) ?: run {
-                    val completed = source.job.preparedAsset?.isComplete == true || source.job.status == CompatibilityStatus.READY
-                    debugLogSink.log("WebHls", "segment missing id=${source.item.id} index=$indexInManifest target=$targetFileSegIndex available=${index.segments.size} complete=$completed")
-                    val status = if (completed) HttpStatusCode.NotFound else HttpStatusCode.Accepted
-                    val message = if (completed) "That video segment is no longer available." else "Preparing the next HLS segment."
-                    call.respond(status, ErrorPayload(message))
-                    return@get
-                }
-                // Read the raw segment bytes so we can patch the TFHD box before serving.
-                // Media3 InAppMuxer writes tfhd.base-data-offset as an absolute file offset,
-                // which MSE forbids.  MseTfhdPatcher rewrites it to use default-base-is-moof.
-                val rawSegmentBytes = withContext(Dispatchers.IO) {
-                    runCatching {
-                        java.io.RandomAccessFile(source.file, "r").use { raf ->
-                            raf.seek(segment.offset)
-                            ByteArray(segment.length.toInt()).also { raf.readFully(it) }
+                    val index = awaitHlsIndex(
+                        itemId = source.item.id,
+                        file = source.file,
+                        requireFirstSegment = true,
+                        requiredSegmentIndex = indexInManifest,
+                    ) ?: run {
+                        debugLogSink.log("WebHls", "segment pending id=${source.item.id} index=$indexInManifest")
+                        call.respond(HttpStatusCode.Accepted, ErrorPayload("Preparing the next HLS segment."))
+                        return@get
+                    }
+                    val segment = index.segments.getOrNull(targetFileSegIndex) ?: run {
+                        val completed = source.job.preparedAsset?.isComplete == true || source.job.status == CompatibilityStatus.READY
+                        debugLogSink.log("WebHls", "segment missing id=${source.item.id} index=$indexInManifest target=$targetFileSegIndex available=${index.segments.size} complete=$completed")
+                        val status = if (completed) HttpStatusCode.NotFound else HttpStatusCode.Accepted
+                        val message = if (completed) "That video segment is no longer available." else "Preparing the next HLS segment."
+                        call.respond(status, ErrorPayload(message))
+                        return@get
+                    }
+                    // Read the raw segment bytes so we can patch the TFHD box before serving.
+                    // Media3 InAppMuxer writes tfhd.base-data-offset as an absolute file offset,
+                    // which MSE forbids.  MseTfhdPatcher rewrites it to use default-base-is-moof.
+                    val rawSegmentBytes = withContext(Dispatchers.IO) {
+                        try {
+                            java.io.RandomAccessFile(source.file, "r").use { raf ->
+                                raf.seek(segment.offset)
+                                ByteArray(segment.length.toInt()).also { raf.readFully(it) }
+                            }
+                        } catch (e: Exception) {
+                            debugLogSink.log("WebHls", "Failed to read segment id=${source.item.id} index=$targetFileSegIndex", e)
+                            null
                         }
-                    }.getOrNull()
+                    }
+                    if (rawSegmentBytes == null) {
+                        call.respond(HttpStatusCode.InternalServerError, ErrorPayload("Could not read segment."))
+                        return@get
+                    }
+                    val segmentBytes = try {
+                        MseTfhdPatcher.patch(rawSegmentBytes, segment.offset)
+                    } catch (e: Exception) {
+                        debugLogSink.log("WebHls", "Patching failed id=${source.item.id} index=$targetFileSegIndex", e)
+                        rawSegmentBytes // Fallback to unpatched; might fail in browser but better than 500
+                    }
+                    val patched = segmentBytes !== rawSegmentBytes
+                    val savedBytes = rawSegmentBytes.size - segmentBytes.size
+                    debugLogSink.log(
+                        "WebHls",
+                        "segment served id=${source.item.id} manifestIndex=$indexInManifest fileIndex=$targetFileSegIndex " +
+                                "bytes=${segment.length} patchedForMse=$patched${if (patched) " saved=$savedBytes" else ""}",
+                    )
+                    call.response.headers.append(HttpHeaders.AcceptRanges, "bytes")
+                    call.response.headers.append(HttpHeaders.CacheControl, "no-store")
+                    call.respondBytes(
+                        bytes = segmentBytes,
+                        contentType = ContentType.parse("video/mp4"),
+                        status = HttpStatusCode.OK,
+                    )
+                } catch (e: Exception) {
+                    debugLogSink.log("WebHls/segment", "CRITICAL ERROR id=${call.parameters["id"]} index=${call.parameters["index"]}", e)
+                    call.respond(HttpStatusCode.InternalServerError, ErrorPayload("Internal server error."))
                 }
-                if (rawSegmentBytes == null) {
-                    call.respond(HttpStatusCode.InternalServerError, ErrorPayload("Could not read segment."))
-                    return@get
-                }
-                val segmentBytes = MseTfhdPatcher.patch(rawSegmentBytes, segment.offset)
-                val patched = segmentBytes !== rawSegmentBytes
-                val savedBytes = rawSegmentBytes.size - segmentBytes.size
-                debugLogSink.log(
-                    "WebHls",
-                    "segment served id=${source.item.id} manifestIndex=$indexInManifest fileIndex=$targetFileSegIndex " +
-                        "bytes=${segment.length} patchedForMse=$patched${if (patched) " saved=$savedBytes" else ""}",
-                )
-                call.response.headers.append(HttpHeaders.AcceptRanges, "bytes")
-                call.response.headers.append(HttpHeaders.CacheControl, "no-store")
-                call.respondBytes(
-                    bytes = segmentBytes,
-                    contentType = ContentType.parse("video/mp4"),
-                    status = HttpStatusCode.OK,
-                )
             }
 
 
@@ -1606,7 +1665,12 @@ class KtorGhostStreamServer(
      * output Main or High Profile H.264, not Baseline, and may produce HEVC via fallback.
      * A hardcoded "avc1.42E028" would mismatch and cause bufferAppendError in hls.js.
      */
-    private fun buildHlsMasterPlaylist(itemId: String, detectedVideoCodec: String?): String {
+    private fun buildHlsMasterPlaylist(
+        itemId: String,
+        detectedVideoCodec: String?,
+        width: Int? = null,
+        height: Int? = null,
+    ): String {
         // Use the codec detected from the fMP4 moov box.
         // Fall back to High Profile L4.0 which covers the broadest range of Android encoder output.
         val videoCodec = detectedVideoCodec ?: "avc1.640028"
@@ -1615,7 +1679,13 @@ class KtorGhostStreamServer(
         return buildString {
             appendLine("#EXTM3U")
             appendLine("#EXT-X-VERSION:7")
-            appendLine("#EXT-X-STREAM-INF:BANDWIDTH=2000000,CODECS=\"$videoCodec,$audioCodec\"")
+            val streamInfParts = mutableListOf<String>()
+            streamInfParts += "BANDWIDTH=2000000"
+            streamInfParts += "CODECS=\"$videoCodec,$audioCodec\""
+            if (width != null && height != null) {
+                streamInfParts += "RESOLUTION=${width}x$height"
+            }
+            appendLine("#EXT-X-STREAM-INF:${streamInfParts.joinToString(",")}")
             appendLine("/hls/$itemId/playlist.m3u8")
         }
     }
@@ -1652,6 +1722,8 @@ class KtorGhostStreamServer(
             // For segments that aren't ready yet, the server will block in awaitHlsIndex until they appear.
             appendLine("#EXT-X-PLAYLIST-TYPE:VOD")
             appendLine("#EXT-X-INDEPENDENT-SEGMENTS")
+            // Signals to iOS Safari that it should start at the beginning of the VOD timeline.
+            appendLine("#EXT-X-START:TIME-OFFSET=0")
             appendLine("#EXT-X-MAP:URI=\"/hls/$itemId/init.mp4\"")
 
             // Determine how many segments will exist in total.
@@ -2061,10 +2133,10 @@ class KtorGhostStreamServer(
         const val HLS_TARGET_DURATION_SECONDS = 3
         const val STREAMING_BUFFER_SIZE = 64 * 1024
         // Require this many segments to be ready before serving the first playlist.
-        // At 2 seconds per segment (HLS_SEGMENT_DURATION_SECONDS), 10 segments gives 
-        // a 20-second startup buffer, which prevents bufferAppendError during the
-        // critical first few seconds of playback.
-        const val MIN_SEGMENTS_BEFORE_PLAY = 10
+        // Previously set to 10 (20 seconds), which caused significant startup delay.
+        // Reduced to 3 (6 seconds), which provides enough buffer to avoid stall but
+        // starts much faster.
+        const val MIN_SEGMENTS_BEFORE_PLAY = 3
         // How many times awaitHlsIndex retries after a job is finalized but the
         // index doesn't yet meet requirements (handles OS file-flush latency).
         const val HLS_FINALIZED_RETRY_COUNT = 5

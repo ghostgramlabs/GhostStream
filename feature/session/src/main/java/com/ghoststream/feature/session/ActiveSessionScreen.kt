@@ -32,6 +32,8 @@ import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Share
 import androidx.compose.material.icons.outlined.StopCircle
+import androidx.compose.material.icons.outlined.Collections
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -61,6 +63,7 @@ import com.ghostgramlabs.directserve.core.resources.ui.GhostSpacing
 import com.ghoststream.core.model.BlockedClient
 import com.ghoststream.core.model.ConnectedClient
 import com.ghoststream.core.model.SessionState
+import com.ghoststream.core.model.UploadRequest
 import com.ghoststream.core.model.deviceIdentity
 import com.ghoststream.core.model.displayAccessUrl
 import com.ghoststream.core.model.resolvedAccessUrl
@@ -82,7 +85,6 @@ fun ActiveSessionScreen(
     browserPrepActiveFileName: String?,
     browserPrepManuallyTriggered: Boolean,
     hapticOnDeviceConnect: Boolean,
-    showTransferSpeed: Boolean,
     onCopyLink: () -> Unit,
     onShareLink: () -> Unit,
     onBack: () -> Unit,
@@ -95,6 +97,8 @@ fun ActiveSessionScreen(
     onUnblockClient: (String) -> Unit,
     onRegeneratePin: () -> Unit,
     onDisconnectAll: () -> Unit,
+    pendingUploadRequest: UploadRequest? = null,
+    onResolveUploadRequest: (String, Boolean) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
     val haptics = LocalHapticFeedback.current
@@ -141,7 +145,6 @@ fun ActiveSessionScreen(
         item {
             SessionStatsRow(
                 sessionState = sessionState,
-                showTransferSpeed = showTransferSpeed,
             )
         }
 
@@ -201,6 +204,58 @@ fun ActiveSessionScreen(
                 Text(stringResource(R.string.session_stop_sharing))
             }
         }
+    }
+
+    pendingUploadRequest?.let { request ->
+        val requesterIdentity = deviceIdentity(request.requesterIp)
+        AlertDialog(
+            onDismissRequest = { onResolveUploadRequest(request.id, false) },
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            icon = { Icon(Icons.Outlined.Collections, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
+            title = { Text(stringResource(R.string.home_upload_request_title)) },
+            text = {
+                val fileText = if (request.fileCount > 1) stringResource(R.string.home_upload_request_files, request.fileCount) else stringResource(R.string.home_upload_request_single)
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        stringResource(R.string.home_upload_request_body, requesterIdentity.nameWithIp, fileText),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    if (request.fileCount == 1) {
+                        Text(
+                            request.fileName,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    Text(
+                        stringResource(R.string.home_upload_request_total_size, formatBytes(request.sizeBytes)),
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { onResolveUploadRequest(request.id, true) },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = sessionPrimaryButtonColors(),
+                ) {
+                    Text(stringResource(R.string.common_accept))
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { onResolveUploadRequest(request.id, false) },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = sessionSecondaryButtonColors(),
+                ) {
+                    Text(stringResource(R.string.common_decline))
+                }
+            },
+            shape = RoundedCornerShape(28.dp),
+        )
     }
 }
 
@@ -725,7 +780,6 @@ private fun SessionAccessPanel(
 @Composable
 private fun SessionStatsRow(
     sessionState: SessionState,
-    showTransferSpeed: Boolean,
 ) {
     FlowRow(
         modifier = Modifier.padding(horizontal = GhostSpacing.screenHorizontal),
@@ -734,9 +788,6 @@ private fun SessionStatsRow(
     ) {
         SessionMetric(stringResource(R.string.session_metric_devices), sessionState.connectedClients.size.toString())
         SessionMetric(stringResource(R.string.session_metric_sent), formatBytes(sessionState.transferStats.totalBytesSent))
-        if (showTransferSpeed) {
-            SessionMetric(stringResource(R.string.session_metric_speed), formatSpeed(sessionState.transferStats.currentBytesPerSecond))
-        }
         SessionMetric(stringResource(R.string.session_metric_elapsed), formatElapsed(sessionState.transferStats.startedAtEpochMs))
     }
 }
@@ -1157,8 +1208,6 @@ private fun formatBytes(bytes: Long): String {
     }
     return "${(value * 10).roundToInt() / 10.0} ${units[index]}"
 }
-
-private fun formatSpeed(bytesPerSecond: Long): String = "${formatBytes(bytesPerSecond)}/s"
 
 @Composable
 private fun networkLabel(sessionState: SessionState): String {

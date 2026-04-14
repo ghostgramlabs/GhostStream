@@ -27,7 +27,6 @@ data class AppSettings(
     val preferredPort: Int = 43183,
     val keepScreenAwake: Boolean = true,
     val hapticOnDeviceConnect: Boolean = true,
-    val showTransferSpeed: Boolean = true,
     val showRecentSessions: Boolean = true,
     val requireSessionPin: Boolean = false,
     val autoGeneratePin: Boolean = true,

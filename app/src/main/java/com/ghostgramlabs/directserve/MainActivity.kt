@@ -508,7 +508,6 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     browserPrepActiveFileName = activeBrowserPrep?.first?.displayName,
                     browserPrepManuallyTriggered = uiState.browserPrepManuallyTriggered,
                     hapticOnDeviceConnect = uiState.settings.hapticOnDeviceConnect,
-                    showTransferSpeed = uiState.settings.showTransferSpeed,
                     onCopyLink = {
                         val url = uiState.sessionState.resolvedAccessUrl()
                         if (url != null) {
@@ -546,6 +545,8 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onUnblockClient = viewModel::unblockClient,
                     onRegeneratePin = viewModel::regeneratePin,
                     onDisconnectAll = viewModel::disconnectAll,
+                    pendingUploadRequest = uiState.pendingUploadRequest,
+                    onResolveUploadRequest = viewModel::resolveUploadRequest,
                     modifier = Modifier.padding(innerPadding),
                 )
             }
@@ -557,7 +558,6 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     appVersionLabel = viewModel.versionLabel(),
                     onToggleKeepScreenAwake = { viewModel.updateSettings { current -> current.copy(keepScreenAwake = it) } },
                     onToggleHaptics = { viewModel.updateSettings { current -> current.copy(hapticOnDeviceConnect = it) } },
-                    onToggleTransferSpeed = { viewModel.updateSettings { current -> current.copy(showTransferSpeed = it) } },
                     onToggleRecentSessions = { viewModel.updateSettings { current -> current.copy(showRecentSessions = it) } },
                     onToggleRequirePin = { viewModel.updateSettings { current -> current.copy(requireSessionPin = it) } },
                     onToggleAutoGeneratePin = { viewModel.updateSettings { current -> current.copy(autoGeneratePin = it) } },

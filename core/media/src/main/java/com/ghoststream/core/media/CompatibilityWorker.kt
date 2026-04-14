@@ -28,6 +28,7 @@ interface CompatibilityWorker {
     suspend fun prepare(
         item: SharedItem,
         cache: PlaybackCache,
+        stabilizedSource: StabilizedSourceInfo? = null,
         startOffsetMs: Long = 0L,
         onUpdate: (CompatibilityWorkerUpdate) -> Unit,
     ): CompatibilityWorkerResult
@@ -41,6 +42,7 @@ class StubCompatibilityWorker : CompatibilityWorker {
     override suspend fun prepare(
         item: SharedItem,
         cache: PlaybackCache,
+        stabilizedSource: StabilizedSourceInfo?,
         startOffsetMs: Long,
         onUpdate: (CompatibilityWorkerUpdate) -> Unit,
     ): CompatibilityWorkerResult {

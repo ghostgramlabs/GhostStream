@@ -12,6 +12,8 @@ import android.util.Size
 import com.ghoststream.core.model.MediaCategory
 import com.ghoststream.core.model.PlaybackDecision
 import com.ghoststream.core.model.SharedItem
+import com.ghoststream.core.model.DebugLogSink
+import com.ghoststream.core.model.NoOpDebugLogSink
 import java.io.ByteArrayOutputStream
 import java.io.File
 import kotlinx.coroutines.Dispatchers
@@ -20,15 +22,22 @@ import kotlinx.coroutines.withContext
 class AndroidMediaAnalyzer(
     private val context: Context,
     private val decisionEngine: SmartPlaybackDecisionEngine = DefaultSmartPlaybackDecisionEngine(),
+    private val debugLogSink: DebugLogSink = NoOpDebugLogSink,
 ) : MediaAnalyzer {
 
     private val thumbCacheDir: File = File(context.cacheDir, "ghoststream_thumbs").apply { mkdirs() }
     private val previewCacheDir: File = File(context.cacheDir, "ghoststream_previews").apply { mkdirs() }
 
     override fun inspect(uri: Uri, mimeType: String?, displayName: String): MediaInspection {
-        val lower = displayName.lowercase()
-        val normalizedMimeType = normalizeMimeType(mimeType = mimeType, lowerCaseName = lower)
-        val trackInspection = inspectTracks(uri)
+        return try {
+            val lower = displayName.lowercase()
+            val normalizedMimeType = normalizeMimeType(mimeType = mimeType, lowerCaseName = lower)
+            val trackInspection = try {
+                inspectTracks(uri)
+            } catch (e: Exception) {
+                debugLogSink.log("MediaAnalyzer", "Track inspection failed for $displayName ($uri)", e)
+                TrackInspection(null, null, null)
+            }
         val container = detectContainer(normalizedMimeType = normalizedMimeType, lowerCaseName = lower)
         val browserSafe = isBrowserSafe(normalizedMimeType = normalizedMimeType, lowerCaseName = lower)
 
@@ -83,8 +92,31 @@ class AndroidMediaAnalyzer(
             likelyContainerOnlyIssue = likelyContainerOnlyIssue,
             likelyNeedsTranscode = likelyNeedsTranscode,
             durationMs = trackInspection.durationMs,
+            videoProfile = trackInspection.videoProfile,
+            videoLevel = trackInspection.videoLevel,
+            bitDepth = trackInspection.bitDepth,
             hasFaststart = hasFaststart,
         )
+        } catch (e: Exception) {
+            debugLogSink.log("MediaAnalyzer", "CRITICAL: Inspection failure for $displayName", e)
+            MediaInspection(
+                originalMimeType = mimeType,
+                normalizedMimeType = if (mimeType != null) normalizeMimeType(mimeType, displayName.lowercase()) else null,
+                displayName = displayName,
+                extension = displayName.substringAfterLast('.', ""),
+                container = MediaContainer.OTHER,
+                videoTrackMimeType = null,
+                audioTrackMimeType = null,
+                browserSafe = false,
+                likelyContainerOnlyIssue = false,
+                likelyNeedsTranscode = true, // Err on the side of caution
+                durationMs = null,
+                videoProfile = null,
+                videoLevel = null,
+                bitDepth = null,
+                hasFaststart = null,
+            )
+        }
     }
 
     override fun decidePlayback(inspection: MediaInspection): PlaybackDecision {
@@ -95,7 +127,7 @@ class AndroidMediaAnalyzer(
         if (mimeType?.startsWith("video/") != true && mimeType?.startsWith("audio/") != true) {
             return null
         }
-        val metadataDuration = runCatching {
+        val metadataDuration = try {
             val retriever = MediaMetadataRetriever()
             try {
                 retriever.setDataSource(context, uri)
@@ -103,7 +135,10 @@ class AndroidMediaAnalyzer(
             } finally {
                 retriever.release()
             }
-        }.getOrNull()
+        } catch (e: Exception) {
+            debugLogSink.log("MediaAnalyzer", "Duration metadata extraction failed for $uri", e)
+            null
+        }
 
         // Fallback: MediaExtractor is often more reliable for containers like MKV/WEBM on some Android versions.
         val extractorDuration = inspectTracks(uri).durationMs
@@ -128,13 +163,16 @@ class AndroidMediaAnalyzer(
             val bitmap = when {
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
                     (item.category == MediaCategory.VIDEO || item.category == MediaCategory.PHOTO) -> {
-                    runCatching {
+                    try {
                         context.contentResolver.loadThumbnail(
                             uri,
                             Size(maxSizePx, maxSizePx),
                             null,
                         )
-                    }.getOrNull()
+                    } catch (e: Exception) {
+                        debugLogSink.log("MediaAnalyzer", "ContentResolver.loadThumbnail failed for ${item.displayName}", e)
+                        null
+                    }
                 }
 
                 else -> null
@@ -199,7 +237,7 @@ class AndroidMediaAnalyzer(
         maxSizePx: Int,
     ): Bitmap? {
         return when (item.category) {
-            MediaCategory.VIDEO -> runCatching {
+            com.ghoststream.core.model.MediaCategory.VIDEO -> runCatching {
                 val retriever = MediaMetadataRetriever()
                 try {
                     retriever.setDataSource(context, uri)
@@ -209,7 +247,7 @@ class AndroidMediaAnalyzer(
                 }
             }.getOrNull()
 
-            MediaCategory.PHOTO -> decodePhotoThumbnail(uri, maxSizePx)
+            com.ghoststream.core.model.MediaCategory.PHOTO -> decodePhotoThumbnail(uri, maxSizePx)
             else -> null
         }
     }
@@ -397,6 +435,10 @@ class AndroidMediaAnalyzer(
                 var videoTrackMimeType: String? = null
                 var audioTrackMimeType: String? = null
                 var durationMs: Long? = null
+                var videoProfile: Int? = null
+                var videoLevel: Int? = null
+                var bitDepth: Int? = null
+
                 for (index in 0 until extractor.trackCount) {
                     val format = extractor.getTrackFormat(index)
                     val mimeType = format.getString(MediaFormat.KEY_MIME)
@@ -405,8 +447,29 @@ class AndroidMediaAnalyzer(
                         durationMs = maxOf(durationMs ?: 0L, trackDuration)
                     }
                     when {
-                        videoTrackMimeType == null && mimeType?.startsWith("video/") == true ->
+                        videoTrackMimeType == null && mimeType?.startsWith("video/") == true -> {
                             videoTrackMimeType = normalizeVideoCodec(mimeType)
+                            if (format.containsKey(MediaFormat.KEY_PROFILE)) {
+                                videoProfile = format.getInteger(MediaFormat.KEY_PROFILE)
+                            }
+                            if (format.containsKey(MediaFormat.KEY_LEVEL)) {
+                                videoLevel = format.getInteger(MediaFormat.KEY_LEVEL)
+                            }
+                            // Bit depth is often not explicitly in KEY_BIT_PER_SAMPLE for video
+                            // but sometimes in KEY_COLOR_FORMAT (e.g. 10-bit YUV formats)
+                            // or KEY_COLOR_TRANSFER (HDR10). 
+                            // For simplicity, we detect 10-bit if bit-per-sample is present and > 8
+                            if (format.containsKey("bit-per-sample")) {
+                                bitDepth = format.getInteger("bit-per-sample")
+                            } else if (format.containsKey("color-format")) {
+                                // Some common 10-bit formats on Android
+                                val colorFormat = format.getInteger("color-format")
+                                // 0x7FA30C00 is sometimes used for 10-bit
+                                if (colorFormat == 0x7FA30C00 || colorFormat == 54) { // 54 = YCBCR_P010
+                                    bitDepth = 10
+                                }
+                            }
+                        }
                         audioTrackMimeType == null && mimeType?.startsWith("audio/") == true ->
                             audioTrackMimeType = normalizeAudioCodec(mimeType)
                     }
@@ -415,6 +478,9 @@ class AndroidMediaAnalyzer(
                     videoTrackMimeType = videoTrackMimeType,
                     audioTrackMimeType = audioTrackMimeType,
                     durationMs = durationMs,
+                    videoProfile = videoProfile,
+                    videoLevel = videoLevel,
+                    bitDepth = bitDepth,
                 )
             } finally {
                 extractor.release()
@@ -515,5 +581,8 @@ class AndroidMediaAnalyzer(
         val videoTrackMimeType: String? = null,
         val audioTrackMimeType: String? = null,
         val durationMs: Long? = null,
+        val videoProfile: Int? = null,
+        val videoLevel: Int? = null,
+        val bitDepth: Int? = null,
     )
 }

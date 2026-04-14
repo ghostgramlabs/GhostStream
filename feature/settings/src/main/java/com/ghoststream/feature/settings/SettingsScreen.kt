@@ -54,7 +54,6 @@ fun SettingsScreen(
     appVersionLabel: String,
     onToggleKeepScreenAwake: (Boolean) -> Unit,
     onToggleHaptics: (Boolean) -> Unit,
-    onToggleTransferSpeed: (Boolean) -> Unit,
     onToggleRecentSessions: (Boolean) -> Unit,
     onToggleRequirePin: (Boolean) -> Unit,
     onToggleAutoGeneratePin: (Boolean) -> Unit,
@@ -156,7 +155,6 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(12.dp))
                 SettingsToggleRow(stringResource(R.string.settings_keep_screen_awake), stringResource(R.string.settings_keep_screen_awake_desc), settings.keepScreenAwake, onToggleKeepScreenAwake)
                 SettingsToggleRow(stringResource(R.string.settings_vibrate_on_connect), stringResource(R.string.settings_vibrate_on_connect_desc), settings.hapticOnDeviceConnect, onToggleHaptics)
-                SettingsToggleRow(stringResource(R.string.settings_show_speed), stringResource(R.string.settings_show_speed_desc), settings.showTransferSpeed, onToggleTransferSpeed)
                 SettingsToggleRow(stringResource(R.string.settings_show_recent_shares), stringResource(R.string.settings_show_recent_shares_desc), settings.showRecentSessions, onToggleRecentSessions)
                 SettingsChoiceRow(
                     title = stringResource(R.string.settings_auto_stop),

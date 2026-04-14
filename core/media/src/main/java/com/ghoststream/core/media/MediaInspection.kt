@@ -33,6 +33,21 @@ data class MediaInspection(
     val likelyNeedsTranscode: Boolean,
     val durationMs: Long? = null,
     /**
+     * AVC/H.264 profile (e.g. 66=Baseline, 77=Main, 100=High).
+     * Used to determine hardware decoder compatibility.
+     */
+    val videoProfile: Int? = null,
+    /**
+     * AVC/H.264 level (e.g. 31=3.1, 41=4.1, 52=5.2).
+     * Used to determine hardware decoder throughput limits.
+     */
+    val videoLevel: Int? = null,
+    /**
+     * Bit depth (e.g. 8, 10). 10-bit video often requires transcoding for
+     * web playback on older devices or specific browsers (iOS/Safari).
+     */
+    val bitDepth: Int? = null,
+    /**
      * True if the MP4/MOV file has the moov atom before mdat (faststart-ready).
      * Null if not applicable (non-MP4/MOV container) or if detection failed.
      * When false, browser playback may require downloading the entire file before

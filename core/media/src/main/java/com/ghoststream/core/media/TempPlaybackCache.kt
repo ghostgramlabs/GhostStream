@@ -31,13 +31,25 @@ interface PlaybackCache {
         isFragmentedMp4: Boolean = false,
     ): CachedPlaybackAsset
 
+    /** Deletes all cache entries (completed and temporary) for [itemId]. */
+    suspend fun evict(itemId: String)
+
     suspend fun clearAll()
+
+    fun getStabilizedSourceFile(itemId: String): File
+    suspend fun evictStabilizedSource(itemId: String)
+    suspend fun cleanupStabilizedSources(activeItemIds: Set<String>)
 }
 
 class TempPlaybackCache(
     context: Context,
 ) : PlaybackCache {
     private val rootDir = File(context.cacheDir, "ghoststream_compat").apply { mkdirs() }
+    private val stabilizerDir = File(context.cacheDir, "stabilized_sources").apply { mkdirs() }
+
+    companion object {
+        private const val MAX_STABILIZER_CACHE_BYTES = 500L * 1024L * 1024L // 500 MB
+    }
 
     /**
      * Computes a short fingerprint for [item]'s source file using its size and
@@ -106,6 +118,14 @@ class TempPlaybackCache(
         )
     }
 
+    override suspend fun evict(itemId: String) {
+        withContext(Dispatchers.IO) {
+            rootDir.listFiles()
+                ?.filter { it.name.startsWith(itemId) }
+                ?.forEach { runCatching { it.delete() } }
+        }
+    }
+
     override suspend fun clearAll() {
         withContext(Dispatchers.IO) {
             rootDir.listFiles()?.forEach { file ->
@@ -123,6 +143,48 @@ class TempPlaybackCache(
         rootDir.listFiles()
             ?.filter { it.isFile && it.name.startsWith(itemId) && it.nameWithoutExtension != currentBase }
             ?.forEach { stale -> runCatching { stale.delete() } }
+    }
+
+    override fun getStabilizedSourceFile(itemId: String): File {
+        return File(stabilizerDir, "$itemId.source")
+    }
+
+    override suspend fun evictStabilizedSource(itemId: String) {
+        withContext(Dispatchers.IO) {
+            val file = getStabilizedSourceFile(itemId)
+            if (file.exists()) runCatching { file.delete() }
+        }
+    }
+
+    /**
+     * Cleans up the stabilization cache:
+     * 1. Deletes orphaned files (not in [activeItemIds])
+     * 2. Enforces a 500MB size limit via LRU eviction
+     */
+    override suspend fun cleanupStabilizedSources(activeItemIds: Set<String>) {
+        withContext(Dispatchers.IO) {
+            val files = stabilizerDir.listFiles() ?: return@withContext
+            
+            // 1. Delete orphaned files
+            files.filter { it.isFile && it.nameWithoutExtension !in activeItemIds }
+                .forEach { runCatching { it.delete() } }
+
+            // 2. Enforce size limit (LRU)
+            val remainingFiles = stabilizerDir.listFiles()?.filter { it.isFile } ?: return@withContext
+            var currentTotal = remainingFiles.sumOf { it.length() }
+            
+            if (currentTotal > MAX_STABILIZER_CACHE_BYTES) {
+                CompatLogger.info("Cache", "Enforcing stabilizer cache limit: ${currentTotal / 1024 / 1024}MB > 500MB")
+                remainingFiles.sortedBy { it.lastModified() } // Oldest first
+                    .forEach { file ->
+                        if (currentTotal <= MAX_STABILIZER_CACHE_BYTES) return@forEach
+                        val length = file.length()
+                        if (runCatching { file.delete() }.isSuccess) {
+                            currentTotal -= length
+                        }
+                    }
+            }
+        }
     }
 
     private fun inferMimeType(file: File): String? {

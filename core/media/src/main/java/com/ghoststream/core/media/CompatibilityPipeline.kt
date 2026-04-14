@@ -22,15 +22,24 @@ interface CompatibilityPipeline {
     suspend fun requestSeek(item: SharedItem, offsetMs: Long): CompatibilityJob
     suspend fun resolvePlayback(item: SharedItem): PlaybackResolution
     fun currentJob(itemId: String): CompatibilityJob?
+    suspend fun invalidate(itemId: String)
     suspend fun cancelPendingPreparations()
     suspend fun clearTemporaryOutputs()
 }
 
 class QueuedCompatibilityPipeline(
-    private val cache: PlaybackCache,
+    private val cache: TempPlaybackCache,
     private val worker: CompatibilityWorker,
+    private val stabilizer: MediaSourceStabilizer,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
 ) : CompatibilityPipeline {
+    init {
+        scope.launch {
+            queueMutex.withLock {
+                cache.cleanupStabilizedSources(_jobs.value.keys)
+            }
+        }
+    }
     private val _jobs = MutableStateFlow<Map<String, CompatibilityJob>>(emptyMap())
     private val queueMutex = Mutex()
     private val pendingRequests = mutableListOf<PreparationRequest>()
@@ -41,6 +50,9 @@ class QueuedCompatibilityPipeline(
 
     // Throttling: track last emitted coarse progress per item to avoid excessive updates
     private val lastEmittedBucket = mutableMapOf<String, Int>()
+    
+    // Retry protection: track how many times an item has been reported as broken by the client
+    private val failureCounts = mutableMapOf<String, Int>()
 
     override val jobs: StateFlow<Map<String, CompatibilityJob>> = _jobs.asStateFlow()
 
@@ -51,6 +63,8 @@ class QueuedCompatibilityPipeline(
         private const val STALL_TIMEOUT_MS = 120_000L // 2 minutes
         /** Max stall checks before giving up */
         private const val MAX_STALL_RETRIES = 1
+        /** Max times we allow the client to report a prepared asset as broken before giving up */
+        private const val MAX_RETRY_ATTEMPTS = 2
     }
 
     override suspend fun inspect(item: SharedItem): CompatibilityJob {
@@ -147,17 +161,35 @@ class QueuedCompatibilityPipeline(
         if (item.playbackDecision.mode == PlaybackMode.DIRECT) {
             return current
         }
-        if (!prioritize && current.status == CompatibilityStatus.QUEUED) {
-            return current
+        // 1. Ensure the source is stabilized BEFORE it ever enters the queue.
+        // This avoids SecurityException in background worker later.
+        val stabilizedCurrent = if (current.stabilizedSource == null && current.status != CompatibilityStatus.READY) {
+            val stabilized = stabilizer.stabilize(
+                uriString = item.uri,
+                mimeType = item.mimeType,
+                sizeBytes = item.sizeBytes,
+                itemId = item.id
+            )
+            upsert(current.copy(stabilizedSource = stabilized))
+        } else {
+            current
+        }
+
+        if (stabilizedCurrent.stabilizedSource != null && !stabilizedCurrent.stabilizedSource!!.readProbeSuccess) {
+            // If stabilization already failed, don't even try to queue.
+            return upsert(stabilizedCurrent.copy(
+                status = CompatibilityStatus.FAILED,
+                message = "Unable to access the media source. Please ensure the file still exists and the app has permission to read it."
+            ))
         }
 
         val queued = upsert(
-            current.copy(
+            stabilizedCurrent.copy(
                 status = CompatibilityStatus.QUEUED,
                 message = queuedMessage(item.playbackDecision.mode, prioritize),
                 progressPercent = 0,
-                preparedAsset = if (current.status == CompatibilityStatus.READY) current.preparedAsset else null,
-                streamable = current.status == CompatibilityStatus.READY,
+                preparedAsset = if (stabilizedCurrent.status == CompatibilityStatus.READY) stabilizedCurrent.preparedAsset else null,
+                streamable = stabilizedCurrent.status == CompatibilityStatus.READY,
                 updatedAtEpochMs = System.currentTimeMillis(),
             ),
         )
@@ -261,6 +293,30 @@ class QueuedCompatibilityPipeline(
     }
 
     override fun currentJob(itemId: String): CompatibilityJob? = jobs.value[itemId]
+
+    override suspend fun invalidate(itemId: String) {
+        // 1. Cancel any active or pending work for this item.
+        worker.cancel(itemId)
+        queueMutex.withLock {
+            pendingRequests.removeAll { it.item.id == itemId }
+            reprioritizedItems.remove(itemId)
+            canceledItems.remove(itemId)
+            if (activeRequest?.item?.id == itemId) {
+                activeRequest = null
+            }
+        }
+
+        // 2. Clear the physical cache entries.
+        cache.evict(itemId)
+
+        // 3. Track failure to prevent infinite retry loops.
+        failureCounts[itemId] = (failureCounts[itemId] ?: 0) + 1
+
+        // 4. Reset the job state in memory.
+        _jobs.update { current ->
+            current - itemId
+        }
+    }
 
     override suspend fun cancelPendingPreparations() {
         var activeItemId: String? = null
@@ -410,6 +466,20 @@ class QueuedCompatibilityPipeline(
         val item = request.item
         val now = System.currentTimeMillis()
 
+        // Persistent failure protection: if this item has failed too many times, 
+        // don't start it again. 
+        val failures = failureCounts[item.id] ?: 0
+        if (failures >= MAX_RETRY_ATTEMPTS) {
+            upsert(
+                (currentJob(item.id) ?: inspect(item)).copy(
+                    status = CompatibilityStatus.FAILED,
+                    message = "This file is repeatedly failing playback even after optimization. It might be corrupt or rely on a codec your device cannot handle.",
+                    updatedAtEpochMs = now,
+                )
+            )
+            return
+        }
+
         // Start with ANALYZING phase
         val analyzing = upsert(
             (currentJob(item.id) ?: inspect(item)).copy(
@@ -457,6 +527,7 @@ class QueuedCompatibilityPipeline(
                 val result = worker.prepare(
                     item = item,
                     cache = cache,
+                    stabilizedSource = (currentJob(item.id) ?: preparing).stabilizedSource,
                     startOffsetMs = request.startOffsetMs,
                     onUpdate = onUpdate@{ update ->
                         val current = currentJob(item.id) ?: preparing
@@ -562,7 +633,12 @@ class QueuedCompatibilityPipeline(
             }
         }
 
-        upsert(completed)
+        val finalJob = upsert(completed)
+        
+        // Cleanup stabilized source file if we reached a terminal state
+        if (finalJob.status == CompatibilityStatus.READY || finalJob.status == CompatibilityStatus.FAILED) {
+            cache.evictStabilizedSource(item.id)
+        }
     }
 
     private fun upsert(job: CompatibilityJob): CompatibilityJob {

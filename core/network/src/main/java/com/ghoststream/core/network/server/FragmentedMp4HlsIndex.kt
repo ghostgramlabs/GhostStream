@@ -13,6 +13,8 @@ internal data class FragmentedMp4HlsIndex(
      * attribute so MSE opens the right SourceBuffer type instead of guessing.
      */
     val videoCodecString: String? = null,
+    val width: Int? = null,
+    val height: Int? = null,
 )
 
 internal data class HlsMediaSegment(
@@ -36,7 +38,7 @@ internal object FragmentedMp4HlsIndexer {
      */
     fun read(file: File, fragmentDurationSeconds: Double = 2.0): FragmentedMp4HlsIndex? {
         if (!file.exists()) return null
-        return runCatching { readInternal(file, fragmentDurationSeconds) }.getOrNull()
+        return readInternal(file, fragmentDurationSeconds)
     }
 
     private fun readInternal(file: File, fragmentDurationSeconds: Double): FragmentedMp4HlsIndex? {
@@ -75,10 +77,10 @@ internal object FragmentedMp4HlsIndexer {
             // in hls.js when the Android encoder produces a different H.264 profile than the
             // hardcoded Baseline string, or produces HEVC/VP9 via DefaultEncoderFactory fallback.
             val moovBox = boxes.firstOrNull { it.type == "moov" }
-            val videoCodecString = if (moovBox != null) {
-                runCatching { readVideoCodecFromMoov(raf, moovBox) }.getOrNull()
+            val (videoCodecString, width, height) = if (moovBox != null) {
+                runCatching { readVideoMetadataFromMoov(raf, moovBox) }.getOrNull() ?: Triple(null, null, null)
             } else {
-                null
+                Triple(null, null, null)
             }
 
             val firstMoofIndex = boxes.indexOfFirst { it.type == "moof" }
@@ -165,6 +167,8 @@ internal object FragmentedMp4HlsIndexer {
                 segments = segments,
                 fileLength = fileLength,
                 videoCodecString = videoCodecString,
+                width = width,
+                height = height,
             )
         }
     }
@@ -173,20 +177,20 @@ internal object FragmentedMp4HlsIndexer {
 
     /**
      * Walk moov → trak (vide) → mdia → minf → stbl → stsd to find the first video sample
-     * entry box and return an RFC 6381 codec string (e.g. "avc1.640028" or "hvc1.1.6.L120.90").
-     * Returns null if the structure cannot be found or parsed.
+     * entry box and return an RFC 6381 codec string and dimensions.
+     * Returns null triple if the structure cannot be found or parsed.
      */
-    private fun readVideoCodecFromMoov(raf: RandomAccessFile, moovBox: Mp4TopLevelBox): String? {
+    private fun readVideoMetadataFromMoov(raf: RandomAccessFile, moovBox: Mp4TopLevelBox): Triple<String?, Int?, Int?> {
         val moovEnd = moovBox.offset + moovBox.size
         for (trak in readChildBoxes(raf, moovBox.offset + 8, moovEnd)) {
             if (trak.type != "trak") continue
-            val codec = readTrakVideoCodec(raf, trak) ?: continue
-            return codec
+            val metadata = readTrakVideoMetadata(raf, trak) ?: continue
+            return metadata
         }
-        return null
+        return Triple(null, null, null)
     }
 
-    private fun readTrakVideoCodec(raf: RandomAccessFile, trak: Mp4TopLevelBox): String? {
+    private fun readTrakVideoMetadata(raf: RandomAccessFile, trak: Mp4TopLevelBox): Triple<String?, Int?, Int?>? {
         val trakEnd = trak.offset + trak.size
         val mdia = readChildBoxes(raf, trak.offset + 8, trakEnd).firstOrNull { it.type == "mdia" } ?: return null
         val mdiaEnd = mdia.offset + mdia.size
@@ -218,24 +222,29 @@ internal object FragmentedMp4HlsIndexer {
         val entryEnd = firstEntryStart + entrySize
 
         return when (entryType) {
-            "avc1", "avc3" -> readH264CodecString(raf, firstEntryStart, entryEnd)
-            "hvc1", "hev1" -> readH265CodecString(raf, firstEntryStart, entryEnd)
-            "vp09" -> "vp09.00.40.08"
-            "av01" -> "av01.0.04M.08"
+            "avc1", "avc3" -> readH264Metadata(raf, firstEntryStart, entryEnd)
+            "hvc1", "hev1" -> readH265Metadata(raf, firstEntryStart, entryEnd)
+            "vp09" -> Triple("vp09.00.40.08", null, null)
+            "av01" -> Triple("av01.0.04M.08", null, null)
             else -> null
         }
     }
 
     /**
-     * Parse the avcC box (inside avc1) to get the exact H.264 codec string.
+     * Parse the avcC box (inside avc1) to get the exact H.264 codec string and dimensions.
      * avc1 VisualSampleEntry layout: 8 header + 6 reserved + 2 data_ref_index
      * + 16 pre_defined/reserved + 2 width + 2 height + 4 horizres + 4 vertres
      * + 4 reserved + 2 frame_count + 32 compressorname + 2 depth + 2 pre_defined = 86 bytes total
      * then child boxes begin (avcC is always first).
      */
-    private fun readH264CodecString(raf: RandomAccessFile, avc1Start: Long, avc1End: Long): String {
+    private fun readH264Metadata(raf: RandomAccessFile, avc1Start: Long, avc1End: Long): Triple<String?, Int?, Int?> {
+        raf.seek(avc1Start + 32)
+        val width = raf.readUnsignedShort()
+        val height = raf.readUnsignedShort()
+
         val childStart = avc1Start + 86L
         var pos = childStart
+        var codec: String? = null
         while (pos + 8 <= avc1End) {
             raf.seek(pos)
             val size32 = raf.readInt().toLong() and 0xffffffffL
@@ -249,22 +258,23 @@ internal object FragmentedMp4HlsIndexer {
                 val compat = raf.read()
                 val level = raf.read()
                 if (profile >= 0 && compat >= 0 && level >= 0) {
-                    return "avc1.%02X%02X%02X".format(profile, compat, level)
+                    codec = "avc1.%02X%02X%02X".format(profile, compat, level)
+                    break
                 }
             }
             pos += size32
         }
-        return "avc1.640028"  // High Profile L4.0 — safe fallback for Android encoders
+        return Triple(codec ?: "avc1.640028", width, height)
     }
 
     /**
-     * Construct an H.265 codec string from the hvcC box.
-     * Full HEVC codec string parsing is complex; we return a safe default that covers
-     * the most common Android hardware encoder output (Main Profile L4.0 Main Tier).
+     * Construct an H.265 codec string and dimensions from the hvc1 box.
      */
-    @Suppress("UNUSED_PARAMETER")
-    private fun readH265CodecString(raf: RandomAccessFile, hvc1Start: Long, hvc1End: Long): String {
-        return "hvc1.1.6.L120.90"  // Main profile, Main tier, Level 4.0
+    private fun readH265Metadata(raf: RandomAccessFile, hvc1Start: Long, hvc1End: Long): Triple<String?, Int?, Int?> {
+        raf.seek(hvc1Start + 32)
+        val width = raf.readUnsignedShort()
+        val height = raf.readUnsignedShort()
+        return Triple("hvc1.1.6.L120.90", width, height)
     }
 
     /** Read all direct child boxes between [from, to) from the RandomAccessFile. */
