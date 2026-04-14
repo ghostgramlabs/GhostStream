@@ -47,10 +47,6 @@ class GhostStreamForegroundService : Service() {
     private var lastNotificationUrl: String? = null
     private var lastNotificationClientCount: Int? = null
     private var lastNotificationUpdateMs: Long = 0L
-    private companion object {
-        /** Minimum interval between notification updates (ms) */
-        const val NOTIFICATION_MIN_INTERVAL_MS = 2_000L
-    }
 
     override fun onCreate() {
         super.onCreate()
@@ -545,6 +541,8 @@ class GhostStreamForegroundService : Service() {
     }
 
     companion object {
+        /** Minimum interval between notification updates (ms) */
+        private const val NOTIFICATION_MIN_INTERVAL_MS = 2_000L
         private const val CHANNEL_ID = "ghoststream_sharing"
         private const val REQUEST_CHANNEL_ID = "ghoststream_requests"
         private const val CONNECTION_CHANNEL_ID = "ghoststream_connections"
