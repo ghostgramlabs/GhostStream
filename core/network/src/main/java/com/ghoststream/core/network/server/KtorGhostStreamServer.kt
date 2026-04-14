@@ -1164,6 +1164,15 @@ class KtorGhostStreamServer(
             respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_optimized_unavailable)))
             return
         }
+
+        // Suspicious File Check: If a "complete" file is suspiciously small (e.g. < 10KB),
+        // it is likely a legacy stub or a failed transcode from a pre-Atomic Rename run.
+        // We reject it here so the client triggers a fresh preparation.
+        if (playbackSource.isComplete && file.length() < 10 * 1024L) {
+            debugLogSink.log("WebCompat/Gate", "REJECTED id=${item.id} reason=suspicious_size size=${file.length()}")
+            respond(HttpStatusCode.Conflict, ErrorPayload("The cached asset is incomplete or corrupt.  Retrying preparation..."))
+            return
+        }
         if (playbackSource.allowGrowing && !playbackSource.isComplete) {
             streamGrowingCachedFile(
                 item = item,

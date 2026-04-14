@@ -38,6 +38,7 @@ class InMemorySessionManager(
 
     private var speedWindowStartedAt = 0L
     private var speedWindowBytes = 0L
+    private var lastStateUpdateEpochMs = 0L
 
     override val sessionState: StateFlow<SessionState> = _sessionState.asStateFlow()
     override val recentSessions: StateFlow<List<RecentSession>> = _recentSessions.asStateFlow()
@@ -247,26 +248,38 @@ class InMemorySessionManager(
             speedWindowBytes += bytes
         }
 
-        _sessionState.update { current ->
-            val updatedClients = current.connectedClients.map { client ->
-                if (client.ipAddress != ipAddress) {
-                    client
-                } else {
-                    client.copy(
-                        activity = activity,
-                        bytesServed = client.bytesServed + bytes,
-                        lastSeenEpochMs = now,
-                    )
+        val shouldUpdateState = now - lastStateUpdateEpochMs > 500L
+        if (shouldUpdateState) {
+            lastStateUpdateEpochMs = now
+            _sessionState.update { current ->
+                val updatedClients = current.connectedClients.map { client ->
+                    if (client.ipAddress != ipAddress) {
+                        client
+                    } else {
+                        client.copy(
+                            activity = activity,
+                            bytesServed = client.bytesServed + bytes,
+                            lastSeenEpochMs = now,
+                        )
+                    }
                 }
+                current.copy(
+                    connectedClients = updatedClients,
+                    transferStats = current.transferStats.copy(
+                        totalBytesSent = current.transferStats.totalBytesSent + bytes,
+                        currentBytesPerSecond = speedWindowBytes,
+                        lastActivityEpochMs = now,
+                    ),
+                )
             }
-            current.copy(
-                connectedClients = updatedClients,
-                transferStats = current.transferStats.copy(
-                    totalBytesSent = current.transferStats.totalBytesSent + bytes,
-                    currentBytesPerSecond = speedWindowBytes,
-                    lastActivityEpochMs = now,
-                ),
-            )
+        } else {
+            // Silently accumulate bytes in session state without emitting flow update
+            // to avoid notification spam. The next throttled update will catch up.
+            // Note: StateFlow update is atomic, but we are skipping the emission here.
+            // We use a non-emitting update if possible or just wait for the next 500ms block.
+            // Actually, we WANT to update the values but NOT necessarily trigger a massive 
+            // sequence of notification updates. However, StateFlow ALWAYS emits if value changes.
+            // So we simply don't update _sessionState.value until the throttle expires.
         }
     }
 

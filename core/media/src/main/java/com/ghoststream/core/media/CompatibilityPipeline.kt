@@ -346,7 +346,11 @@ class QueuedCompatibilityPipeline(
                             current.copy(
                                 status = update.status ?: current.status,
                                 message = update.message ?: current.message,
-                                progressPercent = update.progressPercent ?: current.progressPercent,
+                                progressPercent = if (update.progressPercent != null && current.progressPercent != null) {
+                                    maxOf(current.progressPercent!!, update.progressPercent!!)
+                                } else {
+                                    update.progressPercent ?: current.progressPercent
+                                },
                                 preparedAsset = update.preparedAsset ?: current.preparedAsset,
                                 hlsReady = update.hlsReady ?: current.hlsReady,
                                 directReady = update.directReady ?: current.directReady,
