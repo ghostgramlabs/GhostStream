@@ -597,14 +597,16 @@ class KtorGhostStreamServer(
 
                 // During heavy prepare, skip frame-at-time extraction (expensive) and only
                 // serve cached/cheap poster thumbnails. This frees CPU for the active transcode.
-                val bytes = if (hasHeavyPrepareJob && timeMs != null) {
+                val bytesOrNull = if (hasHeavyPrepareJob && timeMs != null) {
                     // Skip scrubbing frame extraction during heavy prepare — just serve poster
                     mediaAnalyzer.loadThumbnailBytes(item)
                 } else if (timeMs != null) {
                     mediaAnalyzer.extractFrameAtMs(item, timeMs) ?: mediaAnalyzer.loadThumbnailBytes(item)
                 } else {
                     mediaAnalyzer.loadThumbnailBytes(item)
-                } ?: run {
+                }
+
+                if (bytesOrNull == null) {
                     // Don't log thumbnail misses during heavy prepare (reduces noise)
                     if (!hasHeavyPrepareJob) {
                         debugLogSink.log("WebThumb", "empty id=${item.id} name=${item.displayName} timeMs=$timeMs")
@@ -614,12 +616,12 @@ class KtorGhostStreamServer(
                 }
 
                 if (!hasHeavyPrepareJob) {
-                    debugLogSink.log("WebThumb", "served id=${item.id} bytes=${bytes.size} timeMs=$timeMs")
+                    debugLogSink.log("WebThumb", "served id=${item.id} bytes=${bytesOrNull.size} timeMs=$timeMs")
                 }
                 // Don't call observeClient for thumbnail requests — this was causing
                 // SessionState updates on every thumb fetch, which cascaded into
                 // notification updates. Thumbnail fetches are passive reads, not activity.
-                call.respondBytes(bytes, ContentType.Image.JPEG)
+                call.respondBytes(bytesOrNull, ContentType.Image.JPEG)
             }
 
             get("/download/{id}") {
