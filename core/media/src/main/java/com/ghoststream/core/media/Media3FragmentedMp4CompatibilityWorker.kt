@@ -478,6 +478,71 @@ class Media3FragmentedMp4CompatibilityWorker(
         }
     }
 
+    /**
+     * For TRANSCODE mode: converts the fragmented MP4 (used for live HLS streaming)
+     * into a regular MP4 for cached playback.
+     * For REMUX/TRANSMUX: InAppMuxer already produces regular MP4 with moov at front,
+     * so this is a no-op (returns the input file unchanged).
+     */
+    private fun finalizePlaybackAsset(item: SharedItem, inputFile: File): File {
+        // REMUX and TRANSMUX use non-fragmented output — already correct format.
+        if (item.playbackDecision.mode != PlaybackMode.TRANSCODE) return inputFile
+        // Small files don't benefit from re-muxing
+        if (inputFile.length() < 1024 * 50) return inputFile
+
+        val optimizedFile = File(inputFile.parentFile, "${inputFile.name}.opt")
+        val extractor = MediaExtractor()
+        var muxer: android.media.MediaMuxer? = null
+
+        return try {
+            extractor.setDataSource(inputFile.absolutePath)
+            muxer = android.media.MediaMuxer(
+                optimizedFile.absolutePath,
+                android.media.MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4,
+            )
+
+            val trackCount = extractor.trackCount
+            val trackMap = mutableMapOf<Int, Int>()
+
+            for (i in 0 until trackCount) {
+                val format = extractor.getTrackFormat(i)
+                trackMap[i] = muxer.addTrack(format)
+            }
+
+            muxer.start()
+
+            val bufferSize = 1024 * 1024
+            val buffer = java.nio.ByteBuffer.allocate(bufferSize)
+            val bufferInfo = android.media.MediaCodec.BufferInfo()
+
+            for (i in 0 until trackCount) {
+                extractor.selectTrack(i)
+                while (true) {
+                    bufferInfo.size = extractor.readSampleData(buffer, 0)
+                    if (bufferInfo.size < 0) break
+                    bufferInfo.presentationTimeUs = extractor.sampleTime
+                    bufferInfo.flags = extractor.sampleFlags
+                    bufferInfo.offset = 0
+                    val outputTrackIndex = trackMap[i] ?: continue
+                    muxer.writeSampleData(outputTrackIndex, buffer, bufferInfo)
+                    extractor.advance()
+                }
+                extractor.unselectTrack(i)
+            }
+
+            muxer.stop()
+            runCatching { inputFile.delete() }
+            optimizedFile
+        } catch (e: Exception) {
+            CompatLogger.warn("CompatExport", "Finalization re-mux failed for ${item.id}", e)
+            runCatching { optimizedFile.delete() }
+            inputFile // Fall back to the fragmented version
+        } finally {
+            extractor.release()
+            runCatching { muxer?.release() }
+        }
+    }
+
     private fun scheduleProgressUpdates(
         item: SharedItem,
         cache: PlaybackCache,
