@@ -39,6 +39,18 @@ interface PlaybackCache {
     fun getStabilizedSourceFile(itemId: String): File
     suspend fun evictStabilizedSource(itemId: String)
     suspend fun cleanupStabilizedSources(activeItemIds: Set<String>)
+
+    /**
+     * Enforce cache budget: evict oldest prepared assets (by last-modified time)
+     * until total cache size is under [maxBytes]. Never evicts items in [protectedIds].
+     */
+    suspend fun enforceBudget(maxBytes: Long, protectedIds: Set<String> = emptySet())
+
+    /** Returns the total size in bytes of all prepared cache files. */
+    fun totalCacheSizeBytes(): Long
+
+    /** Deletes orphaned .tmp files and stale entries not matching any active library item. */
+    suspend fun cleanupOrphans(activeItemIds: Set<String>)
 }
 
 class TempPlaybackCache(
@@ -49,6 +61,8 @@ class TempPlaybackCache(
 
     companion object {
         private const val MAX_STABILIZER_CACHE_BYTES = 500L * 1024L * 1024L // 500 MB
+        /** Default prepared-asset cache budget: 2 GB */
+        const val DEFAULT_CACHE_BUDGET_BYTES = 2L * 1024L * 1024L * 1024L
     }
 
     /**
@@ -59,8 +73,6 @@ class TempPlaybackCache(
     private fun sourceFingerprint(item: SharedItem): String {
         val size = item.sizeBytes
         val mtime = item.lastModifiedEpochMs ?: 0L
-        // Simple, human-readable fingerprint: size_mtime.
-        // Collisions are astronomically unlikely for files with the same itemId.
         return "${size}_${mtime}"
     }
 
@@ -71,17 +83,14 @@ class TempPlaybackCache(
 
     override fun lookup(item: SharedItem): CachedPlaybackAsset? {
         val expectedBase = cacheBaseName(item)
-        // Look for a completed file (.mp4, .m4a, etc.) with the exact fingerprinted name.
-        // Ignore .tmp files (in-progress or interrupted transcodes) and any file whose
-        // name doesn't match the current fingerprint (stale cache from a changed source).
         val file = rootDir.listFiles()
             ?.firstOrNull { candidate ->
                 candidate.isFile &&
                 !candidate.name.endsWith(".tmp") &&
+                !candidate.name.endsWith(".opt") &&
                 candidate.nameWithoutExtension == expectedBase
             }
             ?: run {
-                // Clean up stale entries for this item ID (different fingerprint = old source).
                 purgeStaleCacheFor(item.id, expectedBase)
                 return null
             }
@@ -134,6 +143,93 @@ class TempPlaybackCache(
         }
     }
 
+    override fun getStabilizedSourceFile(itemId: String): File {
+        return File(stabilizerDir, "${itemId}.source")
+    }
+
+    override suspend fun evictStabilizedSource(itemId: String) {
+        withContext(Dispatchers.IO) {
+            val file = getStabilizedSourceFile(itemId)
+            runCatching { file.delete() }
+        }
+    }
+
+    override suspend fun cleanupStabilizedSources(activeItemIds: Set<String>) {
+        withContext(Dispatchers.IO) {
+            stabilizerDir.listFiles()?.forEach { file ->
+                val itemId = file.nameWithoutExtension
+                if (itemId !in activeItemIds) {
+                    runCatching { file.delete() }
+                }
+            }
+            // Enforce size budget for stabilized sources
+            val files = stabilizerDir.listFiles()?.toList() ?: return@withContext
+            val totalSize = files.sumOf { it.length() }
+            if (totalSize > MAX_STABILIZER_CACHE_BYTES) {
+                val sorted = files.sortedBy { it.lastModified() }
+                var freed = 0L
+                val target = totalSize - MAX_STABILIZER_CACHE_BYTES
+                for (file in sorted) {
+                    if (freed >= target) break
+                    if (file.nameWithoutExtension !in activeItemIds) {
+                        freed += file.length()
+                        runCatching { file.delete() }
+                    }
+                }
+            }
+        }
+    }
+
+    override suspend fun enforceBudget(maxBytes: Long, protectedIds: Set<String>) {
+        withContext(Dispatchers.IO) {
+            val files = rootDir.listFiles()
+                ?.filter { it.isFile && !it.name.endsWith(".tmp") && !it.name.endsWith(".opt") }
+                ?: return@withContext
+            val totalSize = files.sumOf { it.length() }
+            if (totalSize <= maxBytes) return@withContext
+
+            // Sort by last modified (oldest first) for LRU eviction
+            val evictionCandidates = files
+                .filter { file -> protectedIds.none { id -> file.name.startsWith(id) } }
+                .sortedBy { it.lastModified() }
+
+            var currentSize = totalSize
+            for (file in evictionCandidates) {
+                if (currentSize <= maxBytes) break
+                val fileSize = file.length()
+                if (runCatching { file.delete() }.isSuccess) {
+                    currentSize -= fileSize
+                    CompatLogger.debug("CacheEvict", "evicted ${file.name} (${fileSize / 1024}KB) budget=${currentSize / 1024 / 1024}MB")
+                }
+            }
+        }
+    }
+
+    override fun totalCacheSizeBytes(): Long {
+        return rootDir.listFiles()
+            ?.filter { it.isFile && !it.name.endsWith(".tmp") && !it.name.endsWith(".opt") }
+            ?.sumOf { it.length() }
+            ?: 0L
+    }
+
+    override suspend fun cleanupOrphans(activeItemIds: Set<String>) {
+        withContext(Dispatchers.IO) {
+            rootDir.listFiles()?.forEach { file ->
+                // Delete .tmp files (interrupted transcodes)
+                if (file.name.endsWith(".tmp") || file.name.endsWith(".opt")) {
+                    runCatching { file.delete() }
+                    return@forEach
+                }
+                // Delete files whose item ID is not in the active library
+                val fileItemId = file.name.substringBefore('_')
+                if (fileItemId.isNotEmpty() && fileItemId !in activeItemIds) {
+                    runCatching { file.delete() }
+                    CompatLogger.debug("CacheCleanup", "orphan removed: ${file.name}")
+                }
+            }
+        }
+    }
+
     /**
      * Deletes any cache files for [itemId] whose fingerprinted base name does NOT match
      * [currentBase].  Called lazily on every lookup miss so the cache directory stays tidy
@@ -143,48 +239,6 @@ class TempPlaybackCache(
         rootDir.listFiles()
             ?.filter { it.isFile && it.name.startsWith(itemId) && it.nameWithoutExtension != currentBase }
             ?.forEach { stale -> runCatching { stale.delete() } }
-    }
-
-    override fun getStabilizedSourceFile(itemId: String): File {
-        return File(stabilizerDir, "$itemId.source")
-    }
-
-    override suspend fun evictStabilizedSource(itemId: String) {
-        withContext(Dispatchers.IO) {
-            val file = getStabilizedSourceFile(itemId)
-            if (file.exists()) runCatching { file.delete() }
-        }
-    }
-
-    /**
-     * Cleans up the stabilization cache:
-     * 1. Deletes orphaned files (not in [activeItemIds])
-     * 2. Enforces a 500MB size limit via LRU eviction
-     */
-    override suspend fun cleanupStabilizedSources(activeItemIds: Set<String>) {
-        withContext(Dispatchers.IO) {
-            val files = stabilizerDir.listFiles() ?: return@withContext
-            
-            // 1. Delete orphaned files
-            files.filter { it.isFile && it.nameWithoutExtension !in activeItemIds }
-                .forEach { runCatching { it.delete() } }
-
-            // 2. Enforce size limit (LRU)
-            val remainingFiles = stabilizerDir.listFiles()?.filter { it.isFile } ?: return@withContext
-            var currentTotal = remainingFiles.sumOf { it.length() }
-            
-            if (currentTotal > MAX_STABILIZER_CACHE_BYTES) {
-                CompatLogger.info("Cache", "Enforcing stabilizer cache limit: ${currentTotal / 1024 / 1024}MB > 500MB")
-                remainingFiles.sortedBy { it.lastModified() } // Oldest first
-                    .forEach { file ->
-                        if (currentTotal <= MAX_STABILIZER_CACHE_BYTES) return@forEach
-                        val length = file.length()
-                        if (runCatching { file.delete() }.isSuccess) {
-                            currentTotal -= length
-                        }
-                    }
-            }
-        }
     }
 
     private fun inferMimeType(file: File): String? {

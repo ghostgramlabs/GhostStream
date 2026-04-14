@@ -35,9 +35,11 @@ class QueuedCompatibilityPipeline(
 ) : CompatibilityPipeline {
     init {
         scope.launch {
-            queueMutex.withLock {
-                cache.cleanupStabilizedSources(_jobs.value.keys)
-            }
+            // Startup cleanup: remove orphaned .tmp files and enforce cache budget
+            cache.cleanupOrphans(_jobs.value.keys)
+            cache.cleanupStabilizedSources(_jobs.value.keys)
+            cache.enforceBudget(TempPlaybackCache.DEFAULT_CACHE_BUDGET_BYTES, protectedIds = _jobs.value.keys)
+            CompatLogger.info("CacheInit", "startup cleanup complete totalCache=${cache.totalCacheSizeBytes() / 1024 / 1024}MB")
         }
     }
     private val _jobs = MutableStateFlow<Map<String, CompatibilityJob>>(emptyMap())
@@ -603,84 +605,3 @@ class QueuedCompatibilityPipeline(
                         (reprioritizedItems.remove(item.id) to canceledItems.remove(item.id))
                     }
                     when {
-                        canceled -> preparing.copy(
-                            status = CompatibilityStatus.IDLE,
-                            progressPercent = null,
-                            preparedAsset = null,
-                            message = preparing.decision.reason,
-                            streamable = false,
-                            updatedAtEpochMs = System.currentTimeMillis(),
-                        )
-
-                        reprioritized -> preparing.copy(
-                            status = CompatibilityStatus.QUEUED,
-                            progressPercent = 0,
-                            preparedAsset = null,
-                            message = queuedMessage(item.playbackDecision.mode, prioritize = false),
-                            streamable = false,
-                            updatedAtEpochMs = System.currentTimeMillis(),
-                        )
-
-                        else -> preparing.copy(
-                            status = CompatibilityStatus.FAILED,
-                            progressPercent = null,
-                            message = result.message,
-                            streamable = false,
-                            updatedAtEpochMs = System.currentTimeMillis(),
-                        )
-                    }
-                }
-            }
-        }
-
-        val finalJob = upsert(completed)
-        
-        // Cleanup stabilized source file if we reached a terminal state
-        if (finalJob.status == CompatibilityStatus.READY || finalJob.status == CompatibilityStatus.FAILED) {
-            cache.evictStabilizedSource(item.id)
-        }
-    }
-
-    private fun upsert(job: CompatibilityJob): CompatibilityJob {
-        _jobs.update { current ->
-            current + (job.itemId to job)
-        }
-        return job
-    }
-
-    private fun queuedMessage(mode: PlaybackMode, prioritize: Boolean): String {
-        return when {
-            prioritize && mode == PlaybackMode.REMUX -> "Opening this video next for browser playback."
-            prioritize && mode == PlaybackMode.TRANSCODE -> "Opening this video next for browser playback."
-            mode == PlaybackMode.REMUX -> "Queued for lightweight playback optimization."
-            mode == PlaybackMode.TRANSCODE -> "Queued for compatibility conversion."
-            else -> "Ready."
-        }
-    }
-
-    private fun enqueueLocked(request: PreparationRequest) {
-        pendingRequests.removeAll { it.item.id == request.item.id }
-        if (request.prioritizePlayback) {
-            pendingRequests.add(0, request)
-        } else {
-            pendingRequests.add(request)
-        }
-    }
-
-    private fun preemptActiveLocked(priorityItemId: String): String? {
-        val currentActive = activeRequest ?: return null
-        if (currentActive.item.id == priorityItemId || currentActive.prioritizePlayback) {
-            return null
-        }
-        reprioritizedItems += currentActive.item.id
-        pendingRequests.removeAll { it.item.id == currentActive.item.id }
-        pendingRequests.add(0, currentActive.copy(prioritizePlayback = false))
-        return currentActive.item.id
-    }
-
-    private data class PreparationRequest(
-        val item: SharedItem,
-        val prioritizePlayback: Boolean,
-        val startOffsetMs: Long = 0L,
-    )
-}

@@ -137,33 +137,26 @@ class MainViewModel(
             }
             .launchIn(viewModelScope)
 
-        // ── PRE-EMPTIVE WARMUP ───────────────────────────────────────────────────
-        // Proactively start remuxing/transcoding for the most recent library items
-        // so they are ready before the user clicks Play.
+        // ── EAGER PREPARATION ────────────────────────────────────────────────────
+        // Proactively prepare ALL non-DIRECT videos the moment they enter the library.
+        // This is the key architecture decision: by the time a browser opens a player,
+        // the prepared MP4 should already exist. No waiting at playback time.
         container.storageRepository.libraryState
             .onEach { library ->
-                val settings = container.settingsRepository.settings.first()
                 // Build warmup candidates using suspend-compatible loop.
                 // inspect() is suspend (it checks disk cache), so we can't use .filter{}.
                 val candidates = library.items
                     .filter { it.category == com.ghoststream.core.model.MediaCategory.VIDEO && it.playbackDecision.mode != com.ghoststream.core.model.PlaybackMode.DIRECT }
-                val videosToWarmup = mutableListOf<com.ghoststream.core.model.SharedItem>()
-                val limit = if (settings.autoOptimizeLibrary) Int.MAX_VALUE else 2
                 for (item in candidates) {
-                    if (videosToWarmup.size >= limit) break
+                    // Dedup: skip items already queued this session
+                    if (warmupRequestedIds.contains(item.id)) continue
                     // Use inspect() to check both in-memory state AND disk cache.
                     // This prevents re-queuing items whose prepared .mp4 still exists on disk.
                     val job = container.compatibilityPipeline.inspect(item)
                     if (job.status == com.ghoststream.core.media.CompatibilityStatus.IDLE && job.preparedAsset == null) {
-                        videosToWarmup.add(item)
+                        warmupRequestedIds.add(item.id)
+                        container.compatibilityPipeline.requestPreparation(item, prioritize = false)
                     }
-                }
-
-                // Only submit items that haven't been queued this session (dedup).
-                val newItems = videosToWarmup.filterNot { item -> warmupRequestedIds.contains(item.id) }
-                newItems.forEach { item ->
-                    warmupRequestedIds.add(item.id)
-                    container.compatibilityPipeline.requestPreparation(item, prioritize = false)
                 }
             }
             .launchIn(viewModelScope)

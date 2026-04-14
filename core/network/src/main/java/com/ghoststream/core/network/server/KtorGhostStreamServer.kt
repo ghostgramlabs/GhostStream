@@ -2057,9 +2057,9 @@ class KtorGhostStreamServer(
                     mimeType = item.mimeType,
                     category = item.category.name.lowercase(),
                     streamUrl = "/stream/${item.id}",
-                    // Use HLS only for TRANSMUX and TRANSCODE modes when not yet complete.
-                    // REMUX (Faststart) and DIRECT always use direct file playback.
-                    hlsUrl = if (item.category == MediaCategory.VIDEO && !isComplete && 
-                        (item.playbackDecision.mode == PlaybackMode.TRANSMUX || item.playbackDecision.mode == PlaybackMode.TRANSCODE)) {
+                    // Use HLS only for TRANSCODE mode when not yet complete (play-while-transcoding).
+                    // REMUX, TRANSMUX, and DIRECT all produce regular MP4 files served directly.
+                    hlsUrl = if (item.category == MediaCategory.VIDEO && !isComplete &&
+                        item.playbackDecision.mode == PlaybackMode.TRANSCODE) {
                         "/hls/${item.id}/master.m3u8"
                     } els
