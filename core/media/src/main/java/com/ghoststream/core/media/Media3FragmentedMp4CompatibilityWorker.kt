@@ -447,6 +447,155 @@ class Media3FragmentedMp4CompatibilityWorker(
                         // but let's be strict for iOS.
                         val isYuv420 = color == 19 || color == 21 || color == 0x7FA30C04 || color == 0x7FA30C03
                         if (!isYuv420 && color != 0 && color != 2130706688) { // 2130706688 is sometimes used for flexible YUV
-                             // For now just warn or log debug, but let's check for 10-bit explicitly
+                             // Check for 10-bit explicitly
                              if (color == 0x7FA30C00 || color == 54) {
+                                 return ValidationResult(false, "Incompatible 10-bit color format: $color")
+                             }
+                             CompatLogger.debug("CompatValidate", "Non-standard color format $color for ${file.name} — allowing")
+                        }
+                    }
+                    videoOk = true
+                }
+                if (mime.startsWith("audio/")) {
+                    if (mime != android.media.MediaFormat.MIMETYPE_AUDIO_AAC &&
+                        mime != "audio/mp4a-latm" &&
+                        mime != android.media.MediaFormat.MIMETYPE_AUDIO_MPEG &&
+                        mime != "audio/mpeg"
+                    ) {
+                        return ValidationResult(false, "Invalid audio codec: $mime (expected AAC or MP3)")
+                    }
+                    audioOk = true
+                }
+            }
+            if (!videoOk && !audioOk) {
+                return ValidationResult(false, "No valid tracks found in output")
+            }
+            ValidationResult(true)
+        } catch (e: Exception) {
+            ValidationResult(false, "Validation exception: ${e.message}")
+        } finally {
+            extractor.release()
+        }
+    }
+
+    private fun scheduleProgressUpdates(
+        item: SharedItem,
+        cache: PlaybackCache,
+        transform: ActiveTransform,
+        cancelled: AtomicBoolean,
+        onUpdate: (CompatibilityWorkerUpdate) -> Unit,
+    ) {
+        var lastLoggedBucket = -1
+        var wasStreamable = false
+        val startTimeMs = System.currentTimeMillis()
+        // Only TRANSCODE uses fragmented MP4 — only it can be streamed mid-job.
+        // REMUX and TRANSMUX produce non-fragmented MP4 that isn't playable until complete.
+        val canStreamDuringPrepare = item.playbackDecision.mode == PlaybackMode.TRANSCODE
+
+        val progressRunnable = object : Runnable {
+            override fun run() {
+                if (cancelled.get() || transform.completion.isCompleted) return
+
+                val transformer = transform.transformer ?: return
+                val progressHolder = ProgressHolder()
+                val progress = when (transformer.getProgress(progressHolder)) {
+                    Transformer.PROGRESS_STATE_AVAILABLE -> progressHolder.progress
+                    else -> null
+                }
+
+                val currentSize = transform.outputFile.length()
+                val streamable = canStreamDuringPrepare && currentSize >= STREAMABLE_BYTES_THRESHOLD
+
+                // Log every 5% bucket
+                val currentBucket = progress?.let { (it / 5) * 5 } ?: -1
+                if (currentBucket != lastLoggedBucket && currentBucket >= 0) {
+                    lastLoggedBucket = currentBucket
+                    val elapsedSec = (System.currentTimeMillis() - startTimeMs) / 1000
+                    android.util.Log.i(
+                        "GhostStream/Compat",
+                        "progress id=${item.id} progress=$progress% bucket=$currentBucket% " +
+                            "outputBytes=$currentSize streamable=$streamable elapsed=${elapsedSec}s",
+                    )
+                }
+                if (streamable && !wasStreamable) {
+                    wasStreamable = true
+                    android.util.Log.i(
+                        "GhostStream/Compat",
+                        "streamable id=${item.id} outputBytes=$currentSize progress=$progress%",
+                    )
+                }
+
+                onUpdate(
+                    CompatibilityWorkerUpdate(
+                        status = CompatibilityStatus.PREPARING,
+                        message = when {
+                            streamable && item.playbackDecision.mode == PlaybackMode.REMUX ->
+                                "Finalizing the optimized browser stream."
+                            streamable ->
+                                "Finalizing the compatible browser stream."
+                            item.playbackDecision.mode == PlaybackMode.REMUX ->
+                                "Optimizing for browser playback..."
+                            item.playbackDecision.mode == PlaybackMode.TRANSMUX ->
+                                "Repackaging for browser playback..."
+                            else ->
+                                "Preparing for web playback..."
+                        },
+                        progressPercent = progress,
+                        preparedAsset = null, // Do NOT expose temp file as playback asset
+                        hlsReady = streamable,
+                        directReady = false,
+                        streamable = streamable,
+                    ),
+                )
+
+                transform.handler.postDelayed(this, PROGRESS_POLL_INTERVAL_MS)
+            }
+        }
+
+        transform.handler.post(progressRunnable)
+    }
+
+    private fun completedMessage(item: SharedItem, exportResult: ExportResult): String {
+        return when (exportResult.videoConversionProcess) {
+            ExportResult.CONVERSION_PROCESS_TRANSMUXED -> "Browser playback is ready."
+            ExportResult.CONVERSION_PROCESS_TRANSCODED -> "Compatible playback is ready."
+            ExportResult.CONVERSION_PROCESS_TRANSMUXED_AND_TRANSCODED -> "Compatible playback is ready."
+            else -> if (item.playbackDecision.mode == PlaybackMode.REMUX) {
+                "Optimized playback is ready."
+            } else {
+                "Browser playback is ready."
+            }
+        }
+    }
+
+    private data class ActiveTransform(
+        val itemId: String,
+        val outputFile: File,
+        val finalFile: File,
+        val handler: Handler,
+        val thread: HandlerThread,
+        val completion: CompletableDeferred<CompatibilityWorkerResult>,
+        @Volatile var transformer: Transformer? = null,
+    ) {
+        fun cancel() {
+            handler.post {
+                transformer?.cancel()
+            }
+            runCatching { outputFile.delete() }
+            completion.complete(
+                CompatibilityWorkerResult.Failure(
+                    message = "Compatibility preparation was stopped.",
+                ),
+            )
+            thread.quitSafely()
+        }
+    }
+
+    private companion object {
+        const val FRAGMENT_DURATION_MS = 2_000L
+        const val MAX_OUTPUT_HEIGHT = 1080
+        const val PROGRESS_POLL_INTERVAL_MS = 700L
+        const val STREAMABLE_BYTES_THRESHOLD = 256L * 1024L
+    }
+}
                                  return ValidationResult(false, "Incompatible 10-bit color format: $colo
