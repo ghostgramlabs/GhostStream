@@ -31,12 +31,14 @@ data class CompatibilityJob(
     val message: String = decision.reason,
     val progressPercent: Int? = null,
     val preparedAsset: CachedPlaybackAsset? = null,
-    val streamable: Boolean = status == CompatibilityStatus.READY,
+    val hlsReady: Boolean = false,
+    val directReady: Boolean = preparedAsset?.isComplete ?: false,
+    val streamable: Boolean = hlsReady || directReady,
     val startOffsetMs: Long = 0L,
     val updatedAtEpochMs: Long = System.currentTimeMillis(),
 ) {
     val canServePlayback: Boolean
-        get() = status == CompatibilityStatus.READY || (streamable && preparedAsset != null)
+        get() = status == CompatibilityStatus.READY || hlsReady || directReady
 }
 
 sealed interface PlaybackSource {

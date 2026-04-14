@@ -23,6 +23,7 @@ class AndroidMediaAnalyzer(
 ) : MediaAnalyzer {
 
     private val thumbCacheDir: File = File(context.cacheDir, "ghoststream_thumbs").apply { mkdirs() }
+    private val previewCacheDir: File = File(context.cacheDir, "ghoststream_previews").apply { mkdirs() }
 
     override fun inspect(uri: Uri, mimeType: String?, displayName: String): MediaInspection {
         val lower = displayName.lowercase()
@@ -95,12 +96,16 @@ class AndroidMediaAnalyzer(
             }
         }.getOrNull()
 
-        if (metadataDuration != null && metadataDuration > 0) {
-            return metadataDuration
-        }
-
         // Fallback: MediaExtractor is often more reliable for containers like MKV/WEBM on some Android versions.
-        return inspectTracks(uri).durationMs
+        val extractorDuration = inspectTracks(uri).durationMs
+
+        return when {
+            metadataDuration == null -> extractorDuration
+            extractorDuration == null -> metadataDuration
+            // If they both exist, pick the longer one. Large discrepancies usually mean
+            // metadata is truncated or one tool failed to index the whole file.
+            else -> maxOf(metadataDuration, extractorDuration)
+        }
     }
 
     override suspend fun loadThumbnailBytes(item: SharedItem, maxSizePx: Int): ByteArray? {
@@ -136,9 +141,38 @@ class AndroidMediaAnalyzer(
         }
     }
 
+    override suspend fun extractFrameAtMs(item: SharedItem, timeMs: Long, maxSizePx: Int): ByteArray? {
+        val cacheFile = File(previewCacheDir, "${item.id}_${timeMs}.jpg")
+        if (cacheFile.exists()) {
+            return withContext(Dispatchers.IO) { cacheFile.readBytes() }
+        }
+
+        return withContext(Dispatchers.IO) {
+            val retriever = MediaMetadataRetriever()
+            try {
+                retriever.setDataSource(context, Uri.parse(item.uri))
+                // OPTION_CLOSEST_SYNC is much faster than OPTION_CLOSEST because it only
+                // decodes the nearest I-frame (keyframe). This is ideal for scrubbing previews
+                // where responsiveness is more important than frame-perfect accuracy.
+                val bitmap = retriever.getFrameAtTime(timeMs * 1000L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+                
+                bitmap?.toJpegBytes()?.also { bytes ->
+                    runCatching { cacheFile.writeBytes(bytes) }
+                }
+            } catch (e: Exception) {
+                null
+            } finally {
+                retriever.release()
+            }
+        }
+    }
+
     override suspend fun clearTemporaryCache() {
         withContext(Dispatchers.IO) {
             thumbCacheDir.listFiles()?.forEach { file ->
+                runCatching { file.delete() }
+            }
+            previewCacheDir.listFiles()?.forEach { file ->
                 runCatching { file.delete() }
             }
         }
@@ -378,6 +412,15 @@ class AndroidMediaAnalyzer(
         mime == "audio/opus" -> "audio/opus"
 
         else -> mime
+    }
+
+    private fun Bitmap.toJpegBytes(quality: Int = 85): ByteArray? {
+        val out = ByteArrayOutputStream()
+        return if (compress(Bitmap.CompressFormat.JPEG, quality, out)) {
+            out.toByteArray()
+        } else {
+            null
+        }
     }
 
     private data class TrackInspection(

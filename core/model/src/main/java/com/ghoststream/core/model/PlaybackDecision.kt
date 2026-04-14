@@ -4,8 +4,13 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class PlaybackMode {
+    /** Serve the original file direct to the browser with zero intervention. */
     DIRECT,
+    /** Optimize the container/metadata of an MP4 (e.g. fast-start) without re-encoding. */
     REMUX,
+    /** Packaging into HLS segments without re-encoding video. (Container/MSE compatibility). */
+    TRANSMUX,
+    /** Full re-encode to H.264/AAC inside HLS segments. */
     TRANSCODE,
 }
 

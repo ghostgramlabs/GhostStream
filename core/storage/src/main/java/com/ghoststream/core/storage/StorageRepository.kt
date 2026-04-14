@@ -19,6 +19,7 @@ interface StorageRepository {
     suspend fun clearSelection()
     suspend fun loadSmartSelectionGroups(): List<SmartSelectionGroup>
     fun findItemById(itemId: String): SharedItem?
+    suspend fun verifyAvailability(item: SharedItem): Boolean
     suspend fun saveUploadedFile(
         fileName: String,
         mimeType: String,

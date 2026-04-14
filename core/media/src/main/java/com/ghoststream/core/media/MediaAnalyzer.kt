@@ -12,5 +12,6 @@ interface MediaAnalyzer {
     }
     fun readDurationMs(uri: Uri, mimeType: String?): Long?
     suspend fun loadThumbnailBytes(item: SharedItem, maxSizePx: Int = 640): ByteArray?
+    suspend fun extractFrameAtMs(item: SharedItem, timeMs: Long, maxSizePx: Int = 320): ByteArray?
     suspend fun clearTemporaryCache()
 }

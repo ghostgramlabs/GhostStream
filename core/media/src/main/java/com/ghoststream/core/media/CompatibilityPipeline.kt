@@ -68,6 +68,19 @@ class QueuedCompatibilityPipeline(
                 streamable = cachedAsset != null,
             )
 
+            PlaybackMode.TRANSMUX -> CompatibilityJob(
+                itemId = item.id,
+                decision = item.playbackDecision,
+                status = if (cachedAsset != null) CompatibilityStatus.READY else CompatibilityStatus.IDLE,
+                message = if (cachedAsset != null) {
+                    "Lightning-fast stream is ready."
+                } else {
+                    "Will prepare a lightning-fast stream when requested."
+                },
+                preparedAsset = cachedAsset,
+                streamable = cachedAsset != null,
+            )
+
             PlaybackMode.TRANSCODE -> CompatibilityJob(
                 itemId = item.id,
                 decision = item.playbackDecision,
@@ -300,6 +313,7 @@ class QueuedCompatibilityPipeline(
                 status = CompatibilityStatus.PREPARING,
                 message = when (item.playbackDecision.mode) {
                     PlaybackMode.REMUX -> "Optimizing container for browser playback..."
+                    PlaybackMode.TRANSMUX -> "Preparing lightning-fast stream..."
                     PlaybackMode.TRANSCODE -> "Optimizing for browser playback..."
                     PlaybackMode.DIRECT -> item.playbackDecision.reason
                 },
@@ -319,6 +333,7 @@ class QueuedCompatibilityPipeline(
             )
 
             PlaybackMode.REMUX,
+            PlaybackMode.TRANSMUX,
             PlaybackMode.TRANSCODE,
             -> when (
                 val result = worker.prepare(
@@ -333,6 +348,8 @@ class QueuedCompatibilityPipeline(
                                 message = update.message ?: current.message,
                                 progressPercent = update.progressPercent ?: current.progressPercent,
                                 preparedAsset = update.preparedAsset ?: current.preparedAsset,
+                                hlsReady = update.hlsReady ?: current.hlsReady,
+                                directReady = update.directReady ?: current.directReady,
                                 streamable = update.streamable ?: current.streamable,
                                 updatedAtEpochMs = System.currentTimeMillis(),
                             ),
@@ -350,6 +367,8 @@ class QueuedCompatibilityPipeline(
                         progressPercent = 100,
                         preparedAsset = result.preparedAsset,
                         message = result.message,
+                        hlsReady = true,
+                        directReady = true,
                         streamable = true,
                         updatedAtEpochMs = System.currentTimeMillis(),
                     )
@@ -379,4 +398,60 @@ class QueuedCompatibilityPipeline(
                         )
 
                         else -> preparing.copy(
-                            stat
+                            status = CompatibilityStatus.FAILED,
+                            progressPercent = null,
+                            message = result.message,
+                            streamable = false,
+                            updatedAtEpochMs = System.currentTimeMillis(),
+                        )
+                    }
+                }
+            }
+        }
+
+        upsert(completed)
+    }
+
+    private fun upsert(job: CompatibilityJob): CompatibilityJob {
+        _jobs.update { current ->
+            current + (job.itemId to job)
+        }
+        return job
+    }
+
+    private fun queuedMessage(mode: PlaybackMode, prioritize: Boolean): String {
+        return when {
+            prioritize && mode == PlaybackMode.REMUX -> "Opening this video next for browser playback."
+            prioritize && mode == PlaybackMode.TRANSCODE -> "Opening this video next for browser playback."
+            mode == PlaybackMode.REMUX -> "Queued for lightweight playback optimization."
+            mode == PlaybackMode.TRANSCODE -> "Queued for compatibility conversion."
+            else -> "Ready."
+        }
+    }
+
+    private fun enqueueLocked(request: PreparationRequest) {
+        pendingRequests.removeAll { it.item.id == request.item.id }
+        if (request.prioritizePlayback) {
+            pendingRequests.add(0, request)
+        } else {
+            pendingRequests.add(request)
+        }
+    }
+
+    private fun preemptActiveLocked(priorityItemId: String): String? {
+        val currentActive = activeRequest ?: return null
+        if (currentActive.item.id == priorityItemId || currentActive.prioritizePlayback) {
+            return null
+        }
+        reprioritizedItems += currentActive.item.id
+        pendingRequests.removeAll { it.item.id == currentActive.item.id }
+        pendingRequests.add(0, currentActive.copy(prioritizePlayback = false))
+        return currentActive.item.id
+    }
+
+    private data class PreparationRequest(
+        val item: SharedItem,
+        val prioritizePlayback: Boolean,
+        val startOffsetMs: Long = 0L,
+    )
+}

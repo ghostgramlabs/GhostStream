@@ -333,7 +333,14 @@ function isTvBrowser() {
  * the TFHD base-data-offset restriction that caused bufferAppendError via MSE/hls.js.
  */
 function shouldUseDirectCompatMp4(item) {
-  return Boolean(item.preparedMp4Url && item.playbackMode !== "DIRECT");
+  // Only use the direct MP4 source once the compatibility job is 100% finished.
+  // Using it earlier (while growing) causes browsers to lock in a short duration.
+  // This covers REMUX (Fast-start), TRANSMUX (Complete), and TRANSCODE (Complete).
+  return Boolean(
+    item.preparedMp4Url && 
+    item.playbackMode !== "DIRECT" && 
+    item.compatibilityComplete
+  );
 }
 
 /**
@@ -356,9 +363,14 @@ function shouldUseNativeHlsPlayback(item) {
 function canUseManagedHls(item) {
   // Direct MP4 is available — no need for hls.js.
   if (shouldUseDirectCompatMp4(item)) return false;
+  
+  // REMUX (Fast-start) does not support progressive HLS playback; it must
+  // wait until the file is complete. TRANSMUX and TRANSCODE use HLS.
+  const isHlsMode = item.playbackMode === "TRANSMUX" || item.playbackMode === "TRANSCODE";
+
   return Boolean(
     item.hlsUrl &&
-    item.playbackMode !== "DIRECT" &&
+    isHlsMode &&
     !isAppleDevice() &&
     !isTvBrowser() &&
     typeof window.Hls !== "undefined" &&
@@ -381,6 +393,9 @@ function shouldUseManagedHlsPlayback(item) {
  * Android Chrome, desktop browsers etc. all get Plyr + hls.js.
  */
 function shouldUseNativeVideoPlayer(item) {
+  // When playing a direct MP4 (either original or prepared), we use Plyr.
+  // Native video player is only used for Apple/TV HLS streams.
+  if (shouldUseDirectCompatMp4(item) || item.playbackMode === "DIRECT") return false;
   return shouldUseNativeHlsPlayback(item);
 }
 
@@ -395,6 +410,7 @@ function shouldUseHlsPlayback(item) {
  * For direct/progressive, probe the stream URL with a Range header.
  */
 function resolveVideoSourceUrl(item) {
+  if (item.playbackMode === "DIRECT") return item.streamUrl;
   if (shouldUseDirectCompatMp4(item)) return item.preparedMp4Url;
   if (shouldUseNativeHlsPlayback(item)) return item.hlsUrl;
   if (shouldUseManagedHlsPlayback(item)) return item.hlsUrl; // probe the playlist
@@ -867,13 +883,20 @@ function videoMarkup(item) {
   const preload = useNativePlayer ? "metadata" : "auto";
 
   // Priority Source Logic:
-  // 1. Direct Compat MP4 (Ready)
-  // 2. Native HLS (Apple/TV)
-  // 3. Managed HLS (Chrome/Android) - Source attached by hls.js
-  // 4. Original Stream URL (Direct play)
-  const sourceUrl = item.preparedMp4Url 
-    ? item.preparedMp4Url 
-    : (shouldUseNativeHlsPlayback(item) ? item.hlsUrl : (shouldUseManagedHlsPlayback(item) ? null : item.streamUrl));
+  // 1. Finalized Direct Compat MP4 (Complete)
+  // 2. Native HLS (Apple/TV StartupReady)
+  // 3. Managed HLS (Chrome/Android StartupReady) - Source attached by hls.js (null here)
+  // 4. Original Stream URL (ONLY for DIRECT playbackMode items)
+  let sourceUrl = null;
+  if (item.playbackMode === "DIRECT") {
+    sourceUrl = item.streamUrl;
+  } else if (shouldUseDirectCompatMp4(item)) {
+    sourceUrl = item.preparedMp4Url;
+  } else if (shouldUseNativeHlsPlayback(item)) {
+    sourceUrl = item.hlsUrl;
+  } else if (shouldUseManagedHlsPlayback(item)) {
+    sourceUrl = null; // hls.js will attach source
+  }
   
   const sourceAttribute = sourceUrl ? ` src="${sourceUrl}"` : "";
 
@@ -895,9 +918,12 @@ function videoMarkup(item) {
 }
 
 function canUseManagedHlsFallback(item, managedHlsAvailable) {
-  // Allow hls.js fallback for both REMUX and TRANSCODE if the initial native/progressive
-  // attempt fails. Both modes produce fMP4 with an HLS playlist.
-  return Boolean(managedHlsAvailable && (item.playbackMode === "REMUX" || item.playbackMode === "TRANSCODE"));
+  // Allow hls.js fallback for REMUX, TRANSMUX, and TRANSCODE if the initial 
+  // native/progressive attempt fails. All these modes produce fMP4 with an HLS playlist.
+  const isHlsCapable = item.playbackMode === "REMUX" || 
+                       item.playbackMode === "TRANSMUX" || 
+                       item.playbackMode === "TRANSCODE";
+  return Boolean(managedHlsAvailable && isHlsCapable);
 }
 
 function showCompatibilityWaitingStage(item) {
@@ -929,7 +955,14 @@ function hydrateVideoPlayer(item, options = {}) {
   let managedHlsFallbackUsed = false;
   debugTrace(
     "player_hydrate",
-    `id=${item.id} mode=${item.playbackMode} directMp4=${useDirectMp4} nativePlayer=${useNativePlayer} managedHls=${useManagedHls} nativeHls=${shouldUseNativeHlsPlayback(item)} managedHlsAvailable=${managedHlsAvailable}`,
+    `id=${item.id} mode=${item.playbackMode} directMp4=${useDirectMp4} ` +
+    `nativePlayer=${useNativePlayer} managedHls=${useManagedHls} ` +
+    `nativeHls=${shouldUseNativeHlsPlayback(item)} ` +
+    `managedHlsAvailable=${managedHlsAvailable} ` +
+    `hasPreparedUrl=${Boolean(item.preparedMp4Url)} ` +
+    `hasHlsUrl=${Boolean(item.hlsUrl)} ` +
+    `compComplete=${item.compatibilityComplete} ` +
+    `streamReady=${item.streamReady}`
   );
 
   if (!useNativePlayer && typeof window.Plyr === "function") {
@@ -937,6 +970,7 @@ function hydrateVideoPlayer(item, options = {}) {
       iconUrl: "/plyr.svg",
     });
     state.plyrItemId = item.id;
+    setupScrubbingPreviews(item, state.plyr);
   }
 
   const restartPlayback = () => {
@@ -1088,13 +1122,18 @@ function hydrateVideoPlayer(item, options = {}) {
         return;
       }
 
-      if (data.type === window.Hls.ErrorTypes.MEDIA_ERROR) {
-        mediaRecoveryAttempts += 1;
-        if (mediaRecoveryAttempts <= MAX_MEDIA_RECOVERIES) {
-          hls.recoverMediaError();
-        } else {
-          showHlsError("This video is still getting ready. Try again in a moment.");
+      if (data.type === window.Hls.ErrorTypes.NETWORK_ERROR) {
+        const status = data.response?.status;
+        if (status === 410) {
+          // 410 Gone: The server believes the item is missing. 
+          // Attempt a one-time recovery with a short delay to allow the server to re-verify.
+          console.log("[GhostStream HLS] 410 Gone detected, attempting recovery...");
+          setTimeout(() => {
+            hls.loadSource(hlsUrl);
+          }, 1000);
+          return;
         }
+        showHlsError("A network error occurred while loading the video.");
         return;
       }
       showHlsError("This video is still getting ready. Try again in a moment.");
@@ -1339,10 +1378,9 @@ function updateCompatElements(job, streamLive) {
 async function ensureCompatiblePlayerMounted(item) {
   const mountToken = ++state.compatMountToken;
   const alreadyReady = Boolean(
-    item.streamReady || // New: support instant start
-    item.compatibilityComplete ||
-    item.compatibilityStatus === "READY" ||
-    item.preparedMp4Url  // server only sets this when status=READY
+    item.playbackMode === "DIRECT" ||
+    (item.streamReady && (shouldUseNativeHlsPlayback(item) || shouldUseManagedHlsPlayback(item))) ||
+    shouldUseDirectCompatMp4(item)
   );
   if (item.playbackMode !== "DIRECT" && !alreadyReady) {
     const ready = await probeCompatiblePlaybackSource(item);
@@ -1576,12 +1614,12 @@ async function pollCompat(id, item) {
   let lastTraceKey = "";
   const applyCompatState = async (job) => {
     const canStartPlayback = shouldStartCompatibilityPlayback(item, job);
-    const traceKey = `${job.status}|${job.progressPercent ?? ""}|${canStartPlayback}|${job.complete}`;
+    const traceKey = `${job.status}|${job.progressPercent ?? ""}|${canStartPlayback}|${job.compatibilityComplete}`;
     if (traceKey !== lastTraceKey) {
       lastTraceKey = traceKey;
       debugTrace(
         "compat_status",
-        `id=${id} status=${job.status} progress=${job.progressPercent ?? ""} ready=${canStartPlayback} complete=${job.complete}`,
+        `id=${id} status=${job.status} progress=${job.progressPercent ?? ""} ready=${canStartPlayback} complete=${job.compatibilityComplete}`,
       );
     }
     const nextItem = {
@@ -1590,11 +1628,8 @@ async function pollCompat(id, item) {
       compatibilityStatus: job.status,
       compatibilityMessage: job.message,
       compatibilityProgressPercent: job.progressPercent,
-      compatibilityComplete: job.complete,
-      // Expose the direct-playback URL as soon as the job is complete so the player
-      // switches from HLS to plain <video src> without needing a page reload.
-      // The server endpoint /compat-mp4/{id} is only accessible when status=READY.
-      preparedMp4Url: job.fileUrl,
+      compatibilityComplete: job.compatibilityComplete,
+      preparedMp4Url: job.preparedMp4Url,
       hlsUrl: job.hlsUrl || item.hlsUrl,
     };
 
@@ -2102,4 +2137,92 @@ function mountUploadDashboard() {
     state.pendingUploadFiles = [];
     addFilesToUppy(queuedFiles);
   }
+}
+
+/**
+ * Formats seconds into a human-readable string (H:MM:SS or M:SS).
+ */
+function formatTime(seconds) {
+  if (isNaN(seconds) || seconds === Infinity) return "0:00";
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) {
+    return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  }
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+/**
+ * Sets up the scrubbing preview tooltip for the video player.
+ */
+function setupScrubbingPreviews(item, plyr) {
+  if (!plyr || !plyr.elements || !plyr.elements.progress) return;
+  const progress = plyr.elements.progress;
+  const container = plyr.elements.container;
+
+  let preview = container.querySelector(".gs-scrub-preview");
+  if (!preview) {
+    preview = document.createElement("div");
+    preview.className = "gs-scrub-preview";
+    preview.innerHTML = `
+      <img src="" alt="">
+      <div class="gs-scrub-preview-time">0:00</div>
+    `;
+    container.appendChild(preview);
+  }
+
+  const img = preview.querySelector("img");
+  const timeLabel = preview.querySelector(".gs-scrub-preview-time");
+  let lastFetchTime = 0;
+  let currentTargetTimeMs = -1;
+
+  const updatePreview = (e) => {
+    const rect = progress.getBoundingClientRect();
+    const percent = Math.max(0, Math.min(1, (e.pageX - rect.left) / rect.width));
+    const duration = plyr.duration || 0;
+    if (duration <= 0) return;
+
+    const timeSec = percent * duration;
+    const timeMs = Math.floor(timeSec * 1000);
+
+    // Position the tooltip
+    preview.style.left = `${percent * 100}%`;
+    timeLabel.textContent = formatTime(timeSec);
+    preview.classList.add("is-visible");
+
+    // Throttled fetch (at most every 400ms) to avoid overloading the server/hardware
+    const now = Date.now();
+    if (now - lastFetchTime > 400 && timeMs !== currentTargetTimeMs) {
+      lastFetchTime = now;
+      currentTargetTimeMs = timeMs;
+      // We use a temporary image to avoid flickering while loading
+      const nextImg = new Image();
+      nextImg.onload = () => {
+        if (currentTargetTimeMs === timeMs) {
+          img.src = nextImg.src;
+          img.style.opacity = "1";
+        }
+      };
+      nextImg.onerror = () => {
+        // If the frame extraction fails, the server should have returned the poster
+        // but if even that fails, we keep the previous frame or hide.
+        if (currentTargetTimeMs === timeMs) {
+           console.log("[GhostStream] Thumbnail fetch failed for timeMs=" + timeMs);
+        }
+      };
+      nextImg.src = `/thumb/${item.id}?timeMs=${timeMs}`;
+    }
+  };
+
+  const hidePreview = () => {
+    preview.classList.remove("is-visible");
+    currentTargetTimeMs = -1;
+  };
+
+  progress.addEventListener("mousemove", updatePreview);
+  progress.addEventListener("mouseenter", updatePreview);
+  progress.addEventListener("mouseleave", hidePreview);
+  progress.addEventListener("touchstart", updatePreview, { passive: true });
+  progress.addEventListener("touchend", hidePreview, { passive: true });
 }

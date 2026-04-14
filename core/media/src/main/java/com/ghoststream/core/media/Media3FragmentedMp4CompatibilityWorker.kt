@@ -42,6 +42,40 @@ class Media3FragmentedMp4CompatibilityWorker(
         cache: PlaybackCache,
         startOffsetMs: Long,
         onUpdate: (CompatibilityWorkerUpdate) -> Unit,
+    ): CompatibilityWorkerResult {
+        val result = runJob(item, cache, startOffsetMs, onUpdate)
+
+        // If REMUX fails, we automatically retry with TRANSCODE. AVI files often report
+        // H.264 video but have timing issues that cause Media3's Transmuxer to fail
+        // during REMUX; dropping back to full TRANSCODE usually resolves this.
+        return if (result is CompatibilityWorkerResult.Failure &&
+            item.playbackDecision.mode == PlaybackMode.REMUX
+        ) {
+            onUpdate(
+                CompatibilityWorkerUpdate(
+                    message = "Lightning optimization failed; retrying with full compatibility conversion...",
+                    status = CompatibilityStatus.PREPARING,
+                    progressPercent = 0,
+                ),
+            )
+            // Force a transcode decision for the retry attempt.
+            val fallbackItem = item.copy(
+                playbackDecision = item.playbackDecision.copy(
+                    mode = PlaybackMode.TRANSCODE,
+                    reason = "Falling back to transcode after remux failure",
+                ),
+            )
+            runJob(fallbackItem, cache, startOffsetMs, onUpdate)
+        } else {
+            result
+        }
+    }
+
+    private suspend fun runJob(
+        item: SharedItem,
+        cache: PlaybackCache,
+        startOffsetMs: Long,
+        onUpdate: (CompatibilityWorkerUpdate) -> Unit,
     ): CompatibilityWorkerResult = withContext(Dispatchers.IO) {
         if (item.playbackDecision.mode == PlaybackMode.DIRECT) {
             return@withContext CompatibilityWorkerResult.Failure(item.playbackDecision.reason)
@@ -80,23 +114,36 @@ class Media3FragmentedMp4CompatibilityWorker(
                 val listener = object : Transformer.Listener {
                     override fun onCompleted(composition: Composition, exportResult: ExportResult) {
                         val message = completedMessage(item, exportResult)
+                        android.util.Log.i("GhostStream/Compat", "Compat finalize begin id=${item.id} temp=${tmpOutputFile.absolutePath}")
                         // Atomic rename: .tmp → .mp4 ensures PlaybackCache.lookup never returns
-                        // a partial file. If the rename fails (e.g. no space left), record the
-                        // tmp file itself so streaming still works.
-                        val completedFile = if (tmpOutputFile.renameTo(finalOutputFile)) finalOutputFile else tmpOutputFile
+                        // a partial file.
+                        val completedFile = if (tmpOutputFile.renameTo(finalOutputFile)) {
+                            android.util.Log.i("GhostStream/Compat", "Compat finalize complete id=${item.id} final=${finalOutputFile.absolutePath}")
+                            finalOutputFile
+                        } else {
+                            android.util.Log.w("GhostStream/Compat", "Compat finalize RENAME FAILED id=${item.id}")
+                            tmpOutputFile
+                        }
+                        
+                        val isHlsMode = item.playbackDecision.mode == PlaybackMode.TRANSMUX ||
+                                        item.playbackDecision.mode == PlaybackMode.TRANSCODE
                         val asset = cache.record(
                             itemId = item.id,
                             file = completedFile,
                             mimeType = "video/mp4",
                             isComplete = true,
-                            isFragmentedMp4 = true,
+                            isFragmentedMp4 = isHlsMode,
                         )
+                        
+                        android.util.Log.i("GhostStream/Compat", "Compat direct ready id=${item.id}")
                         onUpdate(
                             CompatibilityWorkerUpdate(
                                 status = CompatibilityStatus.READY,
                                 message = message,
                                 progressPercent = 100,
                                 preparedAsset = asset,
+                                hlsReady = true,
+                                directReady = true,
                                 streamable = true,
                             ),
                         )
@@ -113,6 +160,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                         exportResult: ExportResult,
                         exportException: ExportException,
                     ) {
+                        android.util.Log.e("GhostStream/Compat", "Export failed for id=${item.id} mode=${item.playbackDecision.mode} offset=$startOffsetMs", exportException)
                         runCatching { tmpOutputFile.delete() }
                         completion.complete(
                             CompatibilityWorkerResult.Failure(
@@ -143,7 +191,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                     .setLooper(thread.looper)
                     .setMuxerFactory(
                         InAppMuxer.Factory.Builder()
-                            .setOutputFragmentedMp4(true)
+                            .setOutputFragmentedMp4(item.playbackDecision.mode == PlaybackMode.TRANSMUX || item.playbackDecision.mode == PlaybackMode.TRANSCODE)
                             .setFragmentDurationMs(FRAGMENT_DURATION_MS)
                             .build(),
                     )
@@ -165,7 +213,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                 }
 
                 // Audio configuration: MUST be browser-compatible (AAC/MP3) for MSE.
-                // We do this for both TRANSCODE and REMUX modes.
+                // We do this for all conversion modes.
                 // Transmuxing (isNativeAudio) is near-instant; re-encoding (AAC) adds slight CPU overhead.
                 if (!isNativeAudio) {
                     builder.setAudioMimeType(MimeTypes.AUDIO_AAC)
@@ -234,6 +282,7 @@ class Media3FragmentedMp4CompatibilityWorker(
             thread.quitSafely()
         }
     }
+
 
     /**
      * Returns the MIME type of the first audio track found in [item]'s source URI, or null
@@ -313,7 +362,9 @@ class Media3FragmentedMp4CompatibilityWorker(
                                 "Creating a fragmented compatibility stream..."
                         },
                         progressPercent = progress,
-                        preparedAsset = asset,
+                        preparedAsset = null, // Do NOT expose the temp file as a playback asset
+                        hlsReady = streamable,
+                        directReady = false,
                         streamable = streamable,
                     ),
                 )

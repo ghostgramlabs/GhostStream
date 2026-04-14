@@ -218,6 +218,12 @@ class AndroidStorageRepository(
         return _libraryState.value.items.firstOrNull { it.id == itemId }
     }
 
+    override suspend fun verifyAvailability(item: SharedItem): Boolean {
+        return withContext(Dispatchers.IO) {
+            isUriAvailable(item.uri.toUri())
+        }
+    }
+
     override suspend fun saveUploadedFile(
         fileName: String,
         mimeType: String,
@@ -502,13 +508,16 @@ class AndroidStorageRepository(
     }
 
     private fun isUriAvailable(uri: Uri): Boolean {
-        return try {
+        return runCatching {
+            // Use openFileDescriptor specifically to check for actual file accessibility
+            // across processes. This is more reliable than just checking permissions.
             context.contentResolver.openFileDescriptor(uri, "r")?.use { true } ?: false
-        } catch (_: FileNotFoundException) {
+        }.recover { error ->
+            // If we get a SecurityException, the permission might be temporarily suspended
+            // (e.g. if the user is in a state where SAF permissions aren't currently active).
+            // However, for verifyAvailability we want to be strict but also avoid permanent failure.
             false
-        } catch (_: SecurityException) {
-            false
-        }
+        }.getOrDefault(false)
     }
 
     private fun takeTreePermission(treeUri: Uri) {

@@ -581,5 +581,47 @@ class MainViewModel(
                     existing?.status == com.ghoststream.core.media.CompatibilityStatus.QUEUED ||
                     existing?.status == com.ghoststream.core.media.CompatibilityStatus.PREPARING
                 if (!alreadyHandled) {
-                    container.compatibilityPipeline.requestPreparation(item, prioritize = false)
-                 
+                    queuedCount++
+                }
+            }
+        return queuedCount
+    }
+
+    companion object {
+        fun factory(container: AppContainer): ViewModelProvider.Factory {
+            return object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    val application = container.application
+                    return MainViewModel(application, container) as T
+                }
+            }
+        }
+    }
+}
+
+private fun NearbyDiscoveryState.filterCurrentSession(sessionState: SessionState, application: Application): NearbyDiscoveryState {
+    val sessionHost = sessionState.sessionUrl?.let(Uri::parse)?.host?.lowercase()
+    val sessionAddress = sessionState.networkAvailability.localAddress?.lowercase()
+    val sessionHostname = sessionState.hostname?.lowercase()
+    val sessionPort = sessionState.serverPort
+    val sessionId = sessionState.sessionId
+
+    val filteredDevices = devices.filterNot { device ->
+        val sameSessionId = sessionId != null && device.sessionId == sessionId
+        val sameAddress = sessionAddress != null && device.address.lowercase() == sessionAddress
+        val sameHost = listOfNotNull(device.hostname?.lowercase(), device.friendlyUrl?.let(Uri::parse)?.host?.lowercase())
+            .any { it == sessionHost || it == sessionHostname }
+        val samePort = sessionPort != null && device.port == sessionPort
+        sameSessionId || (samePort && (sameAddress || sameHost))
+    }
+
+    return copy(
+        devices = filteredDevices,
+        helperText = when {
+            lastError != null -> helperText
+            filteredDevices.isNotEmpty() -> application.getString(R.string.nearby_helper_tap_session)
+            else -> application.getString(R.string.nearby_helper_open_on_other_device)
+        },
+    )
+}
