@@ -147,4 +147,13 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
                     reason = reason,
                 )
             }
-
+
+            // ── Fallback: Non-video files ────────────────────────────────────
+            else -> PlaybackDecision(
+                mode = PlaybackMode.DIRECT,
+                browserMimeType = inspection.normalizedMimeType ?: "application/octet-stream",
+                reason = "Non-video file; serving directly",
+            )
+        }
+    }
+}

@@ -1,4 +1,4 @@
-package com.ghoststream.core.network.server
+﻿package com.ghoststream.core.network.server
 
 import android.content.Context
 import android.content.res.Configuration
@@ -388,7 +388,7 @@ class KtorGhostStreamServer(
                         return@get
                     }
 
-                    // Only inspect — do not auto-trigger preparation here.
+                    // Only inspect â€” do not auto-trigger preparation here.
                     // The browser explicitly requests preparation via POST /api/compat/{id}/prepare,
                     // which prevents duplicate transcode jobs when the library state updates.
                     val job = compatibilitySnapshotFor(
@@ -456,7 +456,7 @@ class KtorGhostStreamServer(
                 // escalate the file to REMUX so it gets a prepared compatible asset.
                 val forceCompat = call.request.queryParameters["force"] == "true"
                 val effectiveItem = if (forceCompat && item.playbackDecision.mode == PlaybackMode.DIRECT) {
-                    debugLogSink.log("WebCompat", "direct_play_escalation id=${item.id} name=${item.displayName} — browser reported DIRECT failure, escalating to REMUX")
+                    debugLogSink.log("WebCompat", "direct_play_escalation id=${item.id} name=${item.displayName} â€” browser reported DIRECT failure, escalating to REMUX")
                     item.copy(
                         playbackDecision = item.playbackDecision.copy(
                             mode = PlaybackMode.REMUX,
@@ -639,7 +639,7 @@ class KtorGhostStreamServer(
                 // During heavy prepare, skip frame-at-time extraction (expensive) and only
                 // serve cached/cheap poster thumbnails. This frees CPU for the active transcode.
                 val bytesOrNull = if (hasHeavyPrepareJob && timeMs != null) {
-                    // Skip scrubbing frame extraction during heavy prepare — just serve poster
+                    // Skip scrubbing frame extraction during heavy prepare â€” just serve poster
                     mediaAnalyzer.loadThumbnailBytes(item)
                 } else if (timeMs != null) {
                     mediaAnalyzer.extractFrameAtMs(item, timeMs) ?: mediaAnalyzer.loadThumbnailBytes(item)
@@ -659,7 +659,7 @@ class KtorGhostStreamServer(
                 if (!hasHeavyPrepareJob) {
                     debugLogSink.log("WebThumb", "served id=${item.id} bytes=${bytesOrNull.size} timeMs=$timeMs")
                 }
-                // Don't call observeClient for thumbnail requests — this was causing
+                // Don't call observeClient for thumbnail requests â€” this was causing
                 // SessionState updates on every thumb fetch, which cascaded into
                 // notification updates. Thumbnail fetches are passive reads, not activity.
                 call.respondBytes(bytesOrNull, ContentType.Image.JPEG)
@@ -708,7 +708,7 @@ class KtorGhostStreamServer(
                 )
             }
 
-            // Master playlist — advertises the stream with an explicit CODECS hint.
+            // Master playlist â€” advertises the stream with an explicit CODECS hint.
             // The codec string is read dynamically from the fMP4 moov box so it exactly
             // matches what the Android encoder produced.  A hardcoded Baseline string
             // caused bufferAppendError when the hardware encoder used Main/High Profile
@@ -718,7 +718,7 @@ class KtorGhostStreamServer(
                 try {
                     val source = call.resolveHlsSource(call.parameters["id"]) ?: return@get
                     val ua = call.request.header(HttpHeaders.UserAgent) ?: ""
-                    // Read the video codec string from the fMP4 init segment (fast, non-blocking —
+                    // Read the video codec string from the fMP4 init segment (fast, non-blocking â€”
                     // the moov box is only a few KB).  Returns null if the file is not yet written
                     // or the codec cannot be determined; buildHlsMasterPlaylist falls back gracefully.
                     val hlsIndex = withContext(Dispatchers.IO) {
@@ -733,14 +733,14 @@ class KtorGhostStreamServer(
                         }
                     }
                     val detectedVideoCodec = hlsIndex?.videoCodecString
-                    // ── DEBUG ────────────────────────────────────────────────────────────────
+                    // â”€â”€ DEBUG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                     debugLogSink.log(
                         "WebHls/master",
                         "id=${source.item.id} " +
                                 "mode=${source.item.playbackDecision.mode} " +
                                 "file=${source.file.name} " +
                                 "fileBytes=${source.file.length()} " +
-                                "detectedCodec=${detectedVideoCodec ?: "NULL→fallback:avc1.640028"} " +
+                                "detectedCodec=${detectedVideoCodec ?: "NULLâ†’fallback:avc1.640028"} " +
                                 "initBytes=${hlsIndex?.initSegmentLength ?: "n/a"} " +
                                 "segments=${hlsIndex?.segments?.size ?: "n/a"}",
                     )
@@ -751,7 +751,7 @@ class KtorGhostStreamServer(
                         height = hlsIndex?.height,
                     )
                     debugLogSink.log("WebHls/master", "serving:\n$masterPlaylist")
-                    // ────────────────────────────────────────────────────────────────────────
+                    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                     // Both Apple-style and IANA content types are accepted by all HLS players.
                     val hlsContentType = if (ua.contains("Safari", ignoreCase = true) && !ua.contains("Chrome", ignoreCase = true)) {
                         "application/vnd.apple.mpegurl"
@@ -1473,7 +1473,7 @@ class KtorGhostStreamServer(
         // For in-progress fragmented MP4 video we bypass the 4 MB byte-count threshold
         // (which previously caused 16+ seconds of waiting before playback started) and
         // instead check the HLS index directly.  As soon as MIN_SEGMENTS_BEFORE_PLAY
-        // complete moof+mdat fragments exist in the growing file the player can start —
+        // complete moof+mdat fragments exist in the growing file the player can start â€”
         // hls.js will continue fetching new segments as transcoding writes them,
         // and the EVENT playlist keeps growing until #EXT-X-ENDLIST is appended on
         // completion.
@@ -1490,7 +1490,7 @@ class KtorGhostStreamServer(
         // complete segments (e.g. the fMP4 hasn't written its first fragment yet or the
         // indexer returned an unexpected structure), fall back to the old byte-count gate.
         // awaitHlsIndex in the playlist endpoint will keep polling until real segments
-        // appear, so this only moves the "green light" to the client earlier — it doesn't
+        // appear, so this only moves the "green light" to the client earlier â€” it doesn't
         // bypass the actual segment requirement for serving the playlist.
         return job.canServePlayback
     }
@@ -1598,7 +1598,7 @@ class KtorGhostStreamServer(
         )
     }
 
-    // Suspend version — replaces Thread.sleep with coroutine-friendly delay so we
+    // Suspend version â€” replaces Thread.sleep with coroutine-friendly delay so we
     // never block a Ktor dispatcher thread while waiting for the next segment to
     // be written to the growing fMP4 output file.
     //
@@ -1645,7 +1645,7 @@ class KtorGhostStreamServer(
             val finalized = job?.preparedAsset?.isComplete == true || job?.status == CompatibilityStatus.READY
             val failed = job?.status == CompatibilityStatus.FAILED || job?.status == CompatibilityStatus.STALLED
             if (finalized || failed) {
-                // The job is done. The segments must exist — do a few extra retries to
+                // The job is done. The segments must exist â€” do a few extra retries to
                 // handle OS file-flush latency or transient read errors before giving up.
                 // Returning null here would cause the endpoint to send 202, which hls.js
                 // treats as a fatal network error.
@@ -1671,12 +1671,12 @@ class KtorGhostStreamServer(
     }
 
     /**
-     * HLS Master Playlist — contains an explicit CODECS string so that hls.js and native
+     * HLS Master Playlist â€” contains an explicit CODECS string so that hls.js and native
      * HLS players configure MSE / hardware decoders with the correct codec, avoiding the
      * bufferAppendError that occurs when the codec is guessed from the raw segment bytes.
      *
      * The video codec string is read directly from the fMP4 init segment's moov box so it
-     * exactly matches what the Android encoder produced — Android hardware encoders typically
+     * exactly matches what the Android encoder produced â€” Android hardware encoders typically
      * output Main or High Profile H.264, not Baseline, and may produce HEVC via fallback.
      * A hardcoded "avc1.42E028" would mismatch and cause bufferAppendError in hls.js.
      */
@@ -1795,7 +1795,7 @@ class KtorGhostStreamServer(
 
     // Called inside Ktor's respondOutputStream lambda which already runs on a blocking
     // IO thread, so Thread.sleep is safe here (it does not block a coroutine scheduler
-    // thread — it blocks the dedicated IO thread that Ktor allocated for the response).
+    // thread â€” it blocks the dedicated IO thread that Ktor allocated for the response).
     private fun waitForGrowingFileOffset(
         itemId: String,
         file: File,
@@ -1823,7 +1823,7 @@ class KtorGhostStreamServer(
 
     /**
      * Seek an [InputStream] to the given byte offset.
-     * [InputStream.skip] is unreliable on Android content-provider streams — it
+     * [InputStream.skip] is unreliable on Android content-provider streams â€” it
      * may skip fewer bytes than requested. This method calls skip in a loop
      * and falls back to [InputStream.read] if skip stalls, guaranteeing all
      * bytes are consumed.
@@ -2062,4 +2062,87 @@ class KtorGhostStreamServer(
                     hlsUrl = if (item.category == MediaCategory.VIDEO && !isComplete &&
                         item.playbackDecision.mode == PlaybackMode.TRANSCODE) {
                         "/hls/${item.id}/master.m3u8"
-                    } els
+                    } else {
+                        null
+                    },
+                    downloadUrl = if (allowDownloads) "/download/${item.id}" else null,
+                    subtitleUrl = item.subtitleMatch?.let { "/subtitle/${item.id}" },
+                    durationMs = item.durationMs,
+                    sizeBytes = item.sizeBytes,
+                    compatibility = item.playbackDecision.compatibilityLabel,
+                    reason = item.playbackDecision.reason,
+                    playbackMode = item.playbackDecision.mode,
+                    compatibilityStatus = compatibilityJob.status.takeIf { item.playbackDecision.mode != PlaybackMode.DIRECT },
+                    compatibilityMessage = compatibilityJob.message.takeIf { item.playbackDecision.mode != PlaybackMode.DIRECT },
+                    compatibilityProgressPercent = compatibilityJob.progressPercent,
+                    compatibilityComplete = isComplete,
+                    streamReady = streamReady,
+                    preparedMp4Url = if (
+                        isComplete &&
+                        streamReady &&
+                        hasProgressedAsset &&
+                        item.playbackDecision.mode != PlaybackMode.DIRECT
+                    ) {
+                        "/api/compat/${item.id}/file"
+                    } else {
+                        null
+                    },
+                )
+            }
+        }
+    }
+
+    @Serializable
+    private data class CompatibilityStatusPayload(
+        val itemId: String,
+        val status: CompatibilityStatus,
+        val message: String,
+        val progressPercent: Int? = null,
+        val ready: Boolean,
+        val compatibilityComplete: Boolean,
+        val preparedMp4Url: String? = null,
+        val hlsUrl: String? = null,
+    ) {
+        companion object {
+            fun from(job: CompatibilityJob, ready: Boolean): CompatibilityStatusPayload {
+                val isComplete = job.status == CompatibilityStatus.READY || job.directReady
+                return CompatibilityStatusPayload(
+                    itemId = job.itemId,
+                    status = job.status,
+                    message = job.message,
+                    progressPercent = job.progressPercent,
+                    ready = ready,
+                    compatibilityComplete = isComplete,
+                    preparedMp4Url = if (job.directReady && job.decision.mode != PlaybackMode.DIRECT && job.preparedAsset != null) "/api/compat/${job.itemId}/file" else null,
+                    hlsUrl = if (job.hlsReady && !isComplete &&
+                        (job.decision.mode == PlaybackMode.TRANSMUX || job.decision.mode == PlaybackMode.TRANSCODE)) "/hls/${job.itemId}/master.m3u8" else null,
+                )
+            }
+        }
+    }
+
+    private data class HlsPlaybackSource(
+        val item: SharedItem,
+        val job: CompatibilityJob,
+        val file: File,
+    )
+
+    private data class RequestedGrowingRange(
+        val start: Long,
+        val endInclusive: Long?,
+    )
+
+    companion object {
+        const val COOKIE_NAME = "ghost_session"
+        const val GROWING_FILE_POLL_INTERVAL_MS = 300L
+        const val MAX_GROWING_FILE_IDLE_POLLS = 300
+        const val HLS_INDEX_POLL_INTERVAL_MS = 250L
+        const val MAX_HLS_INDEX_IDLE_POLLS = 80
+        const val HLS_SEGMENT_DURATION_SECONDS = 2.0
+        const val HLS_TARGET_DURATION_SECONDS = 3
+        const val STREAMING_BUFFER_SIZE = 64 * 1024
+        const val MIN_SEGMENTS_BEFORE_PLAY = 10
+        const val HLS_FINALIZED_RETRY_COUNT = 5
+        const val HLS_FINALIZED_RETRY_INTERVAL_MS = 400L
+    }
+}

@@ -1,4 +1,4 @@
-package com.ghoststream.core.media
+﻿package com.ghoststream.core.media
 
 import com.ghoststream.core.model.PlaybackMode
 import com.ghoststream.core.model.SharedItem
@@ -85,7 +85,7 @@ class QueuedCompatibilityPipeline(
             if (assetFile.exists() && assetFile.length() > 0) {
                 return existing // Reuse: file is valid on disk
             }
-            // File is missing/empty — fall through to disk cache lookup below
+            // File is missing/empty â€” fall through to disk cache lookup below
         }
 
         // ALWAYS check the disk cache for a valid prepared asset.
@@ -605,3 +605,79 @@ class QueuedCompatibilityPipeline(
                         (reprioritizedItems.remove(item.id) to canceledItems.remove(item.id))
                     }
                     when {
+                        canceled -> preparing.copy(
+                            status = CompatibilityStatus.IDLE,
+                            progressPercent = null,
+                            preparedAsset = null,
+                            message = preparing.decision.reason,
+                            streamable = false,
+                            updatedAtEpochMs = System.currentTimeMillis(),
+                        )
+
+                        reprioritized -> preparing.copy(
+                            status = CompatibilityStatus.QUEUED,
+                            progressPercent = 0,
+                            preparedAsset = null,
+                            message = queuedMessage(item.playbackDecision.mode, prioritize = false),
+                            streamable = false,
+                            updatedAtEpochMs = System.currentTimeMillis(),
+                        )
+
+                        else -> preparing.copy(
+                            status = CompatibilityStatus.FAILED,
+                            progressPercent = null,
+                            message = result.message,
+                            streamable = false,
+                            updatedAtEpochMs = System.currentTimeMillis(),
+                        )
+                    }
+                }
+            }
+        }
+
+        upsert(completed)
+    }
+
+    private fun upsert(job: CompatibilityJob): CompatibilityJob {
+        _jobs.update { current ->
+            current + (job.itemId to job)
+        }
+        return job
+    }
+
+    private fun queuedMessage(mode: PlaybackMode, prioritize: Boolean): String {
+        return when {
+            prioritize && mode == PlaybackMode.REMUX -> "Opening this video next for browser playback."
+            prioritize && mode == PlaybackMode.TRANSCODE -> "Opening this video next for browser playback."
+            mode == PlaybackMode.REMUX -> "Queued for lightweight playback optimization."
+            mode == PlaybackMode.TRANSCODE -> "Queued for compatibility conversion."
+            else -> "Ready."
+        }
+    }
+
+    private fun enqueueLocked(request: PreparationRequest) {
+        pendingRequests.removeAll { it.item.id == request.item.id }
+        if (request.prioritizePlayback) {
+            pendingRequests.add(0, request)
+        } else {
+            pendingRequests.add(request)
+        }
+    }
+
+    private fun preemptActiveLocked(priorityItemId: String): String? {
+        val currentActive = activeRequest ?: return null
+        if (currentActive.item.id == priorityItemId || currentActive.prioritizePlayback) {
+            return null
+        }
+        reprioritizedItems += currentActive.item.id
+        pendingRequests.removeAll { it.item.id == currentActive.item.id }
+        pendingRequests.add(0, currentActive.copy(prioritizePlayback = false))
+        return currentActive.item.id
+    }
+
+    private data class PreparationRequest(
+        val item: SharedItem,
+        val prioritizePlayback: Boolean,
+        val startOffsetMs: Long = 0L,
+    )
+}

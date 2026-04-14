@@ -662,5 +662,4 @@ class Media3FragmentedMp4CompatibilityWorker(
         const val PROGRESS_POLL_INTERVAL_MS = 700L
         const val STREAMABLE_BYTES_THRESHOLD = 256L * 1024L
     }
-}
-                                 return ValidationResult(false, "Incompatible 10-bit color format: $colo
+}
