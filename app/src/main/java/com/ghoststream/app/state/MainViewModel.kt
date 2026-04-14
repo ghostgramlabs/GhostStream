@@ -126,7 +126,9 @@ class MainViewModel(
                 if (_browserPrepManuallyTriggered.value) {
                     val hasActiveJobs = jobs.values.any { job ->
                         job.status == com.ghoststream.core.media.CompatibilityStatus.QUEUED ||
-                            job.status == com.ghoststream.core.media.CompatibilityStatus.PREPARING
+                            job.status == com.ghoststream.core.media.CompatibilityStatus.PREPARING ||
+                            job.status == com.ghoststream.core.media.CompatibilityStatus.ANALYZING ||
+                            job.status == com.ghoststream.core.media.CompatibilityStatus.FINALIZING
                     }
                     if (!hasActiveJobs) {
                         _browserPrepManuallyTriggered.value = false
@@ -579,7 +581,9 @@ class MainViewModel(
                 val existing = container.compatibilityPipeline.currentJob(item.id)
                 val alreadyHandled = existing?.status == com.ghoststream.core.media.CompatibilityStatus.READY ||
                     existing?.status == com.ghoststream.core.media.CompatibilityStatus.QUEUED ||
-                    existing?.status == com.ghoststream.core.media.CompatibilityStatus.PREPARING
+                    existing?.status == com.ghoststream.core.media.CompatibilityStatus.PREPARING ||
+                    existing?.status == com.ghoststream.core.media.CompatibilityStatus.ANALYZING ||
+                    existing?.status == com.ghoststream.core.media.CompatibilityStatus.FINALIZING
                 if (!alreadyHandled) {
                     queuedCount++
                 }

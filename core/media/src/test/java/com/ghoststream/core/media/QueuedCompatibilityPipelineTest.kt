@@ -120,7 +120,11 @@ class QueuedCompatibilityPipelineTest {
         advanceUntilIdle()
 
         val inFlightJob = pipeline.currentJob(item.id) ?: error("Expected compatibility job")
-        assertEquals(CompatibilityStatus.PREPARING, inFlightJob.status)
+        // When streamable becomes true, the pipeline promotes to FINALIZING
+        assertTrue(
+            "Expected PREPARING or FINALIZING but was ${inFlightJob.status}",
+            inFlightJob.status == CompatibilityStatus.PREPARING || inFlightJob.status == CompatibilityStatus.FINALIZING,
+        )
         assertTrue(inFlightJob.streamable)
 
         val resolution = pipeline.resolvePlayback(item)

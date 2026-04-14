@@ -918,7 +918,6 @@ private fun ConnectedClientSummary(
             text = listOfNotNull(
                 identity.ipAddress,
                 client.displayName?.takeIf { it.isNotBlank() },
-                client.activity.name.replace('_', ' '),
             )
                 .distinct()
                 .joinToString(" | "),

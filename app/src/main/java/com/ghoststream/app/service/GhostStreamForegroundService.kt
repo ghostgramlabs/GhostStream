@@ -42,6 +42,16 @@ class GhostStreamForegroundService : Service() {
     private var lastConnectedClientIds: Set<String>? = null
     private val debugLogRepository by lazy { container.debugLogRepository }
 
+    // ── Notification debounce state ──────────────────────────────────────────
+    private var lastNotificationIsSharing: Boolean? = null
+    private var lastNotificationUrl: String? = null
+    private var lastNotificationClientCount: Int? = null
+    private var lastNotificationUpdateMs: Long = 0L
+    private companion object {
+        /** Minimum interval between notification updates (ms) */
+        const val NOTIFICATION_MIN_INTERVAL_MS = 2_000L
+    }
+
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
@@ -52,6 +62,9 @@ class GhostStreamForegroundService : Service() {
                     if (!state.isSharing && !startupInProgress) {
                         debugLogRepository.log("ForegroundService", "session inactive; stopping service")
                         lastConnectedClientIds = null
+                        lastNotificationIsSharing = null
+                        lastNotificationUrl = null
+                        lastNotificationClientCount = null
                         cancelActiveNotifications()
                         stopForeground(STOP_FOREGROUND_REMOVE)
                         stopSelf()
@@ -63,16 +76,33 @@ class GhostStreamForegroundService : Service() {
                     } else {
                         state.connectedClients.filterNot { it.id in previousClientIds }
                     }
-                    NotificationManagerCompat.from(this@GhostStreamForegroundService)
-                        .notify(NOTIFICATION_ID, buildNotification(state))
+
+                    // ── DEBOUNCE: Only update foreground notification on meaningful changes ──
+                    val now = System.currentTimeMillis()
+                    val clientCount = state.connectedClients.size
+                    val isMeaningfulChange = lastNotificationIsSharing != state.isSharing ||
+                        lastNotificationUrl != state.sessionUrl ||
+                        lastNotificationClientCount != clientCount ||
+                        newClients.isNotEmpty() ||
+                        (now - lastNotificationUpdateMs > NOTIFICATION_MIN_INTERVAL_MS)
+
+                    if (isMeaningfulChange) {
+                        NotificationManagerCompat.from(this@GhostStreamForegroundService)
+                            .notify(NOTIFICATION_ID, buildNotification(state))
+                        lastNotificationIsSharing = state.isSharing
+                        lastNotificationUrl = state.sessionUrl
+                        lastNotificationClientCount = clientCount
+                        lastNotificationUpdateMs = now
+                        debugLogRepository.log(
+                            "ForegroundService",
+                            "notification updated isSharing=${state.isSharing} url=${state.sessionUrl} clients=$clientCount",
+                        )
+                    }
+
                     if (state.isSharing && newClients.isNotEmpty()) {
                         showDeviceConnectionNotification(newClients, state.connectedClients.size)
                     }
                     lastConnectedClientIds = state.connectedClients.mapTo(linkedSetOf()) { it.id }
-                    debugLogRepository.log(
-                        "ForegroundService",
-                        "notification updated isSharing=${state.isSharing} url=${state.sessionUrl} port=${state.serverPort}",
-                    )
                 }
             }
         }

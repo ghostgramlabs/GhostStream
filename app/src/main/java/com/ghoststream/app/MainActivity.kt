@@ -473,13 +473,19 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                 }
                 val activeBrowserPrep = browserPrepCandidates.firstNotNullOfOrNull { item ->
                     uiState.compatibilityJobs[item.id]
-                        ?.takeIf { it.status == com.ghoststream.core.media.CompatibilityStatus.PREPARING }
+                        ?.takeIf {
+                            it.status == com.ghoststream.core.media.CompatibilityStatus.PREPARING ||
+                                it.status == com.ghoststream.core.media.CompatibilityStatus.ANALYZING ||
+                                it.status == com.ghoststream.core.media.CompatibilityStatus.FINALIZING
+                        }
                         ?.let { item to it }
                 }
                 val browserPrepQueuedCount = browserPrepCandidates.count { item ->
                     val status = uiState.compatibilityJobs[item.id]?.status
                     status == com.ghoststream.core.media.CompatibilityStatus.QUEUED ||
-                        status == com.ghoststream.core.media.CompatibilityStatus.PREPARING
+                        status == com.ghoststream.core.media.CompatibilityStatus.PREPARING ||
+                        status == com.ghoststream.core.media.CompatibilityStatus.ANALYZING ||
+                        status == com.ghoststream.core.media.CompatibilityStatus.FINALIZING
                 }
                 val browserPrepReadyCount = browserPrepCandidates.count { item ->
                     val job = uiState.compatibilityJobs[item.id]

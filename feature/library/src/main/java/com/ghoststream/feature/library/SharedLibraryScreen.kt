@@ -789,7 +789,9 @@ private fun LibraryItemRow(
                     if (item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT) {
                         when (compatibilityJob?.status) {
                             CompatibilityStatus.QUEUED,
+                            CompatibilityStatus.ANALYZING,
                             CompatibilityStatus.PREPARING,
+                            CompatibilityStatus.FINALIZING,
                             -> OutlinedButton(
                                 onClick = {},
                                 enabled = false,
@@ -911,9 +913,12 @@ private fun compatibilityStatusLabel(job: CompatibilityJob): String {
     val prefix = when (job.status) {
         CompatibilityStatus.IDLE -> stringResource(R.string.library_compat_not_prepared)
         CompatibilityStatus.QUEUED -> stringResource(R.string.library_compat_queued)
+        CompatibilityStatus.ANALYZING -> stringResource(R.string.library_compat_preparing)
         CompatibilityStatus.PREPARING -> stringResource(R.string.library_compat_preparing)
+        CompatibilityStatus.FINALIZING -> stringResource(R.string.library_compat_preparing)
         CompatibilityStatus.READY -> stringResource(R.string.library_compat_ready)
         CompatibilityStatus.FAILED -> stringResource(R.string.library_compat_unavailable)
+        CompatibilityStatus.STALLED -> stringResource(R.string.library_compat_unavailable)
     }
     return stringResource(R.string.library_compat_message, prefix, job.message)
 }

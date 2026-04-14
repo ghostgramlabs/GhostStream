@@ -38,7 +38,19 @@ class QueuedCompatibilityPipeline(
     private var queueProcessorRunning = false
     private var activeRequest: PreparationRequest? = null
 
+    // Throttling: track last emitted coarse progress per item to avoid excessive updates
+    private val lastEmittedBucket = mutableMapOf<String, Int>()
+
     override val jobs: StateFlow<Map<String, CompatibilityJob>> = _jobs.asStateFlow()
+
+    companion object {
+        /** Only emit UI-visible updates when progress moves by at least this many percent */
+        private const val PROGRESS_BUCKET_SIZE = 5
+        /** Max time (ms) with no progress movement before marking STALLED */
+        private const val STALL_TIMEOUT_MS = 120_000L // 2 minutes
+        /** Max stall checks before giving up */
+        private const val MAX_STALL_RETRIES = 1
+    }
 
     override suspend fun inspect(item: SharedItem): CompatibilityJob {
         val existing = currentJob(item.id)
@@ -98,7 +110,11 @@ class QueuedCompatibilityPipeline(
     }
     override suspend fun requestPreparation(item: SharedItem, prioritize: Boolean): CompatibilityJob {
         val current = inspect(item)
-        if (current.status == CompatibilityStatus.READY || current.status == CompatibilityStatus.PREPARING) {
+        if (current.status == CompatibilityStatus.READY ||
+            current.status == CompatibilityStatus.PREPARING ||
+            current.status == CompatibilityStatus.ANALYZING ||
+            current.status == CompatibilityStatus.FINALIZING
+        ) {
             return current
         }
         if (item.playbackDecision.mode == PlaybackMode.DIRECT) {
@@ -212,7 +228,7 @@ class QueuedCompatibilityPipeline(
                 job = job,
             )
 
-            job.status == CompatibilityStatus.FAILED -> PlaybackResolution.Failed(job)
+            job.status == CompatibilityStatus.FAILED || job.status == CompatibilityStatus.STALLED -> PlaybackResolution.Failed(job)
             else -> PlaybackResolution.Pending(job)
         }
     }
@@ -230,7 +246,9 @@ class QueuedCompatibilityPipeline(
         activeItemId?.let(worker::cancel)
         _jobs.update { current ->
             current.mapValues { (_, job) ->
-                if (job.status == CompatibilityStatus.QUEUED || job.status == CompatibilityStatus.PREPARING) {
+                if (job.status == CompatibilityStatus.QUEUED || job.status == CompatibilityStatus.PREPARING ||
+                    job.status == CompatibilityStatus.ANALYZING || job.status == CompatibilityStatus.FINALIZING
+                ) {
                     job.copy(
                         status = CompatibilityStatus.IDLE,
                         message = job.decision.reason,
@@ -292,7 +310,11 @@ class QueuedCompatibilityPipeline(
 
             try {
                 val current = currentJob(nextRequest.item.id)
-                if (current?.status == CompatibilityStatus.READY || current?.status == CompatibilityStatus.PREPARING) {
+                if (current?.status == CompatibilityStatus.READY ||
+                    current?.status == CompatibilityStatus.PREPARING ||
+                    current?.status == CompatibilityStatus.ANALYZING ||
+                    current?.status == CompatibilityStatus.FINALIZING
+                ) {
                     continue
                 }
                 process(nextRequest)
@@ -306,20 +328,89 @@ class QueuedCompatibilityPipeline(
         }
     }
 
+    /**
+     * Returns true if the progress update represents a meaningful change worth emitting.
+     * Filters out tiny 1% increments that create UI/notification churn.
+     */
+    private fun isMeaningfulUpdate(itemId: String, update: CompatibilityWorkerUpdate, current: CompatibilityJob): Boolean {
+        // State changes are always meaningful
+        if (update.status != null && update.status != current.status) return true
+        // Streamable becoming true is meaningful
+        if (update.streamable == true && !current.streamable) return true
+        // Asset becoming available is meaningful
+        if (update.preparedAsset != null && current.preparedAsset == null) return true
+        // HLS/direct ready transitions
+        if (update.hlsReady == true && !current.hlsReady) return true
+        if (update.directReady == true && !current.directReady) return true
+
+        // Progress: only meaningful if it crosses a 5% bucket boundary
+        if (update.progressPercent != null) {
+            val newBucket = (update.progressPercent!! / PROGRESS_BUCKET_SIZE) * PROGRESS_BUCKET_SIZE
+            val lastBucket = lastEmittedBucket[itemId] ?: -1
+            if (newBucket > lastBucket) {
+                lastEmittedBucket[itemId] = newBucket
+                return true
+            }
+        }
+
+        return false
+    }
+
+    /**
+     * Check if a job appears stuck and handle stall detection.
+     */
+    private fun checkForStall(current: CompatibilityJob): CompatibilityJob {
+        if (current.status != CompatibilityStatus.PREPARING) return current
+        val now = System.currentTimeMillis()
+        val timeSinceProgress = now - current.lastProgressAt
+        if (timeSinceProgress < STALL_TIMEOUT_MS) return current
+
+        return if (current.stallCheckCount >= MAX_STALL_RETRIES) {
+            current.copy(
+                status = CompatibilityStatus.STALLED,
+                message = "Preparation appears stuck. The file may be too complex for this device.",
+                updatedAtEpochMs = now,
+            )
+        } else {
+            current.copy(
+                stallCheckCount = current.stallCheckCount + 1,
+                updatedAtEpochMs = now,
+            )
+        }
+    }
+
     private suspend fun process(request: PreparationRequest) {
         val item = request.item
-        val preparing = upsert(
+        val now = System.currentTimeMillis()
+
+        // Start with ANALYZING phase
+        val analyzing = upsert(
             (currentJob(item.id) ?: inspect(item)).copy(
+                status = CompatibilityStatus.ANALYZING,
+                message = "Analyzing media file...",
+                progressPercent = 5,
+                streamable = false,
+                startOffsetMs = request.startOffsetMs,
+                updatedAtEpochMs = now,
+                lastProgressAt = now,
+                lastProgressValue = 0,
+                lastOutputBytesAt = now,
+                stallCheckCount = 0,
+            ),
+        )
+        lastEmittedBucket[item.id] = 0
+
+        // Transition to PREPARING
+        val preparing = upsert(
+            analyzing.copy(
                 status = CompatibilityStatus.PREPARING,
                 message = when (item.playbackDecision.mode) {
                     PlaybackMode.REMUX -> "Optimizing container for browser playback..."
                     PlaybackMode.TRANSMUX -> "Preparing lightning-fast stream..."
-                    PlaybackMode.TRANSCODE -> "Optimizing for browser playback..."
+                    PlaybackMode.TRANSCODE -> "Preparing for web playback..."
                     PlaybackMode.DIRECT -> item.playbackDecision.reason
                 },
-                progressPercent = 12,
-                streamable = false,
-                startOffsetMs = request.startOffsetMs,
+                progressPercent = 10,
                 updatedAtEpochMs = System.currentTimeMillis(),
             ),
         )
@@ -340,22 +431,53 @@ class QueuedCompatibilityPipeline(
                     item = item,
                     cache = cache,
                     startOffsetMs = request.startOffsetMs,
-                    onUpdate = { update ->
+                    onUpdate = onUpdate@{ update ->
                         val current = currentJob(item.id) ?: preparing
+
+                        // Check for stall condition
+                        val stallChecked = checkForStall(current)
+                        if (stallChecked.status == CompatibilityStatus.STALLED) {
+                            upsert(stallChecked)
+                            return@onUpdate
+                        }
+
+                        // Only emit meaningful updates (throttled)
+                        if (!isMeaningfulUpdate(item.id, update, current)) return@onUpdate
+
+                        val newProgress = if (update.progressPercent != null && current.progressPercent != null) {
+                            maxOf(current.progressPercent!!, update.progressPercent!!)
+                        } else {
+                            update.progressPercent ?: current.progressPercent
+                        }
+
+                        val progressNow = System.currentTimeMillis()
+                        val progressMoved = newProgress != null && newProgress > current.lastProgressValue
+
+                        // Detect FINALIZING state when streamable becomes true
+                        val effectiveStatus = when {
+                            update.status == CompatibilityStatus.READY -> CompatibilityStatus.READY
+                            update.streamable == true && !current.streamable -> CompatibilityStatus.FINALIZING
+                            update.status != null -> update.status
+                            else -> current.status
+                        }
+
                         upsert(
                             current.copy(
-                                status = update.status ?: current.status,
-                                message = update.message ?: current.message,
-                                progressPercent = if (update.progressPercent != null && current.progressPercent != null) {
-                                    maxOf(current.progressPercent!!, update.progressPercent!!)
+                                status = effectiveStatus,
+                                message = if (effectiveStatus == CompatibilityStatus.FINALIZING) {
+                                    "Finalizing browser stream..."
                                 } else {
-                                    update.progressPercent ?: current.progressPercent
+                                    update.message ?: current.message
                                 },
+                                progressPercent = newProgress,
                                 preparedAsset = update.preparedAsset ?: current.preparedAsset,
                                 hlsReady = update.hlsReady ?: current.hlsReady,
                                 directReady = update.directReady ?: current.directReady,
                                 streamable = update.streamable ?: current.streamable,
-                                updatedAtEpochMs = System.currentTimeMillis(),
+                                updatedAtEpochMs = progressNow,
+                                lastProgressAt = if (progressMoved) progressNow else current.lastProgressAt,
+                                lastProgressValue = newProgress ?: current.lastProgressValue,
+                                lastOutputBytesAt = if (update.streamable == true || update.preparedAsset != null) progressNow else current.lastOutputBytesAt,
                             ),
                         )
                     },

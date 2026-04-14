@@ -81,9 +81,39 @@ class Media3FragmentedMp4CompatibilityWorker(
             return@withContext CompatibilityWorkerResult.Failure(item.playbackDecision.reason)
         }
 
+        val jobStartMs = System.currentTimeMillis()
+        android.util.Log.i(
+            "GhostStream/Compat",
+            "prepare_enqueue id=${item.id} mode=${item.playbackDecision.mode} " +
+                "reason=\"${item.playbackDecision.reason}\" " +
+                "size=${item.sizeBytes} offset=$startOffsetMs",
+        )
+
         val tmpOutputFile = cache.newOutputFile(item, "tmp")
         val finalOutputFile = cache.newOutputFile(item, "mp4")
         runCatching { tmpOutputFile.parentFile?.mkdirs() }
+
+        // If a finalized prepared asset already exists and matches source, skip re-prepare.
+        val existingAsset = cache.lookup(item)
+        if (existingAsset != null) {
+            android.util.Log.i("GhostStream/Compat", "cache_hit id=${item.id} path=${existingAsset.filePath}")
+            onUpdate(
+                CompatibilityWorkerUpdate(
+                    status = CompatibilityStatus.READY,
+                    message = "Cached browser playback is ready.",
+                    progressPercent = 100,
+                    preparedAsset = existingAsset,
+                    hlsReady = true,
+                    directReady = true,
+                    streamable = true,
+                ),
+            )
+            return@withContext CompatibilityWorkerResult.Success(
+                preparedAsset = existingAsset,
+                message = "Cached browser playback is ready.",
+            )
+        }
+
         // Delete any leftover .tmp from a previous interrupted transcode (safe to remove since
         // TempPlaybackCache.lookup ignores .tmp files — a partial .tmp is never treated as READY).
         if (tmpOutputFile.exists()) runCatching { tmpOutputFile.delete() }
@@ -114,14 +144,16 @@ class Media3FragmentedMp4CompatibilityWorker(
                 val listener = object : Transformer.Listener {
                     override fun onCompleted(composition: Composition, exportResult: ExportResult) {
                         val message = completedMessage(item, exportResult)
-                        android.util.Log.i("GhostStream/Compat", "Compat finalize begin id=${item.id} temp=${tmpOutputFile.absolutePath}")
+                        val elapsedSec = (System.currentTimeMillis() - jobStartMs) / 1000
+                        android.util.Log.i("GhostStream/Compat", "finalize_begin id=${item.id} elapsed=${elapsedSec}s outputBytes=${tmpOutputFile.length()}")
                         // Atomic rename: .tmp → .mp4 ensures PlaybackCache.lookup never returns
                         // a partial file.
                         val completedFile = if (tmpOutputFile.renameTo(finalOutputFile)) {
-                            android.util.Log.i("GhostStream/Compat", "Compat finalize complete id=${item.id} final=${finalOutputFile.absolutePath}")
+                            val totalElapsed = (System.currentTimeMillis() - jobStartMs) / 1000
+                            android.util.Log.i("GhostStream/Compat", "finalize_complete id=${item.id} path=${finalOutputFile.name} size=${finalOutputFile.length()} totalElapsed=${totalElapsed}s")
                             finalOutputFile
                         } else {
-                            android.util.Log.w("GhostStream/Compat", "Compat finalize RENAME FAILED id=${item.id}")
+                            android.util.Log.w("GhostStream/Compat", "finalize_rename_failed id=${item.id}")
                             tmpOutputFile
                         }
                         
@@ -135,7 +167,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                             isFragmentedMp4 = isHlsMode,
                         )
                         
-                        android.util.Log.i("GhostStream/Compat", "Compat direct ready id=${item.id}")
+                        android.util.Log.i("GhostStream/Compat", "READY id=${item.id} mode=${item.playbackDecision.mode}")
                         onUpdate(
                             CompatibilityWorkerUpdate(
                                 status = CompatibilityStatus.READY,
@@ -160,7 +192,8 @@ class Media3FragmentedMp4CompatibilityWorker(
                         exportResult: ExportResult,
                         exportException: ExportException,
                     ) {
-                        android.util.Log.e("GhostStream/Compat", "Export failed for id=${item.id} mode=${item.playbackDecision.mode} offset=$startOffsetMs", exportException)
+                        val failedElapsed = (System.currentTimeMillis() - jobStartMs) / 1000
+                        android.util.Log.e("GhostStream/Compat", "FAILED id=${item.id} mode=${item.playbackDecision.mode} offset=$startOffsetMs elapsed=${failedElapsed}s", exportException)
                         runCatching { tmpOutputFile.delete() }
                         completion.complete(
                             CompatibilityWorkerResult.Failure(
@@ -320,6 +353,10 @@ class Media3FragmentedMp4CompatibilityWorker(
         cancelled: AtomicBoolean,
         onUpdate: (CompatibilityWorkerUpdate) -> Unit,
     ) {
+        var lastLoggedBucket = -1
+        var wasStreamable = false
+        val startTimeMs = System.currentTimeMillis()
+
         val progressRunnable = object : Runnable {
             override fun run() {
                 if (cancelled.get() || transform.completion.isCompleted) return
@@ -333,16 +370,24 @@ class Media3FragmentedMp4CompatibilityWorker(
 
                 val currentSize = transform.outputFile.length()
                 val streamable = currentSize >= STREAMABLE_BYTES_THRESHOLD
-                val asset = if (currentSize > 0L) {
-                    cache.record(
-                        itemId = item.id,
-                        file = transform.outputFile,
-                        mimeType = "video/mp4",
-                        isComplete = false,
-                        isFragmentedMp4 = true,
+
+                // Log every 5% bucket and on streamable transition
+                val currentBucket = progress?.let { (it / 5) * 5 } ?: -1
+                if (currentBucket != lastLoggedBucket && currentBucket >= 0) {
+                    lastLoggedBucket = currentBucket
+                    val elapsedSec = (System.currentTimeMillis() - startTimeMs) / 1000
+                    android.util.Log.i(
+                        "GhostStream/Compat",
+                        "progress id=${item.id} progress=$progress% bucket=$currentBucket% " +
+                            "outputBytes=$currentSize streamable=$streamable elapsed=${elapsedSec}s",
                     )
-                } else {
-                    null
+                }
+                if (streamable && !wasStreamable) {
+                    wasStreamable = true
+                    android.util.Log.i(
+                        "GhostStream/Compat",
+                        "streamable id=${item.id} outputBytes=$currentSize progress=$progress%",
+                    )
                 }
 
                 onUpdate(
@@ -359,7 +404,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                                 "Preparing fragmented playback for fast browser start..."
 
                             else ->
-                                "Creating a fragmented compatibility stream..."
+                                "Preparing for web playback..."
                         },
                         progressPercent = progress,
                         preparedAsset = null, // Do NOT expose the temp file as a playback asset

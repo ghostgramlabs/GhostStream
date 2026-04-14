@@ -468,8 +468,17 @@ function compatibilityHeadline(item, streamLive = item.streamReady) {
   if (item.compatibilityStatus === "FAILED") {
     return gsStr("web_player_error_open", "This video could not be opened");
   }
+  if (item.compatibilityStatus === "STALLED") {
+    return gsStr("web_player_stalled", "Preparation appears stuck");
+  }
+  if (item.compatibilityStatus === "ANALYZING") {
+    return gsStr("web_player_analyzing", "Analyzing video...");
+  }
+  if (item.compatibilityStatus === "FINALIZING") {
+    return gsStr("web_player_finalizing", "Finalizing browser stream...");
+  }
   if (!streamLive) {
-    return gsStr("web_player_opening", "Opening video...");
+    return gsStr("web_player_opening", "Preparing for web playback...");
   }
   if (item.compatibilityComplete || item.compatibilityStatus === "READY") {
     return gsStr("web_player_ready", "Video is ready");
@@ -481,8 +490,17 @@ function compatibilityBody(item, streamLive = item.streamReady) {
   if (item.compatibilityStatus === "FAILED") {
     return gsStr("web_error_streaming_codec", "This file's codec is not supported by the Android server for streaming. Please download.");
   }
+  if (item.compatibilityStatus === "STALLED") {
+    return gsStr("web_player_stalled_desc", "The file may be too complex for this device. Try downloading instead.");
+  }
+  if (item.compatibilityStatus === "ANALYZING") {
+    return gsStr("web_player_analyzing_desc", "Checking video format and codecs...");
+  }
+  if (item.compatibilityStatus === "FINALIZING") {
+    return gsStr("web_player_finalizing_desc", "Almost ready. Completing the browser-compatible stream.");
+  }
   if (!streamLive) {
-    return gsStr("web_player_wait_desc", "This browser needs a moment to open the video. Keep this page open.");
+    return gsStr("web_player_wait_desc", "Preparing a browser-compatible version. Keep this page open.");
   }
   if (item.compatibilityComplete || item.compatibilityStatus === "READY") {
     return gsStr("web_player_ready_desc", "Playback is ready on this device.");
@@ -494,8 +512,17 @@ function compatibilityBadgeLabel(item, streamLive = item.streamReady) {
   if (item.compatibilityStatus === "FAILED") {
     return gsStr("web_player_try_again", "Try again");
   }
+  if (item.compatibilityStatus === "STALLED") {
+    return gsStr("web_player_status_stalled", "Stuck");
+  }
+  if (item.compatibilityStatus === "ANALYZING") {
+    return gsStr("web_player_status_analyzing", "Analyzing");
+  }
+  if (item.compatibilityStatus === "FINALIZING") {
+    return gsStr("web_player_status_finalizing", "Finalizing");
+  }
   if (!streamLive) {
-    return gsStr("web_player_status_opening", "Opening");
+    return gsStr("web_player_status_opening", "Preparing");
   }
   if (item.compatibilityComplete || item.compatibilityStatus === "READY") {
     return gsStr("web_player_status_ready", "Ready");
@@ -1612,15 +1639,42 @@ async function pollCompat(id, item) {
   const route = `/player/video/${id}`;
   const token = ++state.compatPollToken;
   let lastTraceKey = "";
+  let lastTracedBucket = -1;
+
+  /**
+   * Adaptive polling interval based on current state.
+   * - First 3 polls: 500ms (fast startup)
+   * - Normal preparing: 1000ms
+   * - Long-running (>20 polls or progress <50%): 1500ms
+   * - Very long (>60 polls): 2000ms
+   * - READY/FAILED/STALLED: stop polling
+   */
+  function getAdaptiveInterval(attempts, job) {
+    if (attempts < 3) return 500;
+    if (attempts > 60) return 2000;
+    if (attempts > 20 || (job.progressPercent != null && job.progressPercent < 50 && attempts > 10)) return 1500;
+    return 1000;
+  }
+
   const applyCompatState = async (job) => {
     const canStartPlayback = shouldStartCompatibilityPlayback(item, job);
-    const traceKey = `${job.status}|${job.progressPercent ?? ""}|${canStartPlayback}|${job.compatibilityComplete}`;
+
+    // Only trace compat_status on meaningful changes: state change, 5% bucket, or ready/failed
+    const progressBucket = job.progressPercent != null ? Math.floor(job.progressPercent / 5) * 5 : null;
+    const traceKey = `${job.status}|${progressBucket ?? ""}|${canStartPlayback}|${job.compatibilityComplete}`;
     if (traceKey !== lastTraceKey) {
-      lastTraceKey = traceKey;
-      debugTrace(
-        "compat_status",
-        `id=${id} status=${job.status} progress=${job.progressPercent ?? ""} ready=${canStartPlayback} complete=${job.compatibilityComplete}`,
-      );
+      // Only log if status changed, bucket changed, or terminal state
+      const bucketChanged = progressBucket !== null && progressBucket !== lastTracedBucket;
+      const statusChanged = lastTraceKey === "" || traceKey.split("|")[0] !== lastTraceKey.split("|")[0];
+      const isTerminal = job.status === "READY" || job.status === "FAILED" || job.status === "STALLED";
+      if (statusChanged || bucketChanged || isTerminal || canStartPlayback) {
+        lastTraceKey = traceKey;
+        lastTracedBucket = progressBucket ?? lastTracedBucket;
+        debugTrace(
+          "compat_status",
+          `id=${id} status=${job.status} progress=${job.progressPercent ?? ""} ready=${canStartPlayback} complete=${job.compatibilityComplete}`,
+        );
+      }
     }
     const nextItem = {
       ...item,
@@ -1635,7 +1689,7 @@ async function pollCompat(id, item) {
 
     state.compatItem = nextItem;
     updateCompatElements(job, canStartPlayback);
-    
+
     // Auto-switch: if the remux task just finished (complete=true) AND we are currently in HLS mode,
     // force a switch to Direct MP4 immediately to resolve any MSE-level HLS glitches.
     if (job.complete && nextItem.preparedMp4Url && (state.hls || state.plyr?.source?.includes("m3u8"))) {
@@ -1654,7 +1708,7 @@ async function pollCompat(id, item) {
       updateCompatElements(job, false);
       return false;
     }
-    if (job.status === "FAILED") {
+    if (job.status === "FAILED" || job.status === "STALLED") {
       updateCompatElements(job, false);
       cancelCompatPolling();
       return true;
@@ -1676,18 +1730,20 @@ async function pollCompat(id, item) {
     attempts += 1;
     if (attempts > 600) return;
 
+    let job;
     try {
-      const job = await api(`/api/compat/${id}`);
+      job = await api(`/api/compat/${id}`);
       if (token !== state.compatPollToken || location.pathname !== route) return;
       if (await applyCompatState(job)) {
         return;
       }
     } catch (_) {}
 
-    state.compatPollTimer = setTimeout(tick, 350);
+    const interval = getAdaptiveInterval(attempts, job || {});
+    state.compatPollTimer = setTimeout(tick, interval);
   }
 
-  state.compatPollTimer = setTimeout(tick, 180);
+  state.compatPollTimer = setTimeout(tick, 500);
 }
 
 function forceDirectPlayback(item) {

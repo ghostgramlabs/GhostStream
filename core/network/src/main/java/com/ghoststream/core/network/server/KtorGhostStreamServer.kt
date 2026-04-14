@@ -84,6 +84,8 @@ class KtorGhostStreamServer(
 
     private var engine: ApplicationEngine? = null
     private val running = AtomicBoolean(false)
+    /** Throttled compat poll logging: tracks last logged state key per item to avoid log spam */
+    private val lastCompatLogKey = java.util.concurrent.ConcurrentHashMap<String, String>()
 
     override suspend fun start(port: Int): ServerBinding {
         debugLogSink.log("LocalServer", "start requested port=$port running=${running.get()}")
@@ -420,10 +422,17 @@ class KtorGhostStreamServer(
                 }
                 val job = compatibilitySnapshotFor(item, triggerPreparation = false)
                 val ready = compatibilityStreamReady(item)
-                debugLogSink.log(
-                    "WebCompat",
-                    "poll id=${item.id} mode=${item.playbackDecision.mode} status=${job.status} ready=$ready complete=${job.directReady} progress=${job.progressPercent} asset=${job.preparedAsset?.filePath}",
-                )
+                // Throttled logging: only log on state change or 5% progress bucket change
+                val currentBucket = job.coarseProgressBucket
+                val lastKey = lastCompatLogKey[item.id]
+                val newKey = "${job.status}|$currentBucket|$ready"
+                if (lastKey != newKey) {
+                    lastCompatLogKey[item.id] = newKey
+                    debugLogSink.log(
+                        "WebCompat",
+                        "poll id=${item.id} mode=${item.playbackDecision.mode} status=${job.status} ready=$ready complete=${job.directReady} progress=${job.progressPercent} asset=${job.preparedAsset?.filePath?.substringAfterLast('/')}",
+                    )
+                }
                 call.respond(
                     CompatibilityStatusPayload.from(
                         job = job,
@@ -568,6 +577,16 @@ class KtorGhostStreamServer(
                     call.respond(HttpStatusCode.NotFound, ErrorPayload("Preview unavailable"))
                     return@get
                 }
+
+                // Deprioritize non-essential thumbnail work during heavy prepare jobs.
+                // If a TRANSCODE or TRANSMUX job is actively PREPARING/ANALYZING, defer
+                // video frame extraction (which is CPU-heavy) to avoid competing for resources.
+                val hasHeavyPrepareJob = compatibilityPipeline.jobs.value.values.any { job ->
+                    (job.status == CompatibilityStatus.PREPARING || job.status == CompatibilityStatus.ANALYZING) &&
+                        (job.decision.mode == com.ghoststream.core.model.PlaybackMode.TRANSCODE ||
+                         job.decision.mode == com.ghoststream.core.model.PlaybackMode.TRANSMUX)
+                }
+
                 val item = resolveItem(call.parameters["id"]) ?: run {
                     debugLogSink.log("WebThumb", "missing id=${call.parameters["id"]}")
                     call.respond(HttpStatusCode.NotFound, ErrorPayload("Preview unavailable"))
@@ -575,19 +594,31 @@ class KtorGhostStreamServer(
                 }
 
                 val timeMs = call.request.queryParameters["timeMs"]?.toLongOrNull()
-                val bytes = if (timeMs != null) {
-                    // Optimized scrubbing: try to extract specific frame, fall back to poster thumbnail if it fails
+
+                // During heavy prepare, skip frame-at-time extraction (expensive) and only
+                // serve cached/cheap poster thumbnails. This frees CPU for the active transcode.
+                val bytes = if (hasHeavyPrepareJob && timeMs != null) {
+                    // Skip scrubbing frame extraction during heavy prepare — just serve poster
+                    mediaAnalyzer.loadThumbnailBytes(item)
+                } else if (timeMs != null) {
                     mediaAnalyzer.extractFrameAtMs(item, timeMs) ?: mediaAnalyzer.loadThumbnailBytes(item)
                 } else {
                     mediaAnalyzer.loadThumbnailBytes(item)
                 } ?: run {
-                    debugLogSink.log("WebThumb", "empty id=${item.id} name=${item.displayName} timeMs=$timeMs")
+                    // Don't log thumbnail misses during heavy prepare (reduces noise)
+                    if (!hasHeavyPrepareJob) {
+                        debugLogSink.log("WebThumb", "empty id=${item.id} name=${item.displayName} timeMs=$timeMs")
+                    }
                     call.respond(HttpStatusCode.NotFound, ErrorPayload("Preview unavailable"))
                     return@get
                 }
 
-                debugLogSink.log("WebThumb", "served id=${item.id} bytes=${bytes.size} timeMs=$timeMs")
-                sessionManager.observeClient(call.remoteHost(), call.request.header(HttpHeaders.UserAgent), ClientActivity.BROWSING)
+                if (!hasHeavyPrepareJob) {
+                    debugLogSink.log("WebThumb", "served id=${item.id} bytes=${bytes.size} timeMs=$timeMs")
+                }
+                // Don't call observeClient for thumbnail requests — this was causing
+                // SessionState updates on every thumb fetch, which cascaded into
+                // notification updates. Thumbnail fetches are passive reads, not activity.
                 call.respondBytes(bytes, ContentType.Image.JPEG)
             }
 
@@ -1351,8 +1382,8 @@ class KtorGhostStreamServer(
         // Fully complete: always ready regardless of how we got here.
         if (job.status == CompatibilityStatus.READY || job.preparedAsset?.isComplete == true) return true
 
-        // Not started or permanently failed: not ready.
-        if (job.status == CompatibilityStatus.FAILED || job.status == CompatibilityStatus.IDLE) return false
+        // Not started, permanently failed, or stalled: not ready.
+        if (job.status == CompatibilityStatus.FAILED || job.status == CompatibilityStatus.STALLED || job.status == CompatibilityStatus.IDLE) return false
 
         // If no output file has been recorded yet (job is QUEUED or just started), not ready.
         val preparedAsset = job.preparedAsset ?: return false
@@ -1467,7 +1498,7 @@ class KtorGhostStreamServer(
         }
 
         val job = compatibilitySnapshotFor(item, triggerPreparation = true, prioritizePreparation = true)
-        if (job.status == CompatibilityStatus.FAILED) {
+        if (job.status == CompatibilityStatus.FAILED || job.status == CompatibilityStatus.STALLED) {
             respond(HttpStatusCode.Conflict, ErrorPayload(job.message))
             return null
         }
@@ -1536,7 +1567,7 @@ class KtorGhostStreamServer(
 
             val job = compatibilityPipeline.currentJob(itemId)
             val finalized = job?.preparedAsset?.isComplete == true || job?.status == CompatibilityStatus.READY
-            val failed = job?.status == CompatibilityStatus.FAILED
+            val failed = job?.status == CompatibilityStatus.FAILED || job?.status == CompatibilityStatus.STALLED
             if (finalized || failed) {
                 // The job is done. The segments must exist — do a few extra retries to
                 // handle OS file-flush latency or transient read errors before giving up.
@@ -1690,7 +1721,7 @@ class KtorGhostStreamServer(
 
             val job = compatibilityPipeline.currentJob(itemId)
             val finalized = job?.preparedAsset?.isComplete == true || job?.status == CompatibilityStatus.READY
-            val failed = job?.status == CompatibilityStatus.FAILED
+            val failed = job?.status == CompatibilityStatus.FAILED || job?.status == CompatibilityStatus.STALLED
             if (finalized || failed) {
                 return available
             }
@@ -1757,7 +1788,7 @@ class KtorGhostStreamServer(
 
             val job = compatibilityPipeline.currentJob(itemId)
             val finalized = job?.preparedAsset?.isComplete == true || job?.status == CompatibilityStatus.READY
-            val failed = job?.status == CompatibilityStatus.FAILED
+            val failed = job?.status == CompatibilityStatus.FAILED || job?.status == CompatibilityStatus.STALLED
             if ((finalized || failed) && file.length() <= written) {
                 break
             }
