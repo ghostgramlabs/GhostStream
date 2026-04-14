@@ -1288,29 +1288,35 @@ function hydrateVideoPlayer(item, options = {}) {
       }
       return;
     }
-    if (item.playbackMode !== "DIRECT") {
-      const failureCount = (state.compatPlaybackFailures[item.id] || 0) + 1;
-      state.compatPlaybackFailures[item.id] = failureCount;
-      if (failureCount <= 2) {
+    // For ALL modes (including DIRECT), attempt compat fallback on video error.
+    // DIRECT files can fail if the original has bad moov, unsupported profile/level,
+    // or browser-specific decode issues. Falling back to compat preparation fixes this.
+    const failureCount = (state.compatPlaybackFailures[item.id] || 0) + 1;
+    state.compatPlaybackFailures[item.id] = failureCount;
+    if (failureCount <= 2) {
+      const isDirectFallback = item.playbackMode === "DIRECT";
+      if (isDirectFallback) {
+        debugTrace("video_error_direct_compat_fallback", `id=${item.id} failures=${failureCount} triggering compat preparation`);
+      } else {
         debugTrace("video_error_retry_compat", `id=${item.id} failures=${failureCount}`);
-        showCompatibilityWaitingStage({
-          ...item,
-          streamReady: false,
-          compatibilityComplete: false,
-        });
-        pollCompat(item.id, {
-          ...item,
-          streamReady: false,
-          compatibilityComplete: false,
-        });
-        return;
       }
+      showCompatibilityWaitingStage({
+        ...item,
+        streamReady: false,
+        compatibilityComplete: false,
+      });
+      pollCompat(item.id, {
+        ...item,
+        streamReady: false,
+        compatibilityComplete: false,
+      }, { forceCompat: isDirectFallback });
+      return;
     }
     if (errorCard) errorCard.classList.add("is-visible");
     if (errorText) {
       errorText.textContent = item.playbackMode === "DIRECT"
         ? (state.bootstrap?.preventDownload
-          ? "This browser could not start the video. Try again."
+          ? gsStr("web_error_video_start_no_dl", "This browser could not play the video. The server is preparing a compatible version.")
           : gsStr("web_error_video_start", "This browser could not start the video. Try again or download the original file."))
         : "This video is still opening. Try again in a moment.";
     }
@@ -1634,7 +1640,7 @@ function attachMusicPlayers() {
   });
 }
 
-async function pollCompat(id, item) {
+async function pollCompat(id, item, options = {}) {
   cancelCompatPolling();
   const route = `/player/video/${id}`;
   const token = ++state.compatPollToken;
@@ -1717,8 +1723,9 @@ async function pollCompat(id, item) {
   };
 
   try {
-    debugTrace("compat_prepare_request", `id=${id}`);
-    const prepareJob = await api(`/api/compat/${id}/prepare`, { method: "POST" });
+    const forceParam = options.forceCompat ? "?force=true" : "";
+    debugTrace("compat_prepare_request", `id=${id} force=${!!options.forceCompat}`);
+    const prepareJob = await api(`/api/compat/${id}/prepare${forceParam}`, { method: "POST" });
     if (token === state.compatPollToken && location.pathname === route && await applyCompatState(prepareJob)) {
       return;
     }

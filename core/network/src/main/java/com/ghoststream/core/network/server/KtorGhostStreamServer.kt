@@ -452,8 +452,23 @@ class KtorGhostStreamServer(
                     call.respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_file_unavailable)))
                     return@post
                 }
-                val job = compatibilitySnapshotFor(item, triggerPreparation = true, prioritizePreparation = true)
-                val ready = compatibilityStreamReady(item)
+                // If the browser reports that DIRECT play failed (force=true param),
+                // escalate the file to REMUX so it gets a prepared compatible asset.
+                val forceCompat = call.request.queryParameters["force"] == "true"
+                val effectiveItem = if (forceCompat && item.playbackDecision.mode == PlaybackMode.DIRECT) {
+                    debugLogSink.log("WebCompat", "direct_play_escalation id=${item.id} name=${item.displayName} — browser reported DIRECT failure, escalating to REMUX")
+                    item.copy(
+                        playbackDecision = item.playbackDecision.copy(
+                            mode = PlaybackMode.REMUX,
+                            reason = "Browser rejected direct playback; preparing compatible version",
+                            compatibilityLabel = "Preparing compatible version",
+                        ),
+                    )
+                } else {
+                    item
+                }
+                val job = compatibilitySnapshotFor(effectiveItem, triggerPreparation = true, prioritizePreparation = true)
+                val ready = compatibilityStreamReady(effectiveItem)
                 debugLogSink.log(
                     "WebCompat",
                     "prepare id=${item.id} mode=${item.playbackDecision.mode} status=${job.status} ready=$ready complete=${job.directReady} progress=${job.progressPercent} asset=${job.preparedAsset?.filePath}",
@@ -2047,100 +2062,4 @@ class KtorGhostStreamServer(
                     hlsUrl = if (item.category == MediaCategory.VIDEO && !isComplete && 
                         (item.playbackDecision.mode == PlaybackMode.TRANSMUX || item.playbackDecision.mode == PlaybackMode.TRANSCODE)) {
                         "/hls/${item.id}/master.m3u8"
-                    } else {
-                        null
-                    },
-                    downloadUrl = if (allowDownloads) "/download/${item.id}" else null,
-                    subtitleUrl = item.subtitleMatch?.let { "/subtitle/${item.id}" },
-                    durationMs = item.durationMs,
-                    sizeBytes = item.sizeBytes,
-                    compatibility = item.playbackDecision.compatibilityLabel,
-                    reason = item.playbackDecision.reason,
-                    playbackMode = item.playbackDecision.mode,
-                    compatibilityStatus = compatibilityJob.status.takeIf { item.playbackDecision.mode != PlaybackMode.DIRECT },
-                    compatibilityMessage = compatibilityJob.message.takeIf { item.playbackDecision.mode != PlaybackMode.DIRECT },
-                    compatibilityProgressPercent = compatibilityJob.progressPercent,
-                    compatibilityComplete = isComplete,
-                    streamReady = streamReady,
-                    // Provide the direct MP4 URL ONLY when the job is 100% complete.
-                    // For growing files, we must use HLS (/hls/...) because progressive
-                    // MP4 via /api/compat/.../file cannot reliably update its duration
-                    // in the browser's video element as more data is written.
-                    preparedMp4Url = if (
-                        isComplete &&
-                        streamReady &&
-                        hasProgressedAsset &&
-                        item.playbackDecision.mode != PlaybackMode.DIRECT
-                    ) {
-                        "/api/compat/${item.id}/file"
-                    } else {
-                        null
-                    },
-                )
-            }
-        }
-    }
-
-    @Serializable
-    private data class CompatibilityStatusPayload(
-        val itemId: String,
-        val status: CompatibilityStatus,
-        val message: String,
-        val progressPercent: Int? = null,
-        val ready: Boolean,
-        val compatibilityComplete: Boolean,
-        val preparedMp4Url: String? = null,
-        val hlsUrl: String? = null,
-    ) {
-        companion object {
-            fun from(job: CompatibilityJob, ready: Boolean): CompatibilityStatusPayload {
-                val isComplete = job.status == CompatibilityStatus.READY || job.directReady
-                return CompatibilityStatusPayload(
-                    itemId = job.itemId,
-                    status = job.status,
-                    message = job.message,
-                    progressPercent = job.progressPercent,
-                    ready = ready,
-                    compatibilityComplete = isComplete,
-                    // Provide the direct file URL ONLY when the job is fully complete (DirectReady).
-                    preparedMp4Url = if (job.directReady && job.decision.mode != PlaybackMode.DIRECT && job.preparedAsset != null) "/api/compat/${job.itemId}/file" else null,
-                    // Provide HLS URL as soon as startup buffer is ready (HlsReady).
-                    hlsUrl = if (job.hlsReady && !isComplete && 
-                        (job.decision.mode == PlaybackMode.TRANSMUX || job.decision.mode == PlaybackMode.TRANSCODE)) "/hls/${job.itemId}/master.m3u8" else null,
-                )
-            }
-        }
-    }
-
-    private data class HlsPlaybackSource(
-        val item: SharedItem,
-        val job: CompatibilityJob,
-        val file: File,
-    )
-
-    private data class RequestedGrowingRange(
-        val start: Long,
-        val endInclusive: Long?,
-    )
-
-    companion object {
-        const val COOKIE_NAME = "ghost_session"
-        const val GROWING_FILE_POLL_INTERVAL_MS = 300L
-        const val MAX_GROWING_FILE_IDLE_POLLS = 300
-        const val HLS_INDEX_POLL_INTERVAL_MS = 250L
-        const val MAX_HLS_INDEX_IDLE_POLLS = 80
-        const val HLS_SEGMENT_DURATION_SECONDS = 2.0
-        const val HLS_TARGET_DURATION_SECONDS = 3
-        const val STREAMING_BUFFER_SIZE = 64 * 1024
-        // Require this many segments to be ready before serving the first playlist.
-        // Previously set to 10 (20 seconds), which caused significant startup delay.
-        // Reduced to 3 (6 seconds), which provides enough buffer to avoid stall but
-        // starts much faster.
-        const val MIN_SEGMENTS_BEFORE_PLAY = 3
-        // How many times awaitHlsIndex retries after a job is finalized but the
-        // index doesn't yet meet requirements (handles OS file-flush latency).
-        const val HLS_FINALIZED_RETRY_COUNT = 5
-        // Delay between each finalized-job retry in awaitHlsIndex.
-        const val HLS_FINALIZED_RETRY_INTERVAL_MS = 400L
-    }
-}
+                    } els

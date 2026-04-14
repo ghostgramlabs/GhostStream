@@ -72,25 +72,33 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
 
         return when {
             // ── Tier 0: DIRECT ──────────────────────────────────────────────────
-            // Browser-safe container + codecs + profiles + bit-depth + faststart.
+            // Browser-safe container + codecs + profiles + bit-depth + CONFIRMED faststart.
+            // IMPORTANT: hasFaststart must be explicitly true. If null (unknown), we
+            // conservatively use REMUX to guarantee browser compatibility. This prevents
+            // the "MP4 marked DIRECT but browser throws video_error code=4" failure.
             isBrowserContainer && (!hasVideo || isFullyUniversal) && isAacOrMp3 &&
-                inspection.hasFaststart != false -> {
+                inspection.hasFaststart == true -> {
                 PlaybackDecision(
                     mode = PlaybackMode.DIRECT,
                     browserMimeType = "video/mp4",
-                    reason = "Ready for universal browser playback (Native H.264/AAC)",
+                    reason = "Ready for universal browser playback (Native H.264/AAC, faststart verified)",
                 )
             }
 
-            // ── Tier 1a: REMUX (Bad faststart in MP4/MOV) ───────────────────────
-            // Codecs are fine but moov atom is at the end of the file.
+            // ── Tier 1a: REMUX (Bad or unknown faststart in MP4/MOV) ────────────
+            // Codecs are fine but moov atom is at the end OR detection was inconclusive.
+            // Conservative: always REMUX if faststart is not confirmed true.
             isBrowserContainer && (!hasVideo || isFullyUniversal) && isAacOrMp3 &&
-                inspection.hasFaststart == false -> {
+                inspection.hasFaststart != true -> {
                 PlaybackDecision(
                     mode = PlaybackMode.REMUX,
                     browserMimeType = "video/mp4",
                     compatibilityLabel = "Quick optimization needed",
-                    reason = "Relocating metadata for instant browser playback (faststart fix)",
+                    reason = if (inspection.hasFaststart == false) {
+                        "Relocating metadata for instant browser playback (faststart fix)"
+                    } else {
+                        "Optimizing container for reliable browser playback (faststart unverified)"
+                    },
                 )
             }
 
@@ -139,21 +147,4 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
                     reason = reason,
                 )
             }
-
-            // ── Non-video: PDF ──────────────────────────────────────────────────
-            inspection.container == MediaContainer.PDF -> PlaybackDecision(
-                mode = PlaybackMode.DIRECT,
-                browserMimeType = "application/pdf",
-                reason = "Browser preview is available",
-            )
-
-            // ── Everything else: serve directly ─────────────────────────────────
-            // Audio files, images, documents — serve the original.
-            else -> PlaybackDecision(
-                mode = PlaybackMode.DIRECT,
-                browserMimeType = inspection.normalizedMimeType ?: inspection.originalMimeType,
-                reason = "Original file download is available",
-            )
-        }
-    }
-}
+
