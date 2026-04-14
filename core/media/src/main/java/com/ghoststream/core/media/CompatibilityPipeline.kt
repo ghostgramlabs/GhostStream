@@ -54,9 +54,28 @@ class QueuedCompatibilityPipeline(
 
     override suspend fun inspect(item: SharedItem): CompatibilityJob {
         val existing = currentJob(item.id)
-        if (existing != null) return existing
 
-        // lookup(item) validates size + mtime fingerprint — returns null if source changed.
+        // If there's an actively running job (QUEUED/ANALYZING/PREPARING/FINALIZING), trust it.
+        // These states mean work is in progress and we shouldn't interfere.
+        if (existing != null && existing.status in activeJobStates) {
+            return existing
+        }
+
+        // If existing job is READY with a valid preparedAsset, verify the file still exists on disk.
+        // This catches the case where the file was deleted externally or by clearTemporaryOutputs().
+        if (existing != null && existing.status == CompatibilityStatus.READY && existing.preparedAsset != null) {
+            val assetFile = java.io.File(existing.preparedAsset!!.filePath)
+            if (assetFile.exists() && assetFile.length() > 0) {
+                return existing // Reuse: file is valid on disk
+            }
+            // File is missing/empty — fall through to disk cache lookup below
+        }
+
+        // ALWAYS check the disk cache for a valid prepared asset.
+        // This is the critical reuse path: even if the in-memory _jobs map was cleared
+        // (e.g. by cancelPendingPreparations), the .mp4 may still exist on disk from a
+        // previous successful prepare. cache.lookup() validates the file against the
+        // source's size + mtime fingerprint, so stale files are never returned.
         val cachedAsset = cache.lookup(item)
         val job = when (item.playbackDecision.mode) {
             PlaybackMode.DIRECT -> CompatibilityJob(
@@ -108,6 +127,13 @@ class QueuedCompatibilityPipeline(
         }
         return upsert(job)
     }
+
+    private val activeJobStates = setOf(
+        CompatibilityStatus.QUEUED,
+        CompatibilityStatus.ANALYZING,
+        CompatibilityStatus.PREPARING,
+        CompatibilityStatus.FINALIZING,
+    )
     override suspend fun requestPreparation(item: SharedItem, prioritize: Boolean): CompatibilityJob {
         val current = inspect(item)
         if (current.status == CompatibilityStatus.READY ||

@@ -146,8 +146,10 @@ class MainViewModel(
                 val videosToWarmup = library.items
                     .filter { it.category == com.ghoststream.core.model.MediaCategory.VIDEO && it.playbackDecision.mode != com.ghoststream.core.model.PlaybackMode.DIRECT }
                     .filter { item ->
-                        val job = container.compatibilityPipeline.currentJob(item.id)
-                        job == null || (job.status == com.ghoststream.core.media.CompatibilityStatus.IDLE && job.preparedAsset == null)
+                        // Use inspect() to check both in-memory state AND disk cache.
+                        // This prevents re-queuing items whose prepared .mp4 still exists on disk.
+                        val job = container.compatibilityPipeline.inspect(item)
+                        job.status == com.ghoststream.core.media.CompatibilityStatus.IDLE && job.preparedAsset == null
                     }
                     .let { items ->
                         if (settings.autoOptimizeLibrary) {
