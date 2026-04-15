@@ -352,6 +352,12 @@ function shouldUseDirectCompatMp4(item) {
 function shouldUseNativeHlsPlayback(item) {
   // If the prepared MP4 is ready, skip HLS entirely — the browser plays it directly.
   if (shouldUseDirectCompatMp4(item)) return false;
+  // iOS Safari native HLS has limited support for fragmented MP4 with TFHD base-data-offset
+  // atoms used during live TRANSCODE. Rather than risk a broken playback experience, we
+  // block iOS from using native HLS while a TRANSCODE is still in progress. iOS will see
+  // "Preparing…" and get the complete regular MP4 once finalized — which plays perfectly.
+  const isLiveTranscode = item.playbackMode === "TRANSCODE" && !item.compatibilityComplete;
+  if (isLiveTranscode && isAppleDevice()) return false;
   return Boolean(item.hlsUrl && item.playbackMode !== "DIRECT" && (isAppleDevice() || isTvBrowser()));
 }
 

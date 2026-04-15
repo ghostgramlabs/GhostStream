@@ -102,14 +102,17 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
                 )
             }
 
-            // ── Tier 1b: REMUX (MP4/MOV container, incompatible audio) ──────────
-            // Video is safe, but audio needs re-encode.
+            // ── Tier 1b: TRANSMUX (MP4/MOV container, incompatible audio) ─────────
+            // Video codec is safe (H.264), container is MP4/MOV, but audio needs re-encode.
+            // We copy the video stream and transcode only the audio to AAC-LC.
+            // Uses TRANSMUX (not REMUX) because audio encoding is involved — same non-fragmented
+            // MP4 output, but audio must be decoded and re-encoded, not simply remuxed.
             isBrowserContainer && hasVideo && isFullyUniversal && !isAacOrMp3 -> {
                 PlaybackDecision(
-                    mode = PlaybackMode.REMUX,
+                    mode = PlaybackMode.TRANSMUX,
                     browserMimeType = "video/mp4",
-                    compatibilityLabel = "Quick audio fix needed",
-                    reason = "Re-encoding audio to AAC; video stays unchanged",
+                    compatibilityLabel = "Audio conversion needed",
+                    reason = "Re-encoding audio to AAC for browser compatibility; video stream copied unchanged",
                 )
             }
 

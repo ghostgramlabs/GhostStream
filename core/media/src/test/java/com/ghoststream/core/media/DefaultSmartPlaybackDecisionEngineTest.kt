@@ -87,28 +87,30 @@ class DefaultSmartPlaybackDecisionEngineTest {
         assertEquals(PlaybackMode.REMUX, d.mode)
     }
 
+    // ── Tier 1b: MP4/MOV container, incompatible audio → TRANSMUX (copy video, re-encode audio)
+
     @Test
-    fun `MP4 + H264 + Opus resolves to REMUX (Opus excluded from DIRECT)`() {
+    fun `MP4 + H264 + Opus resolves to TRANSMUX (Opus excluded from DIRECT, audio re-encode needed)`() {
         val d = engine.decide(inspect(MediaContainer.MP4, audio = "audio/opus"))
-        assertEquals(PlaybackMode.REMUX, d.mode)
+        assertEquals(PlaybackMode.TRANSMUX, d.mode)
     }
 
     @Test
-    fun `MP4 + H264 + AC3 resolves to REMUX (AC3 not browser-safe)`() {
+    fun `MP4 + H264 + AC3 resolves to TRANSMUX (AC3 not browser-safe, audio re-encode needed)`() {
         val d = engine.decide(inspect(MediaContainer.MP4, audio = "audio/ac3"))
-        assertEquals(PlaybackMode.REMUX, d.mode)
+        assertEquals(PlaybackMode.TRANSMUX, d.mode)
     }
 
     @Test
-    fun `MP4 + H264 + DTS resolves to REMUX`() {
+    fun `MP4 + H264 + DTS resolves to TRANSMUX (DTS audio re-encode needed)`() {
         val d = engine.decide(inspect(MediaContainer.MP4, audio = "audio/dtshd-ma"))
-        assertEquals(PlaybackMode.REMUX, d.mode)
+        assertEquals(PlaybackMode.TRANSMUX, d.mode)
     }
 
     @Test
-    fun `MOV + H264 + AC3 resolves to REMUX (audio needs transcoding)`() {
+    fun `MOV + H264 + AC3 resolves to TRANSMUX (audio needs re-encoding to AAC)`() {
         val d = engine.decide(inspect(MediaContainer.QUICKTIME, audio = "audio/ac3", name = "movie.mov"))
-        assertEquals(PlaybackMode.REMUX, d.mode)
+        assertEquals(PlaybackMode.TRANSMUX, d.mode)
     }
 
     // ── Tier 2: TRANSMUX (wrong container, codecs are ok) ───────────────────
