@@ -221,5 +221,14 @@ class QueuedCompatibilityPipelineTest {
             rootDir.delete()
             assets.clear()
         }
+
+        // Stub implementations for cache management methods (not needed in unit tests)
+        override suspend fun evict(itemId: String) { /* no-op */ }
+        override fun getStabilizedSourceFile(itemId: String): File = File(rootDir, "$itemId.source")
+        override suspend fun evictStabilizedSource(itemId: String) { /* no-op */ }
+        override suspend fun cleanupStabilizedSources(activeItemIds: Set<String>) { /* no-op */ }
+        override suspend fun enforceBudget(maxBytes: Long, protectedIds: Set<String>) { /* no-op */ }
+        override fun totalCacheSizeBytes(): Long = 0L
+        override suspend fun cleanupOrphans(activeItemIds: Set<String>) { /* no-op */ }
     }
 }

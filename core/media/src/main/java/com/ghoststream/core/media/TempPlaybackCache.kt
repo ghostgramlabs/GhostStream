@@ -1,6 +1,7 @@
 package com.ghoststream.core.media
 
 import android.content.Context
+import com.ghoststream.core.model.PlaybackMode
 import com.ghoststream.core.model.SharedItem
 import java.io.File
 import java.util.Locale
@@ -99,7 +100,7 @@ class TempPlaybackCache(
         // REMUX and TRANSMUX produce regular MP4 with moov-at-front (non-fragmented).
         // We derive this from the item's playback decision since the file's own bytes
         // cannot reliably encode this distinction after writing.
-        val isFragmented = item.playbackDecision.mode == com.ghoststream.core.model.PlaybackMode.TRANSCODE
+        val isFragmented = item.playbackDecision.mode == PlaybackMode.TRANSCODE
 
         return CachedPlaybackAsset(
             itemId = item.id,
