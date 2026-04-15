@@ -330,4 +330,29 @@ internal object FragmentedMp4HlsIndexer {
     private fun readType(raf: RandomAccessFile): String {
         val buffer = ByteArray(4)
         raf.readFully(buffer)
-        return buffer.toStri
+        return buffer.toString(Charsets.US_ASCII)
+    }
+
+    private inline fun List<Mp4TopLevelBox>.indexOfFirstFrom(
+        startIndex: Int,
+        predicate: (Mp4TopLevelBox) -> Boolean,
+    ): Int {
+        for (index in startIndex until size) {
+            if (predicate(this[index])) {
+                return index
+            }
+        }
+        return -1
+    }
+
+    private data class Mp4TopLevelBox(
+        val type: String,
+        val offset: Long,
+        val size: Long,
+    )
+
+    private const val MIN_BOX_HEADER_SIZE = 8L
+    private const val LARGE_BOX_HEADER_SIZE = 16L
+    private val INIT_TRAILING_BOX_TYPES = setOf("sidx", "ssix")
+    private val SEGMENT_PREFIX_BOX_TYPES = setOf("styp", "prft", "emsg")
+}

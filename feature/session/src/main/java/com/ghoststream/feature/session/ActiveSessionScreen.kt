@@ -1199,4 +1199,63 @@ private fun generateQrBitmap(content: String): Bitmap? {
 
 private fun formatBytes(bytes: Long): String {
     if (bytes <= 0) return "0 B"
-    val units = l
+    val units = listOf("B", "KB", "MB", "GB")
+    var value = bytes.toDouble()
+    var index = 0
+    while (value >= 1024 && index < units.lastIndex) {
+        value /= 1024
+        index++
+    }
+    return "${(value * 10).roundToInt() / 10.0} ${units[index]}"
+}
+
+@Composable
+private fun networkLabel(sessionState: SessionState): String {
+    return when {
+        sessionState.networkAvailability.type.name == "HOTSPOT" -> stringResource(R.string.session_network_hotspot)
+        sessionState.networkAvailability.type.name == "WIFI" -> stringResource(R.string.session_network_wifi)
+        sessionState.networkAvailability.type.name == "LOCAL" -> stringResource(R.string.session_network_local)
+        else -> stringResource(R.string.session_network_offline)
+    }
+}
+
+private fun formatElapsed(startedAtEpochMs: Long?): String {
+    if (startedAtEpochMs == null || startedAtEpochMs == 0L) return "0s"
+    val elapsed = (System.currentTimeMillis() - startedAtEpochMs).coerceAtLeast(0) / 1000
+    val hours = elapsed / 3600
+    val mins = (elapsed % 3600) / 60
+    val secs = elapsed % 60
+    return when {
+        hours > 0 -> "${hours}h ${mins.toString().padStart(2, '0')}m"
+        mins > 0 -> "${mins}m ${secs.toString().padStart(2, '0')}s"
+        else -> "${secs}s"
+    }
+}
+
+@Composable
+private fun sessionPrimaryButtonColors() = ButtonDefaults.buttonColors(
+    containerColor = MaterialTheme.colorScheme.primary,
+    contentColor = MaterialTheme.colorScheme.onPrimary,
+    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+    disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.72f),
+)
+
+@Composable
+private fun sessionSecondaryButtonColors() = ButtonDefaults.outlinedButtonColors(
+    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
+    contentColor = MaterialTheme.colorScheme.onSurface,
+    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.44f),
+    disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.46f),
+)
+
+@Composable
+private fun sessionAccentSurface() = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+
+@Composable
+private fun sessionAccentBorder() = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
+
+@Composable
+private fun sessionLiveSurface() = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+
+@Composable
+private fun sessionLiveBorder() = MaterialTheme.colorScheme.primary.copy(alpha = 0.42f)

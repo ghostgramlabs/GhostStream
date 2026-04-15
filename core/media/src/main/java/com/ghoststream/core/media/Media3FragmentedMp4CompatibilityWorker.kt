@@ -594,10 +594,12 @@ class Media3FragmentedMp4CompatibilityWorker(
                     CompatibilityWorkerUpdate(
                         status = CompatibilityStatus.PREPARING,
                         message = when {
-                            // Only TRANSCODE uses fragmented MP4 and can be streamable mid-job
-                            streamable -> "Streaming preview ready, finalizing full output..."
+                            streamable && item.playbackDecision.mode == PlaybackMode.REMUX ->
+                                "Finalizing the optimized browser stream."
+                            streamable ->
+                                "Finalizing the compatible browser stream."
                             item.playbackDecision.mode == PlaybackMode.REMUX ->
-                                "Optimizing container for browser playback..."
+                                "Optimizing for browser playback..."
                             item.playbackDecision.mode == PlaybackMode.TRANSMUX ->
                                 "Repackaging for browser playback..."
                             else ->

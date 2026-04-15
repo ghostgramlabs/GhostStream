@@ -56,14 +56,24 @@ class DefaultSmartPlaybackDecisionEngineTest {
         assertEquals("video/mp4", d.browserMimeType)
     }
 
-    // ── Tier 0: DIRECT also when faststart is unknown (null) ─────────────────
-    // detectFaststart() uses byte-scanning which only works on file:// URIs.
-    // content:// URIs (MediaStore/SAF) return null — should not force REMUX.
+    // ── Tier 1: REMUX (unknown or bad faststart, or incompatible audio) ─────
 
     @Test
-    fun `MP4 + H264 + AAC + unknown faststart resolves to DIRECT (null is OK)`() {
+    fun `MP4 + H264 + AAC + unknown faststart resolves to DIRECT (null is OK for content URIs)`() {
         val d = engine.decide(inspect(MediaContainer.MP4))
         assertEquals(PlaybackMode.DIRECT, d.mode)
+    }
+
+    @Test
+    fun `MP4 + H264 + AAC + bad faststart resolves to REMUX`() {
+        val d = engine.decide(inspect(MediaContainer.MP4, hasFaststart = false))
+        assertEquals(PlaybackMode.REMUX, d.mode)
+    }
+
+    @Test
+    fun `MOV + H264 + AAC + bad faststart resolves to REMUX`() {
+        val d = engine.decide(inspect(MediaContainer.QUICKTIME, mime = "video/quicktime", name = "movie.mov", hasFaststart = false))
+        assertEquals(PlaybackMode.REMUX, d.mode)
     }
 
     @Test
@@ -71,22 +81,6 @@ class DefaultSmartPlaybackDecisionEngineTest {
         val d = engine.decide(inspect(MediaContainer.QUICKTIME, mime = "video/quicktime", name = "movie.mov"))
         assertEquals(PlaybackMode.DIRECT, d.mode)
     }
-
-    // ── Tier 1a: REMUX (confirmed bad faststart only) ─────────────────────────
-
-    @Test
-    fun `MP4 + H264 + AAC + confirmed bad faststart resolves to REMUX`() {
-        val d = engine.decide(inspect(MediaContainer.MP4, hasFaststart = false))
-        assertEquals(PlaybackMode.REMUX, d.mode)
-    }
-
-    @Test
-    fun `MOV + H264 + AAC + confirmed bad faststart resolves to REMUX`() {
-        val d = engine.decide(inspect(MediaContainer.QUICKTIME, mime = "video/quicktime", name = "movie.mov", hasFaststart = false))
-        assertEquals(PlaybackMode.REMUX, d.mode)
-    }
-
-    // ── Tier 1b: TRANSMUX (MP4/MOV container, incompatible audio) ─────────────
 
     @Test
     fun `MP4 + H264 + Opus resolves to TRANSMUX (audio re-encode needed)`() {

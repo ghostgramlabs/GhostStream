@@ -43,4 +43,15 @@ data class MediaInspection(
      */
     val videoLevel: Int? = null,
     /**
-     * Bit depth (e.g. 
+     * Bit depth (e.g. 8, 10). 10-bit video often requires transcoding for
+     * web playback on older devices or specific browsers (iOS/Safari).
+     */
+    val bitDepth: Int? = null,
+    /**
+     * True if the MP4/MOV file has the moov atom before mdat (faststart-ready).
+     * Null if not applicable (non-MP4/MOV container) or if detection failed.
+     * When false, browser playback may require downloading the entire file before
+     * seeking works, so a REMUX pass to relocate moov is recommended.
+     */
+    val hasFaststart: Boolean? = null,
+)

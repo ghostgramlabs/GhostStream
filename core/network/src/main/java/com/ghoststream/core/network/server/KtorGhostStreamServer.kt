@@ -2114,8 +2114,7 @@ class KtorGhostStreamServer(
                     ready = ready,
                     compatibilityComplete = isComplete,
                     preparedMp4Url = if (job.directReady && job.decision.mode != PlaybackMode.DIRECT && job.preparedAsset != null) "/api/compat/${job.itemId}/file" else null,
-                    // HLS is only used for TRANSCODE (fragmented MP4 play-while-transcoding).
-                    // REMUX and TRANSMUX produce regular MP4 served via preparedMp4Url.
+                    // HLS only for TRANSCODE (fragmented MP4). REMUX/TRANSMUX use preparedMp4Url.
                     hlsUrl = if (job.hlsReady && !isComplete &&
                         job.decision.mode == PlaybackMode.TRANSCODE) "/hls/${job.itemId}/master.m3u8" else null,
                 )

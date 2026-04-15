@@ -223,7 +223,7 @@ class QueuedCompatibilityPipelineTest {
         }
 
         override suspend fun evict(itemId: String) {}
-        override fun getStabilizedSourceFile(itemId: String): File = File(rootDir, "$itemId.source")
+        override fun getStabilizedSourceFile(itemId: String): java.io.File = java.io.File(rootDir, "$itemId.source")
         override suspend fun evictStabilizedSource(itemId: String) {}
         override suspend fun cleanupStabilizedSources(activeItemIds: Set<String>) {}
         override suspend fun enforceBudget(maxBytes: Long, protectedIds: Set<String>) {}

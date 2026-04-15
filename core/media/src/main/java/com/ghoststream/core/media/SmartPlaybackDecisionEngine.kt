@@ -73,10 +73,11 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
         return when {
             // ── Tier 0: DIRECT ──────────────────────────────────────────────────
             // Browser-safe container + codecs + profiles + bit-depth.
-            // hasFaststart != false: DIRECT when confirmed good (true) OR unknown (null).
-            // detectFaststart() only works on file:// URIs — content:// from MediaStore/SAF
-            // returns null (no byte-range read). null should not force unnecessary REMUX.
-            // Only reject DIRECT when bad faststart is positively confirmed (false).
+            // hasFaststart != false: allow DIRECT when confirmed good (true) OR
+            // unknown (null). detectFaststart() reads raw bytes — only works on
+            // file:// URIs. content:// URIs from MediaStore/SAF return null
+            // (no byte-range access). null must not force unnecessary REMUX for
+            // every video. Only block DIRECT when bad moov is CONFIRMED (false).
             isBrowserContainer && (!hasVideo || isFullyUniversal) && isAacOrMp3 &&
                 inspection.hasFaststart != false -> {
                 PlaybackDecision(
@@ -90,8 +91,7 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
             }
 
             // ── Tier 1a: REMUX (Confirmed bad faststart in MP4/MOV) ─────────────
-            // Codecs are fine but moov atom is confirmed at the end of the file.
-            // Rewrite container with moov at front — no re-encode, very fast.
+            // Codecs are fine but moov atom is confirmed at end of file.
             isBrowserContainer && (!hasVideo || isFullyUniversal) && isAacOrMp3 &&
                 inspection.hasFaststart == false -> {
                 PlaybackDecision(
@@ -103,14 +103,14 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
             }
 
             // ── Tier 1b: TRANSMUX (MP4/MOV container, incompatible audio) ────────
-            // Video is H.264 and safe; container is MP4/MOV; but audio needs re-encoding.
-            // Copy video, transcode audio to AAC-LC, produce non-fragmented MP4.
+            // Video is H.264 and safe; audio needs re-encoding to AAC.
+            // Copy video stream, transcode audio only, output non-fragmented MP4.
             isBrowserContainer && hasVideo && isFullyUniversal && !isAacOrMp3 -> {
                 PlaybackDecision(
                     mode = PlaybackMode.TRANSMUX,
                     browserMimeType = "video/mp4",
                     compatibilityLabel = "Audio conversion needed",
-                    reason = "Re-encoding audio to AAC for browser compatibility; video stream copied unchanged",
+                    reason = "Re-encoding audio to AAC for browser compatibility; video copied unchanged",
                 )
             }
 

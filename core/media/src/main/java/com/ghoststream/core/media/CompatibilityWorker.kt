@@ -50,4 +50,9 @@ class StubCompatibilityWorker : CompatibilityWorker {
             message = when (item.playbackDecision.mode) {
                 PlaybackMode.REMUX -> "Remux architecture is ready, but container optimization is not enabled in this build yet."
                 PlaybackMode.TRANSMUX -> "Transmux architecture is ready, but HLS packaging is not enabled in this build yet."
-                PlaybackMode.TRANSCODE -> "Transcode architecture is wired, but compatibility conversion is not enabled in this build yet."
+                PlaybackMode.TRANSCODE -> "Transcode architecture is wired, but compatibility conversion is not enabled in this build yet."
+                PlaybackMode.DIRECT -> item.playbackDecision.reason
+            },
+        )
+    }
+}

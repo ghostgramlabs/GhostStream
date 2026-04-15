@@ -97,7 +97,7 @@ class TempPlaybackCache(
             }
 
         // Only TRANSCODE produces fragmented fMP4 (for live HLS play-while-transcoding).
-        // REMUX and TRANSMUX produce regular non-fragmented MP4 served via direct file.
+        // REMUX and TRANSMUX produce regular non-fragmented MP4 served via direct range requests.
         val isFragmented = item.playbackDecision.mode == PlaybackMode.TRANSCODE
 
         return CachedPlaybackAsset(

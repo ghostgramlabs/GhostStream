@@ -568,4 +568,3 @@ private fun settingsSecondaryButtonColors() = ButtonDefaults.outlinedButtonColor
 
 @Composable
 private fun ghostPanelColor(): androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.surface
-                                                                                                                                                                                                                                      
