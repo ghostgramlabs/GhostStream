@@ -1,9 +1,9 @@
-package com.ghoststream.core.network.server
+package com.ghoststream.core.media
 
 import java.io.File
 import java.io.RandomAccessFile
 
-internal data class FragmentedMp4HlsIndex(
+data class FragmentedMp4HlsIndex(
     val initSegmentLength: Long,
     val segments: List<HlsMediaSegment>,
     val fileLength: Long,
@@ -15,16 +15,18 @@ internal data class FragmentedMp4HlsIndex(
     val videoCodecString: String? = null,
     val width: Int? = null,
     val height: Int? = null,
+    /** Diagnostic info for why indexing might have failed or found zero segments. */
+    val diagnosticInfo: String? = null,
 )
 
-internal data class HlsMediaSegment(
+data class HlsMediaSegment(
     val index: Int,
     val offset: Long,
     val length: Long,
     val durationSeconds: Double,
 )
 
-internal object FragmentedMp4HlsIndexer {
+object FragmentedMp4HlsIndexer {
     /**
      * Parse a (possibly still-growing) fragmented MP4 file and return an HLS segment
      * index describing the init segment and all complete moof+mdat fragments found.
@@ -38,7 +40,16 @@ internal object FragmentedMp4HlsIndexer {
      */
     fun read(file: File, fragmentDurationSeconds: Double = 2.0): FragmentedMp4HlsIndex? {
         if (!file.exists()) return null
-        return readInternal(file, fragmentDurationSeconds)
+        return try {
+            readInternal(file, fragmentDurationSeconds)
+        } catch (e: Exception) {
+            FragmentedMp4HlsIndex(
+                initSegmentLength = 0,
+                segments = emptyList(),
+                fileLength = file.length(),
+                diagnosticInfo = "Exception during parse: ${e.message}"
+            )
+        }
     }
 
     private fun readInternal(file: File, fragmentDurationSeconds: Double): FragmentedMp4HlsIndex? {
@@ -83,11 +94,25 @@ internal object FragmentedMp4HlsIndexer {
                 Triple(null, null, null)
             }
 
-            val firstMoofIndex = boxes.indexOfFirst { it.type == "moof" }
-            if (firstMoofIndex < 0) return null
-
             val moovIndex = boxes.indexOfLast { it.type == "moov" }
-            if (moovIndex < 0) return null
+            if (moovIndex < 0) {
+                return FragmentedMp4HlsIndex(
+                    initSegmentLength = 0,
+                    segments = emptyList(),
+                    fileLength = fileLength,
+                    diagnosticInfo = "No 'moov' box found. Not a valid MP4 or init segment still being written."
+                )
+            }
+
+            val firstMoofIndex = boxes.indexOfFirst { it.type == "moof" }
+            if (firstMoofIndex < 0) {
+                return FragmentedMp4HlsIndex(
+                    initSegmentLength = boxes[moovIndex].offset + boxes[moovIndex].size,
+                    segments = emptyList(),
+                    fileLength = fileLength,
+                    diagnosticInfo = "Found 'moov' but no 'moof' fragments yet. Encoding in progress?"
+                )
+            }
 
             var initSegmentLength = boxes[moovIndex].offset + boxes[moovIndex].size
             var cursor = moovIndex + 1
@@ -175,11 +200,6 @@ internal object FragmentedMp4HlsIndexer {
 
     // ── Codec detection ────────────────────────────────────────────────────────────────────────
 
-    /**
-     * Walk moov → trak (vide) → mdia → minf → stbl → stsd to find the first video sample
-     * entry box and return an RFC 6381 codec string and dimensions.
-     * Returns null triple if the structure cannot be found or parsed.
-     */
     private fun readVideoMetadataFromMoov(raf: RandomAccessFile, moovBox: Mp4TopLevelBox): Triple<String?, Int?, Int?> {
         val moovEnd = moovBox.offset + moovBox.size
         for (trak in readChildBoxes(raf, moovBox.offset + 8, moovEnd)) {
@@ -196,9 +216,8 @@ internal object FragmentedMp4HlsIndexer {
         val mdiaEnd = mdia.offset + mdia.size
         val mdiaChildren = readChildBoxes(raf, mdia.offset + 8, mdiaEnd)
 
-        // Verify this is a video track via the 'vide' handler
         val hdlr = mdiaChildren.firstOrNull { it.type == "hdlr" } ?: return null
-        val handlerTypeOffset = hdlr.offset + 8 + 4 + 4  // header(8) + version_flags(4) + pre_defined(4)
+        val handlerTypeOffset = hdlr.offset + 8 + 4 + 4
         if (handlerTypeOffset + 4 > hdlr.offset + hdlr.size) return null
         raf.seek(handlerTypeOffset)
         val handlerBuf = ByteArray(4)
@@ -211,7 +230,6 @@ internal object FragmentedMp4HlsIndexer {
         val stblEnd = stbl.offset + stbl.size
         val stsd = readChildBoxes(raf, stbl.offset + 8, stblEnd).firstOrNull { it.type == "stsd" } ?: return null
 
-        // stsd body: version_flags(4) + entry_count(4), then sample entries
         val firstEntryStart = stsd.offset + 8 + 8
         if (firstEntryStart + 8 > stsd.offset + stsd.size) return null
         raf.seek(firstEntryStart)
@@ -230,13 +248,6 @@ internal object FragmentedMp4HlsIndexer {
         }
     }
 
-    /**
-     * Parse the avcC box (inside avc1) to get the exact H.264 codec string and dimensions.
-     * avc1 VisualSampleEntry layout: 8 header + 6 reserved + 2 data_ref_index
-     * + 16 pre_defined/reserved + 2 width + 2 height + 4 horizres + 4 vertres
-     * + 4 reserved + 2 frame_count + 32 compressorname + 2 depth + 2 pre_defined = 86 bytes total
-     * then child boxes begin (avcC is always first).
-     */
     private fun readH264Metadata(raf: RandomAccessFile, avc1Start: Long, avc1End: Long): Triple<String?, Int?, Int?> {
         raf.seek(avc1Start + 32)
         val width = raf.readUnsignedShort()
@@ -252,8 +263,7 @@ internal object FragmentedMp4HlsIndexer {
             val typeBuf = ByteArray(4)
             raf.readFully(typeBuf)
             if (typeBuf.toString(Charsets.US_ASCII) == "avcC" && pos + 12 <= avc1End) {
-                // avcC body: configVersion(1) + profileIndication(1) + profileCompat(1) + levelIdc(1)
-                raf.seek(pos + 9)  // skip 8-byte box header + 1-byte configVersion
+                raf.seek(pos + 9)
                 val profile = raf.read()
                 val compat = raf.read()
                 val level = raf.read()
@@ -267,9 +277,6 @@ internal object FragmentedMp4HlsIndexer {
         return Triple(codec ?: "avc1.640028", width, height)
     }
 
-    /**
-     * Construct an H.265 codec string and dimensions from the hvc1 box.
-     */
     private fun readH265Metadata(raf: RandomAccessFile, hvc1Start: Long, hvc1End: Long): Triple<String?, Int?, Int?> {
         raf.seek(hvc1Start + 32)
         val width = raf.readUnsignedShort()
@@ -277,7 +284,6 @@ internal object FragmentedMp4HlsIndexer {
         return Triple("hvc1.1.6.L120.90", width, height)
     }
 
-    /** Read all direct child boxes between [from, to) from the RandomAccessFile. */
     private fun readChildBoxes(raf: RandomAccessFile, from: Long, to: Long): List<Mp4TopLevelBox> {
         val result = mutableListOf<Mp4TopLevelBox>()
         var pos = from
@@ -300,8 +306,6 @@ internal object FragmentedMp4HlsIndexer {
         }
         return result
     }
-
-    // ── Segment parsing helpers ─────────────────────────────────────────────────────────────────
 
     private fun findSegmentStartIndex(
         boxes: List<Mp4TopLevelBox>,

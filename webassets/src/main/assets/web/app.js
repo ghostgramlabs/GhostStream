@@ -895,12 +895,13 @@ function renderVideoStage(item, showPlayer) {
     ? videoMarkup(item)
     : `
       <div class="gs-compat-card" id="compatStageCard">
-        <div class="gs-logo-mark gs-spinner"></div>
+        <div class="gs-logo-mark${item.status === "FAILED" ? "" : " gs-spinner"}"></div>
         <span class="gs-badge" data-compat-badge>${compatibilityBadgeLabel(item, false)}</span>
         <h3 data-compat-title>${compatibilityHeadline(item, false)}</h3>
         <p data-compat-message>${esc(compatibilityBody(item, false))}</p>
-        <p class="gs-meta" data-compat-progress>${item.compatibilityProgressPercent != null ? `${item.compatibilityProgressPercent}%` : "Opening"}</p>
+        <p class="gs-meta" data-compat-progress>${item.status === "FAILED" ? "Stopped" : (item.compatibilityProgressPercent != null ? `${item.compatibilityProgressPercent}%` : "Opening")}</p>
         <div class="gs-toolbar-actions gs-mt-2">
+          ${item.status === "FAILED" ? `<button class="gs-btn gs-btn-accent gs-btn-sm" onclick="retryPreparation('${item.id}')">Retry Optimization</button>` : ""}
           ${!state.bootstrap?.preventDownload ? `<a class="gs-btn gs-btn-sm" href="${item.downloadUrl}">Try original (may fail)</a>` : ""}
         </div>
       </div>
@@ -941,6 +942,7 @@ function videoMarkup(item) {
         <p id="vErrorText">This browser could not start the video.</p>
         <div class="gs-toolbar-actions">
           <button class="gs-btn gs-btn-accent gs-btn-sm" id="retryVideoBtn">Try again</button>
+          ${item.playbackMode !== "DIRECT" ? `<button class="gs-btn gs-btn-sm" onclick="retryPreparation('${item.id}')">Reset & Retry Optimization</button>` : ""}
           ${allowDownloads ? `<a class="gs-btn gs-btn-download gs-btn-sm" href="${item.downloadUrl}">${gsStr("web_btn_download_original", "Download original")}</a>` : ""}
         </div>
       </div>
@@ -982,6 +984,14 @@ function hydrateVideoPlayer(item, options = {}) {
   const allowManagedHlsFallback = canUseManagedHlsFallback(item, managedHlsAvailable);
   const errorCard = document.getElementById("vError");
   const errorText = document.getElementById("vErrorText");
+  
+  // Aspect Ratio Reset: clear previous ratio to prevent portrait/landscape leakage
+  const playerStructural = video.closest(".gs-player");
+  const wrapStructural = video.closest(".gs-video-wrap");
+  if (playerStructural) playerStructural.style.aspectRatio = "";
+  if (wrapStructural) wrapStructural.style.aspectRatio = "";
+  video.style.aspectRatio = "";
+
   let autoRetryUsed = false;
   let managedHlsFallbackUsed = false;
   debugTrace(
@@ -997,10 +1007,27 @@ function hydrateVideoPlayer(item, options = {}) {
   );
 
   if (!useNativePlayer && typeof window.Plyr === "function") {
-    state.plyr = new window.Plyr(video, {
+    const plyrOptions = {
       iconUrl: "/plyr.svg",
-    });
+    };
+    
+    // Initialize with the true total duration from analyzed metadata
+    if (item.totalDurationMs) {
+      plyrOptions.duration = item.totalDurationMs / 1000;
+    }
+    
+    state.plyr = new window.Plyr(video, plyrOptions);
     state.plyrItemId = item.id;
+    
+    // Explicitly set ratio from metadata if available
+    if (item.width && item.height) {
+      state.plyr.ratio = `${item.width}:${item.height}`;
+      const playerStructural = video.closest(".gs-player");
+      const wrapStructural = video.closest(".gs-video-wrap");
+      if (playerStructural) playerStructural.style.aspectRatio = `${item.width} / ${item.height}`;
+      if (wrapStructural) wrapStructural.style.aspectRatio = `${item.width} / ${item.height}`;
+    }
+    
     setupScrubbingPreviews(item, state.plyr);
   }
 
@@ -1126,6 +1153,7 @@ function hydrateVideoPlayer(item, options = {}) {
             // We use state.compatItem to ensure we have the LATEST updated URL from polling.
             const currentItem = state.compatItem || item;
             if (currentItem.preparedMp4Url) {
+              debugTrace("prepared_asset_reused", `id=${item.id} asset=${currentItem.preparedMp4Url.substringAfterLast('/')}`);
               debugTrace("hls_error_direct_mp4_fallback", `id=${item.id} url=${currentItem.preparedMp4Url}`);
               destroyHls();
               const plyrObj = state.plyr;
@@ -1230,7 +1258,46 @@ function hydrateVideoPlayer(item, options = {}) {
   video.addEventListener("canplay", markPlaybackStable);
   video.addEventListener("playing", markPlaybackStable);
   video.addEventListener("loadedmetadata", () => {
-    debugTrace("video_loadedmetadata", `id=${item.id} readyState=${video.readyState} currentSrc=${video.currentSrc}`);
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    const src = video.currentSrc || "";
+    
+    // RATIO PROTECTION:
+    // 1. Ignore metadata if the current source is the blank.mp4 placeholder.
+    // 2. Ignore 32x20 dimensions which are typical of the blank placeholder.
+    if (src.includes("blank.mp4") || (w === 32 && h === 20)) {
+      debugTrace("video_loadedmetadata_ignored", `id=${item.id} reason=placeholder_detected width=${w} height=${h}`);
+      return;
+    }
+
+    debugTrace("video_loadedmetadata", `id=${item.id} width=${w} height=${h} currentSrc=${src}`);
+    if (w && h) {
+      const ratioStr = `${w}:${h}`;
+      
+      // If we already have authoritative metadata (item.width/height), and it matches, skip the update.
+      if (item.width && item.height) {
+        const metadataRatio = item.width / item.height;
+        const actualRatio = w / h;
+        // Allow a tiny delta for float precision, but if they are basically the same, don't churn.
+        if (Math.abs(metadataRatio - actualRatio) < 0.01) {
+          debugTrace("video_ratio_skip", `id=${item.id} reason=matches_metadata ratio=${ratioStr}`);
+          return;
+        }
+      }
+
+      const playerStructural = video.closest(".gs-player");
+      const wrapStructural = video.closest(".gs-video-wrap");
+      
+      if (playerStructural) playerStructural.style.aspectRatio = `${w} / ${h}`;
+      if (wrapStructural) wrapStructural.style.aspectRatio = `${w} / ${h}`;
+
+      if (state.plyr) {
+        state.plyr.ratio = ratioStr;
+      } else {
+        video.style.aspectRatio = `${w} / ${h}`;
+      }
+      debugTrace("video_ratio_applied", `id=${item.id} ratio=${ratioStr} playerType=${state.plyr ? "plyr" : "native"}`);
+    }
   });
   video.addEventListener("canplay", () => {
     debugTrace("video_canplay", `id=${item.id} readyState=${video.readyState}`);
@@ -1257,9 +1324,20 @@ function hydrateVideoPlayer(item, options = {}) {
 
     if (!isBuffered) {
       debugTrace("video_seek_restart", `id=${item.id} offset=${currentTime.toFixed(1)}s`);
-      // Temporarily show the 'Opening video...' message while the transcoder jumps.
-      showCompatibilityWaitingStage({ ...item, streamReady: false });
       
+      // If the user seeks beyond the currently prepared percentage, show a specific state.
+      const duration = (item.totalDurationMs || item.durationMs || 0) / 1000;
+      const progressPercent = item.compatibilityProgressPercent || 0;
+      const preparedSeconds = (progressPercent / 100) * duration;
+      
+      if (currentTime > preparedSeconds + 2 && !item.compatibilityComplete) {
+         showCompatibilityWaitingStage({ 
+            ...item, 
+            streamReady: false,
+            compatibilityMessage: gsStr("web_player_preparing_segment", "Preparing this segment for you...") 
+         });
+      }
+
       try {
         const url = `/api/compat/${item.id}/seek?offsetMs=${Math.floor(currentTime * 1000)}`;
         const resp = await fetch(url, { method: "POST" });
@@ -1314,6 +1392,7 @@ function hydrateVideoPlayer(item, options = {}) {
         streamReady: false,
         compatibilityComplete: false,
       }, { forceCompat: isDirectFallback });
+      debugTrace("compat_failed", `id=${item.id} reason=${item.compatibilityMessage || "unknown"}`);
       return;
     }
     if (errorCard) errorCard.classList.add("is-visible");
@@ -1390,7 +1469,7 @@ function updateCompatElements(job, streamLive) {
     }, streamLive);
   });
   document.querySelectorAll("[data-compat-progress]").forEach((element) => {
-    element.textContent = job.progressPercent != null ? `${job.progressPercent}%` : (streamLive ? "Playing" : "Opening");
+    element.textContent = job.status === "FAILED" ? "Stopped" : (job.progressPercent != null ? `${job.progressPercent}%` : (streamLive ? "Playing" : "Opening"));
   });
   document.querySelectorAll("[data-compat-badge]").forEach((element) => {
     element.textContent = compatibilityBadgeLabel({
@@ -1406,9 +1485,44 @@ function updateCompatElements(job, streamLive) {
       streamReady: streamLive,
     }, streamLive);
   });
+  
+  // If we just transitioned to FAILED, ensure the retry button appears in the stage card
+  const stage = document.getElementById("compatStageCard");
+  if (stage && job.status === "FAILED") {
+    const actions = stage.querySelector(".gs-toolbar-actions");
+    if (actions && !actions.querySelector(".gs-btn-accent")) {
+       const btn = document.createElement("button");
+       btn.className = "gs-btn gs-btn-accent gs-btn-sm";
+       btn.textContent = "Retry Optimization";
+       btn.onclick = () => retryPreparation(job.itemId);
+       actions.prepend(btn);
+       
+       const spinner = stage.querySelector(".gs-spinner");
+       if (spinner) spinner.classList.remove("gs-spinner");
+       
+       const progress = stage.querySelector("[data-compat-progress]");
+       if (progress) progress.textContent = "Stopped";
+    }
+  }
+
   const inline = document.getElementById("compatInline");
   if (inline) {
     inline.classList.toggle("is-visible", streamLive);
+  }
+}
+
+async function retryPreparation(id) {
+  debugTrace("compat_retry_clicked", `id=${id}`);
+  try {
+    const job = await api(`/api/compat/${id}/retry`, { method: "POST" });
+    const path = location.pathname;
+    if (path === `/player/video/${id}`) {
+      // Re-initialize the player view
+      renderVideoPlayer(id);
+    }
+  } catch (error) {
+    console.error("Manual retry failed:", error);
+    alert("Unable to restart optimization: " + error.message);
   }
 }
 
@@ -1695,19 +1809,13 @@ async function pollCompat(id, item, options = {}) {
       compatibilityComplete: job.compatibilityComplete,
       preparedMp4Url: job.preparedMp4Url,
       hlsUrl: job.hlsUrl || item.hlsUrl,
+      width: job.width || item.width,
+      height: job.height || item.height,
+      totalDurationMs: job.totalDurationMs || item.totalDurationMs || item.durationMs,
     };
 
     state.compatItem = nextItem;
     updateCompatElements(job, canStartPlayback);
-
-    // Auto-switch: if the remux task just finished (complete=true) AND we are currently in HLS mode,
-    // force a switch to Direct MP4 immediately to resolve any MSE-level HLS glitches.
-    if (job.complete && nextItem.preparedMp4Url && (state.hls || state.plyr?.source?.includes("m3u8"))) {
-      debugTrace("poll_compat_complete_switch", `id=${id} switching to direct mp4`);
-      forceDirectPlayback(nextItem);
-      cancelCompatPolling();
-      return true;
-    }
 
     if (canStartPlayback) {
       const mounted = await ensureCompatiblePlayerMounted(nextItem);

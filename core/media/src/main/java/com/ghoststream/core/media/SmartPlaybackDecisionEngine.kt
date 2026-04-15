@@ -94,6 +94,7 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
             // Codecs are fine but moov atom is confirmed at end of file.
             isBrowserContainer && (!hasVideo || isFullyUniversal) && isAacOrMp3 &&
                 inspection.hasFaststart == false -> {
+                CompatLogger.info("DecisionEngine", "item_id=${inspection.itemId ?: "unknown"} mode=REMUX reason=\"Relocating metadata for instant browser playback (faststart fix)\"")
                 PlaybackDecision(
                     mode = PlaybackMode.REMUX,
                     browserMimeType = "video/mp4",
@@ -106,6 +107,7 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
             // Video is H.264 and safe; audio needs re-encoding to AAC.
             // Copy video stream, transcode audio only, output non-fragmented MP4.
             isBrowserContainer && hasVideo && isFullyUniversal && !isAacOrMp3 -> {
+                CompatLogger.info("DecisionEngine", "item_id=${inspection.itemId ?: "unknown"} mode=TRANSMUX reason=\"Re-encoding audio to AAC for browser compatibility; video copied unchanged\"")
                 PlaybackDecision(
                     mode = PlaybackMode.TRANSMUX,
                     browserMimeType = "video/mp4",
@@ -141,6 +143,8 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
                     !isSafeLevel -> "Video level (${inspection.videoLevel}) exceeds mobile/TV hardware limits"
                     else -> "Re-encoding for universal browser compatibility"
                 }
+                CompatLogger.info("DecisionEngine", "item_id=${inspection.itemId ?: "unknown"} mode=TRANSCODE reason=\"$reason\" " + 
+                    "codec=${inspection.videoTrackMimeType} bitDepth=${inspection.bitDepth} profile=${inspection.videoProfile} level=${inspection.videoLevel}")
                 PlaybackDecision(
                     mode = PlaybackMode.TRANSCODE,
                     browserMimeType = "video/mp4",

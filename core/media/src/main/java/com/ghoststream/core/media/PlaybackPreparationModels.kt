@@ -24,6 +24,9 @@ data class CachedPlaybackAsset(
     val createdAtEpochMs: Long,
     val isComplete: Boolean = true,
     val isFragmentedMp4: Boolean = false,
+    val width: Int? = null,
+    val height: Int? = null,
+    val totalDurationMs: Long? = null,
 )
 
 @Serializable
@@ -45,6 +48,18 @@ data class CompatibilityJob(
     val lastOutputBytesAt: Long = System.currentTimeMillis(),
     val stallCheckCount: Int = 0,
     val stabilizedSource: StabilizedSourceInfo? = null,
+    // Failure metadata
+    val lastFailureType: CompatibilityFailureType? = null,
+    val lastFailureReason: String? = null,
+    val failureCount: Int = 0,
+    val failureLimit: Int = 2,
+    val isTerminalFailure: Boolean = false,
+    val lastFailureAt: Long? = null,
+    val width: Int? = null,
+    val height: Int? = null,
+    val totalDurationMs: Long? = null,
+    /** Timestamp of the last media-serving signal (HLS playlist/segment request). */
+    val lastMediaServedAt: Long? = null,
 ) {
     val canServePlayback: Boolean
         get() = status == CompatibilityStatus.READY || hlsReady || directReady

@@ -96,6 +96,8 @@ class AndroidMediaAnalyzer(
             videoLevel = trackInspection.videoLevel,
             bitDepth = trackInspection.bitDepth,
             hasFaststart = hasFaststart,
+            width = trackInspection.width,
+            height = trackInspection.height,
         )
         } catch (e: Exception) {
             debugLogSink.log("MediaAnalyzer", "CRITICAL: Inspection failure for $displayName", e)
@@ -115,6 +117,8 @@ class AndroidMediaAnalyzer(
                 videoLevel = null,
                 bitDepth = null,
                 hasFaststart = null,
+                width = null,
+                height = null,
             )
         }
     }
@@ -438,6 +442,8 @@ class AndroidMediaAnalyzer(
                 var videoProfile: Int? = null
                 var videoLevel: Int? = null
                 var bitDepth: Int? = null
+                var width: Int? = null
+                var height: Int? = null
 
                 for (index in 0 until extractor.trackCount) {
                     val format = extractor.getTrackFormat(index)
@@ -454,6 +460,12 @@ class AndroidMediaAnalyzer(
                             }
                             if (format.containsKey(MediaFormat.KEY_LEVEL)) {
                                 videoLevel = format.getInteger(MediaFormat.KEY_LEVEL)
+                            }
+                            if (format.containsKey(MediaFormat.KEY_WIDTH)) {
+                                width = format.getInteger(MediaFormat.KEY_WIDTH)
+                            }
+                            if (format.containsKey(MediaFormat.KEY_HEIGHT)) {
+                                height = format.getInteger(MediaFormat.KEY_HEIGHT)
                             }
                             // Bit depth is often not explicitly in KEY_BIT_PER_SAMPLE for video
                             // but sometimes in KEY_COLOR_FORMAT (e.g. 10-bit YUV formats)
@@ -481,6 +493,8 @@ class AndroidMediaAnalyzer(
                     videoProfile = videoProfile,
                     videoLevel = videoLevel,
                     bitDepth = bitDepth,
+                    width = width,
+                    height = height,
                 )
             } finally {
                 extractor.release()
@@ -584,5 +598,7 @@ class AndroidMediaAnalyzer(
         val videoProfile: Int? = null,
         val videoLevel: Int? = null,
         val bitDepth: Int? = null,
+        val width: Int? = null,
+        val height: Int? = null,
     )
 }

@@ -180,4 +180,20 @@ class MediaSourceStabilizer(
             null
         }
     }
+
+    /**
+     * Ensures the source is stabilized and then executes the block.
+     */
+    suspend fun <T> withStabilizedSource(
+        item: com.ghoststream.core.model.SharedItem,
+        block: suspend (StabilizedSourceInfo) -> T
+    ): T {
+        val info = stabilize(
+            uriString = item.uri,
+            mimeType = item.mimeType,
+            sizeBytes = item.sizeBytes,
+            itemId = item.id
+        )
+        return block(info)
+    }
 }

@@ -54,4 +54,16 @@ data class MediaInspection(
      * seeking works, so a REMUX pass to relocate moov is recommended.
      */
     val hasFaststart: Boolean? = null,
+    /**
+     * Optional ID of the item being inspected, used for logging and tracking.
+     */
+    val itemId: String? = null,
+    /**
+     * Native video width in pixels.
+     */
+    val width: Int? = null,
+    /**
+     * Native video height in pixels.
+     */
+    val height: Int? = null,
 )

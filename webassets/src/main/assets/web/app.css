@@ -678,6 +678,7 @@ input {
 
 .gs-video-wrap {
   position: relative;
+  /* Natural ratio applied via inline style from JS */
 }
 
 .gs-video-wrap .plyr,
@@ -700,8 +701,7 @@ input {
 }
 
 .gs-video-wrap video.gs-native-video {
-  aspect-ratio: 16 / 9;
-  object-fit: contain;
+  width: 100%;
 }
 
 .gs-video-wrap .plyr__poster,
@@ -1369,7 +1369,7 @@ input:focus-visible {
   }
 
   .gs-card-img {
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 16 / 9; /* Default fallback for TV */
     border-radius: 18px 18px 0 0;
   }
 

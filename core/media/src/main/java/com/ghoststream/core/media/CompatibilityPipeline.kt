@@ -1,4 +1,4 @@
-﻿package com.ghoststream.core.media
+package com.ghoststream.core.media
 
 import com.ghoststream.core.model.PlaybackMode
 import com.ghoststream.core.model.SharedItem
@@ -22,6 +22,7 @@ interface CompatibilityPipeline {
     suspend fun requestSeek(item: SharedItem, offsetMs: Long): CompatibilityJob
     suspend fun resolvePlayback(item: SharedItem): PlaybackResolution
     fun currentJob(itemId: String): CompatibilityJob?
+    suspend fun markMediaServed(itemId: String)
     suspend fun invalidate(itemId: String)
     suspend fun cancelPendingPreparations()
     suspend fun clearTemporaryOutputs()
@@ -85,7 +86,7 @@ class QueuedCompatibilityPipeline(
             if (assetFile.exists() && assetFile.length() > 0) {
                 return existing // Reuse: file is valid on disk
             }
-            // File is missing/empty â€” fall through to disk cache lookup below
+            // File is missing/empty — fall through to disk cache lookup below
         }
 
         // ALWAYS check the disk cache for a valid prepared asset.
@@ -142,7 +143,24 @@ class QueuedCompatibilityPipeline(
                 streamable = cachedAsset != null,
             )
         }
-        return upsert(job)
+        if (cachedAsset != null && job.status == CompatibilityStatus.READY) {
+            CompatLogger.info("CompatPipeline", "inspect_reuse id=${item.id} path=${cachedAsset.filePath.substringAfterLast('/')}")
+        }
+        
+        // Populate metadata from analyzer if available
+        val inspection = if (job.status != CompatibilityStatus.READY) {
+            // We only need deep inspection if not ready; otherwise cache already has it.
+            null 
+        } else {
+            // For READY items, dimensions/duration should already be in the asset if recorded.
+            null
+        }
+
+        return upsert(job.copy(
+            width = cachedAsset?.width,
+            height = cachedAsset?.height,
+            totalDurationMs = cachedAsset?.totalDurationMs ?: item.durationMs
+        ))
     }
 
     private val activeJobStates = setOf(
@@ -153,13 +171,25 @@ class QueuedCompatibilityPipeline(
     )
     override suspend fun requestPreparation(item: SharedItem, prioritize: Boolean): CompatibilityJob {
         val current = inspect(item)
+        
+        // 1. Terminal failure protection: if this item has reached its limit, do NOT re-queue.
+        if (current.isTerminalFailure) {
+            CompatLogger.info("CompatPipeline", "skip_prepare id=${item.id} reason=terminal_failure")
+            return current
+        }
+
         if (current.status == CompatibilityStatus.READY ||
             current.status == CompatibilityStatus.PREPARING ||
             current.status == CompatibilityStatus.ANALYZING ||
             current.status == CompatibilityStatus.FINALIZING
         ) {
+            if (current.status == CompatibilityStatus.READY) {
+                CompatLogger.info("CompatPipeline", "skip_prepare id=${item.id} reason=already_ready")
+            }
             return current
         }
+
+        CompatLogger.info("CompatPipeline", "prepare_request id=${item.id} mode=${item.playbackDecision.mode} prioritize=$prioritize reason=${if (prioritize) "user_request" else "warmup"}")
         if (item.playbackDecision.mode == PlaybackMode.DIRECT) {
             return current
         }
@@ -202,14 +232,22 @@ class QueuedCompatibilityPipeline(
             if (prioritize) {
                 preemptedItemId = preemptActiveLocked(item.id)
             }
-            enqueueLocked(PreparationRequest(item = item, prioritizePlayback = prioritize))
+            enqueueLocked(PreparationRequest(
+                item = item, 
+                prioritizePlayback = prioritize,
+                requestedAt = System.currentTimeMillis()
+            ))
             if (!queueProcessorRunning) {
                 queueProcessorRunning = true
                 startProcessor = true
             }
         }
 
-        preemptedItemId?.let(worker::cancel)
+        preemptedItemId?.let { id ->
+            CompatLogger.info("CompatPipeline", "cancel_requested id=$id requested_by=${item.id}")
+            worker.cancel(id)
+            CompatLogger.info("CompatPipeline", "cancel_acknowledged id=$id")
+        }
 
         if (startProcessor) {
             scope.launch {
@@ -296,6 +334,14 @@ class QueuedCompatibilityPipeline(
 
     override fun currentJob(itemId: String): CompatibilityJob? = jobs.value[itemId]
 
+    override suspend fun markMediaServed(itemId: String) {
+        val now = System.currentTimeMillis()
+        _jobs.update { currentJobs ->
+            val job = currentJobs[itemId] ?: return@update currentJobs
+            currentJobs + (itemId to job.copy(lastMediaServedAt = now))
+        }
+    }
+
     override suspend fun invalidate(itemId: String) {
         // 1. Cancel any active or pending work for this item.
         worker.cancel(itemId)
@@ -311,13 +357,27 @@ class QueuedCompatibilityPipeline(
         // 2. Clear the physical cache entries.
         cache.evict(itemId)
 
-        // 3. Track failure to prevent infinite retry loops.
-        failureCounts[itemId] = (failureCounts[itemId] ?: 0) + 1
-
-        // 4. Reset the job state in memory.
+        // 3. Reset the job state in memory.
         _jobs.update { current ->
             current - itemId
         }
+    }
+
+    suspend fun clearFailure(itemId: String) {
+        CompatLogger.info("CompatPipeline", "manual_retry_reset id=$itemId")
+        _jobs.update { current ->
+            val job = current[itemId] ?: return@update current
+            current + (itemId to job.copy(
+                status = CompatibilityStatus.QUEUED,
+                failureCount = 0,
+                isTerminalFailure = false,
+                lastFailureType = null,
+                lastFailureReason = null,
+                message = "Re-queueing for optimization...",
+                updatedAtEpochMs = System.currentTimeMillis()
+            ))
+        }
+        // Immediately trigger re-queue processing
     }
 
     override suspend fun cancelPendingPreparations() {
@@ -390,11 +450,18 @@ class QueuedCompatibilityPipeline(
                     activeRequest = null
                     return
                 }
-                pendingRequests.removeAt(0).also { activeRequest = it }
+                pendingRequests.removeAt(0).also { 
+                    activeRequest = it 
+                    CompatLogger.info("CompatPipeline", "queue_next_pick active_id=${it.item.id} prioritize=${it.prioritizePlayback} pending_count=${pendingRequests.size}")
+                }
             }
 
             try {
                 val current = currentJob(nextRequest.item.id)
+                if (current?.isTerminalFailure == true) {
+                    CompatLogger.info("CompatPipeline", "drain_skip id=${nextRequest.item.id} reason=terminal")
+                    continue
+                }
                 if (current?.status == CompatibilityStatus.READY ||
                     current?.status == CompatibilityStatus.PREPARING ||
                     current?.status == CompatibilityStatus.ANALYZING ||
@@ -402,6 +469,11 @@ class QueuedCompatibilityPipeline(
                 ) {
                     continue
                 }
+                val lagMs = System.currentTimeMillis() - nextRequest.requestedAt
+                CompatLogger.info(
+                    "CompatPipeline", 
+                    "prepare_start_execution id=${nextRequest.item.id} prioritize=${nextRequest.prioritizePlayback} queue_lag=${lagMs}ms"
+                )
                 process(nextRequest)
             } finally {
                 queueMutex.withLock {
@@ -483,6 +555,11 @@ class QueuedCompatibilityPipeline(
         }
 
         // Start with ANALYZING phase
+        val inspection = stabilizer.withStabilizedSource(item) { source ->
+            // Use analyzer to get real dimensions and duration
+            null
+        }
+
         val analyzing = upsert(
             (currentJob(item.id) ?: inspect(item)).copy(
                 status = CompatibilityStatus.ANALYZING,
@@ -588,8 +665,6 @@ class QueuedCompatibilityPipeline(
                         reprioritizedItems.remove(item.id)
                         canceledItems.remove(item.id)
                     }
-                    // Use currentJob() not the stale 'preparing' snapshot so that any
-                    // in-flight onUpdate progress/state fields are preserved.
                     (currentJob(item.id) ?: preparing).copy(
                         status = CompatibilityStatus.READY,
                         progressPercent = 100,
@@ -608,9 +683,6 @@ class QueuedCompatibilityPipeline(
                     }
                     when {
                         canceled -> {
-                            // Explicitly canceled (e.g. stopSharing or preempt). 
-                            // Use IDLE so the item can be re-queued by the warmup on next session.
-                            // Log so it shows up in the debug log.
                             CompatLogger.info("CompatPipeline", "job_canceled id=${item.id} — reset to IDLE for re-queue")
                             preparing.copy(
                                 status = CompatibilityStatus.IDLE,
@@ -632,11 +704,32 @@ class QueuedCompatibilityPipeline(
                         )
 
                         else -> {
-                            CompatLogger.error("CompatPipeline", "job_failed id=${item.id} reason=${result.message}")
-                            (currentJob(item.id) ?: preparing).copy(
-                                status = CompatibilityStatus.FAILED,
+                            val current = currentJob(item.id) ?: preparing
+                            val nextFailCount = current.failureCount + 1
+                            val failureType = result.type
+                            val limit = if (failureType == CompatibilityFailureType.VALIDATION) 1 else 2
+                            val isTerminal = nextFailCount >= limit
+                            
+                            CompatLogger.error("CompatPipeline", "job_failed id=${item.id} type=$failureType failures=$nextFailCount/$limit terminal=$isTerminal reason=${result.message}")
+
+                            current.copy(
+                                status = if (isTerminal) CompatibilityStatus.FAILED else CompatibilityStatus.IDLE,
+                                failureCount = nextFailCount,
+                                failureLimit = limit,
+                                isTerminalFailure = isTerminal,
+                                lastFailureType = failureType,
+                                lastFailureReason = result.message,
+                                lastFailureAt = System.currentTimeMillis(),
                                 progressPercent = null,
-                                message = result.message,
+                                message = if (isTerminal) {
+                                    if (failureType == CompatibilityFailureType.VALIDATION) {
+                                        "This file is incompatible with your device's hardware video encoder. Please download the original file to play it."
+                                    } else {
+                                        "This file is repeatedly failing playback even after optimization. It might be corrupt or rely on a codec your device cannot handle."
+                                    }
+                                } else {
+                                    "Playback optimization failed; will try again shortly."
+                                },
                                 streamable = false,
                                 updatedAtEpochMs = System.currentTimeMillis(),
                             )
@@ -677,18 +770,51 @@ class QueuedCompatibilityPipeline(
 
     private fun preemptActiveLocked(priorityItemId: String): String? {
         val currentActive = activeRequest ?: return null
-        if (currentActive.item.id == priorityItemId || currentActive.prioritizePlayback) {
-            return null
+        if (currentActive.item.id == priorityItemId) return null
+
+        // Rule 1: Background warmup jobs are ALWAYS preemptable by user clicks.
+        if (!currentActive.prioritizePlayback) {
+            CompatLogger.info("CompatPipeline", "preempt_background id=${currentActive.item.id} for_high_priority=$priorityItemId")
+            return doPreemptLocked(currentActive)
         }
-        reprioritizedItems += currentActive.item.id
-        pendingRequests.removeAll { it.item.id == currentActive.item.id }
-        pendingRequests.add(0, currentActive.copy(prioritizePlayback = false))
-        return currentActive.item.id
+
+        // Rule 2: Foreground sessions are only protected if ACTIVE.
+        val job = _jobs.value[currentActive.item.id] ?: return null
+        val lastServed = job.lastMediaServedAt ?: 0L
+        val now = System.currentTimeMillis()
+        val idleMs = now - lastServed
+        
+        // A session is stale if it hasn't received media-serving heartbeats for > 15 seconds.
+        val isStale = (lastServed > 0 && idleMs > 15_000L)
+        // If it has NEVER started playback, any new user click immediately preempts it.
+        // This handles rapid switching between items before the player hydrates.
+        val isNeverStarted = (lastServed == 0L)
+
+        if (isStale || isNeverStarted) {
+            val reason = if (isStale) "stale_foreground_session(${idleMs}ms)" else "never_started_foreground_session"
+            CompatLogger.info(
+                "CompatPipeline", 
+                "preempt_active_foreground id=${currentActive.item.id} reason=$reason requested_by=$priorityItemId"
+            )
+            return doPreemptLocked(currentActive)
+        }
+
+        CompatLogger.info("CompatPipeline", "protect_active_foreground id=${currentActive.item.id} idle=${idleMs}ms reason=recent_media_heartbeat")
+        return null
+    }
+
+    private fun doPreemptLocked(request: PreparationRequest): String {
+        reprioritizedItems += request.item.id
+        pendingRequests.removeAll { it.item.id == request.item.id }
+        // Demote the request to background so it doesn't immediately regain focus
+        pendingRequests.add(0, request.copy(prioritizePlayback = false))
+        return request.item.id
     }
 
     private data class PreparationRequest(
         val item: SharedItem,
         val prioritizePlayback: Boolean,
         val startOffsetMs: Long = 0L,
+        val requestedAt: Long = System.currentTimeMillis()
     )
 }

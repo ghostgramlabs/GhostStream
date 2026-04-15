@@ -2,6 +2,17 @@ package com.ghoststream.core.media
 
 import com.ghoststream.core.model.PlaybackMode
 import com.ghoststream.core.model.SharedItem
+import kotlinx.serialization.Serializable
+
+@Serializable
+enum class CompatibilityFailureType {
+    VALIDATION,  // Deterministic output mismatch
+    EXPORT,      // Hardware encoder crash / Media3 error
+    STALL,       // Timeout
+    SOURCE,      // SecurityException / File missing
+    CANCEL,      // Explicitly canceled
+    UNKNOWN
+}
 
 sealed interface CompatibilityWorkerResult {
     data class Success(
@@ -11,6 +22,7 @@ sealed interface CompatibilityWorkerResult {
 
     data class Failure(
         val message: String,
+        val type: CompatibilityFailureType = CompatibilityFailureType.UNKNOWN,
     ) : CompatibilityWorkerResult
 }
 
@@ -22,6 +34,7 @@ data class CompatibilityWorkerUpdate(
     val hlsReady: Boolean? = null,
     val directReady: Boolean? = null,
     val streamable: Boolean? = null,
+    val failureType: CompatibilityFailureType? = null,
 )
 
 interface CompatibilityWorker {
