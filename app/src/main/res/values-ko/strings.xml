@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">DirectServe</string>
+    <string name="app_tagline">개인 로컬 공유</string>
+    <string name="language_title">언어 선택</string>
+    <string name="language_subtitle">DirectServe는 이 언어를 온보딩, 설정, 공유 화면에 사용합니다. 나중에 설정에서 변경할 수 있습니다.</string>
+    <string name="language_selected">선택됨</string>
+    <string name="language_continue">계속</string>
+    <string name="notification_channel_name">공유 세션</string>
+    <string name="notification_channel_description">DirectServe 공유를 백그라운드에서 계속 유지합니다.</string>
+    <string name="notification_title">DirectServe가 공유 중입니다</string>
+    <string name="notification_stop">중지</string>
+</resources>

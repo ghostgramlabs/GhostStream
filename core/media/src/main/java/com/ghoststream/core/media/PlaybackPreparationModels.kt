@@ -1,0 +1,114 @@
+package com.ghoststream.core.media
+
+import com.ghoststream.core.model.PlaybackDecision
+import kotlinx.serialization.Serializable
+
+@Serializable
+enum class CompatibilityStatus {
+    IDLE,
+    QUEUED,
+    ANALYZING,
+    PREPARING,
+    FINALIZING,
+    READY,
+    FAILED,
+    STALLED,
+}
+
+@Serializable
+data class CachedPlaybackAsset(
+    val itemId: String,
+    val filePath: String,
+    val mimeType: String?,
+    val sizeBytes: Long,
+    val createdAtEpochMs: Long,
+    val isComplete: Boolean = true,
+    val isFragmentedMp4: Boolean = false,
+)
+
+@Serializable
+data class CompatibilityJob(
+    val itemId: String,
+    val decision: PlaybackDecision,
+    val status: CompatibilityStatus = CompatibilityStatus.IDLE,
+    val message: String = decision.reason,
+    val progressPercent: Int? = null,
+    val preparedAsset: CachedPlaybackAsset? = null,
+    val hlsReady: Boolean = false,
+    val directReady: Boolean = preparedAsset?.isComplete ?: false,
+    val streamable: Boolean = hlsReady || directReady,
+    val startOffsetMs: Long = 0L,
+    val updatedAtEpochMs: Long = System.currentTimeMillis(),
+    // Stuck detection fields
+    val lastProgressAt: Long = System.currentTimeMillis(),
+    val lastProgressValue: Int = 0,
+    val lastOutputBytesAt: Long = System.currentTimeMillis(),
+    val stallCheckCount: Int = 0,
+    val stabilizedSource: StabilizedSourceInfo? = null,
+) {
+    val canServePlayback: Boolean
+        get() = status == CompatibilityStatus.READY || hlsReady || directReady
+
+    /**
+     * Coarse progress rounded to nearest 5% bucket, used for throttled UI updates.
+     * Returns null if progressPercent is null.
+     */
+    val coarseProgressBucket: Int?
+        get() = progressPercent?.let { (it / 5) * 5 }
+
+    /** True if this job is considered "large file mode" — long-running or big file. */
+    val isLargeFile: Boolean
+        get() {
+            val elapsed = System.currentTimeMillis() - lastProgressAt
+            // If progress hasn't moved more than 10% in 30 seconds, treat as large
+            return elapsed > 30_000L && (progressPercent ?: 0) < 90
+        }
+}
+
+/**
+ * Lightweight user-visible session model for UI rendering.
+ * Internal state updates frequently; this model is throttled and debounced.
+ */
+data class UserVisibleSessionState(
+    val connectedDeviceCount: Int = 0,
+    val shareUrl: String? = null,
+    val currentMediaPrepareState: CompatibilityStatus = CompatibilityStatus.IDLE,
+    val coarseProgress: Int? = null,
+    val isReady: Boolean = false,
+    val isFailed: Boolean = false,
+    val statusMessage: String? = null,
+)
+
+sealed interface PlaybackSource {
+    val mimeType: String?
+    val sizeBytes: Long
+
+    data class OriginalUri(
+        val uriString: String,
+        override val mimeType: String?,
+        override val sizeBytes: Long,
+    ) : PlaybackSource
+
+    data class CachedFile(
+        val filePath: String,
+        override val mimeType: String?,
+        override val sizeBytes: Long,
+        val allowGrowing: Boolean = false,
+        val isComplete: Boolean = true,
+    ) : PlaybackSource
+}
+
+sealed interface PlaybackResolution {
+    data class Ready(
+        val source: PlaybackSource,
+        val job: CompatibilityJob,
+    ) : PlaybackResolution
+
+    data class Pending(
+        val job: CompatibilityJob,
+    ) : PlaybackResolution
+
+    data class Failed(
+        val job: CompatibilityJob,
+    ) : PlaybackResolution
+}

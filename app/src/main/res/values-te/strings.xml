@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">DirectServe</string>
+    <string name="app_tagline">ప్రైవేట్ లోకల్ షేరింగ్</string>
+    <string name="language_title">మీ భాషను ఎంచుకోండి</string>
+    <string name="language_subtitle">DirectServe ఈ భాషను ఆన్‌బోర్డింగ్, సెట్టింగ్స్, షేరింగ్ స్క్రీన్‌లలో ఉపయోగిస్తుంది. దీన్ని తర్వాత సెట్టింగ్స్‌లో మార్చవచ్చు.</string>
+    <string name="language_selected">ఎంచుకున్నారు</string>
+    <string name="language_continue">కొనసాగించండి</string>
+    <string name="notification_channel_name">షేరింగ్ సెషన్</string>
+    <string name="notification_channel_description">DirectServe షేరింగ్‌ను బ్యాక్‌గ్రౌండ్‌లో కొనసాగిస్తుంది.</string>
+    <string name="notification_title">DirectServe ఇప్పుడు షేర్ చేస్తోంది</string>
+    <string name="notification_stop">ఆపండి</string>
+</resources>

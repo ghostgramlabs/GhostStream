@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">DirectServe</string>
+    <string name="app_tagline">Özel yerel paylaşım</string>
+    <string name="language_title">Dilini seç</string>
+    <string name="language_subtitle">DirectServe bu dili karşılama, ayarlar ve paylaşım ekranlarında kullanacak. Bunu daha sonra Ayarlar’dan değiştirebilirsin.</string>
+    <string name="language_selected">Seçildi</string>
+    <string name="language_continue">Devam et</string>
+    <string name="notification_channel_name">Paylaşım oturumu</string>
+    <string name="notification_channel_description">DirectServe paylaşımını arka planda etkin tutar.</string>
+    <string name="notification_title">DirectServe şu anda paylaşıyor</string>
+    <string name="notification_stop">Durdur</string>
+</resources>

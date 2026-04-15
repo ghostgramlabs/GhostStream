@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">DirectServe</string>
+    <string name="app_tagline">Privé lokaal delen</string>
+    <string name="language_title">Kies je taal</string>
+    <string name="language_subtitle">DirectServe gebruikt deze taal voor onboarding, instellingen en deelschermen. Je kunt dit later wijzigen in Instellingen.</string>
+    <string name="language_selected">Geselecteerd</string>
+    <string name="language_continue">Doorgaan</string>
+    <string name="notification_channel_name">Deelsessie</string>
+    <string name="notification_channel_description">Houdt DirectServe-delen actief op de achtergrond.</string>
+    <string name="notification_title">DirectServe deelt nu</string>
+    <string name="notification_stop">Stoppen</string>
+</resources>

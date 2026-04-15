@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">DirectServe</string>
+    <string name="app_tagline">निजी लोकल शेयरिंग</string>
+    <string name="language_title">अपनी भाषा चुनें</string>
+    <string name="language_subtitle">DirectServe यही भाषा ऑनबोर्डिंग, सेटिंग्स और शेयरिंग स्क्रीन में इस्तेमाल करेगा। आप इसे बाद में सेटिंग्स में बदल सकते हैं।</string>
+    <string name="language_selected">चयनित</string>
+    <string name="language_continue">जारी रखें</string>
+    <string name="notification_channel_name">शेयरिंग सत्र</string>
+    <string name="notification_channel_description">DirectServe शेयरिंग को बैकग्राउंड में सक्रिय रखता है।</string>
+    <string name="notification_title">DirectServe शेयर कर रहा है</string>
+    <string name="notification_stop">रोकें</string>
+</resources>

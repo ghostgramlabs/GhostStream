@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <external-files-path
+        name="ghoststream_external_files"
+        path="." />
+    <cache-path
+        name="ghoststream_cache"
+        path="." />
+</paths>

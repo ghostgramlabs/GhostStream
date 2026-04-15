@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">DirectServe</string>
+    <string name="app_tagline">Private local sharing</string>
+    <string name="language_title">Choose your language</string>
+    <string name="language_subtitle">DirectServe will use this language across onboarding, settings, and sharing screens. You can change it later in Settings.</string>
+    <string name="language_selected">Selected</string>
+    <string name="language_continue">Continue</string>
+    <string name="notification_channel_name">Sharing session</string>
+    <string name="notification_channel_description">Keeps DirectServe sharing active in the background.</string>
+    <string name="notification_title">DirectServe is sharing</string>
+    <string name="notification_stop">Stop</string>
+</resources>

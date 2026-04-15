@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">DirectServe</string>
+    <string name="app_tagline">การแชร์ภายในเครื่องแบบส่วนตัว</string>
+    <string name="language_title">เลือกภาษา</string>
+    <string name="language_subtitle">DirectServe จะใช้ภาษานี้ในหน้าต้อนรับ การตั้งค่า และหน้าการแชร์ คุณสามารถเปลี่ยนได้ภายหลังในหน้าการตั้งค่า</string>
+    <string name="language_selected">เลือกแล้ว</string>
+    <string name="language_continue">ต่อไป</string>
+    <string name="notification_channel_name">เซสชันการแชร์</string>
+    <string name="notification_channel_description">ทำให้การแชร์ของ DirectServe ทำงานอยู่เบื้องหลังต่อไป</string>
+    <string name="notification_title">DirectServe กำลังแชร์</string>
+    <string name="notification_stop">หยุด</string>
+</resources>

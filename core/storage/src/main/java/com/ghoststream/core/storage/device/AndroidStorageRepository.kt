@@ -1,0 +1,684 @@
+package com.ghoststream.core.storage.device
+
+import android.content.ContentResolver
+import android.content.ContentUris
+import android.content.Context
+import android.content.Intent
+import android.database.Cursor
+import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import android.provider.MediaStore
+import android.provider.OpenableColumns
+import androidx.core.net.toUri
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStoreFile
+import androidx.documentfile.provider.DocumentFile
+import com.ghoststream.core.media.MediaAnalyzer
+import com.ghoststream.core.history.HistoryRepository
+import com.ghoststream.core.model.*
+import com.ghoststream.core.storage.StorageRepository
+import java.io.FileNotFoundException
+import java.io.IOException
+import java.util.UUID
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+
+class AndroidStorageRepository(
+    private val context: Context,
+    private val mediaAnalyzer: MediaAnalyzer,
+    private val historyRepository: HistoryRepository,
+    private val json: Json = Json { ignoreUnknownKeys = true },
+) : StorageRepository {
+
+    private val addFilesDispatcher = Dispatchers.IO.limitedParallelism(
+        Runtime.getRuntime().availableProcessors().coerceIn(4, 8),
+    )
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val persistence: DataStore<Preferences> = PreferenceDataStoreFactory.create(
+        scope = scope,
+        produceFile = { context.preferencesDataStoreFile("ghoststream_library.preferences_pb") },
+    )
+    private val stateMutex = Mutex()
+    private val _libraryState = MutableStateFlow(LibraryState())
+
+    override val libraryState: StateFlow<LibraryState> = _libraryState.asStateFlow()
+
+    init {
+        scope.launchStateRestore()
+    }
+
+    override suspend fun addFiles(uris: List<Uri>): LibraryState {
+        uris.forEach(::takeDocumentPermission)
+        val newItems = coroutineScope {
+            uris.map { uri ->
+                async(addFilesDispatcher) {
+                    buildSingleItemSync(uri = uri, sourceFolderId = null)
+                }
+            }.awaitAll().filterNotNull()
+        }
+        return stateMutex.withLock {
+            val current = currentPersistedState()
+            val merged = mergeState(
+                items = current.items + newItems,
+                folders = current.folders,
+            )
+            persistAndPublish(merged)
+            merged
+        }
+    }
+
+    override suspend fun addFolder(treeUri: Uri): Result<SharedFolder> = runCatching {
+        takeTreePermission(treeUri)
+        val root = DocumentFile.fromTreeUri(context, treeUri)
+            ?: error("Unable to access the selected folder.")
+        val folderId = stableId(treeUri.toString())
+        val addedAt = System.currentTimeMillis()
+        val scanned = scanTree(root = root, folderId = folderId)
+        val folder = SharedFolder(
+            id = folderId,
+            treeUri = treeUri.toString(),
+            displayName = root.name ?: "Shared folder",
+            fileCount = scanned.size,
+            totalSizeBytes = scanned.sumOf { it.sizeBytes },
+            addedAtEpochMs = addedAt,
+            permissionPersisted = true,
+        )
+        stateMutex.withLock {
+            val current = currentPersistedState()
+            val merged = mergeState(
+                items = current.items.filterNot { it.sourceFolderId == folderId } + scanned,
+                folders = current.folders.filterNot { it.id == folderId } + folder,
+            )
+            persistAndPublish(merged)
+        }
+        folder
+    }
+
+    override suspend fun addSmartSelection(uris: List<Uri>): LibraryState = addFiles(uris)
+
+    override suspend fun removeItem(itemId: String) {
+        stateMutex.withLock {
+            val current = currentPersistedState()
+            val merged = current.copy(items = current.items.filterNot { it.id == itemId })
+                .withSummary()
+            persistAndPublish(merged)
+        }
+    }
+
+    override suspend fun removeFolder(folderId: String) {
+        stateMutex.withLock {
+            val current = currentPersistedState()
+            val merged = current.copy(
+                items = current.items.filterNot { it.sourceFolderId == folderId },
+                folders = current.folders.filterNot { it.id == folderId },
+            ).withSummary()
+            persistAndPublish(merged)
+        }
+    }
+
+    override suspend fun refreshAvailability() {
+        stateMutex.withLock {
+            val current = currentPersistedState()
+            val merged = refreshExistingState(current)
+            persistAndPublish(merged)
+        }
+    }
+
+    override suspend fun clearSelection() {
+        stateMutex.withLock {
+            persistAndPublish(LibraryState())
+        }
+    }
+
+    override suspend fun loadSmartSelectionGroups(): List<SmartSelectionGroup> = withContext(Dispatchers.IO) {
+        val nowSeconds = System.currentTimeMillis() / 1_000L
+        val daySeconds = 24L * 60L * 60L
+        buildList {
+            queryMediaStoreGroup(
+                id = "photos_today",
+                title = "Photos from today",
+                description = "Share today's moments in one tap",
+                collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                mimePrefix = "image/",
+                selection = "${MediaStore.MediaColumns.DATE_ADDED} >= ?",
+                args = arrayOf((nowSeconds - daySeconds).toString()),
+                sortColumn = MediaStore.MediaColumns.DATE_ADDED,
+            )?.let(::add)
+
+            queryMediaStoreGroup(
+                id = "photos_last_7",
+                title = "Photos from last 7 days",
+                description = "Fresh photos ready to send",
+                collection = MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                mimePrefix = "image/",
+                selection = "${MediaStore.MediaColumns.DATE_ADDED} >= ?",
+                args = arrayOf((nowSeconds - 7 * daySeconds).toString()),
+                sortColumn = MediaStore.MediaColumns.DATE_ADDED,
+            )?.let(::add)
+
+            queryMediaStoreGroup(
+                id = "videos_last_week",
+                title = "Videos from last week",
+                description = "Recent clips optimized for quick sharing",
+                collection = MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                mimePrefix = "video/",
+                selection = "${MediaStore.MediaColumns.DATE_ADDED} >= ?",
+                args = arrayOf((nowSeconds - 7 * daySeconds).toString()),
+                sortColumn = MediaStore.MediaColumns.DATE_ADDED,
+            )?.let(::add)
+
+            queryMediaStoreGroup(
+                id = "large_files",
+                title = "Large files",
+                description = "Big files you may want to transfer directly",
+                collection = MediaStore.Files.getContentUri("external"),
+                mimePrefix = null,
+                selection = "${MediaStore.MediaColumns.SIZE} >= ?",
+                args = arrayOf((150L * 1024L * 1024L).toString()),
+                sortColumn = MediaStore.MediaColumns.SIZE,
+            )?.let(::add)
+
+            queryMediaStoreGroup(
+                id = "recent_media",
+                title = "Recently added media",
+                description = "A quick mix of new photos, videos, and audio",
+                collection = MediaStore.Files.getContentUri("external"),
+                mimePrefix = null,
+                selection = "${MediaStore.MediaColumns.DATE_ADDED} >= ?",
+                args = arrayOf((nowSeconds - 3 * daySeconds).toString()),
+                sortColumn = MediaStore.MediaColumns.DATE_ADDED,
+            )?.let(::add)
+        }.filter { it.itemCount > 0 }
+    }
+
+    override fun findItemById(itemId: String): SharedItem? {
+        return _libraryState.value.items.firstOrNull { it.id == itemId }
+    }
+
+    override suspend fun verifyAvailability(item: SharedItem): Boolean {
+        return withContext(Dispatchers.IO) {
+            isUriAvailable(item.uri.toUri())
+        }
+    }
+
+    override suspend fun saveUploadedFile(
+        fileName: String,
+        mimeType: String,
+        content: java.io.InputStream,
+        peer: String,
+        onBytesCopied: ((Long) -> Unit)?,
+    ): Uri? = withContext(Dispatchers.IO) {
+        val resolver = context.contentResolver
+        var finalUri: Uri? = null
+        var bytesWritten = 0L
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val contentValues = android.content.ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
+            }
+            val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
+            val uri = resolver.insert(collection, contentValues) ?: return@withContext null
+            finalUri = runCatching {
+                resolver.openOutputStream(uri)?.use { output ->
+                    bytesWritten = copyWithProgress(content, output, onBytesCopied)
+                }
+                val updatedValues = android.content.ContentValues().apply {
+                    put(MediaStore.MediaColumns.IS_PENDING, 0)
+                }
+                resolver.update(uri, updatedValues, null, null)
+                uri
+            }.onFailure {
+                resolver.delete(uri, null, null)
+            }.getOrNull()
+        } else {
+            val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+            downloadsDir.mkdirs()
+            val file = java.io.File(downloadsDir, fileName)
+            finalUri = runCatching {
+                java.io.FileOutputStream(file).use { output ->
+                    bytesWritten = copyWithProgress(content, output, onBytesCopied)
+                }
+                android.media.MediaScannerConnection.scanFile(context, arrayOf(file.absolutePath), arrayOf(mimeType), null)
+                Uri.fromFile(file)
+            }.getOrNull()
+        }
+
+        if (finalUri != null) {
+            historyRepository.addRecord(
+                TransferRecord(
+                    id = UUID.randomUUID().toString(),
+                    name = fileName,
+                    direction = TransferDirection.RECEIVED,
+                    sizeBytes = bytesWritten,
+                    timestampMs = System.currentTimeMillis(),
+                    peer = peer,
+                    category = determineCategory(mimeType, fileName),
+                    fileUri = finalUri.toString(),
+                )
+            )
+        }
+        finalUri
+    }
+
+    private fun copyWithProgress(
+        input: java.io.InputStream,
+        output: java.io.OutputStream,
+        onBytesCopied: ((Long) -> Unit)?,
+    ): Long {
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        var totalBytes = 0L
+        while (true) {
+            val read = input.read(buffer)
+            if (read <= 0) break
+            output.write(buffer, 0, read)
+            totalBytes += read
+            onBytesCopied?.invoke(read.toLong())
+        }
+        output.flush()
+        return totalBytes
+    }
+
+    private fun buildSingleItemSync(uri: Uri, sourceFolderId: String?): SharedItem? {
+        val resolver = context.contentResolver
+        return runCatching {
+            val meta = resolver.queryOpenableMeta(uri)
+            val now = System.currentTimeMillis()
+            val inspection = mediaAnalyzer.inspect(uri, meta.mimeType, meta.displayName)
+            val playbackDecision = mediaAnalyzer.decidePlayback(inspection)
+            SharedItem(
+                id = stableId(uri.toString()),
+                uri = uri.toString(),
+                displayName = meta.displayName,
+                mimeType = meta.mimeType,
+                category = determineCategory(meta.mimeType, meta.displayName),
+                sizeBytes = meta.sizeBytes,
+                durationMs = mediaAnalyzer.readDurationMs(uri, meta.mimeType),
+                dateAddedEpochMs = now,
+                lastModifiedEpochMs = meta.lastModifiedEpochMs,
+                sourceFolderId = sourceFolderId,
+                thumbnailKey = stableId("thumb:${uri}"),
+                playbackDecision = playbackDecision,
+                metadata = buildMap {
+                    put("source", uri.authority ?: "local")
+                    inspection.videoTrackMimeType?.let { put("video_codec", it) }
+                    inspection.audioTrackMimeType?.let { put("audio_codec", it) }
+                    put("browser_safe", inspection.browserSafe.toString())
+                },
+            )
+        }.getOrNull()
+    }
+
+    private suspend fun scanTree(root: DocumentFile, folderId: String): List<SharedItem> {
+        return withContext(Dispatchers.IO) {
+            val accumulator = mutableListOf<SharedItem>()
+
+            fun walk(node: DocumentFile) {
+                val children = runCatching { node.listFiles() }.getOrDefault(emptyArray())
+                children.forEach { child ->
+                    when {
+                        child.isDirectory -> walk(child)
+                        child.isFile -> {
+                            buildSingleItemSync(
+                                uri = child.uri,
+                                sourceFolderId = folderId,
+                            )?.let(accumulator::add)
+                        }
+                    }
+                }
+            }
+
+            walk(root)
+            pairSubtitles(accumulator)
+        }
+    }
+
+    private fun pairSubtitles(items: List<SharedItem>): List<SharedItem> {
+        val subtitleLookup = items
+            .filter { item -> item.mimeType == "application/x-subrip" || item.displayName.endsWith(".srt", ignoreCase = true) || item.displayName.endsWith(".vtt", ignoreCase = true) }
+            .associateBy { item -> item.displayName.substringBeforeLast('.') }
+
+        return items.map { item ->
+            if (item.category != MediaCategory.VIDEO) return@map item
+            val subtitle = subtitleLookup[item.displayName.substringBeforeLast('.')]
+            if (subtitle == null) item else item.copy(
+                subtitleMatch = com.ghoststream.core.model.SubtitleMatch(
+                    subtitleItemId = subtitle.id,
+                    label = subtitle.displayName.substringAfterLast('.', "Subtitle").uppercase(),
+                    mimeType = subtitle.mimeType ?: "text/vtt",
+                ),
+            )
+        }
+    }
+
+    private suspend fun currentPersistedState(): LibraryState {
+        return persistence.data
+            .catch { error ->
+                if (error is IOException) emit(emptyPreferences()) else throw error
+            }
+            .map { preferences ->
+                preferences[LIBRARY_KEY]
+                    ?.let { encoded ->
+                        runCatching {
+                            json.decodeFromString(PersistedLibrary.serializer(), encoded)
+                        }.getOrNull()
+                    }
+                    ?.toState()
+                    ?.withSummary()
+                    ?: LibraryState()
+            }
+            .first()
+    }
+
+    private suspend fun persistAndPublish(state: LibraryState) {
+        persistence.edit { preferences ->
+            preferences[LIBRARY_KEY] = json.encodeToString(
+                PersistedLibrary.serializer(),
+                PersistedLibrary.from(state),
+            )
+        }
+        _libraryState.value = state
+    }
+
+    private fun mergeState(items: List<SharedItem>, folders: List<SharedFolder>): LibraryState {
+        val mergedItems = pairSubtitles(items)
+            .distinctBy { it.uri }
+            .sortedByDescending { it.dateAddedEpochMs }
+        return LibraryState(
+            items = mergedItems,
+            folders = folders.distinctBy { it.id }.sortedByDescending { it.addedAtEpochMs },
+        ).withSummary()
+    }
+
+    private fun LibraryState.withSummary(): LibraryState {
+        val availableItems = items.filter { it.isAvailable }
+        return copy(
+            summary = LibrarySummary(
+                videos = availableItems.count { it.category == MediaCategory.VIDEO },
+                photos = availableItems.count { it.category == MediaCategory.PHOTO },
+                music = availableItems.count { it.category == MediaCategory.MUSIC },
+                files = availableItems.count { it.category == MediaCategory.FILE },
+                totalItems = availableItems.size,
+                totalBytes = availableItems.sumOf { it.sizeBytes },
+            ),
+        )
+    }
+
+    private fun queryMediaStoreGroup(
+        id: String,
+        title: String,
+        description: String,
+        collection: Uri,
+        mimePrefix: String?,
+        selection: String,
+        args: Array<String>,
+        sortColumn: String,
+    ): SmartSelectionGroup? {
+        return runCatching {
+            val uris = mutableListOf<String>()
+            var totalBytes = 0L
+            querySmartGroupCursor(
+                collection = collection,
+                selection = selection,
+                args = args,
+                sortColumn = sortColumn,
+            )?.use { cursor ->
+                val idIndex = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
+                val sizeIndex = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.SIZE)
+                val mimeIndex = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.MIME_TYPE)
+                while (cursor.moveToNext()) {
+                    val itemMime = cursor.getString(mimeIndex)
+                    if (mimePrefix != null && itemMime?.startsWith(mimePrefix) != true) continue
+                    val contentUri = ContentUris.withAppendedId(collection, cursor.getLong(idIndex))
+                    uris += contentUri.toString()
+                    totalBytes += cursor.getLong(sizeIndex)
+                }
+            }
+            if (uris.isEmpty()) {
+                null
+            } else {
+                SmartSelectionGroup(
+                    id = id,
+                    title = title,
+                    description = description,
+                    itemCount = uris.size,
+                    totalSizeBytes = totalBytes,
+                    uris = uris,
+                )
+            }
+        }.getOrNull()
+    }
+
+    private fun querySmartGroupCursor(
+        collection: Uri,
+        selection: String,
+        args: Array<String>,
+        sortColumn: String,
+    ): Cursor? {
+        val projection = arrayOf(
+            MediaStore.MediaColumns._ID,
+            MediaStore.MediaColumns.SIZE,
+            MediaStore.MediaColumns.MIME_TYPE,
+        )
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val queryArgs = Bundle().apply {
+                putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
+                putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, args)
+                putStringArray(ContentResolver.QUERY_ARG_SORT_COLUMNS, arrayOf(sortColumn))
+                putInt(
+                    ContentResolver.QUERY_ARG_SORT_DIRECTION,
+                    ContentResolver.QUERY_SORT_DIRECTION_DESCENDING,
+                )
+                putInt(ContentResolver.QUERY_ARG_LIMIT, 60)
+            }
+            context.contentResolver.query(collection, projection, queryArgs, null)
+        } else {
+            context.contentResolver.query(
+                collection,
+                projection,
+                selection,
+                args,
+                "$sortColumn DESC",
+            )
+        }
+    }
+
+    private fun isUriAvailable(uri: Uri): Boolean {
+        return runCatching {
+            // Use openFileDescriptor specifically to check for actual file accessibility
+            // across processes. This is more reliable than just checking permissions.
+            context.contentResolver.openFileDescriptor(uri, "r")?.use { true } ?: false
+        }.recover { error ->
+            // If we get a SecurityException, the permission might be temporarily suspended
+            // (e.g. if the user is in a state where SAF permissions aren't currently active).
+            // However, for verifyAvailability we want to be strict but also avoid permanent failure.
+            false
+        }.getOrDefault(false)
+    }
+
+    private fun takeTreePermission(treeUri: Uri) {
+        val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+            Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+        runCatching {
+            context.contentResolver.takePersistableUriPermission(treeUri, flags)
+        }
+    }
+
+    private fun takeDocumentPermission(uri: Uri) {
+        val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+            Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+        runCatching {
+            context.contentResolver.takePersistableUriPermission(uri, flags)
+        }
+    }
+
+    private fun determineCategory(mimeType: String?, displayName: String): MediaCategory {
+        val mime = mimeType.orEmpty()
+        return when {
+            mime.startsWith("video/") -> MediaCategory.VIDEO
+            mime.startsWith("image/") -> MediaCategory.PHOTO
+            mime.startsWith("audio/") -> MediaCategory.MUSIC
+            displayName.endsWith(".mp4", ignoreCase = true) || displayName.endsWith(".avi", ignoreCase = true) || displayName.endsWith(".mkv", ignoreCase = true) || displayName.endsWith(".mov", ignoreCase = true) || displayName.endsWith(".flv", ignoreCase = true) || displayName.endsWith(".wmv", ignoreCase = true) || displayName.endsWith(".webm", ignoreCase = true) || displayName.endsWith(".ts", ignoreCase = true) -> MediaCategory.VIDEO
+            displayName.endsWith(".jpg", ignoreCase = true) || displayName.endsWith(".png", ignoreCase = true) -> MediaCategory.PHOTO
+            displayName.endsWith(".mp3", ignoreCase = true) || displayName.endsWith(".wav", ignoreCase = true) -> MediaCategory.MUSIC
+            else -> MediaCategory.FILE
+        }
+    }
+
+    private fun stableId(value: String): String {
+        return UUID.nameUUIDFromBytes(value.toByteArray()).toString()
+    }
+
+    private fun CoroutineScope.launchStateRestore() {
+        launch {
+            val restored = currentPersistedState().withSummary()
+            val refreshed = refreshExistingState(restored)
+            if (refreshed != restored) {
+                persistAndPublish(refreshed)
+            } else {
+                _libraryState.value = refreshed
+            }
+        }
+    }
+
+    private suspend fun refreshExistingState(state: LibraryState): LibraryState = withContext(Dispatchers.IO) {
+        val refreshedItems = state.items.map { item ->
+            refreshExistingItemSync(item)
+        }
+        mergeState(
+            items = refreshedItems,
+            folders = state.folders,
+        )
+    }
+
+    private fun refreshExistingItemSync(item: SharedItem): SharedItem {
+        val uri = item.uri.toUri()
+        val available = isUriAvailable(uri)
+        if (!available) {
+            return item.copy(isAvailable = false)
+        }
+
+        val meta = runCatching {
+            context.contentResolver.queryOpenableMeta(uri)
+        }.getOrNull() ?: return item.copy(isAvailable = true)
+
+        val resolvedMimeType = meta.mimeType ?: item.mimeType
+        val inspection = runCatching {
+            mediaAnalyzer.inspect(uri, resolvedMimeType, meta.displayName)
+        }.getOrNull()
+        val playbackDecision = inspection?.let(mediaAnalyzer::decidePlayback) ?: item.playbackDecision
+        val metadata = inspection?.let { refreshedInspection ->
+            buildMap {
+                put("source", uri.authority ?: "local")
+                refreshedInspection.videoTrackMimeType?.let { put("video_codec", it) }
+                refreshedInspection.audioTrackMimeType?.let { put("audio_codec", it) }
+                put("browser_safe", refreshedInspection.browserSafe.toString())
+            }
+        } ?: item.metadata
+
+        return item.copy(
+            displayName = meta.displayName,
+            mimeType = resolvedMimeType,
+            category = determineCategory(resolvedMimeType, meta.displayName),
+            sizeBytes = meta.sizeBytes.takeIf { it > 0L } ?: item.sizeBytes,
+            durationMs = runCatching { mediaAnalyzer.readDurationMs(uri, resolvedMimeType) }.getOrNull() ?: item.durationMs,
+            lastModifiedEpochMs = meta.lastModifiedEpochMs ?: item.lastModifiedEpochMs,
+            playbackDecision = playbackDecision,
+            isAvailable = true,
+            metadata = metadata,
+        )
+    }
+
+    private data class OpenableMeta(
+        val displayName: String,
+        val mimeType: String?,
+        val sizeBytes: Long,
+        val lastModifiedEpochMs: Long?,
+    )
+
+    private fun ContentResolver.queryOpenableMeta(uri: Uri): OpenableMeta {
+        val fallbackName = uri.lastPathSegment ?: "Shared item"
+        val mimeType = getType(uri)
+        var displayName = fallbackName
+        var sizeBytes = 0L
+        var lastModified: Long? = null
+
+        query(
+            uri,
+            arrayOf(
+                OpenableColumns.DISPLAY_NAME,
+                OpenableColumns.SIZE,
+                MediaStore.MediaColumns.DATE_MODIFIED,
+            ),
+            null,
+            null,
+            null,
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                displayName = cursor.getStringOrNull(OpenableColumns.DISPLAY_NAME) ?: fallbackName
+                sizeBytes = cursor.getLongOrNull(OpenableColumns.SIZE) ?: 0L
+                lastModified = cursor.getLongOrNull(MediaStore.MediaColumns.DATE_MODIFIED)?.times(1_000L)
+            }
+        }
+
+        return OpenableMeta(
+            displayName = displayName,
+            mimeType = mimeType,
+            sizeBytes = sizeBytes,
+            lastModifiedEpochMs = lastModified,
+        )
+    }
+
+    private fun Cursor.getStringOrNull(columnName: String): String? {
+        val index = getColumnIndex(columnName)
+        return if (index >= 0 && !isNull(index)) getString(index) else null
+    }
+
+    private fun Cursor.getLongOrNull(columnName: String): Long? {
+        val index = getColumnIndex(columnName)
+        return if (index >= 0 && !isNull(index)) getLong(index) else null
+    }
+
+    @Serializable
+    private data class PersistedLibrary(
+        val items: List<SharedItem>,
+        val folders: List<SharedFolder>,
+    ) {
+        fun toState(): LibraryState = LibraryState(items = items, folders = folders)
+
+        companion object {
+            fun from(state: LibraryState): PersistedLibrary = PersistedLibrary(
+                items = state.items,
+                folders = state.folders,
+            )
+        }
+    }
+
+    private companion object {
+        val LIBRARY_KEY = stringPreferencesKey("shared_library_json")
+    }
+}

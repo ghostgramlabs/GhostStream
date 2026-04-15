@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">DirectServe</string>
+    <string name="app_tagline">Личный локальный обмен</string>
+    <string name="language_title">Выберите язык</string>
+    <string name="language_subtitle">DirectServe будет использовать этот язык в приветствии, настройках и экранах обмена. Позже его можно изменить в настройках.</string>
+    <string name="language_selected">Выбрано</string>
+    <string name="language_continue">Продолжить</string>
+    <string name="notification_channel_name">Сеанс обмена</string>
+    <string name="notification_channel_description">Поддерживает общий доступ DirectServe в фоновом режиме.</string>
+    <string name="notification_title">DirectServe выполняет обмен</string>
+    <string name="notification_stop">Остановить</string>
+</resources>
