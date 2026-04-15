@@ -73,10 +73,10 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
         return when {
             // ── Tier 0: DIRECT ──────────────────────────────────────────────────
             // Browser-safe container + codecs + profiles + bit-depth.
-            // Faststart: allow DIRECT when faststart is confirmed good (true) OR unknown (null).
-            // Only block DIRECT when bad faststart is CONFIRMED (false) — detection is
-            // byte-scanning which may not work on all URI types (content:// etc), so null
-            // is common and should not force unnecessary REMUX work.
+            // hasFaststart != false: DIRECT when confirmed good (true) OR unknown (null).
+            // detectFaststart() only works on file:// URIs — content:// from MediaStore/SAF
+            // returns null (no byte-range read). null should not force unnecessary REMUX.
+            // Only reject DIRECT when bad faststart is positively confirmed (false).
             isBrowserContainer && (!hasVideo || isFullyUniversal) && isAacOrMp3 &&
                 inspection.hasFaststart != false -> {
                 PlaybackDecision(
@@ -102,11 +102,9 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
                 )
             }
 
-            // ── Tier 1b: TRANSMUX (MP4/MOV container, incompatible audio) ─────────
-            // Video codec is safe (H.264), container is MP4/MOV, but audio needs re-encode.
-            // We copy the video stream and transcode only the audio to AAC-LC.
-            // Uses TRANSMUX (not REMUX) because audio encoding is involved — same non-fragmented
-            // MP4 output, but audio must be decoded and re-encoded, not simply remuxed.
+            // ── Tier 1b: TRANSMUX (MP4/MOV container, incompatible audio) ────────
+            // Video is H.264 and safe; container is MP4/MOV; but audio needs re-encoding.
+            // Copy video, transcode audio to AAC-LC, produce non-fragmented MP4.
             isBrowserContainer && hasVideo && isFullyUniversal && !isAacOrMp3 -> {
                 PlaybackDecision(
                     mode = PlaybackMode.TRANSMUX,
