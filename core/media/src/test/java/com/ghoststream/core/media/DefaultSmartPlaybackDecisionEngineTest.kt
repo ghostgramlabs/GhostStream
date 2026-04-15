@@ -56,31 +56,34 @@ class DefaultSmartPlaybackDecisionEngineTest {
         assertEquals("video/mp4", d.browserMimeType)
     }
 
-    // ── Tier 1: REMUX (unknown or bad faststart, or incompatible audio) ─────
+    // ── Tier 0: DIRECT also when faststart is unknown ─────────────────────────
+    // Unknown faststart (null) is treated as DIRECT — byte-scanning may not work
+    // on all URI types (content:// from MediaStore etc), so null is common and
+    // should not force unnecessary REMUX work for every MP4 file.
 
     @Test
-    fun `MP4 + H264 + AAC + unknown faststart resolves to REMUX (conservative)`() {
-        // When faststart is null (detection inconclusive), we conservatively REMUX
-        // to prevent "MP4 marked DIRECT but browser throws video_error code=4"
+    fun `MP4 + H264 + AAC + unknown faststart resolves to DIRECT (null = assume OK)`() {
         val d = engine.decide(inspect(MediaContainer.MP4))
-        assertEquals(PlaybackMode.REMUX, d.mode)
+        assertEquals(PlaybackMode.DIRECT, d.mode)
     }
 
     @Test
-    fun `MP4 + H264 + AAC + bad faststart resolves to REMUX`() {
+    fun `MOV + H264 + AAC + unknown faststart resolves to DIRECT`() {
+        val d = engine.decide(inspect(MediaContainer.QUICKTIME, mime = "video/quicktime", name = "movie.mov"))
+        assertEquals(PlaybackMode.DIRECT, d.mode)
+    }
+
+    // ── Tier 1: REMUX (CONFIRMED bad faststart, or incompatible audio) ────────
+
+    @Test
+    fun `MP4 + H264 + AAC + confirmed bad faststart resolves to REMUX`() {
         val d = engine.decide(inspect(MediaContainer.MP4, hasFaststart = false))
         assertEquals(PlaybackMode.REMUX, d.mode)
     }
 
     @Test
-    fun `MOV + H264 + AAC + bad faststart resolves to REMUX`() {
+    fun `MOV + H264 + AAC + confirmed bad faststart resolves to REMUX`() {
         val d = engine.decide(inspect(MediaContainer.QUICKTIME, mime = "video/quicktime", name = "movie.mov", hasFaststart = false))
-        assertEquals(PlaybackMode.REMUX, d.mode)
-    }
-
-    @Test
-    fun `MOV + H264 + AAC + unknown faststart resolves to REMUX`() {
-        val d = engine.decide(inspect(MediaContainer.QUICKTIME, mime = "video/quicktime", name = "movie.mov"))
         assertEquals(PlaybackMode.REMUX, d.mode)
     }
 

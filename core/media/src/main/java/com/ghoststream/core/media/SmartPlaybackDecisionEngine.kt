@@ -72,33 +72,33 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
 
         return when {
             // ── Tier 0: DIRECT ──────────────────────────────────────────────────
-            // Browser-safe container + codecs + profiles + bit-depth + CONFIRMED faststart.
-            // IMPORTANT: hasFaststart must be explicitly true. If null (unknown), we
-            // conservatively use REMUX to guarantee browser compatibility. This prevents
-            // the "MP4 marked DIRECT but browser throws video_error code=4" failure.
+            // Browser-safe container + codecs + profiles + bit-depth.
+            // Faststart: allow DIRECT when faststart is confirmed good (true) OR unknown (null).
+            // Only block DIRECT when bad faststart is CONFIRMED (false) — detection is
+            // byte-scanning which may not work on all URI types (content:// etc), so null
+            // is common and should not force unnecessary REMUX work.
             isBrowserContainer && (!hasVideo || isFullyUniversal) && isAacOrMp3 &&
-                inspection.hasFaststart == true -> {
+                inspection.hasFaststart != false -> {
                 PlaybackDecision(
                     mode = PlaybackMode.DIRECT,
                     browserMimeType = "video/mp4",
-                    reason = "Ready for universal browser playback (Native H.264/AAC, faststart verified)",
+                    reason = if (inspection.hasFaststart == true)
+                        "Ready for direct browser playback (H.264/AAC, faststart confirmed)"
+                    else
+                        "Ready for direct browser playback (H.264/AAC native)",
                 )
             }
 
-            // ── Tier 1a: REMUX (Bad or unknown faststart in MP4/MOV) ────────────
-            // Codecs are fine but moov atom is at the end OR detection was inconclusive.
-            // Conservative: always REMUX if faststart is not confirmed true.
+            // ── Tier 1a: REMUX (Confirmed bad faststart in MP4/MOV) ─────────────
+            // Codecs are fine but moov atom is confirmed at the end of the file.
+            // Rewrite container with moov at front — no re-encode, very fast.
             isBrowserContainer && (!hasVideo || isFullyUniversal) && isAacOrMp3 &&
-                inspection.hasFaststart != true -> {
+                inspection.hasFaststart == false -> {
                 PlaybackDecision(
                     mode = PlaybackMode.REMUX,
                     browserMimeType = "video/mp4",
                     compatibilityLabel = "Quick optimization needed",
-                    reason = if (inspection.hasFaststart == false) {
-                        "Relocating metadata for instant browser playback (faststart fix)"
-                    } else {
-                        "Optimizing container for reliable browser playback (faststart unverified)"
-                    },
+                    reason = "Relocating metadata for instant browser playback (faststart fix)",
                 )
             }
 

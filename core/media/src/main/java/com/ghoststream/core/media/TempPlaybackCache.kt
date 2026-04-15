@@ -95,12 +95,19 @@ class TempPlaybackCache(
                 return null
             }
 
+        // isFragmentedMp4: only TRANSCODE produces fragmented fMP4 (for live HLS streaming).
+        // REMUX and TRANSMUX produce regular MP4 with moov-at-front (non-fragmented).
+        // We derive this from the item's playback decision since the file's own bytes
+        // cannot reliably encode this distinction after writing.
+        val isFragmented = item.playbackDecision.mode == com.ghoststream.core.model.PlaybackMode.TRANSCODE
+
         return CachedPlaybackAsset(
             itemId = item.id,
             filePath = file.absolutePath,
             mimeType = inferMimeType(file),
             sizeBytes = file.length(),
             createdAtEpochMs = file.lastModified(),
+            isFragmentedMp4 = isFragmented,
         )
     }
 
