@@ -588,7 +588,9 @@ class QueuedCompatibilityPipeline(
                         reprioritizedItems.remove(item.id)
                         canceledItems.remove(item.id)
                     }
-                    preparing.copy(
+                    // Use currentJob() not the stale 'preparing' snapshot so that any
+                    // in-flight onUpdate progress/state fields are preserved.
+                    (currentJob(item.id) ?: preparing).copy(
                         status = CompatibilityStatus.READY,
                         progressPercent = 100,
                         preparedAsset = result.preparedAsset,
@@ -605,14 +607,20 @@ class QueuedCompatibilityPipeline(
                         (reprioritizedItems.remove(item.id) to canceledItems.remove(item.id))
                     }
                     when {
-                        canceled -> preparing.copy(
-                            status = CompatibilityStatus.IDLE,
-                            progressPercent = null,
-                            preparedAsset = null,
-                            message = preparing.decision.reason,
-                            streamable = false,
-                            updatedAtEpochMs = System.currentTimeMillis(),
-                        )
+                        canceled -> {
+                            // Explicitly canceled (e.g. stopSharing or preempt). 
+                            // Use IDLE so the item can be re-queued by the warmup on next session.
+                            // Log so it shows up in the debug log.
+                            CompatLogger.info("CompatPipeline", "job_canceled id=${item.id} — reset to IDLE for re-queue")
+                            preparing.copy(
+                                status = CompatibilityStatus.IDLE,
+                                progressPercent = null,
+                                preparedAsset = null,
+                                message = preparing.decision.reason,
+                                streamable = false,
+                                updatedAtEpochMs = System.currentTimeMillis(),
+                            )
+                        }
 
                         reprioritized -> preparing.copy(
                             status = CompatibilityStatus.QUEUED,
@@ -623,13 +631,16 @@ class QueuedCompatibilityPipeline(
                             updatedAtEpochMs = System.currentTimeMillis(),
                         )
 
-                        else -> preparing.copy(
-                            status = CompatibilityStatus.FAILED,
-                            progressPercent = null,
-                            message = result.message,
-                            streamable = false,
-                            updatedAtEpochMs = System.currentTimeMillis(),
-                        )
+                        else -> {
+                            CompatLogger.error("CompatPipeline", "job_failed id=${item.id} reason=${result.message}")
+                            (currentJob(item.id) ?: preparing).copy(
+                                status = CompatibilityStatus.FAILED,
+                                progressPercent = null,
+                                message = result.message,
+                                streamable = false,
+                                updatedAtEpochMs = System.currentTimeMillis(),
+                            )
+                        }
                     }
                 }
             }

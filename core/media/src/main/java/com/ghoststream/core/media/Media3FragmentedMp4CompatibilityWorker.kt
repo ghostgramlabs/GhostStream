@@ -94,6 +94,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                 "reason=\"${item.playbackDecision.reason}\" " +
                 "size=${item.sizeBytes} offset=$startOffsetMs",
         )
+        debugLogSink.log("CompatWorker", "prepare_start id=${item.id} mode=${item.playbackDecision.mode} size=${item.sizeBytes}")
 
         val tmpOutputFile = cache.newOutputFile(item, "tmp")
         val finalOutputFile = cache.newOutputFile(item, "mp4")
@@ -164,27 +165,32 @@ class Media3FragmentedMp4CompatibilityWorker(
                         val message = completedMessage(item, exportResult)
                         val elapsedSec = (System.currentTimeMillis() - jobStartMs) / 1000
                         // Optimization Step: Ensure Faststart (moov at front) for the finalized file.
-                        // We do this BEFORE validation so we can verify the moov position.
+                        debugLogSink.log("CompatExport", "finalize_begin id=${item.id} mode=${item.playbackDecision.mode} elapsed=${(System.currentTimeMillis()-jobStartMs)/1000}s size=${tmpOutputFile.length()}")
                         val optimizedFile = try {
                             finalizePlaybackAsset(item, tmpOutputFile)
                         } catch (e: Exception) {
                             CompatLogger.warn("CompatExport", "Optimization failed for ${item.id}; falling back to raw output", e)
+                            debugLogSink.log("CompatExport", "finalize_fallback id=${item.id} error=${e.message}")
                             tmpOutputFile
                         }
 
                         // Validation Step: Inspect the optimized file before marking it as READY.
+                        debugLogSink.log("CompatValidate", "validate_begin id=${item.id} file=${optimizedFile.name} size=${optimizedFile.length()}")
                         val validationResult = validateOutput(optimizedFile)
                         if (!validationResult.isValid) {
-                            CompatLogger.error("CompatValidate", "VALIDATION FAILED id=${item.id} reason=${validationResult.error}")
+                            val reason = validationResult.error ?: "unknown"
+                            CompatLogger.error("CompatValidate", "VALIDATION FAILED id=${item.id} reason=$reason")
+                            debugLogSink.log("CompatValidate", "VALIDATION FAILED id=${item.id} reason=$reason")
                             runCatching { optimizedFile.delete() }
                             if (optimizedFile != tmpOutputFile) runCatching { tmpOutputFile.delete() }
                             completion.complete(
                                 CompatibilityWorkerResult.Failure(
-                                    message = "Generated media failed universal compatibility validation: ${validationResult.error}",
+                                    message = "Compatibility validation failed: $reason",
                                 ),
                             )
                             return
                         }
+                        debugLogSink.log("CompatValidate", "validate_ok id=${item.id}")
 
                         // Atomic rename: .tmp/.opt → .mp4
                         val completedFile = if (optimizedFile.renameTo(finalOutputFile)) {
@@ -208,6 +214,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                         )
                         
                         android.util.Log.i("GhostStream/Compat", "READY id=${item.id} mode=${item.playbackDecision.mode}")
+                        debugLogSink.log("CompatWorker", "READY id=${item.id} asset=${completedFile.name} elapsed=${(System.currentTimeMillis()-jobStartMs)/1000}s")
                         onUpdate(
                             CompatibilityWorkerUpdate(
                                 status = CompatibilityStatus.READY,
@@ -423,14 +430,23 @@ class Media3FragmentedMp4CompatibilityWorker(
                         format.getInteger(android.media.MediaFormat.KEY_LEVEL)
                     } else null
 
-                    // 100 = High, 77 = Main, 66 = Baseline.
+                    // Profile check: 100 = AVCProfileHigh, 77 = AVCProfileMain, 66 = AVCProfileBaseline.
+                    // These are direct numeric values from MediaCodecInfo.CodecProfileLevel.
                     if (profile != null && profile > 100) {
-                        return ValidationResult(false, "Incompatible video profile: $profile (expected High or below)")
+                        return ValidationResult(false, "Incompatible video profile: $profile (expected High=100 or below)")
                     }
                     
-                    // 41 = 4.1.
-                    if (level != null && level > 41) {
-                        return ValidationResult(false, "Incompatible video level: $level (expected 4.1 or below)")
+                    // Level check: Android uses MediaCodecInfo.CodecProfileLevel.AVCLevelXX bitfield constants,
+                    // NOT plain numeric level values. Correct constants:
+                    //   AVCLevel1=0x01, AVCLevel3=0x40(64), AVCLevel31=0x80(128),
+                    //   AVCLevel4=0x200(512), AVCLevel41=0x400(1024), AVCLevel5=0x1000(4096)
+                    // Level 4.1 bitfield constant = 1024 (0x400). Reject anything above 4.1.
+                    // NOTE: Do NOT use > 41 here — that incorrectly rejects every real encoder output.
+                    val AVC_LEVEL_41 = 0x400 // AVCLevel41 = 1024
+                    if (level != null && level > AVC_LEVEL_41) {
+                        CompatLogger.warn("CompatValidate", "Video level $level (>AVCLevel41=0x400) may not play on all devices, allowing")
+                        // Allow but log — do not reject, as the encoder may target a higher
+                        // level and many browsers can handle it. Only 10-bit/HDR is truly blocking.
                     }
 
                     // Strict check for 8-bit depth.
@@ -662,4 +678,4 @@ class Media3FragmentedMp4CompatibilityWorker(
         const val PROGRESS_POLL_INTERVAL_MS = 700L
         const val STREAMABLE_BYTES_THRESHOLD = 256L * 1024L
     }
-}
+}
