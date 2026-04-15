@@ -33,6 +33,14 @@ class DebugLogRepository(
     private val fileMutex = Mutex()
     private var cachedModernUri: Uri? = null
 
+    // Generate a unique filename per session using the session start timestamp.
+    // This prevents MediaStore "file already exists" failures on repeated installs
+    // or log sharing, where a file with the same name may still exist in Downloads.
+    private val fileName: String = run {
+        val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+        "directserve-debug-$ts.log"
+    }
+
     fun isEnabled(): Boolean = enabled
 
     override fun log(tag: String, message: String, throwable: Throwable?) {
@@ -105,9 +113,9 @@ class DebugLogRepository(
 
     fun locationDescription(): String {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            "${RELATIVE_PATH}$FILE_NAME"
+            "${RELATIVE_PATH}$fileName"
         } else {
-            "DirectServe app downloads/$FILE_NAME"
+            "DirectServe app downloads/$fileName"
         }
     }
 
@@ -136,7 +144,7 @@ class DebugLogRepository(
     private fun ensureLegacyLogFile(): File {
         val directory = appContext.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
             ?: File(appContext.filesDir, "debug-downloads")
-        return File(File(directory, "DirectServe"), FILE_NAME)
+        return File(File(directory, "DirectServe"), fileName)
     }
 
     private fun ensureModernLogUri(): Uri? {
@@ -146,13 +154,12 @@ class DebugLogRepository(
         return try {
             val resolver = appContext.contentResolver
             val collection = MediaStore.Downloads.EXTERNAL_CONTENT_URI
-            
-            // ── 1. Try exact query ──
+
+            // ── 1. Try exact query by this session's filename ──
             val projection = arrayOf(MediaStore.MediaColumns._ID)
             val selection = "${MediaStore.MediaColumns.DISPLAY_NAME}=? AND ${MediaStore.MediaColumns.RELATIVE_PATH}=?"
-            // Some versions expect trailing slash, some don't. We'll try both or use a startsWith.
-            val selectionArgs = arrayOf(FILE_NAME, RELATIVE_PATH)
-            
+            val selectionArgs = arrayOf(fileName, RELATIVE_PATH)
+
             resolver.query(collection, projection, selection, selectionArgs, null)?.use { cursor ->
                 if (cursor.moveToFirst()) {
                     val id = cursor.getLong(0)
@@ -160,21 +167,19 @@ class DebugLogRepository(
                 }
             }
 
-            // ── 2. Fallback query (name only, if path query failed) ──
+            // ── 2. Fallback: name-only query ──
             val nameSelection = "${MediaStore.MediaColumns.DISPLAY_NAME}=?"
-            val nameArgs = arrayOf(FILE_NAME)
+            val nameArgs = arrayOf(fileName)
             resolver.query(collection, projection, nameSelection, nameArgs, null)?.use { cursor ->
-                while (cursor.moveToNext()) {
+                if (cursor.moveToFirst()) {
                     val id = cursor.getLong(0)
-                    val uri = ContentUris.withAppendedId(collection, id)
-                    // If it's ours, reuse it
-                    return uri.also { cachedModernUri = it }
+                    return ContentUris.withAppendedId(collection, id).also { cachedModernUri = it }
                 }
             }
 
-            // ── 3. Attempt insert ──
+            // ── 3. Insert new file ──
             val values = ContentValues().apply {
-                put(MediaStore.MediaColumns.DISPLAY_NAME, FILE_NAME)
+                put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
                 put(MediaStore.MediaColumns.MIME_TYPE, "text/plain")
                 put(MediaStore.MediaColumns.RELATIVE_PATH, RELATIVE_PATH)
             }
@@ -191,7 +196,6 @@ class DebugLogRepository(
 
     private companion object {
         const val LOG_TAG = "DirectServeDebug"
-        const val FILE_NAME = "directserve-debug.log"
         val RELATIVE_PATH = "${Environment.DIRECTORY_DOWNLOADS}/DirectServe/"
         val dateFormatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
     }
