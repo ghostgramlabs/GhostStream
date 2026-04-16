@@ -51,12 +51,14 @@ class Media3FragmentedMp4CompatibilityWorker(
     ): CompatibilityWorkerResult {
         val result = runJob(item, cache, stabilizedSource, startOffsetMs, onUpdate)
 
-        // If REMUX fails, we automatically retry with TRANSCODE. AVI files often report
-        // H.264 video but have timing issues that cause Media3's Transmuxer to fail
-        // during REMUX; dropping back to full TRANSCODE usually resolves this.
+        // If container-only preparation fails, retry once with a full transcode.
         return if (result is CompatibilityWorkerResult.Failure &&
-            item.playbackDecision.mode == PlaybackMode.REMUX
+            (item.playbackDecision.mode == PlaybackMode.REMUX || item.playbackDecision.mode == PlaybackMode.TRANSMUX)
         ) {
+            debugLogSink.log(
+                "CompatWorker",
+                "fallback_triggered id=${item.id} from=${item.playbackDecision.mode} to=TRANSCODE reason=${result.message}",
+            )
             onUpdate(
                 CompatibilityWorkerUpdate(
                     message = "Lightning optimization failed; retrying with full compatibility conversion...",
@@ -162,6 +164,23 @@ class Media3FragmentedMp4CompatibilityWorker(
 
         handler.post {
             try {
+                if (item.playbackDecision.mode != PlaybackMode.TRANSCODE) {
+                    safeComplete(
+                        completion,
+                        remuxToMp4(
+                            item = item,
+                            inputSource = inputSource,
+                            tmpOutputFile = tmpOutputFile,
+                            finalOutputFile = finalOutputFile,
+                            cache = cache,
+                            cancelled = cancelled,
+                            jobStartMs = jobStartMs,
+                            onUpdate = onUpdate,
+                        ),
+                    )
+                    return@post
+                }
+
                 val listener = object : Transformer.Listener {
                     override fun onCompleted(composition: Composition, exportResult: ExportResult) {
                         if (cancelled.get()) {
@@ -434,6 +453,218 @@ class Media3FragmentedMp4CompatibilityWorker(
             null
         } finally {
             extractor.release()
+        }
+    }
+
+    private fun remuxToMp4(
+        item: SharedItem,
+        inputSource: Uri,
+        tmpOutputFile: File,
+        finalOutputFile: File,
+        cache: PlaybackCache,
+        cancelled: AtomicBoolean,
+        jobStartMs: Long,
+        onUpdate: (CompatibilityWorkerUpdate) -> Unit,
+    ): CompatibilityWorkerResult {
+        onUpdate(
+            CompatibilityWorkerUpdate(
+                status = CompatibilityStatus.PREPARING,
+                message = if (item.playbackDecision.mode == PlaybackMode.TRANSMUX) {
+                    "Repackaging video for browser playback..."
+                } else {
+                    "Optimizing video container..."
+                },
+            ),
+        )
+
+        val extractor = MediaExtractor()
+        var muxer: MediaMuxer? = null
+        return try {
+            extractor.setDataSource(context, inputSource, emptyMap())
+            if (extractor.trackCount <= 0) {
+                return CompatibilityWorkerResult.Failure(
+                    "Source file has no readable tracks.",
+                    CompatibilityFailureType.SOURCE,
+                )
+            }
+
+            muxer = MediaMuxer(tmpOutputFile.absolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
+            copyRotationHint(inputSource, muxer)
+
+            val trackMap = linkedMapOf<Int, Int>()
+            val durationUs = maxTrackDurationUs(extractor)
+            val bufferSize = maxTrackBufferSize(extractor)
+
+            for (index in 0 until extractor.trackCount) {
+                val format = extractor.getTrackFormat(index)
+                val mime = format.getString(android.media.MediaFormat.KEY_MIME) ?: continue
+                if (!isMp4MuxableTrack(mime, format)) {
+                    return CompatibilityWorkerResult.Failure(
+                        "Track $index is not safe to copy into MP4: $mime",
+                        CompatibilityFailureType.VALIDATION,
+                    )
+                }
+                trackMap[index] = muxer.addTrack(format)
+            }
+
+            if (trackMap.isEmpty()) {
+                return CompatibilityWorkerResult.Failure(
+                    "No valid tracks found in source.",
+                    CompatibilityFailureType.SOURCE,
+                )
+            }
+
+            muxer.start()
+            val buffer = ByteBuffer.allocate(bufferSize)
+            val info = android.media.MediaCodec.BufferInfo()
+            var lastProgressBucket = -1
+
+            for ((sourceTrack, outputTrack) in trackMap) {
+                if (cancelled.get()) {
+                    return CompatibilityWorkerResult.Failure(
+                        "Compatibility preparation was stopped.",
+                        CompatibilityFailureType.CANCEL,
+                    )
+                }
+                extractor.selectTrack(sourceTrack)
+                while (true) {
+                    if (cancelled.get()) {
+                        return CompatibilityWorkerResult.Failure(
+                            "Compatibility preparation was stopped.",
+                            CompatibilityFailureType.CANCEL,
+                        )
+                    }
+                    buffer.clear()
+                    info.size = extractor.readSampleData(buffer, 0)
+                    if (info.size < 0) break
+                    info.offset = 0
+                    info.presentationTimeUs = extractor.sampleTime
+                    info.flags = extractor.sampleFlags
+                    muxer.writeSampleData(outputTrack, buffer, info)
+
+                    if (durationUs > 0L && info.presentationTimeUs >= 0L) {
+                        val progress = ((info.presentationTimeUs * 100L) / durationUs).toInt().coerceIn(0, 99)
+                        val bucket = (progress / 5) * 5
+                        if (bucket != lastProgressBucket) {
+                            lastProgressBucket = bucket
+                            onUpdate(
+                                CompatibilityWorkerUpdate(
+                                    status = CompatibilityStatus.PREPARING,
+                                    message = if (item.playbackDecision.mode == PlaybackMode.TRANSMUX) {
+                                        "Repackaging video for browser playback..."
+                                    } else {
+                                        "Optimizing video container..."
+                                    },
+                                    progressPercent = progress,
+                                ),
+                            )
+                        }
+                    }
+                    extractor.advance()
+                }
+                extractor.unselectTrack(sourceTrack)
+            }
+
+            onUpdate(
+                CompatibilityWorkerUpdate(
+                    status = CompatibilityStatus.FINALIZING,
+                    message = "Almost ready...",
+                ),
+            )
+
+            val validationResult = validateOutput(tmpOutputFile, cancelled)
+            if (!validationResult.isValid) {
+                runCatching { tmpOutputFile.delete() }
+                return CompatibilityWorkerResult.Failure(
+                    "Compatibility validation failed: ${validationResult.error ?: "unknown"}",
+                    CompatibilityFailureType.VALIDATION,
+                )
+            }
+
+            val completedFile = if (tmpOutputFile.renameTo(finalOutputFile)) finalOutputFile else tmpOutputFile
+            val asset = cache.record(
+                itemId = item.id,
+                file = completedFile,
+                mimeType = "video/mp4",
+                isComplete = true,
+                isFragmentedMp4 = false,
+            )
+            debugLogSink.log(
+                "CompatWorker",
+                "READY id=${item.id} asset=${completedFile.name} elapsed=${(System.currentTimeMillis() - jobStartMs) / 1000}s",
+            )
+            onUpdate(
+                CompatibilityWorkerUpdate(
+                    status = CompatibilityStatus.READY,
+                    message = "Browser playback is ready.",
+                    progressPercent = 100,
+                    preparedAsset = asset,
+                    directReady = true,
+                    streamable = true,
+                ),
+            )
+            CompatibilityWorkerResult.Success(
+                preparedAsset = asset,
+                message = "Browser playback is ready.",
+            )
+        } catch (error: Exception) {
+            runCatching { tmpOutputFile.delete() }
+            CompatibilityWorkerResult.Failure(
+                error.message ?: "Unable to repackage this file for browser playback.",
+                CompatibilityFailureType.EXPORT,
+            )
+        } finally {
+            runCatching { muxer?.stop() }
+            runCatching { muxer?.release() }
+            extractor.release()
+        }
+    }
+
+    private fun isMp4MuxableTrack(mime: String, format: android.media.MediaFormat): Boolean {
+        return when {
+            mime.startsWith("video/") -> mime == android.media.MediaFormat.MIMETYPE_VIDEO_AVC
+            mime == android.media.MediaFormat.MIMETYPE_AUDIO_AAC || mime == "audio/mp4a-latm" ->
+                format.containsKey("csd-0")
+            mime == android.media.MediaFormat.MIMETYPE_AUDIO_MPEG || mime == "audio/mpeg" || mime == "audio/x-mp3" -> true
+            else -> false
+        }
+    }
+
+    private fun maxTrackDurationUs(extractor: MediaExtractor): Long {
+        var durationUs = 0L
+        for (index in 0 until extractor.trackCount) {
+            val format = extractor.getTrackFormat(index)
+            if (format.containsKey(android.media.MediaFormat.KEY_DURATION)) {
+                durationUs = maxOf(durationUs, format.getLong(android.media.MediaFormat.KEY_DURATION))
+            }
+        }
+        return durationUs
+    }
+
+    private fun maxTrackBufferSize(extractor: MediaExtractor): Int {
+        var maxBufferSize = 512 * 1024
+        for (index in 0 until extractor.trackCount) {
+            val format = extractor.getTrackFormat(index)
+            if (format.containsKey(android.media.MediaFormat.KEY_MAX_INPUT_SIZE)) {
+                maxBufferSize = maxOf(maxBufferSize, format.getInteger(android.media.MediaFormat.KEY_MAX_INPUT_SIZE))
+            }
+        }
+        return maxBufferSize
+    }
+
+    private fun copyRotationHint(inputSource: Uri, muxer: MediaMuxer) {
+        val retriever = android.media.MediaMetadataRetriever()
+        try {
+            retriever.setDataSource(context, inputSource)
+            val rotation = retriever.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)
+                ?.toIntOrNull()
+                ?: return
+            if (rotation != 0) {
+                muxer.setOrientationHint(rotation)
+            }
+        } catch (_: Exception) {
+        } finally {
+            retriever.release()
         }
     }
 

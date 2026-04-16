@@ -142,6 +142,49 @@ class QueuedCompatibilityPipelineTest {
         assertEquals(CompatibilityStatus.READY, completedJob.status)
     }
 
+    @Test
+    fun `inspect does not downgrade active job back to idle`() = runTest {
+        val cache = FakePlaybackCache()
+        val testScope = CoroutineScope(coroutineContext)
+        val releaseCompletion = CompletableDeferred<Unit>()
+        val pipeline = QueuedCompatibilityPipeline(
+            cache = cache,
+            worker = object : CompatibilityWorker {
+                override suspend fun prepare(
+                    item: SharedItem,
+                    cache: PlaybackCache,
+                    stabilizedSource: StabilizedSourceInfo?,
+                    startOffsetMs: Long,
+                    onUpdate: (CompatibilityWorkerUpdate) -> Unit,
+                ): CompatibilityWorkerResult {
+                    onUpdate(
+                        CompatibilityWorkerUpdate(
+                            status = CompatibilityStatus.PREPARING,
+                            message = "Preparing...",
+                        ),
+                    )
+                    releaseCompletion.await()
+                    return CompatibilityWorkerResult.Failure("stopped")
+                }
+            },
+            scope = testScope,
+        )
+        val item = transcodeItem(id = "video-4")
+
+        pipeline.requestPreparation(item)
+        advanceUntilIdle()
+
+        val beforeInspect = pipeline.currentJob(item.id) ?: error("Expected compatibility job")
+        assertEquals(CompatibilityStatus.PREPARING, beforeInspect.status)
+
+        val inspected = pipeline.inspect(item)
+        assertEquals(CompatibilityStatus.PREPARING, inspected.status)
+        assertEquals(CompatibilityStatus.PREPARING, pipeline.currentJob(item.id)?.status)
+
+        releaseCompletion.complete(Unit)
+        advanceUntilIdle()
+    }
+
     private fun transcodeItem(id: String = "video-1"): SharedItem {
         return SharedItem(
             id = id,

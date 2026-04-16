@@ -1,11 +1,16 @@
 package com.ghoststream.core.media
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import com.ghoststream.core.model.PlaybackDecision
+import java.io.ByteArrayOutputStream
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.ghoststream.core.model.PlaybackMode
 import com.ghoststream.core.model.SharedItem
 
@@ -125,8 +130,18 @@ class AndroidMediaAnalyzer(
         }
     }
 
-    override suspend fun loadThumbnailBytes(item: SharedItem, maxSizePx: Int): ByteArray? = null
-    override suspend fun extractFrameAtMs(item: SharedItem, timeMs: Long, maxSizePx: Int): ByteArray? = null
+    override suspend fun loadThumbnailBytes(item: SharedItem, maxSizePx: Int): ByteArray? = withContext(Dispatchers.IO) {
+        val uri = Uri.parse(item.uri)
+        when {
+            item.mimeType?.startsWith("image/") == true -> loadImageThumbnail(uri, maxSizePx)
+            item.mimeType?.startsWith("video/") == true -> extractVideoFrame(uri, null, maxSizePx)
+            else -> null
+        }
+    }
+
+    override suspend fun extractFrameAtMs(item: SharedItem, timeMs: Long, maxSizePx: Int): ByteArray? = withContext(Dispatchers.IO) {
+        extractVideoFrame(Uri.parse(item.uri), timeMs, maxSizePx)
+    }
     override suspend fun clearTemporaryCache() {}
 
     private fun inferContainer(mimeType: String?, displayName: String): MediaContainer {
@@ -162,4 +177,53 @@ class AndroidMediaAnalyzer(
         val audioChannels: Int? = null,
         val hdrFormat: String? = null,
     )
+
+    private fun loadImageThumbnail(uri: Uri, maxSizePx: Int): ByteArray? {
+        return runCatching {
+            context.contentResolver.openInputStream(uri)?.use { stream ->
+                BitmapFactory.decodeStream(stream)
+            }?.let { bitmap ->
+                bitmap.useScaledJpeg(maxSizePx)
+            }
+        }.getOrNull()
+    }
+
+    private fun extractVideoFrame(uri: Uri, timeMs: Long?, maxSizePx: Int): ByteArray? {
+        val retriever = MediaMetadataRetriever()
+        return try {
+            retriever.setDataSource(context, uri)
+            val frame = if (timeMs != null) {
+                retriever.getFrameAtTime(timeMs * 1_000L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+            } else {
+                retriever.getFrameAtTime(-1, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+            } ?: return null
+            frame.useScaledJpeg(maxSizePx)
+        } catch (_: Exception) {
+            null
+        } finally {
+            retriever.release()
+        }
+    }
+
+    private fun Bitmap.useScaledJpeg(maxSizePx: Int): ByteArray {
+        val scaled = scaleDown(maxSizePx)
+        val bytes = ByteArrayOutputStream().use { output ->
+            scaled.compress(Bitmap.CompressFormat.JPEG, 82, output)
+            output.toByteArray()
+        }
+        if (scaled !== this) {
+            scaled.recycle()
+        }
+        recycle()
+        return bytes
+    }
+
+    private fun Bitmap.scaleDown(maxSizePx: Int): Bitmap {
+        val longestSide = maxOf(width, height)
+        if (longestSide <= maxSizePx || maxSizePx <= 0) return this
+        val scale = maxSizePx.toFloat() / longestSide.toFloat()
+        val targetWidth = (width * scale).toInt().coerceAtLeast(1)
+        val targetHeight = (height * scale).toInt().coerceAtLeast(1)
+        return Bitmap.createScaledBitmap(this, targetWidth, targetHeight, true)
+    }
 }

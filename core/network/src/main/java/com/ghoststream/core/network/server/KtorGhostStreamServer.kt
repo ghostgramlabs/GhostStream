@@ -2,6 +2,9 @@ package com.ghoststream.core.network.server
 
 import android.content.Context
 import android.content.res.Configuration
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
 import android.net.Uri
 import com.ghostgramlabs.directserve.core.resources.R
 import com.ghoststream.core.media.CompatibilityJob
@@ -96,6 +99,9 @@ class KtorGhostStreamServer(
 
     /** Cache of client capabilities by remote host (IP). */
     private val capabilityCache = java.util.concurrent.ConcurrentHashMap<String, ClientCapabilities>()
+    /** Cache of playback decisions by item + client so passive polling does not re-decide repeatedly. */
+    private val decisionCache = java.util.concurrent.ConcurrentHashMap<String, PlaybackDecision>()
+    private val thumbnailPlaceholderBytes by lazy { buildThumbnailPlaceholderBytes() }
 
     override suspend fun start(port: Int): ServerBinding {
         debugLogSink.log("LocalServer", "start requested port=$port running=${running.get()}")
@@ -606,6 +612,7 @@ class KtorGhostStreamServer(
                 if (caps != null) {
                     val ip = call.request.origin.remoteHost
                     capabilityCache[ip] = caps
+                    decisionCache.keys.removeAll { it.startsWith("$ip|") }
                     debugLogSink.log("Telemetry", "Capabilities recorded for $ip: browser=${caps.browserFamily} hevc=${caps.supportsHevc} mse=${caps.supportsMse}")
                 }
                 call.respond(HttpStatusCode.NoContent)
@@ -693,11 +700,10 @@ class KtorGhostStreamServer(
                 }
 
                 if (bytesOrNull == null) {
-                    // Don't log thumbnail misses during heavy prepare (reduces noise)
                     if (!hasHeavyPrepareJob) {
-                        debugLogSink.log("WebThumb", "empty id=${item.id} name=${item.displayName} timeMs=$timeMs")
+                        debugLogSink.log("WebThumb", "fallback id=${item.id} name=${item.displayName} timeMs=$timeMs")
                     }
-                    call.respond(HttpStatusCode.NotFound, ErrorPayload("Preview unavailable"))
+                    call.respondBytes(thumbnailPlaceholderBytes, ContentType.Image.JPEG)
                     return@get
                 }
 
@@ -1193,21 +1199,31 @@ class KtorGhostStreamServer(
         triggerPreparation: Boolean,
         priority: JobPriority = JobPriority.LOW,
     ): CompatibilityJob {
-        // Retrieve or fallback to baseline client capabilities for this remote host
         val caps = capabilityCache[host]
-        
-        // Re-analyze decision if capabilities are known, to avoid unnecessary transcoding
-        val effectiveItem = if (caps != null) {
-            val decision = mediaAnalyzer.decidePlayback(Uri.parse(item.uri), item.mimeType, item.displayName, caps)
-            item.copy(playbackDecision = decision)
-        } else {
-            item
+        val forcedBrowserFallback = triggerPreparation &&
+            item.playbackDecision.mode != PlaybackMode.DIRECT &&
+            item.playbackDecision.reason.contains("Browser rejected direct playback", ignoreCase = true)
+
+        val effectiveDecision = when {
+            caps == null || forcedBrowserFallback -> item.playbackDecision
+            else -> {
+                val cacheKey = buildDecisionCacheKey(host, item, caps)
+                decisionCache[cacheKey] ?: mediaAnalyzer.decidePlayback(
+                    Uri.parse(item.uri),
+                    item.mimeType,
+                    item.displayName,
+                    caps,
+                ).also { decision ->
+                    decisionCache[cacheKey] = decision
+                    debugLogSink.log(
+                        "PlaybackDecision",
+                        "id=${item.id} host=$host mode=${decision.mode} reason=${decision.reason} " +
+                            "mime=${item.mimeType} video=${item.metadata["video_codec"] ?: "unknown"} audio=${item.metadata["audio_codec"] ?: "unknown"}",
+                    )
+                }
+            }
         }
-        debugLogSink.log(
-            "PlaybackDecision",
-            "id=${item.id} host=$host mode=${effectiveItem.playbackDecision.mode} reason=${effectiveItem.playbackDecision.reason} " +
-                "mime=${item.mimeType} video=${item.metadata["video_codec"] ?: "unknown"} audio=${item.metadata["audio_codec"] ?: "unknown"}",
-        )
+        val effectiveItem = if (effectiveDecision == item.playbackDecision) item else item.copy(playbackDecision = effectiveDecision)
         return if (triggerPreparation && effectiveItem.playbackDecision.mode != PlaybackMode.DIRECT) {
             compatibilityPipeline.requestPreparation(effectiveItem, priority, caps)
         } else {
@@ -2011,6 +2027,35 @@ class KtorGhostStreamServer(
 
     private fun nextFreePort(): Int {
         return ServerSocket(0).use { socket -> socket.localPort }
+    }
+
+    private fun buildDecisionCacheKey(
+        host: String,
+        item: SharedItem,
+        caps: ClientCapabilities,
+    ): String {
+        return listOf(
+            host,
+            item.id,
+            item.sizeBytes.toString(),
+            (item.lastModifiedEpochMs ?: 0L).toString(),
+            item.uri,
+            caps.browserFamily,
+            caps.supportsHevc.toString(),
+            caps.supportsMse.toString(),
+            caps.supportsHlsNatively.toString(),
+        ).joinToString("|")
+    }
+
+    private fun buildThumbnailPlaceholderBytes(): ByteArray {
+        val bitmap = Bitmap.createBitmap(48, 27, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(Color.parseColor("#1F2937"))
+        return java.io.ByteArrayOutputStream().use { output ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 85, output)
+            bitmap.recycle()
+            output.toByteArray()
+        }
     }
 
     @Serializable

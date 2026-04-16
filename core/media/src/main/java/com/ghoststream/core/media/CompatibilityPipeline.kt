@@ -87,6 +87,38 @@ class QueuedCompatibilityPipeline(
         val cachedAsset = cache.lookup(item)
         val isCacheHealthy = cachedAsset != null && cachedAsset.isComplete
         val effectiveDecision = item.playbackDecision
+        val existing = currentJob(item.id)
+
+        if (existing != null) {
+            val refreshed = when {
+                isCacheHealthy -> existing.copy(
+                    decision = effectiveDecision,
+                    status = CompatibilityStatus.READY,
+                    message = "Playback Ready",
+                    preparedAsset = cachedAsset,
+                    progressPercent = 100,
+                    hlsReady = false,
+                    directReady = true,
+                    streamable = true,
+                    isTerminalFailure = false,
+                    lastFailureType = null,
+                    lastFailureReason = null,
+                    lastFailureAt = null,
+                    updatedAtEpochMs = System.currentTimeMillis(),
+                    width = cachedAsset.width ?: existing.width ?: item.metadata["width"]?.toIntOrNull(),
+                    height = cachedAsset.height ?: existing.height ?: item.metadata["height"]?.toIntOrNull(),
+                    totalDurationMs = cachedAsset.totalDurationMs ?: existing.totalDurationMs ?: item.durationMs,
+                )
+
+                else -> existing.copy(
+                    decision = effectiveDecision,
+                    width = existing.width ?: item.metadata["width"]?.toIntOrNull(),
+                    height = existing.height ?: item.metadata["height"]?.toIntOrNull(),
+                    totalDurationMs = existing.totalDurationMs ?: item.durationMs,
+                )
+            }
+            return upsert(refreshed)
+        }
 
         val job = when (effectiveDecision.mode) {
             PlaybackMode.DIRECT -> CompatibilityJob(

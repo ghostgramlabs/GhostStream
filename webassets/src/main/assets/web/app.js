@@ -494,6 +494,9 @@ function compatibilityHeadline(item, streamLive = item.streamReady) {
   if (item.compatibilityStatus === "FINALIZING") {
     return gsStr("web_player_finalizing", "Finalizing browser stream...");
   }
+  if ((item.compatibilityStatus === "IDLE" || !item.compatibilityStatus) && item.playbackMode !== "DIRECT" && !streamLive) {
+    return "This video needs preparation for browser playback";
+  }
   if (!streamLive) {
     return gsStr("web_player_opening", "Preparing for web playback...");
   }
@@ -515,6 +518,9 @@ function compatibilityBody(item, streamLive = item.streamReady) {
   }
   if (item.compatibilityStatus === "FINALIZING") {
     return gsStr("web_player_finalizing_desc", "Almost ready. Completing the browser-compatible stream.");
+  }
+  if ((item.compatibilityStatus === "IDLE" || !item.compatibilityStatus) && item.playbackMode !== "DIRECT" && !streamLive) {
+    return "Prepare this video when you want to watch it in the browser.";
   }
   if (!streamLive) {
     return gsStr("web_player_wait_desc", "Preparing a browser-compatible version. Keep this page open.");
@@ -538,6 +544,9 @@ function compatibilityBadgeLabel(item, streamLive = item.streamReady) {
   if (item.compatibilityStatus === "FINALIZING") {
     return gsStr("web_player_status_finalizing", "Finalizing");
   }
+  if ((item.compatibilityStatus === "IDLE" || !item.compatibilityStatus) && item.playbackMode !== "DIRECT" && !streamLive) {
+    return "Prepare";
+  }
   if (!streamLive) {
     return gsStr("web_player_status_opening", "Preparing");
   }
@@ -545,6 +554,19 @@ function compatibilityBadgeLabel(item, streamLive = item.streamReady) {
     return gsStr("web_player_status_ready", "Ready");
   }
   return gsStr("web_player_status_playing", "Playing");
+}
+
+function isPreparationActiveStatus(status) {
+  return status === "QUEUED" || status === "ANALYZING" || status === "PREPARING" || status === "FINALIZING";
+}
+
+function compatibilityStatusText(item, streamLive = item.streamReady) {
+  if (item.compatibilityStatus === "FAILED" || item.compatibilityStatus === "STALLED") return "Failed";
+  if (item.compatibilityComplete || item.compatibilityStatus === "READY") return "Ready";
+  if (isPreparationActiveStatus(item.compatibilityStatus)) return "Preparing...";
+  if (streamLive) return "Playing";
+  if (item.playbackMode !== "DIRECT") return "Needs preparation";
+  return "Ready";
 }
 
 async function api(url, options = {}) {
@@ -865,9 +887,9 @@ async function renderVideoPlayer(id) {
   const isStreamLive = Boolean(item.streamReady || item.effectivePlaybackMode === "LIVE_HLS");
   const isPreparedReady = Boolean(item.preparedMp4Url) && !isStreamLive;
   const isTerminalFailure = item.compatibilityStatus === "FAILED" || item.compatibilityStatus === "STALLED";
-
-  // If even the original isn't ready, we must poll first.
+  const isPreparationActive = isPreparationActiveStatus(item.compatibilityStatus);
   const showPlayerImmediately = !isTerminalFailure && (isDirect || isPreparedReady || isStreamLive);
+  state.compatItem = item;
   
   shell(`
     <section class="gs-section">
@@ -890,7 +912,7 @@ async function renderVideoPlayer(id) {
               <strong data-compat-title>${compatibilityHeadline(item, isStreamLive)}</strong>
               <p class="gs-meta" data-compat-message>${esc(compatibilityBody(item, isStreamLive))}</p>
             </div>
-            <span class="gs-meta" data-compat-progress>${item.compatibilityProgressPercent != null ? `${item.compatibilityProgressPercent}%` : (isStreamLive ? "Playing" : "Opening")}</span>
+            <span class="gs-meta" data-compat-progress>${compatibilityStatusText(item, isStreamLive)}</span>
           </div>
         ` : ""}
       </div>
@@ -899,24 +921,31 @@ async function renderVideoPlayer(id) {
 
   if (showPlayerImmediately) {
     ensureCompatiblePlayerMounted(item);
-  } else if (!isTerminalFailure) {
-    pollCompat(id, item);
+  } else if (isPreparationActive) {
+    pollCompat(id, item, { startPreparation: false });
   }
 }
 
 function renderVideoStage(item, showPlayer) {
   const status = item.compatibilityStatus || item.status;
+  const isActive = isPreparationActiveStatus(status);
   return showPlayer
     ? videoMarkup(item)
     : `
       <div class="gs-compat-card" id="compatStageCard">
-        <div class="gs-logo-mark${status === "FAILED" ? "" : " gs-spinner"}"></div>
+        <div class="gs-logo-mark${status === "FAILED" || status === "STALLED" || !isActive ? "" : " gs-spinner"}"></div>
         <span class="gs-badge" data-compat-badge>${compatibilityBadgeLabel(item, false)}</span>
         <h3 data-compat-title>${compatibilityHeadline(item, false)}</h3>
         <p data-compat-message>${esc(compatibilityBody(item, false))}</p>
-        <p class="gs-meta" data-compat-progress>${status === "FAILED" ? "Stopped" : (item.compatibilityProgressPercent != null ? `${item.compatibilityProgressPercent}%` : "Opening")}</p>
+        <p class="gs-meta" data-compat-progress>${compatibilityStatusText(item, false)}</p>
         <div class="gs-toolbar-actions gs-mt-2">
-          ${status === "FAILED" ? `<button class="gs-btn gs-btn-accent gs-btn-sm" onclick="retryPreparation('${item.id}')">Retry Optimization</button>` : ""}
+          ${status === "FAILED" || status === "STALLED"
+            ? `<button class="gs-btn gs-btn-accent gs-btn-sm" onclick="retryPreparation('${item.id}')">Retry</button>`
+            : isActive
+              ? `<button class="gs-btn gs-btn-sm" disabled>Preparing...</button>`
+              : item.playbackMode !== "DIRECT"
+                ? `<button class="gs-btn gs-btn-accent gs-btn-sm" onclick="startPreparation('${item.id}')">Prepare for browser</button>`
+                : ""}
           ${!state.bootstrap?.preventDownload ? `<a class="gs-btn gs-btn-sm" href="${item.downloadUrl}">Try original (may fail)</a>` : ""}
         </div>
       </div>
@@ -1412,7 +1441,7 @@ function hydrateVideoPlayer(item, options = {}) {
         ...item,
         streamReady: false,
         compatibilityComplete: false,
-      }, { forceCompat: true });
+      }, { forceCompat: true, startPreparation: true });
       debugTrace("compat_failed", `id=${item.id} reason=${item.compatibilityMessage || "unknown"}`);
       return;
     }
@@ -1481,24 +1510,28 @@ function updateCompatElements(job, streamLive) {
     element.textContent = compatibilityBody({
       compatibilityMessage: job.message,
       compatibilityStatus: job.status,
-      compatibilityComplete: job.complete,
+      compatibilityComplete: job.complete || job.compatibilityComplete,
       streamReady: streamLive,
     }, streamLive);
   });
   document.querySelectorAll("[data-compat-progress]").forEach((element) => {
-    element.textContent = job.status === "FAILED" ? "Stopped" : (job.progressPercent != null ? `${job.progressPercent}%` : (streamLive ? "Playing" : "Opening"));
+    element.textContent = compatibilityStatusText({
+      compatibilityStatus: job.status,
+      compatibilityComplete: job.complete || job.compatibilityComplete,
+      streamReady: streamLive,
+    }, streamLive);
   });
   document.querySelectorAll("[data-compat-badge]").forEach((element) => {
     element.textContent = compatibilityBadgeLabel({
       compatibilityStatus: job.status,
-      compatibilityComplete: job.complete,
+      compatibilityComplete: job.complete || job.compatibilityComplete,
       streamReady: streamLive,
     }, streamLive);
   });
   document.querySelectorAll("[data-compat-title]").forEach((element) => {
     element.textContent = compatibilityHeadline({
       compatibilityStatus: job.status,
-      compatibilityComplete: job.complete,
+      compatibilityComplete: job.complete || job.compatibilityComplete,
       streamReady: streamLive,
     }, streamLive);
   });
@@ -1510,7 +1543,7 @@ function updateCompatElements(job, streamLive) {
     if (actions && !actions.querySelector(".gs-btn-accent")) {
        const btn = document.createElement("button");
        btn.className = "gs-btn gs-btn-accent gs-btn-sm";
-       btn.textContent = "Retry Optimization";
+       btn.textContent = "Retry";
        btn.onclick = () => retryPreparation(job.itemId);
        actions.prepend(btn);
        
@@ -1674,7 +1707,18 @@ function card(item, selectable = false) {
     ? "gs-btn gs-btn-download gs-btn-sm"
     : "gs-btn gs-btn-sm";
   const action = item.category === "video"
-    ? `<a class="${actionBtnClass}" data-link href="/player/video/${item.id}">Play</a>`
+    ? (() => {
+        if (item.playbackMode === "DIRECT" || item.compatibilityStatus === "READY") {
+          return `<a class="${actionBtnClass}" data-link href="/player/video/${item.id}">Play</a>`;
+        }
+        if (item.compatibilityStatus === "FAILED" || item.compatibilityStatus === "STALLED") {
+          return `<a class="${actionBtnClass}" data-link href="/player/video/${item.id}">Retry</a>`;
+        }
+        if (isPreparationActiveStatus(item.compatibilityStatus)) {
+          return `<span class="${actionBtnClass}" aria-disabled="true">Preparing...</span>`;
+        }
+        return `<a class="${actionBtnClass}" data-link href="/player/video/${item.id}">Prepare for browser</a>`;
+      })()
     : item.category === "photo"
       ? `<a class="${actionBtnClass}" data-link href="/photo/${item.id}">${gsStr("web_photo_view", "View")}</a>`
       : item.category === "music"
@@ -1791,6 +1835,7 @@ async function pollCompat(id, item, options = {}) {
   cancelCompatPolling();
   const route = `/player/video/${id}`;
   const token = ++state.compatPollToken;
+  const shouldStartPreparation = Boolean(options.startPreparation);
   let lastTraceKey = "";
   let lastTracedBucket = -1;
 
@@ -1803,7 +1848,7 @@ async function pollCompat(id, item, options = {}) {
    * - READY/FAILED/STALLED: stop polling
    */
   function getAdaptiveInterval(attempts, job) {
-    if (job.status === "FAILED" || job.status === "STALLED") return 0;
+    if (job.status === "FAILED" || job.status === "STALLED" || job.status === "IDLE") return 0;
     if (attempts < 3) return 500;
     if (attempts > 60) return 2000;
     if (attempts > 20 || (job.progressPercent != null && job.progressPercent < 50 && attempts > 10)) return 1500;
@@ -1881,14 +1926,37 @@ async function pollCompat(id, item, options = {}) {
     return false;
   };
 
-  try {
-    const forceParam = options.forceCompat ? "?force=true" : "";
-    debugTrace("compat_prepare_request", `id=${id} force=${!!options.forceCompat}`);
-    const prepareJob = await api(`/api/compat/${id}/prepare${forceParam}`, { method: "POST" });
-    if (token === state.compatPollToken && location.pathname === route && await applyCompatState(prepareJob)) {
-      return;
-    }
-  } catch (_) {}
+  if (shouldStartPreparation) {
+    try {
+      const forceParam = options.forceCompat ? "?force=true" : "";
+      debugTrace("compat_prepare_request", `id=${id} force=${!!options.forceCompat}`);
+      const prepareJob = await api(`/api/compat/${id}/prepare${forceParam}`, { method: "POST" });
+      if (token === state.compatPollToken && location.pathname === route && await applyCompatState(prepareJob)) {
+        return;
+      }
+    } catch (_) {}
+  } else if (!isPreparationActiveStatus(item.compatibilityStatus)) {
+    updateCompatElements(
+      {
+        status: item.compatibilityStatus || "IDLE",
+        message: item.compatibilityMessage || item.reason || "Waiting for preparation.",
+        progressPercent: null,
+        complete: item.compatibilityComplete || false,
+      },
+      false,
+    );
+    return;
+  } else {
+    updateCompatElements(
+      {
+        status: item.compatibilityStatus || "QUEUED",
+        message: item.compatibilityMessage || "Preparing video for browser playback",
+        progressPercent: null,
+        complete: item.compatibilityComplete || false,
+      },
+      false,
+    );
+  }
 
   let attempts = 0;
   async function tick() {
@@ -1911,6 +1979,21 @@ async function pollCompat(id, item, options = {}) {
   }
 
   state.compatPollTimer = setTimeout(tick, 500);
+}
+
+async function startPreparation(id, forceCompat = false) {
+  const currentItem = state.compatItem && state.compatItem.id === id
+    ? state.compatItem
+    : await api(`/api/item/${id}`);
+  state.compatItem = currentItem;
+  showCompatibilityWaitingStage({
+    ...currentItem,
+    compatibilityStatus: "QUEUED",
+    compatibilityMessage: "Preparing video for browser playback",
+    streamReady: false,
+    compatibilityComplete: false,
+  });
+  pollCompat(id, currentItem, { startPreparation: true, forceCompat });
 }
 
 function forceDirectPlayback(item) {
