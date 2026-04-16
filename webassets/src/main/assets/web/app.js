@@ -23,6 +23,7 @@ const state = {
   compatMountToken: 0,
   compatPlaybackFailures: {},
   compatItem: null,
+  ratioLocked: {}, // Track locked ratios per itemId to prevent placeholder overwrite
 };
 
 const routes = {
@@ -407,6 +408,12 @@ function shouldUseHlsPlayback(item) {
   return shouldUseNativeHlsPlayback(item) || shouldUseManagedHlsPlayback(item);
 }
 
+function shouldUseHlsForActiveSession(item) {
+  // If we are already playing via HLS and the session hasn't ended, 
+  // stay on HLS even if the MP4 is ready, to avoid glitches.
+  return (state.hls && state.hlsItemId === item.id) || (state.activeSessionPrefersHls && state.activeSessionPrefersHls[item.id]);
+}
+
 /**
  * Returns the URL to probe when checking if a stream is ready.
  * For direct compat MP4 (READY), probe the compat-mp4 URL with a Range header.
@@ -415,9 +422,14 @@ function shouldUseHlsPlayback(item) {
  */
 function resolveVideoSourceUrl(item) {
   if (item.playbackMode === "DIRECT") return item.streamUrl;
-  if (shouldUseDirectCompatMp4(item)) return item.preparedMp4Url;
-  if (shouldUseNativeHlsPlayback(item)) return item.hlsUrl;
-  if (shouldUseManagedHlsPlayback(item)) return item.hlsUrl; // probe the playlist
+  
+  const prefersHls = shouldUseHlsForActiveSession(item);
+  const effectiveHls = item.effectivePlaybackMode === "LIVE_HLS" || prefersHls;
+  const effectiveMp4 = item.effectivePlaybackMode === "PREPARED_MP4" && !prefersHls;
+
+  if (effectiveMp4 && item.preparedMp4Url) return item.preparedMp4Url;
+  if (effectiveHls && item.hlsUrl) return item.hlsUrl;
+  
   return item.streamUrl;
 }
 
@@ -456,14 +468,16 @@ async function probeCompatiblePlaybackSource(item) {
 
 function shouldStartCompatibilityPlayback(item, job = null) {
   if (item.playbackMode === "DIRECT") return true;
+  
+  // Early hydration: if HLS is possible and we are streamReady, start immediately.
+  const isHlsMode = item.playbackMode === "REMUX" || item.playbackMode === "TRANSMUX" || item.playbackMode === "TRANSCODE";
+  if (isHlsMode && (item.streamReady || item.effectivePlaybackMode === "LIVE_HLS")) return true;
+
   // Direct compat MP4 path: the server only populates preparedMp4Url when status=READY,
   // so the presence of that URL means we can start immediately.
   if (shouldUseDirectCompatMp4(item)) return true;
 
-  // For all other paths, allow playback as soon as the stream is ready.
-  // The 'streamReady' flag (calculated by the server) indicates that at least
-  // MIN_SEGMENTS_BEFORE_PLAY (usually 1) segments have been written to disk for fMP4.
-  if (item.streamReady || item.compatibilityComplete || item.compatibilityStatus === "READY") return true;
+  if (item.compatibilityComplete || item.compatibilityStatus === "READY") return true;
   if (!job) return false;
   return Boolean(job.ready || job.complete || job.status === "READY");
 }
@@ -485,7 +499,7 @@ function compatibilityHeadline(item, streamLive = item.streamReady) {
     return gsStr("web_player_opening", "Preparing for web playback...");
   }
   if (item.compatibilityComplete || item.compatibilityStatus === "READY") {
-    return gsStr("web_player_ready", "Video is ready");
+    return gsStr("web_player_ready", "Playback Ready");
   }
   return gsStr("web_player_starting", "Starting playback...");
 }
@@ -507,7 +521,7 @@ function compatibilityBody(item, streamLive = item.streamReady) {
     return gsStr("web_player_wait_desc", "Preparing a browser-compatible version. Keep this page open.");
   }
   if (item.compatibilityComplete || item.compatibilityStatus === "READY") {
-    return gsStr("web_player_ready_desc", "Playback is ready on this device.");
+    return gsStr("web_player_ready_desc", "This video has been optimized for your browser.");
   }
   return gsStr("web_player_starting_desc", "The video is starting now. If it pauses, wait a moment or try again.");
 }
@@ -849,8 +863,8 @@ async function renderVideoPlayer(id) {
   
   // Decide the initial view state
   const isDirect = item.playbackMode === "DIRECT";
-  const isPreparedReady = Boolean(item.preparedMp4Url);
-  const isStreamLive = Boolean(item.streamReady);
+  const isStreamLive = Boolean(item.streamReady || item.effectivePlaybackMode === "LIVE_HLS");
+  const isPreparedReady = Boolean(item.preparedMp4Url) && !isStreamLive;
 
   // If even the original isn't ready, we must poll first.
   const showPlayerImmediately = isDirect || isPreparedReady || isStreamLive;
@@ -915,19 +929,20 @@ function videoMarkup(item) {
   const preload = useNativePlayer ? "metadata" : "auto";
 
   // Priority Source Logic:
-  // 1. Finalized Direct Compat MP4 (Complete)
-  // 2. Native HLS (Apple/TV StartupReady)
-  // 3. Managed HLS (Chrome/Android StartupReady) - Source attached by hls.js (null here)
-  // 4. Original Stream URL (ONLY for DIRECT playbackMode items)
+  // 1. Session-locked HLS (Stay on HLS if we started there)
+  // 2. Finalized Direct Compat MP4 (If READY and not locked to HLS)
+  // 3. Early HLS (StartupReady/Effective LIVE_HLS)
   let sourceUrl = null;
+  const sessionLockedHls = shouldUseHlsForActiveSession(item);
+
   if (item.playbackMode === "DIRECT") {
     sourceUrl = item.streamUrl;
-  } else if (shouldUseDirectCompatMp4(item)) {
-    sourceUrl = item.preparedMp4Url;
-  } else if (shouldUseNativeHlsPlayback(item)) {
+  } else if (sessionLockedHls) {
     sourceUrl = item.hlsUrl;
-  } else if (shouldUseManagedHlsPlayback(item)) {
-    sourceUrl = null; // hls.js will attach source
+  } else if (item.effectivePlaybackMode === "PREPARED_MP4" && item.preparedMp4Url) {
+    sourceUrl = item.preparedMp4Url;
+  } else if (shouldUseHlsPlayback(item)) {
+    sourceUrl = (shouldUseNativeHlsPlayback(item) || sessionLockedHls) ? item.hlsUrl : null;
   }
   
   const sourceAttribute = sourceUrl ? ` src="${sourceUrl}"` : "";
@@ -1021,11 +1036,15 @@ function hydrateVideoPlayer(item, options = {}) {
     
     // Explicitly set ratio from metadata if available
     if (item.width && item.height) {
+      state.ratioLocked[item.id] = `${item.width}:${item.height}`;
       state.plyr.ratio = `${item.width}:${item.height}`;
-      const playerStructural = video.closest(".gs-player");
       const wrapStructural = video.closest(".gs-video-wrap");
-      if (playerStructural) playerStructural.style.aspectRatio = `${item.width} / ${item.height}`;
-      if (wrapStructural) wrapStructural.style.aspectRatio = `${item.width} / ${item.height}`;
+      if (wrapStructural) {
+        wrapStructural.style.aspectRatio = `${item.width} / ${item.height}`;
+        if (item.height > item.width) {
+          wrapStructural.classList.add("is-portrait");
+        }
+      }
     }
     
     setupScrubbingPreviews(item, state.plyr);
@@ -1263,40 +1282,45 @@ function hydrateVideoPlayer(item, options = {}) {
     const src = video.currentSrc || "";
     
     // RATIO PROTECTION:
-    // 1. Ignore metadata if the current source is the blank.mp4 placeholder.
-    // 2. Ignore 32x20 dimensions which are typical of the blank placeholder.
-    if (src.includes("blank.mp4") || (w === 32 && h === 20)) {
-      debugTrace("video_loadedmetadata_ignored", `id=${item.id} reason=placeholder_detected width=${w} height=${h}`);
-      return;
+    // 1. If we have authoritative oriented dimensions from the server, Lock them immediately.
+    // 2. Ignore metadata events if the current source is a placeholder (blank.mp4 / bootstrap).
+    // 3. Ignore 32x20 dimensions which are common native player default placeholders.
+    const metadataRatio = (item.width && item.height) ? `${item.width}:${item.height}` : null;
+    const isPlaceholder = src.includes("blank.mp4") || src.includes("blob:") == false && src.includes("/api/compat/") == false && src.includes("/hls/") == false;
+    const isDefaultUnstretched = (w === 32 && h === 20);
+
+    if (state.ratioLocked[item.id]) {
+        debugTrace("ratio_override_blocked", `id=${item.id} locked=${state.ratioLocked[item.id]} attempt=${w}x${h}`);
+        if (state.plyr && state.plyr.ratio !== state.ratioLocked[item.id]) {
+            state.plyr.ratio = state.ratioLocked[item.id];
+        }
+        return;
     }
 
-    debugTrace("video_loadedmetadata", `id=${item.id} width=${w} height=${h} currentSrc=${src}`);
-    if (w && h) {
-      const ratioStr = `${w}:${h}`;
-      
-      // If we already have authoritative metadata (item.width/height), and it matches, skip the update.
-      if (item.width && item.height) {
-        const metadataRatio = item.width / item.height;
-        const actualRatio = w / h;
-        // Allow a tiny delta for float precision, but if they are basically the same, don't churn.
-        if (Math.abs(metadataRatio - actualRatio) < 0.01) {
-          debugTrace("video_ratio_skip", `id=${item.id} reason=matches_metadata ratio=${ratioStr}`);
-          return;
+    if (metadataRatio) {
+        state.ratioLocked[item.id] = metadataRatio;
+        debugTrace("ratio_locked_authoritative", `id=${item.id} ratio=${metadataRatio}`);
+        if (state.plyr) state.plyr.ratio = metadataRatio;
+        const wrapStructural = video.closest(".gs-video-wrap");
+        if (wrapStructural) {
+            wrapStructural.style.aspectRatio = metadataRatio.replace(":", " / ");
+            if (item.height > item.width) {
+                wrapStructural.classList.add("is-portrait");
+            }
         }
-      }
+        return;
+    }
 
-      const playerStructural = video.closest(".gs-player");
-      const wrapStructural = video.closest(".gs-video-wrap");
-      
-      if (playerStructural) playerStructural.style.aspectRatio = `${w} / ${h}`;
-      if (wrapStructural) wrapStructural.style.aspectRatio = `${w} / ${h}`;
-
-      if (state.plyr) {
-        state.plyr.ratio = ratioStr;
-      } else {
-        video.style.aspectRatio = `${w} / ${h}`;
-      }
-      debugTrace("video_ratio_applied", `id=${item.id} ratio=${ratioStr} playerType=${state.plyr ? "plyr" : "native"}`);
+    if (w && h && !isPlaceholder && !isDefaultUnstretched) {
+        const ratioStr = `${w}:${h}`;
+        state.ratioLocked[item.id] = ratioStr;
+        debugTrace("ratio_locked_real", `id=${item.id} ratio=${ratioStr} source=${src}`);
+        
+        if (state.plyr) {
+            state.plyr.ratio = ratioStr;
+        } else {
+            video.style.aspectRatio = `${w} / ${h}`;
+        }
     }
   });
   video.addEventListener("canplay", () => {
@@ -1528,19 +1552,31 @@ async function retryPreparation(id) {
 
 async function ensureCompatiblePlayerMounted(item) {
   const mountToken = ++state.compatMountToken;
+  const isHlsEffective = item.effectivePlaybackMode === "LIVE_HLS" || (item.hlsUrl && (item.streamReady || shouldUseHlsForActiveSession(item)));
   const alreadyReady = Boolean(
     item.playbackMode === "DIRECT" ||
-    (item.streamReady && (shouldUseNativeHlsPlayback(item) || shouldUseManagedHlsPlayback(item))) ||
+    isHlsEffective ||
     shouldUseDirectCompatMp4(item)
   );
   if (item.playbackMode !== "DIRECT" && !alreadyReady) {
-    const ready = await probeCompatiblePlaybackSource(item);
-    if (mountToken !== state.compatMountToken || location.pathname !== `/player/video/${item.id}`) {
-      return false;
+    // If HLS is possible (even if only early HLS), we don't need to probe.
+    // The player will handle hydration and internal retries.
+    const hasHls = Boolean(item.hlsUrl && (shouldUseNativeHlsPlayback(item) || shouldUseManagedHlsPlayback(item)));
+    if (!hasHls) {
+      const ready = await probeCompatiblePlaybackSource(item);
+      if (mountToken !== state.compatMountToken || location.pathname !== `/player/video/${item.id}`) {
+        return false;
+      }
+      if (!ready) {
+        return false;
+      }
     }
-    if (!ready) {
-      return false;
-    }
+  }
+
+  // Record that we preferred HLS for this session if we are using it
+  if (isHlsEffective) {
+    if (!state.activeSessionPrefersHls) state.activeSessionPrefersHls = {};
+    state.activeSessionPrefersHls[item.id] = true;
   }
   if (document.getElementById("vPlayer")) {
     hydrateVideoPlayer(item);
@@ -1781,41 +1817,56 @@ async function pollCompat(id, item, options = {}) {
   }
 
   const applyCompatState = async (job) => {
-    const canStartPlayback = shouldStartCompatibilityPlayback(item, job);
+    // 202 Accepted handling: The server might return an ErrorPayload while waiting for 
+    // the HLS duration threshold (4-6s) to be met. We treat this as "Opening".
+    const normalizedJob = {
+      status: job.status || "ANALYZING", // Default to an active state if status is missing (202 response)
+      message: job.message || "Preparing stream...",
+      progressPercent: job.progressPercent,
+      compatibilityComplete: job.compatibilityComplete || false,
+      ready: job.ready || false,
+      preparedMp4Url: job.preparedMp4Url,
+      hlsUrl: job.hlsUrl,
+      width: job.width,
+      height: job.height,
+      totalDurationMs: job.totalDurationMs
+    };
+
+    const canStartPlayback = shouldStartCompatibilityPlayback(item, normalizedJob);
 
     // Only trace compat_status on meaningful changes: state change, 5% bucket, or ready/failed
-    const progressBucket = job.progressPercent != null ? Math.floor(job.progressPercent / 5) * 5 : null;
-    const traceKey = `${job.status}|${progressBucket ?? ""}|${canStartPlayback}|${job.compatibilityComplete}`;
+    const progressBucket = normalizedJob.progressPercent != null ? Math.floor(normalizedJob.progressPercent / 5) * 5 : null;
+    const traceKey = `${normalizedJob.status}|${progressBucket ?? ""}|${canStartPlayback}|${normalizedJob.compatibilityComplete}`;
     if (traceKey !== lastTraceKey) {
       // Only log if status changed, bucket changed, or terminal state
       const bucketChanged = progressBucket !== null && progressBucket !== lastTracedBucket;
       const statusChanged = lastTraceKey === "" || traceKey.split("|")[0] !== lastTraceKey.split("|")[0];
-      const isTerminal = job.status === "READY" || job.status === "FAILED" || job.status === "STALLED";
+      const isTerminal = normalizedJob.status === "READY" || normalizedJob.status === "FAILED" || normalizedJob.status === "STALLED";
       if (statusChanged || bucketChanged || isTerminal || canStartPlayback) {
         lastTraceKey = traceKey;
         lastTracedBucket = progressBucket ?? lastTracedBucket;
         debugTrace(
           "compat_status",
-          `id=${id} status=${job.status} progress=${job.progressPercent ?? ""} ready=${canStartPlayback} complete=${job.compatibilityComplete}`,
+          `id=${id} status=${normalizedJob.status} progress=${normalizedJob.progressPercent ?? ""} ready=${canStartPlayback} complete=${normalizedJob.compatibilityComplete}`,
         );
       }
     }
     const nextItem = {
       ...item,
       streamReady: canStartPlayback,
-      compatibilityStatus: job.status,
-      compatibilityMessage: job.message,
-      compatibilityProgressPercent: job.progressPercent,
-      compatibilityComplete: job.compatibilityComplete,
-      preparedMp4Url: job.preparedMp4Url,
-      hlsUrl: job.hlsUrl || item.hlsUrl,
-      width: job.width || item.width,
-      height: job.height || item.height,
-      totalDurationMs: job.totalDurationMs || item.totalDurationMs || item.durationMs,
+      compatibilityStatus: normalizedJob.status,
+      compatibilityMessage: normalizedJob.message,
+      compatibilityProgressPercent: normalizedJob.progressPercent,
+      compatibilityComplete: normalizedJob.compatibilityComplete,
+      preparedMp4Url: normalizedJob.preparedMp4Url,
+      hlsUrl: normalizedJob.hlsUrl || item.hlsUrl,
+      width: normalizedJob.width || item.width,
+      height: normalizedJob.height || item.height,
+      totalDurationMs: normalizedJob.totalDurationMs || item.totalDurationMs || item.durationMs,
     };
 
     state.compatItem = nextItem;
-    updateCompatElements(job, canStartPlayback);
+    updateCompatElements(normalizedJob, canStartPlayback);
 
     if (canStartPlayback) {
       const mounted = await ensureCompatiblePlayerMounted(nextItem);
@@ -1823,11 +1874,11 @@ async function pollCompat(id, item, options = {}) {
         cancelCompatPolling();
         return true;
       }
-      updateCompatElements(job, false);
+      updateCompatElements(normalizedJob, false);
       return false;
     }
-    if (job.status === "FAILED" || job.status === "STALLED") {
-      updateCompatElements(job, false);
+    if (normalizedJob.status === "FAILED" || normalizedJob.status === "STALLED") {
+      updateCompatElements(normalizedJob, false);
       cancelCompatPolling();
       return true;
     }

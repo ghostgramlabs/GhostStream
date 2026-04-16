@@ -8,6 +8,7 @@ import com.ghoststream.core.media.CompatibilityPipeline
 import com.ghoststream.core.media.MediaAnalyzer
 import com.ghoststream.core.media.Media3FragmentedMp4CompatibilityWorker
 import com.ghoststream.core.media.QueuedCompatibilityPipeline
+import com.ghoststream.core.media.DefaultSmartPlaybackDecisionEngine
 import com.ghoststream.core.media.TempPlaybackCache
 import com.ghoststream.core.media.MediaSourceStabilizer
 import com.ghoststream.core.network.AndroidNetworkInspector
@@ -34,14 +35,16 @@ class AppContainer(
     val debugLogRepository: DebugLogRepository by lazy { DebugLogRepository(appContext, enabled = BuildConfig.DEBUG) }
     val historyRepository: HistoryRepository by lazy { RoomHistoryRepository(appContext) }
     val settingsRepository: SettingsRepository by lazy { DataStoreSettingsRepository(appContext) }
-    val mediaAnalyzer: MediaAnalyzer by lazy { AndroidMediaAnalyzer(appContext, debugLogSink = debugLogRepository) }
+    val decisionEngine by lazy { DefaultSmartPlaybackDecisionEngine() }
+    val mediaAnalyzer: MediaAnalyzer by lazy { AndroidMediaAnalyzer(appContext, decisionEngine, mediaSourceStabilizer) }
     private val tempPlaybackCache: TempPlaybackCache by lazy { TempPlaybackCache(appContext) }
     val mediaSourceStabilizer: MediaSourceStabilizer by lazy { MediaSourceStabilizer(appContext, tempPlaybackCache) }
     val compatibilityPipeline: CompatibilityPipeline by lazy {
-        QueuedCompatibilityPipeline(
+         QueuedCompatibilityPipeline(
             cache = tempPlaybackCache,
             worker = Media3FragmentedMp4CompatibilityWorker(appContext, debugLogSink = debugLogRepository),
             stabilizer = mediaSourceStabilizer,
+            decisionEngine = decisionEngine,
         )
     }
     val storageRepository: StorageRepository by lazy {

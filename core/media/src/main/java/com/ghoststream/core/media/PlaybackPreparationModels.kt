@@ -16,6 +16,26 @@ enum class CompatibilityStatus {
 }
 
 @Serializable
+enum class JobPriority {
+    /** Seeking into the same item — highest priority, reset state. */
+    CRITICAL,
+    /** Explicit user click to play — high priority. */
+    HIGH,
+    /** Background/passive warmup — lowest priority, instantly preemptable. */
+    LOW,
+}
+
+@Serializable
+enum class EffectivePlaybackMode {
+    /** Playing the original source file. */
+    DIRECT,
+    /** Playing via a growing HLS stream. */
+    LIVE_HLS,
+    /** Playing a fully prepared/finalized compatible MP4 file. */
+    PREPARED_MP4,
+}
+
+@Serializable
 data class CachedPlaybackAsset(
     val itemId: String,
     val filePath: String,
@@ -60,9 +80,24 @@ data class CompatibilityJob(
     val totalDurationMs: Long? = null,
     /** Timestamp of the last media-serving signal (HLS playlist/segment request). */
     val lastMediaServedAt: Long? = null,
+    /** The priority of this job. */
+    val priority: JobPriority = JobPriority.LOW,
 ) {
     val canServePlayback: Boolean
         get() = status == CompatibilityStatus.READY || hlsReady || directReady
+
+    /**
+     * The current ideal mode for playback.
+     * Prefers PREPARED_MP4 if fully ready, otherwise LIVE_HLS if streamReady,
+     * otherwise falls back based on the decision mode.
+     */
+    val effectivePlaybackMode: EffectivePlaybackMode
+        get() = when {
+            decision.mode == com.ghoststream.core.model.PlaybackMode.DIRECT -> EffectivePlaybackMode.DIRECT
+            status == CompatibilityStatus.READY || directReady -> EffectivePlaybackMode.PREPARED_MP4
+            streamable -> EffectivePlaybackMode.LIVE_HLS
+            else -> EffectivePlaybackMode.LIVE_HLS // Default to HLS for compatible modes
+        }
 
     /**
      * Coarse progress rounded to nearest 5% bucket, used for throttled UI updates.

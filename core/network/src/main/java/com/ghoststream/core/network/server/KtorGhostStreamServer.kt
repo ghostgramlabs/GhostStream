@@ -11,6 +11,9 @@ import com.ghoststream.core.media.CompatibilityStatus
 import com.ghoststream.core.media.MediaAnalyzer
 import com.ghoststream.core.media.PlaybackResolution
 import com.ghoststream.core.media.PlaybackSource
+import com.ghoststream.core.media.JobPriority
+import com.ghoststream.core.media.EffectivePlaybackMode
+import com.ghoststream.core.media.ClientCapabilities
 import com.ghoststream.core.media.FragmentedMp4HlsIndex
 import com.ghoststream.core.media.FragmentedMp4HlsIndexer
 import com.ghoststream.core.history.HistoryRepository
@@ -89,6 +92,9 @@ class KtorGhostStreamServer(
     private val running = AtomicBoolean(false)
     /** Throttled compat poll logging: tracks last logged state key per item to avoid log spam */
     private val lastCompatLogKey = java.util.concurrent.ConcurrentHashMap<String, String>()
+
+    /** Cache of client capabilities by remote host (IP). */
+    private val capabilityCache = java.util.concurrent.ConcurrentHashMap<String, ClientCapabilities>()
 
     override suspend fun start(port: Int): ServerBinding {
         debugLogSink.log("LocalServer", "start requested port=$port running=${running.get()}")
@@ -216,7 +222,7 @@ class KtorGhostStreamServer(
                     for (item in state.selectedItems.take(8)) {
                         recentCards += BrowserItemCard.from(
                             item = item,
-                            compatibilityJob = compatibilitySnapshotFor(item, triggerPreparation = false),
+                            compatibilityJob = compatibilitySnapshotFor(call.request.origin.remoteHost, item, triggerPreparation = false),
                             showThumbnails = settings.showThumbnails,
                             allowDownloads = allowDownloads,
                         )
@@ -374,7 +380,7 @@ class KtorGhostStreamServer(
                 for (item in items) {
                     cards += BrowserItemCard.from(
                         item = item,
-                        compatibilityJob = compatibilitySnapshotFor(item, triggerPreparation = false),
+                        compatibilityJob = compatibilitySnapshotFor(call.request.origin.remoteHost, item, triggerPreparation = false),
                         showThumbnails = settings.showThumbnails,
                         allowDownloads = allowDownloads,
                     )
@@ -395,9 +401,10 @@ class KtorGhostStreamServer(
                     // The browser explicitly requests preparation via POST /api/compat/{id}/prepare,
                     // which prevents duplicate transcode jobs when the library state updates.
                     val job = compatibilitySnapshotFor(
+                        host = call.request.origin.remoteHost,
                         item = item,
                         triggerPreparation = false,
-                        prioritizePreparation = false,
+                        priority = JobPriority.LOW
                     )
                     val streamReady = compatibilityStreamReady(item)
 
@@ -428,7 +435,7 @@ class KtorGhostStreamServer(
                     call.respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_file_unavailable)))
                     return@get
                 }
-                val job = compatibilitySnapshotFor(item, triggerPreparation = false)
+                val job = compatibilitySnapshotFor(call.request.origin.remoteHost, item, triggerPreparation = false)
                 val ready = compatibilityStreamReady(item)
                 // Throttled logging: only log on state change or 5% progress bucket change
                 val currentBucket = job.coarseProgressBucket
@@ -457,7 +464,7 @@ class KtorGhostStreamServer(
                 }
                 
                 (compatibilityPipeline as? QueuedCompatibilityPipeline)?.clearFailure(item.id)
-                val job = compatibilityPipeline.requestPreparation(item, prioritize = true)
+                val job = compatibilityPipeline.requestPreparation(item, JobPriority.HIGH)
                 
                 call.respond(
                     CompatibilityStatusPayload.from(
@@ -488,7 +495,7 @@ class KtorGhostStreamServer(
                 } else {
                     item
                 }
-                val job = compatibilitySnapshotFor(effectiveItem, triggerPreparation = true, prioritizePreparation = true)
+                val job = compatibilitySnapshotFor(call.request.origin.remoteHost, effectiveItem, triggerPreparation = true, priority = JobPriority.HIGH)
                 val ready = compatibilityStreamReady(effectiveItem)
                 debugLogSink.log(
                     "WebCompat",
@@ -586,6 +593,17 @@ class KtorGhostStreamServer(
                 call.respond(HttpStatusCode.NoContent)
             }
 
+            
+            post("/api/telemetry/capabilities") {
+                if (!call.authorizeBrowserCall()) return@post
+                val caps = call.receiveNullable<ClientCapabilities>()
+                if (caps != null) {
+                    val ip = call.request.origin.remoteHost
+                    capabilityCache[ip] = caps
+                    debugLogSink.log("Telemetry", "Capabilities recorded for $ip: browser=${caps.browserFamily} hevc=${caps.supportsHevc} mse=${caps.supportsMse}")
+                }
+                call.respond(HttpStatusCode.NoContent)
+            }
             post("/api/debug/browser") {
                 if (!debugBrowserTracingEnabled) {
                     call.respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_debug_unavailable)))
@@ -1144,13 +1162,33 @@ class KtorGhostStreamServer(
         return context.createConfigurationContext(configuration)
     }
 
+    /**
+     * Resolves the current compatibility state for a specific item/client combination.
+     * 
+     * ARCHITECTURAL GUARDRAIL:
+     * - [triggerPreparation] MUST ONLY be true when called from explicit Play/Seek intent routes.
+     * - Passive browsing (Discovery, Bootstrap, Library) MUST ALWAYS pass triggerPreparation = false.
+     * - JobPriority.LOW is reserved for manual bulk prepare and must not be used with triggerPreparation=true 
+     *   unless specifically intended for non-immediate background work.
+     */
     private suspend fun compatibilitySnapshotFor(
+        host: String,
         item: SharedItem,
         triggerPreparation: Boolean,
-        prioritizePreparation: Boolean = false,
+        priority: JobPriority = JobPriority.LOW,
     ): CompatibilityJob {
-        return if (triggerPreparation && item.playbackDecision.mode != PlaybackMode.DIRECT) {
-            compatibilityPipeline.requestPreparation(item, prioritize = prioritizePreparation)
+        // Retrieve or fallback to baseline client capabilities for this remote host
+        val caps = capabilityCache[host]
+        
+        // Re-analyze decision if capabilities are known, to avoid unnecessary transcoding
+        val effectiveItem = if (caps != null) {
+            val decision = mediaAnalyzer.decidePlayback(Uri.parse(item.uri), item.mimeType, item.displayName, caps)
+            item.copy(playbackDecision = decision)
+        } else {
+            item
+        }
+        return if (triggerPreparation && effectiveItem.playbackDecision.mode != PlaybackMode.DIRECT) {
+            compatibilityPipeline.requestPreparation(effectiveItem, priority)
         } else {
             compatibilityPipeline.inspect(item)
         }
@@ -1616,7 +1654,7 @@ class KtorGhostStreamServer(
             return null
         }
 
-        val job = compatibilitySnapshotFor(item, triggerPreparation = true, prioritizePreparation = true)
+        val job = compatibilitySnapshotFor(request.origin.remoteHost, item, triggerPreparation = true, priority = JobPriority.HIGH)
         if (job.status == CompatibilityStatus.FAILED || job.status == CompatibilityStatus.STALLED) {
             respond(HttpStatusCode.Conflict, ErrorPayload(job.message))
             return null

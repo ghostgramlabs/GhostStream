@@ -66,4 +66,20 @@ data class MediaInspection(
      * Native video height in pixels.
      */
     val height: Int? = null,
+    /**
+     * Video frame rate in fps.
+     */
+    val frameRate: Float? = null,
+    /**
+     * Average bitrate in bps.
+     */
+    val bitrate: Long? = null,
+    /**
+     * Number of audio channels (e.g. 2, 6).
+     */
+    val audioChannels: Int? = null,
+    /**
+     * HDR format details (e.g. "HDR10", "HLG", "Dolby Vision") if available.
+     */
+    val hdrFormat: String? = null,
 )

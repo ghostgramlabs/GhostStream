@@ -146,6 +146,7 @@ class Media3FragmentedMp4CompatibilityWorker(
             handler = handler,
             thread = thread,
             completion = completion,
+            cancelled = cancelled,
         )
         activeTransforms[item.id] = transform
 
@@ -613,8 +614,9 @@ class Media3FragmentedMp4CompatibilityWorker(
                 
                 val currentSize = transform.outputFile.length()
                 
-                // Readiness Check: Instead of a coarse byte threshold, we use the HLS Indexer
-                // to verify that a browser-safe moov and at least one fragment exist.
+                // Readiness Check: Instead of a coarse byte threshold or fixed segment count,
+                // we use the HlsReadinessValidator to verify that a minimum buffered duration (4-6s)
+                // exists before marking the stream as playable.
                 val hlsIndex = if (canStreamDuringPrepare) {
                     runCatching {
                         FragmentedMp4HlsIndexer.read(
@@ -632,8 +634,11 @@ class Media3FragmentedMp4CompatibilityWorker(
                     }
                 } else null
                 
-                // Only report streamable once we have an init segment AND at least one video fragment.
-                val streamable = hlsIndex != null && hlsIndex.initSegmentLength > 0 && hlsIndex.segments.isNotEmpty()
+                // Readiness Check: Instead of a coarse byte threshold or fixed segment count,
+                // we use the HlsReadinessValidator to verify that a minimum buffered duration (4-6s)
+                // exists before marking the stream as playable.
+                val readiness = HlsReadinessValidator.validate(hlsIndex)
+                val streamable = readiness.isReady
 
                 // Log every 5% bucket
                 val currentBucket = progress?.let { (it / 5) * 5 } ?: -1
@@ -664,6 +669,16 @@ class Media3FragmentedMp4CompatibilityWorker(
                     debugLogSink.log("CompatWorker", "readiness_pending id=${item.id} reason=\"${hlsIndex.diagnosticInfo}\"")
                 }
 
+                val incompleteAsset = CachedPlaybackAsset(
+                    itemId = item.id,
+                    filePath = transform.outputFile.absolutePath,
+                    mimeType = "video/mp4",
+                    sizeBytes = currentSize,
+                    createdAtEpochMs = startTimeMs,
+                    isComplete = false,
+                    isFragmentedMp4 = canStreamDuringPrepare,
+                )
+
                 onUpdate(
                     CompatibilityWorkerUpdate(
                         status = CompatibilityStatus.PREPARING,
@@ -680,7 +695,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                                 "Preparing for web playback..."
                         },
                         progressPercent = progress,
-                        preparedAsset = null, // Do NOT expose temp file as playback asset
+                        preparedAsset = incompleteAsset, // Expose growing file so HLS can serve it
                         hlsReady = streamable,
                         directReady = false,
                         streamable = streamable,
@@ -724,9 +739,11 @@ class Media3FragmentedMp4CompatibilityWorker(
         val handler: Handler,
         val thread: HandlerThread,
         val completion: CompletableDeferred<CompatibilityWorkerResult>,
+        val cancelled: AtomicBoolean,
         @Volatile var transformer: Transformer? = null,
     ) {
         fun cancel() {
+            cancelled.set(true)
             handler.post {
                 transformer?.cancel()
             }

@@ -19,6 +19,7 @@ import com.ghoststream.core.model.SmartSelectionGroup
 import com.ghoststream.core.model.RecentSession
 import com.ghoststream.core.model.buildConnectionDiagnostics
 import com.ghoststream.core.media.CompatibilityJob
+import com.ghoststream.core.media.JobPriority
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,10 +49,6 @@ class MainViewModel(
     private val _browserPrepManuallyTriggered = MutableStateFlow(false)
     private val _events = MutableSharedFlow<AppEvent>(extraBufferCapacity = 8)
 
-    // Session-level dedup set: tracks item IDs that have already been submitted for background
-    // warmup this session.  Prevents the library-state observer from re-queuing the same
-    // item every time the StorageRepository emits a new state (e.g. on each file scan tick).
-    private val warmupRequestedIds = mutableSetOf<String>()
 
     val events = _events.asSharedFlow()
 
@@ -120,7 +117,6 @@ class MainViewModel(
     init {
         refreshNetwork()
         container.debugLogRepository.log("MainViewModel", "initialized")
-        // Auto-reset the manual trigger flag once all queued/active compatibility jobs finish.
         container.compatibilityPipeline.jobs
             .onEach { jobs ->
                 if (_browserPrepManuallyTriggered.value) {
@@ -137,30 +133,7 @@ class MainViewModel(
             }
             .launchIn(viewModelScope)
 
-        // ── EAGER PREPARATION ────────────────────────────────────────────────────
-        // Proactively prepare ALL non-DIRECT videos the moment they enter the library.
-        // This is the key architecture decision: by the time a browser opens a player,
-        // the prepared MP4 should already exist. No waiting at playback time.
-        container.storageRepository.libraryState
-            .onEach { library ->
-                // Build warmup candidates using suspend-compatible loop.
-                // inspect() is suspend (it checks disk cache), so we can't use .filter{}.
-                val candidates = library.items
-                    .filter { it.category == com.ghoststream.core.model.MediaCategory.VIDEO && it.playbackDecision.mode != com.ghoststream.core.model.PlaybackMode.DIRECT }
-                for (item in candidates) {
-                    // Dedup: skip items already queued this session
-                    if (warmupRequestedIds.contains(item.id)) continue
-                    // Use inspect() to check both in-memory state AND disk cache.
-                    // This prevents re-queuing items whose prepared .mp4 still exists on disk.
-                    val job = container.compatibilityPipeline.inspect(item)
-                    if (job.status == com.ghoststream.core.media.CompatibilityStatus.IDLE && job.preparedAsset == null) {
-                        warmupRequestedIds.add(item.id)
-                        container.compatibilityPipeline.requestPreparation(item, prioritize = false)
-                    }
-                }
-            }
-            .launchIn(viewModelScope)
-        // ────────────────────────────────────────────────────────────────────────
+
     }
 
     fun completeOnboarding() {
@@ -473,6 +446,10 @@ class MainViewModel(
         }
     }
 
+    /**
+     * Explicit user-initiated preparation for a single item.
+     * MUST NOT be triggered automatically by browsing or discovery.
+     */
     fun requestPrepareItem(itemId: String) {
         viewModelScope.launch {
             val item = container.storageRepository.findItemById(itemId)
@@ -480,7 +457,7 @@ class MainViewModel(
                 _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_file_no_longer_available)))
                 return@launch
             }
-            container.compatibilityPipeline.requestPreparation(item, prioritize = true)
+            container.compatibilityPipeline.requestPreparation(item, priority = JobPriority.HIGH)
             _events.emit(AppEvent.ShowMessage(application.getString(R.string.message_preparing_browser_playback, item.displayName)))
         }
     }
@@ -565,6 +542,14 @@ class MainViewModel(
         }
     }
 
+    /**
+     * Explicit user-initiated preparation for all compatible items in the active session.
+     * 
+     * ARCHITECTURAL GUARDRAIL:
+     * - This is a manual-only bulk action.
+     * - Uses JobPriority.LOW so it can be preempted by active Play/Seek requests.
+     * - MUST NOT be invoked by lifecycle, bootstrap, or browsing events.
+     */
     private suspend fun queueSessionBrowserPlayback(): Int {
         val session = container.sessionManager.sessionState.value
         if (!session.isSharing) return 0
@@ -580,6 +565,7 @@ class MainViewModel(
                     existing?.status == com.ghoststream.core.media.CompatibilityStatus.ANALYZING ||
                     existing?.status == com.ghoststream.core.media.CompatibilityStatus.FINALIZING
                 if (!alreadyHandled) {
+                    container.compatibilityPipeline.requestPreparation(item, com.ghoststream.core.media.JobPriority.LOW)
                     queuedCount++
                 }
             }
