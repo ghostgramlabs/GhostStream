@@ -57,9 +57,9 @@ interface CompatibilityPipeline {
 }
 
 class QueuedCompatibilityPipeline(
-    private val cache: TempPlaybackCache,
+    private val cache: PlaybackCache,
     private val worker: CompatibilityWorker,
-    private val stabilizer: MediaSourceStabilizer,
+    private val stabilizer: MediaSourceStabilizer? = null,
     private val decisionEngine: SmartPlaybackDecisionEngine = DefaultSmartPlaybackDecisionEngine(),
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
 ) : CompatibilityPipeline {
@@ -86,38 +86,12 @@ class QueuedCompatibilityPipeline(
     override suspend fun inspect(item: SharedItem, capabilities: ClientCapabilities?): CompatibilityJob {
         val cachedAsset = cache.lookup(item)
         val isCacheHealthy = cachedAsset != null && cachedAsset.isComplete
-        
-        val caps = capabilities ?: ClientCapabilities.DEFAULT
-        val customDecision = decisionEngine.decide(
-            inspection = MediaInspection(
-                originalMimeType = item.mimeType,
-                normalizedMimeType = item.playbackDecision.browserMimeType ?: item.mimeType,
-                displayName = item.displayName,
-                extension = item.uri.substringAfterLast('.', ""),
-                container = when {
-                    item.mimeType?.contains("mp4") == true -> MediaContainer.MP4
-                    item.mimeType?.contains("matroska") == true -> MediaContainer.MATROSKA
-                    item.mimeType?.contains("webm") == true -> MediaContainer.WEBM
-                    else -> MediaContainer.OTHER
-                },
-                videoTrackMimeType = item.metadata["video_codec"],
-                audioTrackMimeType = item.metadata["audio_codec"],
-                browserSafe = false,
-                likelyContainerOnlyIssue = true,
-                likelyNeedsTranscode = false,
-                durationMs = item.durationMs,
-                itemId = item.id,
-                width = item.metadata["width"]?.toIntOrNull(),
-                height = item.metadata["height"]?.toIntOrNull(),
-                hasFaststart = item.metadata["faststart"]?.toBoolean(),
-            ),
-            capabilities = caps
-        )
+        val effectiveDecision = item.playbackDecision
 
-        val job = when (customDecision.mode) {
+        val job = when (effectiveDecision.mode) {
             PlaybackMode.DIRECT -> CompatibilityJob(
                 itemId = item.id,
-                decision = customDecision,
+                decision = effectiveDecision,
                 status = CompatibilityStatus.READY,
                 message = "DIRECT: Playback supported natively",
                 streamable = true,
@@ -125,7 +99,7 @@ class QueuedCompatibilityPipeline(
 
             else -> CompatibilityJob(
                 itemId = item.id,
-                decision = customDecision,
+                decision = effectiveDecision,
                 status = if (isCacheHealthy) CompatibilityStatus.READY else CompatibilityStatus.IDLE,
                 message = if (isCacheHealthy) "Playback Ready" else "Playback Ready (Pending Request)",
                 preparedAsset = if (isCacheHealthy) cachedAsset else null,
@@ -155,33 +129,51 @@ class QueuedCompatibilityPipeline(
         }
 
         // Priority Promotion: If a user clicks play (HIGH) on an existing prepare job, elevate it.
-        if (priority != JobPriority.LOW && current.priority == JobPriority.LOW) {
-             upsert(current.copy(priority = priority))
+        val effectiveCurrent = if (priority != JobPriority.LOW && current.priority == JobPriority.LOW) {
+            upsert(current.copy(priority = priority, message = queuedMessage(current.decision.mode, priority)))
+        } else {
+            current
         }
 
-        if (item.playbackDecision.mode == PlaybackMode.DIRECT) return current
+        if (effectiveCurrent.decision.mode == PlaybackMode.DIRECT) return effectiveCurrent
+
+        if (effectiveCurrent.status == CompatibilityStatus.QUEUED ||
+            effectiveCurrent.status == CompatibilityStatus.ANALYZING ||
+            effectiveCurrent.status == CompatibilityStatus.PREPARING ||
+            effectiveCurrent.status == CompatibilityStatus.FINALIZING
+        ) {
+            return effectiveCurrent
+        }
+
+        val effectiveItem = item.copy(playbackDecision = effectiveCurrent.decision)
 
         // Stabilization
-        val stabilizedCurrent = if (current.stabilizedSource == null) {
-            val stabilized = stabilizer.stabilize(
-                uriString = item.uri,
-                mimeType = item.mimeType,
-                sizeBytes = item.sizeBytes,
-                itemId = item.id
+        val stabilizedCurrent = if (effectiveCurrent.stabilizedSource == null) {
+            val stabilized = stabilizer?.stabilize(
+                uriString = effectiveItem.uri,
+                mimeType = effectiveItem.mimeType,
+                sizeBytes = effectiveItem.sizeBytes,
+                itemId = effectiveItem.id
+            ) ?: StabilizedSourceInfo(
+                originalUri = effectiveItem.uri,
+                sourceType = SourceType.PROVIDER_URI,
+                mimeType = effectiveItem.mimeType,
+                sizeBytes = effectiveItem.sizeBytes,
+                chosenStableSource = StableWorkerSource.PersistedUri(effectiveItem.uri),
             )
-            upsert(current.copy(stabilizedSource = stabilized))
-        } else current
+            upsert(effectiveCurrent.copy(stabilizedSource = stabilized))
+        } else effectiveCurrent
 
         val queued = upsert(
             stabilizedCurrent.copy(
                 status = CompatibilityStatus.QUEUED,
-                message = queuedMessage(item.playbackDecision.mode, priority),
+                message = queuedMessage(current.decision.mode, priority),
                 priority = priority,
                 updatedAtEpochMs = System.currentTimeMillis(),
             )
         )
 
-        enqueueAndProcess(PreparationRequest(item, priority))
+        enqueueAndProcess(PreparationRequest(effectiveItem, priority))
         return queued
     }
 
@@ -206,14 +198,14 @@ class QueuedCompatibilityPipeline(
             )
         )
 
-        enqueueAndProcess(PreparationRequest(item, JobPriority.CRITICAL, startOffsetMs = offsetMs))
+        enqueueAndProcess(PreparationRequest(item.copy(playbackDecision = current.decision), JobPriority.CRITICAL, startOffsetMs = offsetMs))
         return queued
     }
 
     override suspend fun resolvePlayback(item: SharedItem, capabilities: ClientCapabilities?): PlaybackResolution {
         val job = inspect(item, capabilities)
         return when {
-            item.playbackDecision.mode == PlaybackMode.DIRECT -> PlaybackResolution.Ready(
+            job.decision.mode == PlaybackMode.DIRECT -> PlaybackResolution.Ready(
                 source = PlaybackSource.OriginalUri(item.uri, item.mimeType, item.sizeBytes),
                 job = job
             )
@@ -242,7 +234,21 @@ class QueuedCompatibilityPipeline(
     override suspend fun clearFailure(itemId: String) {
         _jobs.update { current ->
             val job = current[itemId] ?: return@update current
-            current + (itemId to job.copy(isTerminalFailure = false, failureCount = 0, status = CompatibilityStatus.IDLE))
+            current + (
+                itemId to job.copy(
+                    isTerminalFailure = false,
+                    failureCount = 0,
+                    lastFailureType = null,
+                    lastFailureReason = null,
+                    lastFailureAt = null,
+                    status = CompatibilityStatus.IDLE,
+                    progressPercent = null,
+                    preparedAsset = null,
+                    hlsReady = false,
+                    directReady = false,
+                    streamable = false,
+                )
+            )
         }
     }
 
@@ -309,6 +315,7 @@ class QueuedCompatibilityPipeline(
                 onUpdate = { update ->
                     upsert(currentJob(item.id)?.copy(
                         status = update.status ?: CompatibilityStatus.PREPARING,
+                        message = update.message ?: currentJob(item.id)?.message ?: item.playbackDecision.reason,
                         progressPercent = update.progressPercent,
                         preparedAsset = update.preparedAsset,
                         hlsReady = update.hlsReady ?: false,
@@ -325,8 +332,11 @@ class QueuedCompatibilityPipeline(
         val completed = when (result) {
             is CompatibilityWorkerResult.Success -> currentJob(item.id)!!.copy(
                 status = CompatibilityStatus.READY,
+                message = result.message,
                 progressPercent = 100,
                 preparedAsset = result.preparedAsset,
+                hlsReady = false,
+                directReady = true,
                 streamable = true,
                 updatedAtEpochMs = System.currentTimeMillis()
             )
@@ -334,8 +344,16 @@ class QueuedCompatibilityPipeline(
                 cache.evict(item.id)
                 currentJob(item.id)!!.copy(
                     status = CompatibilityStatus.FAILED,
+                    message = result.message,
+                    progressPercent = null,
+                    preparedAsset = null,
+                    hlsReady = false,
+                    directReady = false,
+                    streamable = false,
+                    lastFailureType = result.type,
                     isTerminalFailure = true,
                     lastFailureReason = result.message,
+                    lastFailureAt = System.currentTimeMillis(),
                     updatedAtEpochMs = System.currentTimeMillis()
                 )
             }

@@ -10,7 +10,6 @@ import android.os.Process
 import java.nio.ByteBuffer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
-import androidx.media3.common.util.UnstableApi
 import androidx.media3.effect.Presentation
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.DefaultEncoderFactory
@@ -37,7 +36,6 @@ import com.ghoststream.core.model.NoOpDebugLogSink
 import com.ghoststream.core.media.FragmentedMp4HlsIndex
 import com.ghoststream.core.media.FragmentedMp4HlsIndexer
 
-@OptIn(UnstableApi::class)
 class Media3FragmentedMp4CompatibilityWorker(
     private val context: Context,
     private val debugLogSink: DebugLogSink = NoOpDebugLogSink,
@@ -166,6 +164,16 @@ class Media3FragmentedMp4CompatibilityWorker(
             try {
                 val listener = object : Transformer.Listener {
                     override fun onCompleted(composition: Composition, exportResult: ExportResult) {
+                        if (cancelled.get()) {
+                            safeComplete(
+                                completion,
+                                CompatibilityWorkerResult.Failure(
+                                    message = "Compatibility preparation was stopped.",
+                                    type = CompatibilityFailureType.CANCEL,
+                                ),
+                            )
+                            return
+                        }
                         val message = completedMessage(item, exportResult)
                         val elapsedSec = (System.currentTimeMillis() - jobStartMs) / 1000
                         // Optimization Step: Ensure Faststart (moov at front) for the finalized file.
@@ -251,6 +259,16 @@ class Media3FragmentedMp4CompatibilityWorker(
                         exportResult: ExportResult,
                         exportException: ExportException,
                     ) {
+                        if (cancelled.get()) {
+                            safeComplete(
+                                completion,
+                                CompatibilityWorkerResult.Failure(
+                                    message = "Compatibility preparation was stopped.",
+                                    type = CompatibilityFailureType.CANCEL,
+                                ),
+                            )
+                            return
+                        }
                         val failedElapsed = (System.currentTimeMillis() - jobStartMs) / 1000
                         val logMsg = "FAILED id=${item.id} mode=${item.playbackDecision.mode} offset=$startOffsetMs elapsed=${failedElapsed}s"
                         android.util.Log.e("GhostStream/Compat", logMsg, exportException)
@@ -342,7 +360,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                             Effects(
                                 /* audioProcessors = */ emptyList(),
                                 /* videoEffects = */ listOf(
-                                    Presentation.createForHeight(MAX_OUTPUT_HEIGHT),
+                                    buildEvenPresentation(item),
                                     // Ensure 8-bit YUV 420 for maximum compatibility.
                                     // (Media3 handles this via the encoder/presentation logic)
                                 ),
@@ -364,7 +382,8 @@ class Media3FragmentedMp4CompatibilityWorker(
                     onUpdate = onUpdate,
                 )
             } catch (error: Exception) {
-                completion.complete(
+                safeComplete(
+                    completion,
                     CompatibilityWorkerResult.Failure(
                         message = error.message ?: "Unable to start compatibility preparation.",
                     ),
@@ -378,6 +397,10 @@ class Media3FragmentedMp4CompatibilityWorker(
             cancelled.set(true)
             handler.removeCallbacksAndMessages(null)
             activeTransforms.remove(item.id)
+            if (!finalOutputFile.exists()) {
+                runCatching { tmpOutputFile.delete() }
+                runCatching { File("${tmpOutputFile.absolutePath}.opt").delete() }
+            }
             thread.quitSafely()
         }
     }
@@ -412,6 +435,25 @@ class Media3FragmentedMp4CompatibilityWorker(
         } finally {
             extractor.release()
         }
+    }
+
+    private fun buildEvenPresentation(item: SharedItem): Presentation {
+        val width = item.metadata["width"]?.toIntOrNull()
+        val height = item.metadata["height"]?.toIntOrNull()
+        if (width == null || height == null || width <= 0 || height <= 0) {
+            return Presentation.createForHeight(MAX_OUTPUT_HEIGHT)
+        }
+
+        val scale = minOf(1f, MAX_OUTPUT_HEIGHT.toFloat() / height.toFloat())
+        val scaledWidth = (((width * scale).toInt()) / 2) * 2
+        val scaledHeight = (((height * scale).toInt()) / 2) * 2
+        val targetWidth = scaledWidth.coerceAtLeast(2)
+        val targetHeight = scaledHeight.coerceAtLeast(2)
+        return Presentation.createForWidthAndHeight(
+            targetWidth,
+            targetHeight,
+            Presentation.LAYOUT_SCALE_TO_FIT,
+        )
     }
 
     private data class ValidationResult(val isValid: Boolean, val error: String? = null)
@@ -724,7 +766,6 @@ class Media3FragmentedMp4CompatibilityWorker(
 
     override fun cancel(itemId: String) {
         activeTransforms[itemId]?.cancel()
-        activeTransforms.remove(itemId)
     }
 
     override fun cancelAll() {
@@ -743,18 +784,28 @@ class Media3FragmentedMp4CompatibilityWorker(
         @Volatile var transformer: Transformer? = null,
     ) {
         fun cancel() {
-            cancelled.set(true)
+            if (!cancelled.compareAndSet(false, true)) return
+            handler.removeCallbacksAndMessages(null)
             handler.post {
-                transformer?.cancel()
+                runCatching { transformer?.cancel() }
+                if (!completion.isCompleted) {
+                    completion.complete(
+                        CompatibilityWorkerResult.Failure(
+                            message = "Compatibility preparation was stopped.",
+                            type = CompatibilityFailureType.CANCEL,
+                        ),
+                    )
+                }
             }
-            runCatching { outputFile.delete() }
-            completion.complete(
-                CompatibilityWorkerResult.Failure(
-                    message = "Compatibility preparation was stopped.",
-                    type = CompatibilityFailureType.CANCEL,
-                ),
-            )
-            thread.quitSafely()
+        }
+    }
+
+    private fun safeComplete(
+        completion: CompletableDeferred<CompatibilityWorkerResult>,
+        result: CompatibilityWorkerResult,
+    ) {
+        if (!completion.isCompleted) {
+            completion.complete(result)
         }
     }
 

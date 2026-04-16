@@ -11,66 +11,163 @@ import com.ghoststream.core.model.PlaybackMode
  * when the client device explicitly supports them.
  */
 interface SmartPlaybackDecisionEngine {
-    fun decide(inspection: MediaInspection, capabilities: ClientCapabilities): PlaybackDecision
+    fun decide(
+        inspection: MediaInspection,
+        capabilities: ClientCapabilities = ClientCapabilities.DEFAULT,
+    ): PlaybackDecision
 }
 
 class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
     override fun decide(inspection: MediaInspection, capabilities: ClientCapabilities): PlaybackDecision {
         val hasVideo = inspection.videoTrackMimeType != null
-        val videoLike = hasVideo || 
+        val videoLike = hasVideo ||
             inspection.originalMimeType?.startsWith("video/") == true ||
             inspection.normalizedMimeType?.startsWith("video/") == true
 
-        // Universal Support: H.264
-        val isAvc = inspection.videoTrackMimeType == "video/avc"
-        
-        // Capability-Aware Direct Play (HEVC, VP9, AV1)
-        val canDirectHevc = capabilities.supportsHevc && (inspection.videoTrackMimeType == "video/hevc" || inspection.videoTrackMimeType == "video/h265")
-        val canDirectVp9 = capabilities.supportsVp9 && inspection.videoTrackMimeType == "video/x-vnd.on2.vp9"
-        val canDirectAv1 = capabilities.supportsAv1 && inspection.videoTrackMimeType == "video/av01"
-
-        // Audio support: Direct (AAC, MP3) vs Transcode
-        val isAac = inspection.audioTrackMimeType?.contains("mp4a-latm") == true || inspection.audioTrackMimeType?.contains("aac") == true
-        val isMp3 = inspection.audioTrackMimeType?.contains("mpeg") == true || inspection.audioTrackMimeType?.contains("mp3") == true
-
-        val videoSafe = isAvc || canDirectHevc || canDirectVp9 || canDirectAv1
-        val audioSafe = isAac || isMp3
+        if (!videoLike) {
+            return PlaybackDecision(
+                mode = PlaybackMode.DIRECT,
+                browserMimeType = inspection.originalMimeType ?: inspection.normalizedMimeType,
+                compatibilityLabel = "Direct Play",
+                reason = "Non-video item bypasses the compatibility pipeline",
+            ).also { logDecision(inspection, capabilities, it) }
+        }
 
         val containerSafe = inspection.container == MediaContainer.MP4 || inspection.container == MediaContainer.QUICKTIME
-        val needsFaststartFix = inspection.hasFaststart == false // null means unknown or skip
+        val needsFaststartFix = containerSafe && inspection.hasFaststart == false
 
-        return when {
-            // DIRECT: Best case, direct playback with range requests.
-            containerSafe && videoSafe && audioSafe && !needsFaststartFix -> PlaybackDecision(
+        val videoCodec = normalizeVideoCodec(inspection.videoTrackMimeType)
+        val audioCodec = normalizeAudioCodec(inspection.audioTrackMimeType)
+
+        val hasKnownVideoIncompatibility = when (videoCodec) {
+            VideoCodec.AVC, VideoCodec.UNKNOWN -> false
+            VideoCodec.HEVC -> !capabilities.supportsHevc
+            VideoCodec.VP9 -> !capabilities.supportsVp9
+            VideoCodec.AV1 -> !capabilities.supportsAv1
+            VideoCodec.OTHER -> true
+        }
+        val hasKnownAudioIncompatibility = when (audioCodec) {
+            AudioCodec.NONE, AudioCodec.AAC, AudioCodec.MP3, AudioCodec.UNKNOWN -> false
+            AudioCodec.OPUS -> !capabilities.supportsOpus
+            AudioCodec.AC3 -> !capabilities.supportsAc3
+            AudioCodec.EAC3 -> !capabilities.supportsEac3
+            AudioCodec.OTHER -> true
+        }
+
+        val needsVideoTranscode =
+            hasKnownVideoIncompatibility ||
+                (inspection.bitDepth != null && inspection.bitDepth > 8 && !capabilities.supportsHdr) ||
+                (inspection.hdrFormat != null && !capabilities.supportsHdr)
+        val needsAudioTranscode = hasKnownAudioIncompatibility
+
+        val decision = when {
+            containerSafe && !needsFaststartFix && !needsVideoTranscode && !needsAudioTranscode -> PlaybackDecision(
                 mode = PlaybackMode.DIRECT,
-                reason = "Directly compatible with your browser",
-                browserMimeType = inspection.normalizedMimeType,
-                compatibilityLabel = "Direct Play"
+                browserMimeType = directMimeTypeFor(inspection),
+                compatibilityLabel = "Direct Play",
+                reason = "Container and codecs are browser-safe for this client",
             )
 
-            // REMUX: Container repair only. moov-at-front or audio swap.
-            videoSafe && audioSafe -> PlaybackDecision(
+            containerSafe && needsFaststartFix && !needsVideoTranscode && !needsAudioTranscode -> PlaybackDecision(
                 mode = PlaybackMode.REMUX,
-                reason = if (needsFaststartFix) "Optimizing for instant stream start" else "Repairing container structure",
                 browserMimeType = "video/mp4",
-                compatibilityLabel = "Optimizing web stream"
+                compatibilityLabel = "Fast Start Fix",
+                reason = "MP4/MOV needs moov relocation before reliable browser playback",
             )
 
-            // REMUX (Audio only): Video is fine, audio needs transcode to AAC.
-            videoSafe -> PlaybackDecision(
-                mode = PlaybackMode.REMUX,
-                reason = "Preparing browser-compatible audio",
+            !needsVideoTranscode -> PlaybackDecision(
+                mode = PlaybackMode.TRANSMUX,
                 browserMimeType = "video/mp4",
-                compatibilityLabel = "Preparing audio"
+                compatibilityLabel = "Repackaging",
+                reason = when {
+                    !containerSafe && needsAudioTranscode ->
+                        "Container is not browser-safe and audio must be converted during repackaging"
+                    !containerSafe ->
+                        "Codecs are acceptable, but the container must be repackaged for the browser"
+                    needsAudioTranscode ->
+                        "Video can be copied, but audio must be converted to a browser-safe format"
+                    else ->
+                        "Packaging fix required before browser playback"
+                },
             )
 
-            // TRANSCODE: Video codec incompatible. Full re-encode to H.264.
             else -> PlaybackDecision(
                 mode = PlaybackMode.TRANSCODE,
-                reason = "Preparing browser-compatible video",
                 browserMimeType = "video/mp4",
-                compatibilityLabel = "Preparing video"
+                compatibilityLabel = "Transcoding",
+                reason = "Video codec is not browser-safe for this client and must be re-encoded",
             )
         }
+
+        logDecision(inspection, capabilities, decision)
+        return decision
+    }
+
+    private fun directMimeTypeFor(inspection: MediaInspection): String? {
+        return when {
+            inspection.originalMimeType?.startsWith("video/") == true &&
+                (inspection.container == MediaContainer.MP4 || inspection.container == MediaContainer.QUICKTIME) -> "video/mp4"
+            else -> inspection.originalMimeType ?: inspection.normalizedMimeType
+        }
+    }
+
+    private fun normalizeVideoCodec(mime: String?): VideoCodec {
+        val normalized = mime?.lowercase().orEmpty()
+        return when {
+            normalized.isBlank() -> VideoCodec.UNKNOWN
+            normalized == "video/avc" || normalized.contains("h264") || normalized.contains("avc1") -> VideoCodec.AVC
+            normalized == "video/hevc" || normalized.contains("h265") || normalized.contains("hvc1") || normalized.contains("hev1") -> VideoCodec.HEVC
+            normalized.contains("vp9") -> VideoCodec.VP9
+            normalized.contains("av01") || normalized.contains("av1") -> VideoCodec.AV1
+            else -> VideoCodec.OTHER
+        }
+    }
+
+    private fun normalizeAudioCodec(mime: String?): AudioCodec {
+        val normalized = mime?.lowercase().orEmpty()
+        return when {
+            normalized.isBlank() -> AudioCodec.UNKNOWN
+            normalized.contains("mp4a-latm") || normalized.contains("aac") -> AudioCodec.AAC
+            normalized.contains("mpeg") || normalized.contains("mp3") -> AudioCodec.MP3
+            normalized.contains("opus") -> AudioCodec.OPUS
+            normalized.contains("eac3") -> AudioCodec.EAC3
+            normalized.contains("ac3") -> AudioCodec.AC3
+            else -> AudioCodec.OTHER
+        }
+    }
+
+    private fun logDecision(
+        inspection: MediaInspection,
+        capabilities: ClientCapabilities,
+        decision: PlaybackDecision,
+    ) {
+        CompatLogger.info(
+            "PlaybackDecision",
+            "item=${inspection.itemId ?: "unknown"} ext=${inspection.extension} " +
+                "container=${inspection.container} video=${inspection.videoTrackMimeType ?: "unknown"} " +
+                "audio=${inspection.audioTrackMimeType ?: "unknown"} faststart=${inspection.hasFaststart} " +
+                "target=${capabilities.browserFamily ?: "unknown"}-${capabilities.os ?: "unknown"} " +
+                "mode=${decision.mode} reason=\"${decision.reason}\"",
+        )
+    }
+
+    private enum class VideoCodec {
+        UNKNOWN,
+        AVC,
+        HEVC,
+        VP9,
+        AV1,
+        OTHER,
+    }
+
+    private enum class AudioCodec {
+        NONE,
+        UNKNOWN,
+        AAC,
+        MP3,
+        OPUS,
+        AC3,
+        EAC3,
+        OTHER,
     }
 }

@@ -27,6 +27,8 @@ enum class JobPriority {
 
 @Serializable
 enum class EffectivePlaybackMode {
+    /** A compatibility path exists, but no playback source is ready yet. */
+    PENDING,
     /** Playing the original source file. */
     DIRECT,
     /** Playing via a growing HLS stream. */
@@ -96,7 +98,7 @@ data class CompatibilityJob(
             decision.mode == com.ghoststream.core.model.PlaybackMode.DIRECT -> EffectivePlaybackMode.DIRECT
             status == CompatibilityStatus.READY || directReady -> EffectivePlaybackMode.PREPARED_MP4
             streamable -> EffectivePlaybackMode.LIVE_HLS
-            else -> EffectivePlaybackMode.LIVE_HLS // Default to HLS for compatible modes
+            else -> EffectivePlaybackMode.PENDING
         }
 
     /**

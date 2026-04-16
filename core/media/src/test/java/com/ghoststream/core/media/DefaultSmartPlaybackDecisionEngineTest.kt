@@ -65,6 +65,12 @@ class DefaultSmartPlaybackDecisionEngineTest {
     }
 
     @Test
+    fun `MP4 with sparse metadata stays DIRECT instead of escalating to transcode`() {
+        val d = engine.decide(inspect(MediaContainer.MP4, video = null, audio = null))
+        assertEquals(PlaybackMode.DIRECT, d.mode)
+    }
+
+    @Test
     fun `MP4 + H264 + AAC + bad faststart resolves to REMUX`() {
         val d = engine.decide(inspect(MediaContainer.MP4, hasFaststart = false))
         assertEquals(PlaybackMode.REMUX, d.mode)
@@ -145,6 +151,15 @@ class DefaultSmartPlaybackDecisionEngineTest {
     fun `MP4 + HEVC + AAC resolves to TRANSCODE (HEVC not universally supported)`() {
         val d = engine.decide(inspect(MediaContainer.MP4, video = "video/hevc"))
         assertEquals(PlaybackMode.TRANSCODE, d.mode)
+    }
+
+    @Test
+    fun `MP4 + HEVC + AAC resolves to DIRECT for HEVC-capable client`() {
+        val d = engine.decide(
+            inspect(MediaContainer.MP4, video = "video/hevc"),
+            ClientCapabilities(supportsHevc = true),
+        )
+        assertEquals(PlaybackMode.DIRECT, d.mode)
     }
 
     @Test

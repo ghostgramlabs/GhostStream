@@ -10,7 +10,6 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -51,6 +50,7 @@ class QueuedCompatibilityPipelineTest {
                 override suspend fun prepare(
                     item: SharedItem,
                     cache: PlaybackCache,
+                    stabilizedSource: StabilizedSourceInfo?,
                     startOffsetMs: Long,
                     onUpdate: (CompatibilityWorkerUpdate) -> Unit,
                 ): CompatibilityWorkerResult {
@@ -79,6 +79,7 @@ class QueuedCompatibilityPipelineTest {
                 override suspend fun prepare(
                     item: SharedItem,
                     cache: PlaybackCache,
+                    stabilizedSource: StabilizedSourceInfo?,
                     startOffsetMs: Long,
                     onUpdate: (CompatibilityWorkerUpdate) -> Unit,
                 ): CompatibilityWorkerResult {
@@ -163,6 +164,7 @@ class QueuedCompatibilityPipelineTest {
         override suspend fun prepare(
             item: SharedItem,
             cache: PlaybackCache,
+            stabilizedSource: StabilizedSourceInfo?,
             startOffsetMs: Long,
             onUpdate: (CompatibilityWorkerUpdate) -> Unit,
         ): CompatibilityWorkerResult {

@@ -23,15 +23,10 @@ class AndroidMediaAnalyzer(
         
         return MediaInspection(
             originalMimeType = mimeType,
-            normalizedMimeType = tracks.videoTrackMimeType ?: mimeType,
+            normalizedMimeType = mimeType,
             displayName = displayName,
             extension = uri.toString().substringAfterLast('.', ""),
-            container = when {
-                mimeType?.contains("mp4") == true -> MediaContainer.MP4
-                mimeType?.contains("matroska") == true -> MediaContainer.MATROSKA
-                mimeType?.contains("webm") == true -> MediaContainer.WEBM
-                else -> MediaContainer.OTHER
-            },
+            container = inferContainer(mimeType, displayName),
             videoTrackMimeType = tracks.videoTrackMimeType,
             audioTrackMimeType = tracks.audioTrackMimeType,
             browserSafe = false, // Engine decides this
@@ -133,6 +128,25 @@ class AndroidMediaAnalyzer(
     override suspend fun loadThumbnailBytes(item: SharedItem, maxSizePx: Int): ByteArray? = null
     override suspend fun extractFrameAtMs(item: SharedItem, timeMs: Long, maxSizePx: Int): ByteArray? = null
     override suspend fun clearTemporaryCache() {}
+
+    private fun inferContainer(mimeType: String?, displayName: String): MediaContainer {
+        val normalizedMime = mimeType?.lowercase().orEmpty()
+        val extension = displayName.substringAfterLast('.', "").lowercase()
+        return when {
+            normalizedMime.contains("mp4") || extension == "mp4" || extension == "m4v" -> MediaContainer.MP4
+            normalizedMime.contains("quicktime") || extension == "mov" -> MediaContainer.QUICKTIME
+            normalizedMime.contains("matroska") || extension == "mkv" -> MediaContainer.MATROSKA
+            normalizedMime.contains("webm") || extension == "webm" -> MediaContainer.WEBM
+            normalizedMime.contains("mp2t") || extension == "ts" -> MediaContainer.TS
+            normalizedMime.contains("x-msvideo") || extension == "avi" -> MediaContainer.AVI
+            normalizedMime.contains("mpeg") && normalizedMime.startsWith("video/") -> MediaContainer.MPEG
+            normalizedMime.startsWith("audio/") && extension == "mp3" -> MediaContainer.MPEG_AUDIO
+            normalizedMime.startsWith("audio/") && (extension == "m4a" || extension == "aac") -> MediaContainer.AAC_AUDIO
+            normalizedMime.startsWith("image/") -> MediaContainer.IMAGE
+            normalizedMime == "application/pdf" || extension == "pdf" -> MediaContainer.PDF
+            else -> MediaContainer.OTHER
+        }
+    }
 
     private data class TrackInspection(
         val videoTrackMimeType: String? = null,

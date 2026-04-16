@@ -468,18 +468,17 @@ async function probeCompatiblePlaybackSource(item) {
 
 function shouldStartCompatibilityPlayback(item, job = null) {
   if (item.playbackMode === "DIRECT") return true;
-  
-  // Early hydration: if HLS is possible and we are streamReady, start immediately.
-  const isHlsMode = item.playbackMode === "REMUX" || item.playbackMode === "TRANSMUX" || item.playbackMode === "TRANSCODE";
-  if (isHlsMode && (item.streamReady || item.effectivePlaybackMode === "LIVE_HLS")) return true;
 
-  // Direct compat MP4 path: the server only populates preparedMp4Url when status=READY,
-  // so the presence of that URL means we can start immediately.
-  if (shouldUseDirectCompatMp4(item)) return true;
+  const effectiveStatus = job?.status || item.compatibilityStatus;
+  if (effectiveStatus === "FAILED" || effectiveStatus === "STALLED") return false;
+  if (job?.preparedMp4Url || shouldUseDirectCompatMp4(item)) return true;
 
-  if (item.compatibilityComplete || item.compatibilityStatus === "READY") return true;
+  const effectiveHlsUrl = job?.hlsUrl || item.hlsUrl;
+  if (effectiveHlsUrl && (job?.ready || item.streamReady)) return true;
+
+  if (item.compatibilityComplete || effectiveStatus === "READY") return true;
   if (!job) return false;
-  return Boolean(job.ready || job.complete || job.status === "READY");
+  return Boolean(job.ready || job.compatibilityComplete || job.status === "READY");
 }
 
 function compatibilityHeadline(item, streamLive = item.streamReady) {
@@ -865,9 +864,10 @@ async function renderVideoPlayer(id) {
   const isDirect = item.playbackMode === "DIRECT";
   const isStreamLive = Boolean(item.streamReady || item.effectivePlaybackMode === "LIVE_HLS");
   const isPreparedReady = Boolean(item.preparedMp4Url) && !isStreamLive;
+  const isTerminalFailure = item.compatibilityStatus === "FAILED" || item.compatibilityStatus === "STALLED";
 
   // If even the original isn't ready, we must poll first.
-  const showPlayerImmediately = isDirect || isPreparedReady || isStreamLive;
+  const showPlayerImmediately = !isTerminalFailure && (isDirect || isPreparedReady || isStreamLive);
   
   shell(`
     <section class="gs-section">
@@ -899,23 +899,24 @@ async function renderVideoPlayer(id) {
 
   if (showPlayerImmediately) {
     ensureCompatiblePlayerMounted(item);
-  } else {
+  } else if (!isTerminalFailure) {
     pollCompat(id, item);
   }
 }
 
 function renderVideoStage(item, showPlayer) {
+  const status = item.compatibilityStatus || item.status;
   return showPlayer
     ? videoMarkup(item)
     : `
       <div class="gs-compat-card" id="compatStageCard">
-        <div class="gs-logo-mark${item.status === "FAILED" ? "" : " gs-spinner"}"></div>
+        <div class="gs-logo-mark${status === "FAILED" ? "" : " gs-spinner"}"></div>
         <span class="gs-badge" data-compat-badge>${compatibilityBadgeLabel(item, false)}</span>
         <h3 data-compat-title>${compatibilityHeadline(item, false)}</h3>
         <p data-compat-message>${esc(compatibilityBody(item, false))}</p>
-        <p class="gs-meta" data-compat-progress>${item.status === "FAILED" ? "Stopped" : (item.compatibilityProgressPercent != null ? `${item.compatibilityProgressPercent}%` : "Opening")}</p>
+        <p class="gs-meta" data-compat-progress>${status === "FAILED" ? "Stopped" : (item.compatibilityProgressPercent != null ? `${item.compatibilityProgressPercent}%` : "Opening")}</p>
         <div class="gs-toolbar-actions gs-mt-2">
-          ${item.status === "FAILED" ? `<button class="gs-btn gs-btn-accent gs-btn-sm" onclick="retryPreparation('${item.id}')">Retry Optimization</button>` : ""}
+          ${status === "FAILED" ? `<button class="gs-btn gs-btn-accent gs-btn-sm" onclick="retryPreparation('${item.id}')">Retry Optimization</button>` : ""}
           ${!state.bootstrap?.preventDownload ? `<a class="gs-btn gs-btn-sm" href="${item.downloadUrl}">Try original (may fail)</a>` : ""}
         </div>
       </div>
@@ -939,7 +940,7 @@ function videoMarkup(item) {
     sourceUrl = item.streamUrl;
   } else if (sessionLockedHls) {
     sourceUrl = item.hlsUrl;
-  } else if (item.effectivePlaybackMode === "PREPARED_MP4" && item.preparedMp4Url) {
+  } else if ((item.effectivePlaybackMode === "PREPARED_MP4" || shouldUseDirectCompatMp4(item)) && item.preparedMp4Url) {
     sourceUrl = item.preparedMp4Url;
   } else if (shouldUseHlsPlayback(item)) {
     sourceUrl = (shouldUseNativeHlsPlayback(item) || sessionLockedHls) ? item.hlsUrl : null;
@@ -1061,7 +1062,7 @@ function hydrateVideoPlayer(item, options = {}) {
   };
 
   const startManagedHls = () => {
-    if (!allowManagedHlsFallback) return false;
+    if (!allowManagedHlsFallback || !item.hlsUrl) return false;
     state.compatItem = item;
     debugTrace("hls_start", `id=${item.id} url=${item.hlsUrl}`);
     destroyHls();
@@ -1207,7 +1208,9 @@ function hydrateVideoPlayer(item, options = {}) {
           // Attempt a one-time recovery with a short delay to allow the server to re-verify.
           console.log("[DirectServe HLS] 410 Gone detected, attempting recovery...");
           setTimeout(() => {
-            hls.loadSource(hlsUrl);
+            if (item.hlsUrl) {
+              hls.loadSource(item.hlsUrl);
+            }
           }, 1000);
           return;
         }
@@ -1394,18 +1397,12 @@ function hydrateVideoPlayer(item, options = {}) {
       }
       return;
     }
-    // For ALL modes (including DIRECT), attempt compat fallback on video error.
-    // DIRECT files can fail if the original has bad moov, unsupported profile/level,
-    // or browser-specific decode issues. Falling back to compat preparation fixes this.
+    // Only DIRECT gets an automatic fallback into compatibility preparation.
+    // If a compatibility path itself fails, the user must explicitly retry.
     const failureCount = (state.compatPlaybackFailures[item.id] || 0) + 1;
     state.compatPlaybackFailures[item.id] = failureCount;
-    if (failureCount <= 2) {
-      const isDirectFallback = item.playbackMode === "DIRECT";
-      if (isDirectFallback) {
-        debugTrace("video_error_direct_compat_fallback", `id=${item.id} failures=${failureCount} triggering compat preparation`);
-      } else {
-        debugTrace("video_error_retry_compat", `id=${item.id} failures=${failureCount}`);
-      }
+    if (item.playbackMode === "DIRECT" && failureCount <= 2) {
+      debugTrace("video_error_direct_compat_fallback", `id=${item.id} failures=${failureCount} triggering compat preparation`);
       showCompatibilityWaitingStage({
         ...item,
         streamReady: false,
@@ -1415,7 +1412,7 @@ function hydrateVideoPlayer(item, options = {}) {
         ...item,
         streamReady: false,
         compatibilityComplete: false,
-      }, { forceCompat: isDirectFallback });
+      }, { forceCompat: true });
       debugTrace("compat_failed", `id=${item.id} reason=${item.compatibilityMessage || "unknown"}`);
       return;
     }
@@ -1445,11 +1442,7 @@ function hydrateVideoPlayer(item, options = {}) {
         streamReady: false,
         compatibilityComplete: false,
       });
-      pollCompat(item.id, {
-        ...item,
-        streamReady: false,
-        compatibilityComplete: false,
-      });
+      retryPreparation(item.id);
       return;
     }
     restartPlayback();
@@ -1810,6 +1803,7 @@ async function pollCompat(id, item, options = {}) {
    * - READY/FAILED/STALLED: stop polling
    */
   function getAdaptiveInterval(attempts, job) {
+    if (job.status === "FAILED" || job.status === "STALLED") return 0;
     if (attempts < 3) return 500;
     if (attempts > 60) return 2000;
     if (attempts > 20 || (job.progressPercent != null && job.progressPercent < 50 && attempts > 10)) return 1500;
@@ -1825,6 +1819,7 @@ async function pollCompat(id, item, options = {}) {
       progressPercent: job.progressPercent,
       compatibilityComplete: job.compatibilityComplete || false,
       ready: job.ready || false,
+      effectivePlaybackMode: job.effectivePlaybackMode,
       preparedMp4Url: job.preparedMp4Url,
       hlsUrl: job.hlsUrl,
       width: job.width,
@@ -1854,12 +1849,13 @@ async function pollCompat(id, item, options = {}) {
     const nextItem = {
       ...item,
       streamReady: canStartPlayback,
+      effectivePlaybackMode: normalizedJob.effectivePlaybackMode || item.effectivePlaybackMode,
       compatibilityStatus: normalizedJob.status,
       compatibilityMessage: normalizedJob.message,
       compatibilityProgressPercent: normalizedJob.progressPercent,
       compatibilityComplete: normalizedJob.compatibilityComplete,
-      preparedMp4Url: normalizedJob.preparedMp4Url,
-      hlsUrl: normalizedJob.hlsUrl || item.hlsUrl,
+      preparedMp4Url: normalizedJob.preparedMp4Url || null,
+      hlsUrl: normalizedJob.hlsUrl || null,
       width: normalizedJob.width || item.width,
       height: normalizedJob.height || item.height,
       totalDurationMs: normalizedJob.totalDurationMs || item.totalDurationMs || item.durationMs,
@@ -1910,6 +1906,7 @@ async function pollCompat(id, item, options = {}) {
     } catch (_) {}
 
     const interval = getAdaptiveInterval(attempts, job || {});
+    if (interval <= 0) return;
     state.compatPollTimer = setTimeout(tick, interval);
   }
 
