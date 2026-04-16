@@ -1135,7 +1135,7 @@ function hydrateVideoPlayer(item, options = {}) {
       const bufType  = data?.buffer         || "";
       const mediaErr = video?.error ? `MediaError(${video.error.code}: ${video.error.message})` : "none";
       const mseState = video?.readyState    ?? "";
-      console.group?.(`[GhostStream HLS] ${data?.details || "error"}`);
+      console.group?.(`[DirectServe HLS] ${data?.details || "error"}`);
       console.log?.("fatal:", Boolean(data?.fatal));
       console.log?.("type:", data?.type || "");
       console.log?.("details:", data?.details || "");
@@ -1205,7 +1205,7 @@ function hydrateVideoPlayer(item, options = {}) {
         if (status === 410) {
           // 410 Gone: The server believes the item is missing. 
           // Attempt a one-time recovery with a short delay to allow the server to re-verify.
-          console.log("[GhostStream HLS] 410 Gone detected, attempting recovery...");
+          console.log("[DirectServe HLS] 410 Gone detected, attempting recovery...");
           setTimeout(() => {
             hls.loadSource(hlsUrl);
           }, 1000);
@@ -2434,7 +2434,7 @@ function setupScrubbingPreviews(item, plyr) {
         // If the frame extraction fails, the server should have returned the poster
         // but if even that fails, we keep the previous frame or hide.
         if (currentTargetTimeMs === timeMs) {
-           console.log("[GhostStream] Thumbnail fetch failed for timeMs=" + timeMs);
+           console.log("[DirectServe] Thumbnail fetch failed for timeMs=" + timeMs);
         }
       };
       nextImg.src = `/thumb/${item.id}?timeMs=${timeMs}`;
