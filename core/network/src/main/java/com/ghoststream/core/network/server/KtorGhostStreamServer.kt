@@ -61,6 +61,7 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import io.ktor.utils.io.ByteWriteChannel
 import io.ktor.utils.io.writeFully
+import io.ktor.util.date.GMTDate
 import java.io.File
 import java.io.InputStream
 import java.io.RandomAccessFile
@@ -708,7 +709,16 @@ class KtorGhostStreamServer(
             }
 
             post("/auth/logout") {
-                call.response.cookies.appendExpired(COOKIE_NAME, path = "/")
+                call.response.cookies.append(
+                    Cookie(
+                        name = COOKIE_NAME,
+                        value = "",
+                        path = "/",
+                        httpOnly = true,
+                        expires = GMTDate.START,
+                        maxAge = 0,
+                    ),
+                )
                 call.respond(AuthResult(success = true))
             }
 

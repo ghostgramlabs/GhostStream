@@ -826,6 +826,7 @@ private fun LibraryItemRow(
                                 Text(if (compactActions) stringResource(R.string.library_preparing) else stringResource(R.string.library_preparing_for_browser))
                             }
 
+                            CompatibilityStatus.PLAYABLE_NOW,
                             CompatibilityStatus.READY -> OutlinedButton(
                                 onClick = {},
                                 enabled = false,
@@ -940,6 +941,7 @@ private fun compatibilityStatusLabel(job: CompatibilityJob): String {
         CompatibilityStatus.ANALYZING -> stringResource(R.string.library_compat_preparing)
         CompatibilityStatus.PREPARING -> stringResource(R.string.library_compat_preparing)
         CompatibilityStatus.FINALIZING -> stringResource(R.string.library_compat_preparing)
+        CompatibilityStatus.PLAYABLE_NOW -> stringResource(R.string.library_compat_ready)
         CompatibilityStatus.READY -> stringResource(R.string.library_compat_ready)
         CompatibilityStatus.FAILED -> stringResource(R.string.library_compat_unavailable)
         CompatibilityStatus.STALLED -> stringResource(R.string.library_compat_unavailable)
