@@ -841,11 +841,12 @@ class KtorGhostStreamServer(
                         }
                     }
                     val detectedVideoCodec = hlsIndex?.videoCodecString
+                    val detectedAudioCodec = hlsIndex?.audioCodecString
                     // â”€â”€ DEBUG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                     debugLogSink.log(
                         "WebHls/master",
                         "id=${source.item.id} " +
-                                "mode=${source.item.playbackDecision.mode} " +
+                                "mode=${source.job.decision.mode} " +
                                 "file=${source.file.name} " +
                                 "fileBytes=${source.file.length()} " +
                                 "detectedCodec=${detectedVideoCodec ?: "NULLâ†’fallback:avc1.640028"} " +
@@ -855,6 +856,7 @@ class KtorGhostStreamServer(
                     val masterPlaylist = buildHlsMasterPlaylist(
                         itemId = source.item.id,
                         detectedVideoCodec = detectedVideoCodec,
+                        detectedAudioCodec = detectedAudioCodec,
                         width = hlsIndex?.width,
                         height = hlsIndex?.height,
                     )
@@ -1801,8 +1803,9 @@ class KtorGhostStreamServer(
             respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_optimized_unavailable)))
             return null
         }
+        val effectiveItem = if (job.decision == item.playbackDecision) item else item.copy(playbackDecision = job.decision)
         return HlsPlaybackSource(
-            item = item,
+            item = effectiveItem,
             job = job,
             file = file,
         )
@@ -1893,20 +1896,22 @@ class KtorGhostStreamServer(
     private fun buildHlsMasterPlaylist(
         itemId: String,
         detectedVideoCodec: String?,
+        detectedAudioCodec: String?,
         width: Int? = null,
         height: Int? = null,
     ): String {
-        // Use the codec detected from the fMP4 moov box.
-        // Fall back to High Profile L4.0 which covers the broadest range of Android encoder output.
-        val videoCodec = detectedVideoCodec ?: "avc1.640028"
-        // mp4a.40.2 = MPEG-4 Audio Object Type 2 = AAC-LC (universally supported)
-        val audioCodec = "mp4a.40.2"
+        // Use the codec list detected from the fMP4 moov box.
+        // Fall back to High Profile L4.0 for video when detection is unavailable.
+        val codecList = buildList {
+            add(detectedVideoCodec ?: "avc1.640028")
+            detectedAudioCodec?.let(::add)
+        }.joinToString(",")
         return buildString {
             appendLine("#EXTM3U")
             appendLine("#EXT-X-VERSION:7")
             val streamInfParts = mutableListOf<String>()
             streamInfParts += "BANDWIDTH=2000000"
-            streamInfParts += "CODECS=\"$videoCodec,$audioCodec\""
+            streamInfParts += "CODECS=\"$codecList\""
             if (width != null && height != null) {
                 streamInfParts += "RESOLUTION=${width}x$height"
             }
@@ -1935,7 +1940,7 @@ class KtorGhostStreamServer(
 
         debugLogSink.log(
             "KtorGhostStreamServer",
-            "building hls playlist id=$itemId name=${item?.displayName} durationMs=$durationMs mode=${item?.playbackDecision?.mode} label=${item?.playbackDecision?.compatibilityLabel} segments=${index.segments.size} ready=${job.status == CompatibilityStatus.READY}"
+            "building hls playlist id=$itemId name=${item?.displayName} durationMs=$durationMs mode=${job.decision.mode} label=${job.decision.compatibilityLabel} segments=${index.segments.size} ready=${job.status == CompatibilityStatus.READY}"
         )
 
         return buildString {

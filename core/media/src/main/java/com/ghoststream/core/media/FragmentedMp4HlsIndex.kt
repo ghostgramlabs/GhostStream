@@ -13,6 +13,11 @@ data class FragmentedMp4HlsIndex(
      * attribute so MSE opens the right SourceBuffer type instead of guessing.
      */
     val videoCodecString: String? = null,
+    /**
+     * RFC 6381 audio codec string read from the moov box when an audio track exists.
+     * Null for video-only outputs or when the audio codec could not be detected.
+     */
+    val audioCodecString: String? = null,
     val width: Int? = null,
     val height: Int? = null,
     /** Diagnostic info for why indexing might have failed or found zero segments. */
@@ -88,10 +93,10 @@ object FragmentedMp4HlsIndexer {
             // in hls.js when the Android encoder produces a different H.264 profile than the
             // hardcoded Baseline string, or produces HEVC/VP9 via DefaultEncoderFactory fallback.
             val moovBox = boxes.firstOrNull { it.type == "moov" }
-            val (videoCodecString, width, height) = if (moovBox != null) {
-                runCatching { readVideoMetadataFromMoov(raf, moovBox) }.getOrNull() ?: Triple(null, null, null)
+            val moovMetadata = if (moovBox != null) {
+                runCatching { readTrackMetadataFromMoov(raf, moovBox) }.getOrNull() ?: MoovMetadata()
             } else {
-                Triple(null, null, null)
+                MoovMetadata()
             }
 
             val moovIndex = boxes.indexOfLast { it.type == "moov" }
@@ -191,26 +196,46 @@ object FragmentedMp4HlsIndexer {
                 initSegmentLength = initSegmentLength,
                 segments = segments,
                 fileLength = fileLength,
-                videoCodecString = videoCodecString,
-                width = width,
-                height = height,
+                videoCodecString = moovMetadata.videoCodecString,
+                audioCodecString = moovMetadata.audioCodecString,
+                width = moovMetadata.width,
+                height = moovMetadata.height,
             )
         }
     }
 
     // ── Codec detection ────────────────────────────────────────────────────────────────────────
 
-    private fun readVideoMetadataFromMoov(raf: RandomAccessFile, moovBox: Mp4TopLevelBox): Triple<String?, Int?, Int?> {
+    private fun readTrackMetadataFromMoov(raf: RandomAccessFile, moovBox: Mp4TopLevelBox): MoovMetadata {
         val moovEnd = moovBox.offset + moovBox.size
+        var videoCodec: String? = null
+        var audioCodec: String? = null
+        var width: Int? = null
+        var height: Int? = null
         for (trak in readChildBoxes(raf, moovBox.offset + 8, moovEnd)) {
             if (trak.type != "trak") continue
-            val metadata = readTrakVideoMetadata(raf, trak) ?: continue
-            return metadata
+            val metadata = readTrakMetadata(raf, trak) ?: continue
+            when (metadata.handlerType) {
+                "vide" -> {
+                    if (videoCodec == null) videoCodec = metadata.codecString
+                    if (width == null) width = metadata.width
+                    if (height == null) height = metadata.height
+                }
+
+                "soun" -> {
+                    if (audioCodec == null) audioCodec = metadata.codecString
+                }
+            }
         }
-        return Triple(null, null, null)
+        return MoovMetadata(
+            videoCodecString = videoCodec,
+            audioCodecString = audioCodec,
+            width = width,
+            height = height,
+        )
     }
 
-    private fun readTrakVideoMetadata(raf: RandomAccessFile, trak: Mp4TopLevelBox): Triple<String?, Int?, Int?>? {
+    private fun readTrakMetadata(raf: RandomAccessFile, trak: Mp4TopLevelBox): TrackMetadata? {
         val trakEnd = trak.offset + trak.size
         val mdia = readChildBoxes(raf, trak.offset + 8, trakEnd).firstOrNull { it.type == "mdia" } ?: return null
         val mdiaEnd = mdia.offset + mdia.size
@@ -222,7 +247,8 @@ object FragmentedMp4HlsIndexer {
         raf.seek(handlerTypeOffset)
         val handlerBuf = ByteArray(4)
         raf.readFully(handlerBuf)
-        if (handlerBuf.toString(Charsets.US_ASCII) != "vide") return null
+        val handlerType = handlerBuf.toString(Charsets.US_ASCII)
+        if (handlerType != "vide" && handlerType != "soun") return null
 
         val minf = mdiaChildren.firstOrNull { it.type == "minf" } ?: return null
         val minfEnd = minf.offset + minf.size
@@ -239,16 +265,40 @@ object FragmentedMp4HlsIndexer {
         val entryType = entryTypeBuf.toString(Charsets.US_ASCII)
         val entryEnd = firstEntryStart + entrySize
 
-        return when (entryType) {
-            "avc1", "avc3" -> readH264Metadata(raf, firstEntryStart, entryEnd)
-            "hvc1", "hev1" -> readH265Metadata(raf, firstEntryStart, entryEnd)
-            "vp09" -> Triple("vp09.00.40.08", null, null)
-            "av01" -> Triple("av01.0.04M.08", null, null)
+        return when (handlerType) {
+            "vide" -> readVideoSampleDescription(raf, entryType, firstEntryStart, entryEnd)
+            "soun" -> readAudioSampleDescription(entryType)
             else -> null
         }
     }
 
-    private fun readH264Metadata(raf: RandomAccessFile, avc1Start: Long, avc1End: Long): Triple<String?, Int?, Int?> {
+    private fun readVideoSampleDescription(
+        raf: RandomAccessFile,
+        entryType: String,
+        entryStart: Long,
+        entryEnd: Long,
+    ): TrackMetadata? {
+        return when (entryType) {
+            "avc1", "avc3" -> readH264Metadata(raf, entryStart, entryEnd)
+            "hvc1", "hev1" -> readH265Metadata(raf, entryStart, entryEnd)
+            "vp09" -> TrackMetadata(handlerType = "vide", codecString = "vp09.00.40.08")
+            "av01" -> TrackMetadata(handlerType = "vide", codecString = "av01.0.04M.08")
+            else -> null
+        }
+    }
+
+    private fun readAudioSampleDescription(entryType: String): TrackMetadata? {
+        val codec = when (entryType) {
+            "mp4a" -> "mp4a.40.2"
+            "ac-3" -> "ac-3"
+            "ec-3" -> "ec-3"
+            "Opus" -> "opus"
+            else -> null
+        }
+        return TrackMetadata(handlerType = "soun", codecString = codec)
+    }
+
+    private fun readH264Metadata(raf: RandomAccessFile, avc1Start: Long, avc1End: Long): TrackMetadata {
         raf.seek(avc1Start + 32)
         val width = raf.readUnsignedShort()
         val height = raf.readUnsignedShort()
@@ -274,14 +324,24 @@ object FragmentedMp4HlsIndexer {
             }
             pos += size32
         }
-        return Triple(codec ?: "avc1.640028", width, height)
+        return TrackMetadata(
+            handlerType = "vide",
+            codecString = codec ?: "avc1.640028",
+            width = width,
+            height = height,
+        )
     }
 
-    private fun readH265Metadata(raf: RandomAccessFile, hvc1Start: Long, hvc1End: Long): Triple<String?, Int?, Int?> {
+    private fun readH265Metadata(raf: RandomAccessFile, hvc1Start: Long, hvc1End: Long): TrackMetadata {
         raf.seek(hvc1Start + 32)
         val width = raf.readUnsignedShort()
         val height = raf.readUnsignedShort()
-        return Triple("hvc1.1.6.L120.90", width, height)
+        return TrackMetadata(
+            handlerType = "vide",
+            codecString = "hvc1.1.6.L120.90",
+            width = width,
+            height = height,
+        )
     }
 
     private fun readChildBoxes(raf: RandomAccessFile, from: Long, to: Long): List<Mp4TopLevelBox> {
@@ -353,6 +413,20 @@ object FragmentedMp4HlsIndexer {
         val type: String,
         val offset: Long,
         val size: Long,
+    )
+
+    private data class TrackMetadata(
+        val handlerType: String,
+        val codecString: String?,
+        val width: Int? = null,
+        val height: Int? = null,
+    )
+
+    private data class MoovMetadata(
+        val videoCodecString: String? = null,
+        val audioCodecString: String? = null,
+        val width: Int? = null,
+        val height: Int? = null,
     )
 
     private const val MIN_BOX_HEADER_SIZE = 8L
