@@ -814,6 +814,45 @@ iframe.gs-preview {
   flex: 1;
 }
 
+.gs-compat-progress-shell {
+  width: min(420px, 100%);
+}
+
+.gs-compat-progress {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+}
+
+.gs-compat-progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.gs-compat-progress-head strong {
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.gs-compat-progress-track {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--accent) 18%, var(--card));
+  border: 1px solid var(--border);
+}
+
+.gs-compat-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--accent), var(--accent-pressed));
+  transition: width 180ms ease;
+}
+
 /* Scrub Preview Tooltip */
 .gs-scrub-preview {
   position: absolute;

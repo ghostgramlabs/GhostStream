@@ -220,7 +220,11 @@ class Media3FragmentedMp4CompatibilityWorker(
 
                         // Validation Step: Inspect the optimized file before marking it as READY.
                         debugLogSink.log("CompatValidate", "validate_begin id=${item.id} file=${optimizedFile.name} size=${optimizedFile.length()}")
-                        val validationResult = validateOutput(optimizedFile, cancelled)
+                        val validationResult = validateOutput(
+                            file = optimizedFile,
+                            cancelled = cancelled,
+                            requireAacAudio = item.playbackDecision.mode == PlaybackMode.TRANSCODE,
+                        )
                         if (cancelled.get()) return
                         
                         if (!validationResult.isValid) {
@@ -249,15 +253,17 @@ class Media3FragmentedMp4CompatibilityWorker(
                             optimizedFile
                         }
                         
-                        // Only TRANSCODE uses fragmented MP4 (for play-while-transcoding HLS).
-                        // REMUX and TRANSMUX produce regular MP4 files.
-                        val isHlsMode = shouldUseFragmentedMp4(item)
+                        // TRANSCODE writes fragmented MP4 while in progress so HLS can start
+                        // once the streamability gate passes. After finalize we prefer a regular
+                        // MP4 for direct browser playback; only keep the fragmented marker if the
+                        // finalize step had to fall back to the still-fragmented source file.
+                        val completedIsFragmentedMp4 = optimizedFile == tmpOutputFile
                         val asset = cache.record(
                             itemId = item.id,
                             file = completedFile,
                             mimeType = "video/mp4",
                             isComplete = true,
-                            isFragmentedMp4 = isHlsMode,
+                            isFragmentedMp4 = completedIsFragmentedMp4,
                         )
                         
                         android.util.Log.i("GhostStream/Compat", "READY id=${item.id} mode=${item.playbackDecision.mode}")
@@ -268,7 +274,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                                 message = message,
                                 progressPercent = 100,
                                 preparedAsset = asset,
-                                hlsReady = isHlsMode,
+                                hlsReady = false,
                                 directReady = true,
                                 streamable = true,
                             ),
@@ -325,12 +331,6 @@ class Media3FragmentedMp4CompatibilityWorker(
 
                 val fallbackTranscode = isFallbackTranscode(item)
                 val useFragmentedMp4 = shouldUseFragmentedMp4(item)
-                if (item.playbackDecision.mode == PlaybackMode.TRANSCODE && !useFragmentedMp4) {
-                    debugLogSink.log(
-                        "CompatWorker",
-                        "muxer_start_blocked id=${item.id} requested=fragmented_mp4 reason=fallback_transcode_requires_complete_mp4",
-                    )
-                }
                 val builder = Transformer.Builder(context)
                     .setLooper(thread.looper)
                     .setMuxerFactory(
@@ -350,8 +350,14 @@ class Media3FragmentedMp4CompatibilityWorker(
                     sourceAudioMimeType == MimeTypes.AUDIO_MPEG ||
                     sourceAudioMimeType == "audio/mpeg" ||
                     sourceAudioMimeType == "audio/x-mp3"
-                val forceAudioTranscode = fallbackTranscode || !isNativeAudio
+                val forceAudioTranscode = item.playbackDecision.mode == PlaybackMode.TRANSCODE ||
+                    fallbackTranscode ||
+                    !isNativeAudio
                 val targetAudioMime = if (forceAudioTranscode) MimeTypes.AUDIO_AAC else sourceAudioMimeType
+                debugLogSink.log(
+                    "CompatWorker",
+                    "output_codecs_selected id=${item.id} video=${if (item.playbackDecision.mode == PlaybackMode.TRANSCODE) MimeTypes.VIDEO_H264 else "copy"} audio=${targetAudioMime ?: "none"}",
+                )
 
                 // Universal format configuration: H.264 Main 4.1 + AAC-LC.
                 // We use setVideoMimeType and setAudioMimeType to trigger re-encoding.
@@ -481,8 +487,8 @@ class Media3FragmentedMp4CompatibilityWorker(
             item.playbackDecision.reason == FALLBACK_TRANSCODE_REASON
     }
 
-    private fun shouldUseFragmentedMp4(item: SharedItem): Boolean {
-        return item.playbackDecision.mode == PlaybackMode.TRANSCODE && !isFallbackTranscode(item)
+    private fun shouldUseFragmentedMp4(@Suppress("UNUSED_PARAMETER") item: SharedItem): Boolean {
+        return item.playbackDecision.mode == PlaybackMode.TRANSCODE
     }
 
     private fun remuxToMp4(
@@ -626,7 +632,11 @@ class Media3FragmentedMp4CompatibilityWorker(
                 "CompatValidate",
                 "transmux_validate_begin id=${item.id} file=${tmpOutputFile.name} size=${tmpOutputFile.length()}",
             )
-            val validationResult = validateOutput(tmpOutputFile, cancelled)
+            val validationResult = validateOutput(
+                file = tmpOutputFile,
+                cancelled = cancelled,
+                requireAacAudio = false,
+            )
             if (!validationResult.isValid) {
                 debugLogSink.log(
                     "CompatValidate",
@@ -758,7 +768,11 @@ class Media3FragmentedMp4CompatibilityWorker(
      * 5. YUV 420 pixel format
      * 6. Faststart (moov before mdat)
      */
-    private fun validateOutput(file: File, cancelled: AtomicBoolean): ValidationResult {
+    private fun validateOutput(
+        file: File,
+        cancelled: AtomicBoolean,
+        requireAacAudio: Boolean,
+    ): ValidationResult {
         val extractor = MediaExtractor()
         return try {
             extractor.setDataSource(file.absolutePath)
@@ -827,11 +841,14 @@ class Media3FragmentedMp4CompatibilityWorker(
                     videoOk = true
                 }
                 if (mime.startsWith("audio/")) {
-                    if (mime != android.media.MediaFormat.MIMETYPE_AUDIO_AAC &&
-                        mime != "audio/mp4a-latm" &&
-                        mime != android.media.MediaFormat.MIMETYPE_AUDIO_MPEG &&
-                        mime != "audio/mpeg"
-                    ) {
+                    val isAac = mime == android.media.MediaFormat.MIMETYPE_AUDIO_AAC ||
+                        mime == "audio/mp4a-latm"
+                    val isMp3 = mime == android.media.MediaFormat.MIMETYPE_AUDIO_MPEG ||
+                        mime == "audio/mpeg"
+                    if (requireAacAudio && !isAac) {
+                        return ValidationResult(false, "Invalid audio codec: $mime (expected AAC)")
+                    }
+                    if (!requireAacAudio && !isAac && !isMp3) {
                         return ValidationResult(false, "Invalid audio codec: $mime (expected AAC or MP3)")
                     }
                     audioOk = true
@@ -932,6 +949,8 @@ class Media3FragmentedMp4CompatibilityWorker(
         val canStreamDuringPrepare = shouldUseFragmentedMp4(item)
         var firstFragmentTimeMs: Long? = null
         var lastDiagnosticLogged: String? = null
+        var lastInitSegmentLength = 0L
+        var lastCommittedSegmentCount = 0
 
         val progressRunnable = object : Runnable {
             override fun run() {
@@ -972,6 +991,27 @@ class Media3FragmentedMp4CompatibilityWorker(
                 val readiness = HlsReadinessValidator.validate(hlsIndex)
                 val streamable = readiness.isReady
 
+                if (canStreamDuringPrepare && hlsIndex != null) {
+                    if (hlsIndex.initSegmentLength > 0L && hlsIndex.initSegmentLength != lastInitSegmentLength) {
+                        lastInitSegmentLength = hlsIndex.initSegmentLength
+                        debugLogSink.log(
+                            "CompatWorker",
+                            "init_segment_locked id=${item.id} bytes=${hlsIndex.initSegmentLength}",
+                        )
+                    }
+
+                    if (hlsIndex.segments.size > lastCommittedSegmentCount) {
+                        for (segmentIndex in lastCommittedSegmentCount until hlsIndex.segments.size) {
+                            val segment = hlsIndex.segments[segmentIndex]
+                            debugLogSink.log(
+                                "CompatWorker",
+                                "segment_committed id=${item.id} index=${segment.index} bytes=${segment.length}",
+                            )
+                        }
+                        lastCommittedSegmentCount = hlsIndex.segments.size
+                    }
+                }
+
                 // Log every 5% bucket
                 val currentBucket = progress?.let { (it / 5) * 5 } ?: -1
                 if (currentBucket != lastLoggedBucket && currentBucket >= 0) {
@@ -992,13 +1032,17 @@ class Media3FragmentedMp4CompatibilityWorker(
                         "streamable id=${item.id} ttfpf=${ttfpf}ms outputBytes=$currentSize segments=${hlsIndex?.segments?.size} progress=$progress%",
                     )
                     debugLogSink.log("CompatWorker", "streamable id=${item.id} ttfpf=${ttfpf}ms segments=${hlsIndex?.segments?.size}")
+                    debugLogSink.log(
+                        "CompatWorker",
+                        "streamability_check_pass id=${item.id} buffered=${"%.2f".format(java.util.Locale.US, readiness.bufferedDurationSeconds)}s segments=${readiness.segmentCount}",
+                    )
                 }
                 
                 // Log indexer failures to internal trace if we are still not streamable
-                if (!streamable && hlsIndex?.diagnosticInfo != null && hlsIndex.diagnosticInfo != lastDiagnosticLogged) {
-                    lastDiagnosticLogged = hlsIndex.diagnosticInfo
-                    android.util.Log.w("GhostStream/Compat", "readiness_pending id=${item.id} reason=\"${hlsIndex.diagnosticInfo}\"")
-                    debugLogSink.log("CompatWorker", "readiness_pending id=${item.id} reason=\"${hlsIndex.diagnosticInfo}\"")
+                if (!streamable && readiness.diagnosticInfo != null && readiness.diagnosticInfo != lastDiagnosticLogged) {
+                    lastDiagnosticLogged = readiness.diagnosticInfo
+                    android.util.Log.w("GhostStream/Compat", "readiness_pending id=${item.id} reason=\"${readiness.diagnosticInfo}\"")
+                    debugLogSink.log("CompatWorker", "streamability_check_fail id=${item.id} reason=\"${readiness.diagnosticInfo}\" buffered=${"%.2f".format(java.util.Locale.US, readiness.bufferedDurationSeconds)}s segments=${readiness.segmentCount}")
                 }
 
                 val incompleteAsset = if (canStreamDuringPrepare) {
@@ -1017,7 +1061,7 @@ class Media3FragmentedMp4CompatibilityWorker(
 
                 onUpdate(
                     CompatibilityWorkerUpdate(
-                        status = CompatibilityStatus.PREPARING,
+                        status = if (streamable && canStreamDuringPrepare) CompatibilityStatus.FINALIZING else CompatibilityStatus.PREPARING,
                         message = when {
                             streamable && item.playbackDecision.mode == PlaybackMode.REMUX ->
                                 "Finalizing the optimized browser stream."

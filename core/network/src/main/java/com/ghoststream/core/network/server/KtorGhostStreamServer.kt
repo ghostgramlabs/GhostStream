@@ -413,13 +413,18 @@ class KtorGhostStreamServer(
                         triggerPreparation = false,
                         priority = JobPriority.LOW
                     )
-                    val streamReady = compatibilityStreamReady(job)
+                    val allowInProgressHls = supportsInProgressHls(
+                        host = call.request.origin.remoteHost,
+                        userAgent = call.request.header(HttpHeaders.UserAgent),
+                    )
+                    val streamReady = compatibilityStreamReady(job, allowInProgressHls = allowInProgressHls)
+                    val hlsUrl = compatibilityHlsUrl(job, allowInProgressHls = allowInProgressHls)
 
                     debugLogSink.log(
                         "WebBrowser",
                         "details id=${item.id} name=${item.displayName} mode=${job.decision.mode} " +
                                 "status=${job.status} streamReady=$streamReady complete=${job.directReady} " +
-                                "asset=${job.preparedAsset?.filePath?.substringAfterLast('/') ?: "NONE"}",
+                                "asset=${job.preparedAsset?.filePath?.substringAfterLast('/') ?: "NONE"} hls=${hlsUrl != null}",
                     )
 
                     call.respond(
@@ -427,6 +432,7 @@ class KtorGhostStreamServer(
                             item = item,
                             compatibilityJob = job,
                             streamReady = streamReady,
+                            hlsUrl = hlsUrl,
                             allowDownloads = !settings.preventDownload,
                         ),
                     )
@@ -443,7 +449,11 @@ class KtorGhostStreamServer(
                     return@get
                 }
                 val job = compatibilitySnapshotFor(call.request.origin.remoteHost, item, triggerPreparation = false)
-                val ready = compatibilityStreamReady(job)
+                val allowInProgressHls = supportsInProgressHls(
+                    host = call.request.origin.remoteHost,
+                    userAgent = call.request.header(HttpHeaders.UserAgent),
+                )
+                val ready = compatibilityStreamReady(job, allowInProgressHls = allowInProgressHls)
                 // Throttled logging: only log on state change or 5% progress bucket change
                 val currentBucket = job.coarseProgressBucket
                 val lastKey = lastCompatLogKey[item.id]
@@ -459,6 +469,7 @@ class KtorGhostStreamServer(
                     CompatibilityStatusPayload.from(
                         job = job,
                         ready = ready,
+                        hlsUrl = compatibilityHlsUrl(job, allowInProgressHls = allowInProgressHls),
                     ),
                 )
             }
@@ -481,7 +492,20 @@ class KtorGhostStreamServer(
                 call.respond(
                     CompatibilityStatusPayload.from(
                         job = job,
-                        ready = compatibilityStreamReady(job),
+                        ready = compatibilityStreamReady(
+                            job,
+                            allowInProgressHls = supportsInProgressHls(
+                                host = call.request.origin.remoteHost,
+                                userAgent = call.request.header(HttpHeaders.UserAgent),
+                            ),
+                        ),
+                        hlsUrl = compatibilityHlsUrl(
+                            job,
+                            allowInProgressHls = supportsInProgressHls(
+                                host = call.request.origin.remoteHost,
+                                userAgent = call.request.header(HttpHeaders.UserAgent),
+                            ),
+                        ),
                     )
                 )
             }
@@ -508,7 +532,11 @@ class KtorGhostStreamServer(
                     item
                 }
                 val job = compatibilitySnapshotFor(call.request.origin.remoteHost, effectiveItem, triggerPreparation = true, priority = JobPriority.HIGH)
-                val ready = compatibilityStreamReady(job)
+                val allowInProgressHls = supportsInProgressHls(
+                    host = call.request.origin.remoteHost,
+                    userAgent = call.request.header(HttpHeaders.UserAgent),
+                )
+                val ready = compatibilityStreamReady(job, allowInProgressHls = allowInProgressHls)
                 debugLogSink.log(
                     "WebCompat",
                     "prepare id=${item.id} mode=${job.decision.mode} status=${job.status} ready=$ready complete=${job.directReady} progress=${job.progressPercent} asset=${job.preparedAsset?.filePath}",
@@ -517,6 +545,7 @@ class KtorGhostStreamServer(
                     CompatibilityStatusPayload.from(
                         job = job,
                         ready = ready,
+                        hlsUrl = compatibilityHlsUrl(job, allowInProgressHls = allowInProgressHls),
                     ),
                 )
             }
@@ -533,7 +562,11 @@ class KtorGhostStreamServer(
                 }
                 
                 val job = compatibilityPipeline.requestSeek(item, offsetMs)
-                val ready = compatibilityStreamReady(job)
+                val allowInProgressHls = supportsInProgressHls(
+                    host = call.request.origin.remoteHost,
+                    userAgent = call.request.header(HttpHeaders.UserAgent),
+                )
+                val ready = compatibilityStreamReady(job, allowInProgressHls = allowInProgressHls)
                 debugLogSink.log(
                     "WebSeek",
                     "seek id=${item.id} offsetMs=$offsetMs status=${job.status} ready=$ready",
@@ -542,6 +575,7 @@ class KtorGhostStreamServer(
                     CompatibilityStatusPayload.from(
                         job = job,
                         ready = ready,
+                        hlsUrl = compatibilityHlsUrl(job, allowInProgressHls = allowInProgressHls),
                     ),
                 )
             }
@@ -774,10 +808,23 @@ class KtorGhostStreamServer(
                 if (!call.authorizeBrowserCall()) return@get
                 try {
                     val source = call.resolveHlsSource(call.parameters["id"]) ?: return@get
-                    if (!compatibilityStreamReady(source.job)) {
+                    val support = resolveInProgressHlsSupport(
+                        host = call.request.origin.remoteHost,
+                        userAgent = call.request.header(HttpHeaders.UserAgent),
+                    )
+                    val allowInProgressHls = support.allowed
+                    if (!compatibilityStreamReady(source.job, allowInProgressHls = allowInProgressHls)) {
+                        debugLogSink.log(
+                            "WebHls",
+                            "hls_start_blocked id=${source.item.id} reason=stream_not_safe browser=${support.reason} status=${source.job.status}",
+                        )
                         call.respond(HttpStatusCode.TooEarly, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
                         return@get
                     }
+                    debugLogSink.log(
+                        "WebHls",
+                        "hls_start_allowed id=${source.item.id} browser=${support.reason} status=${source.job.status}",
+                    )
                     val ua = call.request.header(HttpHeaders.UserAgent) ?: ""
                     // Read the video codec string from the fMP4 init segment (fast, non-blocking â€”
                     // the moov box is only a few KB).  Returns null if the file is not yet written
@@ -858,7 +905,7 @@ class KtorGhostStreamServer(
                     }
                     debugLogSink.log(
                         "WebHls",
-                        "playlist served id=${source.item.id} segments=${index.segments.size} init=${index.initSegmentLength} complete=${source.job.directReady}",
+                        "playlist_published id=${source.item.id} committedSegments=${index.segments.size} init=${index.initSegmentLength} complete=${source.job.directReady}",
                     )
                     sessionManager.observeClient(
                         call.remoteHost(),
@@ -1569,47 +1616,89 @@ class KtorGhostStreamServer(
         }
     }
 
-    private fun compatibilityStreamReady(job: CompatibilityJob): Boolean {
+    private fun compatibilityStreamReady(job: CompatibilityJob, allowInProgressHls: Boolean = false): Boolean {
         if (job.decision.mode == PlaybackMode.DIRECT) return true
+        if (job.status == CompatibilityStatus.READY || job.preparedAsset?.isComplete == true || job.directReady) {
+            return true
+        }
+        return allowInProgressHls &&
+            job.decision.mode == PlaybackMode.TRANSCODE &&
+            job.preparedAsset?.isFragmentedMp4 == true &&
+            job.hlsReady &&
+            job.streamable
+    }
 
-        // Fully complete: always ready regardless of how we got here.
-        if (job.status == CompatibilityStatus.READY || job.preparedAsset?.isComplete == true) return true
+    private fun compatibilityHlsUrl(job: CompatibilityJob, allowInProgressHls: Boolean): String? {
+        if (!allowInProgressHls) return null
+        if (job.decision.mode != PlaybackMode.TRANSCODE) return null
+        if (job.status == CompatibilityStatus.READY || job.preparedAsset?.isComplete == true || job.directReady) return null
+        if (job.preparedAsset?.isFragmentedMp4 != true || !job.hlsReady || !job.streamable) return null
+        return "/hls/${job.itemId}/master.m3u8"
+    }
 
-        // Not started, permanently failed, or stalled: not ready.
-        if (job.status == CompatibilityStatus.FAILED || job.status == CompatibilityStatus.STALLED || job.status == CompatibilityStatus.IDLE) return false
+    private data class InProgressHlsSupport(
+        val allowed: Boolean,
+        val reason: String,
+    )
 
-        // If no output file has been recorded yet (job is QUEUED or just started), not ready.
-        val preparedAsset = job.preparedAsset ?: return false
+    private fun supportsInProgressHls(host: String, userAgent: String?): Boolean {
+        return resolveInProgressHlsSupport(host, userAgent).allowed
+    }
 
-        // For non-video or non-fMP4 (e.g. audio remux) fall back to the old canServePlayback
-        // gate, which uses the raw byte-count threshold.
-        val item = storageRepository.findItemById(job.itemId)
-        if (item?.category != MediaCategory.VIDEO || !preparedAsset.isFragmentedMp4) {
-            return job.canServePlayback
+    private fun resolveInProgressHlsSupport(host: String, userAgent: String?): InProgressHlsSupport {
+        val ua = userAgent.orEmpty()
+        val caps = capabilityCache[host]
+        if (ua.isBlank() && caps == null) {
+            return InProgressHlsSupport(allowed = false, reason = "missing_client_capabilities")
         }
 
-        // For in-progress fragmented MP4 video we bypass the 4 MB byte-count threshold
-        // (which previously caused 16+ seconds of waiting before playback started) and
-        // instead check the HLS index directly.  As soon as MIN_SEGMENTS_BEFORE_PLAY
-        // complete moof+mdat fragments exist in the growing file the player can start â€”
-        // hls.js will continue fetching new segments as transcoding writes them,
-        // and the EVENT playlist keeps growing until #EXT-X-ENDLIST is appended on
-        // completion.
-        val file = File(preparedAsset.filePath)
-        if (!file.exists()) return false
-        val index = runCatching {
-            FragmentedMp4HlsIndexer.read(file, fragmentDurationSeconds = HLS_SEGMENT_DURATION_SECONDS)
-        }.getOrNull()
-        val readiness = HlsReadinessValidator.validate(index)
-        if (index?.initSegmentLength?.let { it > 0L } == true && readiness.isReady) return true
-
-        // Safety fallback: if the HLS indexer cannot yet detect MIN_SEGMENTS_BEFORE_PLAY
-        // complete segments (e.g. the fMP4 hasn't written its first fragment yet or the
-        // indexer returned an unexpected structure), fall back to the old byte-count gate.
-        // awaitHlsIndex in the playlist endpoint will keep polling until real segments
-        // appear, so this only moves the "green light" to the client earlier â€” it doesn't
-        // bypass the actual segment requirement for serving the playlist.
-        return false
+        val isChromiumDesktop =
+            (ua.contains("Chrome", ignoreCase = true) ||
+                ua.contains("Chromium", ignoreCase = true) ||
+                ua.contains("Edg/", ignoreCase = true)) &&
+                !ua.contains("Android", ignoreCase = true) &&
+                !ua.contains("Mobile", ignoreCase = true)
+        val isAppleFamily =
+            ua.contains("iPhone", ignoreCase = true) ||
+                ua.contains("iPad", ignoreCase = true) ||
+                ua.contains("iPod", ignoreCase = true) ||
+                ua.contains("AppleTV", ignoreCase = true) ||
+                (ua.contains("Safari", ignoreCase = true) &&
+                    !ua.contains("Chrome", ignoreCase = true) &&
+                    !ua.contains("Chromium", ignoreCase = true) &&
+                    !ua.contains("Edg/", ignoreCase = true))
+        val isTvBrowser = TV_BROWSER_UA_REGEX.containsMatchIn(ua) ||
+            (TV_TOKEN_REGEX.containsMatchIn(ua) && !APPLE_TV_EXCLUSION_UA_REGEX.containsMatchIn(ua))
+        val nativeHlsCandidate =
+            caps?.supportsHlsNatively == true &&
+                (isAppleFamily ||
+                    isTvBrowser ||
+                    caps.browserFamily.equals("Safari", ignoreCase = true) ||
+                    caps.os.equals("iOS", ignoreCase = true) ||
+                    caps.os.equals("macOS", ignoreCase = true))
+        if (nativeHlsCandidate) {
+            return InProgressHlsSupport(allowed = true, reason = "native_hls")
+        }
+        val managedHlsCandidate =
+            (caps?.supportsMse != false) &&
+                isChromiumDesktop &&
+                !isAppleFamily &&
+                !isTvBrowser
+        if (managedHlsCandidate) {
+            return InProgressHlsSupport(allowed = true, reason = "desktop_chromium")
+        }
+        val reason = when {
+            caps?.supportsHlsNatively == true && caps.browserFamily.equals("Safari", ignoreCase = true) ->
+                "native_hls_waiting_for_streamability"
+            caps?.supportsHlsNatively == true && isTvBrowser ->
+                "tv_native_hls_waiting_for_streamability"
+            isAppleFamily -> "apple_requires_native_hls"
+            isTvBrowser -> "tv_requires_native_hls"
+            !isChromiumDesktop -> "browser_not_supported"
+            caps?.supportsMse == false -> "mse_not_supported"
+            else -> "stream_not_supported"
+        }
+        return InProgressHlsSupport(allowed = false, reason = reason)
     }
 
     private suspend fun io.ktor.server.application.ApplicationCall.streamFileSlice(
@@ -1854,32 +1943,23 @@ class KtorGhostStreamServer(
             appendLine("#EXT-X-VERSION:7")
             appendLine("#EXT-X-TARGETDURATION:$HLS_TARGET_DURATION_SECONDS")
             appendLine("#EXT-X-MEDIA-SEQUENCE:0")
-            // We use VOD type even if growing to ensure the browser shows the full timeline immediately.
-            // For segments that aren't ready yet, the server will block in awaitHlsIndex until they appear.
-            appendLine("#EXT-X-PLAYLIST-TYPE:VOD")
+            appendLine(
+                if (job.status == CompatibilityStatus.READY || job.preparedAsset?.isComplete == true) {
+                    "#EXT-X-PLAYLIST-TYPE:VOD"
+                } else {
+                    "#EXT-X-PLAYLIST-TYPE:EVENT"
+                }
+            )
             appendLine("#EXT-X-INDEPENDENT-SEGMENTS")
             // Signals to iOS Safari that it should start at the beginning of the VOD timeline.
             appendLine("#EXT-X-START:TIME-OFFSET=0")
             appendLine("#EXT-X-MAP:URI=\"/hls/$itemId/init.mp4\"")
 
-            // Determine how many segments will exist in total.
-            // We use the maximum of (calculated segments from duration) and (actual recorded segments).
-            // This prevents video truncation if the metadata duration is inaccurately short.
-            val segmentsCountFromDuration = if (durationMs > 0) {
-                (java.lang.Math.ceil(durationMs / 1000.0 / HLS_SEGMENT_DURATION_SECONDS)).toInt()
-            } else {
-                0
-            }
-            val totalLoopCount = if (job.status == CompatibilityStatus.READY || job.preparedAsset?.isComplete == true) {
-                index.segments.size
-            } else {
-                maxOf(segmentsCountFromDuration, index.segments.size)
-            }
-
-            // Fill the playlist with all segments (indexed ones first, then virtual ones).
-            repeat(totalLoopCount) { segmentIndex ->
-                // Use the indexed duration if available, else use the default target duration.
-                val duration = index.segments.getOrNull(segmentIndex)?.durationSeconds ?: HLS_SEGMENT_DURATION_SECONDS.toDouble()
+            // Only publish committed segments. Never advertise speculative segments that
+            // are still being written, because MSE clients may try to append them
+            // immediately and transition into an unrecoverable error state.
+            repeat(index.segments.size) { segmentIndex ->
+                val duration = index.segments[segmentIndex].durationSeconds
                 appendLine("#EXTINF:${"%.3f".format(java.util.Locale.US, duration)},")
                 appendLine("/hls/$itemId/segment/$segmentIndex.m4s")
             }
@@ -2041,9 +2121,20 @@ class KtorGhostStreamServer(
             (item.lastModifiedEpochMs ?: 0L).toString(),
             item.uri,
             caps.browserFamily,
+            caps.os,
+            caps.supportsAvc.toString(),
             caps.supportsHevc.toString(),
+            caps.supportsVp9.toString(),
+            caps.supportsAv1.toString(),
+            caps.supportsAac.toString(),
+            caps.supportsMp3.toString(),
+            caps.supportsOpus.toString(),
+            caps.supportsAc3.toString(),
+            caps.supportsEac3.toString(),
             caps.supportsMse.toString(),
             caps.supportsHlsNatively.toString(),
+            caps.supportsHdr.toString(),
+            caps.isPowerEfficient.toString(),
         ).joinToString("|")
     }
 
@@ -2205,6 +2296,7 @@ class KtorGhostStreamServer(
                 item: SharedItem,
                 compatibilityJob: CompatibilityJob,
                 streamReady: Boolean,
+                hlsUrl: String?,
                 allowDownloads: Boolean,
             ): BrowserItemDetails {
                 val isComplete = compatibilityJob.status == CompatibilityStatus.READY || compatibilityJob.preparedAsset?.isComplete == true
@@ -2217,11 +2309,7 @@ class KtorGhostStreamServer(
                     mimeType = item.mimeType,
                     category = item.category.name.lowercase(),
                     streamUrl = "/stream/${item.id}",
-                    hlsUrl = if (streamReady && !isComplete && decision.mode == PlaybackMode.TRANSCODE) {
-                        "/hls/${item.id}/master.m3u8"
-                    } else {
-                        null
-                    },
+                    hlsUrl = hlsUrl,
                     downloadUrl = if (allowDownloads) "/download/${item.id}" else null,
                     subtitleUrl = item.subtitleMatch?.let { "/subtitle/${item.id}" },
                     durationMs = item.durationMs,
@@ -2256,6 +2344,7 @@ class KtorGhostStreamServer(
     @Serializable
     private data class CompatibilityStatusPayload(
         val itemId: String,
+        val playbackMode: PlaybackMode,
         val status: CompatibilityStatus,
         val message: String,
         val effectivePlaybackMode: EffectivePlaybackMode,
@@ -2269,10 +2358,11 @@ class KtorGhostStreamServer(
         val totalDurationMs: Long? = null,
     ) {
         companion object {
-            fun from(job: CompatibilityJob, ready: Boolean): CompatibilityStatusPayload {
+            fun from(job: CompatibilityJob, ready: Boolean, hlsUrl: String?): CompatibilityStatusPayload {
                 val isComplete = job.status == CompatibilityStatus.READY || job.directReady
                 return CompatibilityStatusPayload(
                     itemId = job.itemId,
+                    playbackMode = job.decision.mode,
                     status = job.status,
                     message = job.message,
                     effectivePlaybackMode = job.effectivePlaybackMode,
@@ -2280,9 +2370,7 @@ class KtorGhostStreamServer(
                     ready = ready,
                     compatibilityComplete = isComplete,
                     preparedMp4Url = if (job.directReady && job.decision.mode != PlaybackMode.DIRECT && job.preparedAsset != null) "/api/compat/${job.itemId}/file" else null,
-                    // HLS for TRANSCODE mode when not yet complete. 
-                    // Expose immediately so the browser knows the target hydration path.
-                    hlsUrl = if (ready && !isComplete && job.decision.mode == PlaybackMode.TRANSCODE) "/hls/${job.itemId}/master.m3u8" else null,
+                    hlsUrl = hlsUrl,
                     width = job.width,
                     height = job.height,
                     totalDurationMs = job.totalDurationMs,
@@ -2314,5 +2402,8 @@ class KtorGhostStreamServer(
         const val MIN_SEGMENTS_BEFORE_PLAY = 2
         const val HLS_FINALIZED_RETRY_COUNT = 5
         const val HLS_FINALIZED_RETRY_INTERVAL_MS = 400L
+        val TV_BROWSER_UA_REGEX = Regex("Tizen|webOS|Web0S|HbbTV|SmartTV|SMART-TV|NetCast|DLNA|Roku|AFTB|AFTS|AFTN|AFTT|FireTV|CrKey|OPR/.*TV|ANT_", RegexOption.IGNORE_CASE)
+        val TV_TOKEN_REGEX = Regex("\\bTV\\b", RegexOption.IGNORE_CASE)
+        val APPLE_TV_EXCLUSION_UA_REGEX = Regex("iPhone|iPad|AppleTV", RegexOption.IGNORE_CASE)
     }
 }

@@ -22,7 +22,10 @@ const state = {
   compatPollTimer: null,
   compatMountToken: 0,
   compatPlaybackFailures: {},
+  compatProgressMemory: {},
   compatItem: null,
+  playerSourceLocks: {},
+  lastReportedCapabilities: null,
   ratioLocked: {}, // Track locked ratios per itemId to prevent placeholder overwrite
 };
 
@@ -220,6 +223,7 @@ async function boot() {
   try {
     state.bootstrap = await api("/api/bootstrap");
     applyBootstrapUi();
+    await reportClientCapabilities();
     debugTrace("bootstrap_loaded", `route=${path} auth=${state.bootstrap?.authEnabled} theme=${state.bootstrap?.themeMode}`);
     if (path === "/login") {
       renderLogin();
@@ -327,6 +331,91 @@ function isTvBrowser() {
     || (/\bTV\b/i.test(ua) && !/iPhone|iPad|AppleTV/i.test(ua));
 }
 
+function detectBrowserFamily() {
+  const ua = navigator.userAgent || "";
+  if (/Edg\//i.test(ua)) return "Edge";
+  if (/Chrome|Chromium|CriOS/i.test(ua)) return "Chrome";
+  if (/Safari/i.test(ua) && !/Chrome|Chromium|CriOS|Edg\//i.test(ua)) return "Safari";
+  if (/Firefox|FxiOS/i.test(ua)) return "Firefox";
+  return "Unknown";
+}
+
+function detectBrowserOs() {
+  const ua = navigator.userAgent || "";
+  if (/iPhone|iPad|iPod/i.test(ua)) return "iOS";
+  if (/Macintosh/i.test(ua)) return "macOS";
+  if (/Android/i.test(ua)) return "Android";
+  if (/Windows/i.test(ua)) return "Windows";
+  if (/Linux/i.test(ua)) return "Linux";
+  return "Unknown";
+}
+
+function isDesktopChromiumBrowser() {
+  const ua = navigator.userAgent || "";
+  const chromiumFamily = /Chrome|Chromium|Edg\//i.test(ua);
+  const mobileFamily = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+  return Boolean(chromiumFamily && !mobileFamily && !isAppleDevice() && !isTvBrowser());
+}
+
+function canPlayMimeType(video, mimeType) {
+  if (!video || !mimeType || typeof video.canPlayType !== "function") return false;
+  try {
+    return Boolean(video.canPlayType(mimeType).replace(/no/i, ""));
+  } catch (_) {
+    return false;
+  }
+}
+
+function buildClientCapabilities() {
+  const video = document.createElement("video");
+  const mediaSource = window.MediaSource || window.ManagedMediaSource;
+  const supportsMse = Boolean(mediaSource && typeof mediaSource.isTypeSupported === "function");
+  const supportsHlsNatively = canPlayMimeType(video, "application/vnd.apple.mpegurl") ||
+    canPlayMimeType(video, "application/x-mpegURL");
+  const supportsHevc = canPlayMimeType(video, 'video/mp4; codecs="hvc1.1.6.L120.B0"') ||
+    canPlayMimeType(video, 'video/mp4; codecs="hev1.1.6.L120.B0"');
+  const supportsVp9 = canPlayMimeType(video, 'video/webm; codecs="vp9"') ||
+    canPlayMimeType(video, 'video/mp4; codecs="vp09.00.40.08"');
+  const supportsAv1 = canPlayMimeType(video, 'video/mp4; codecs="av01.0.04M.08"');
+  const supportsAac = canPlayMimeType(video, 'audio/mp4; codecs="mp4a.40.2"');
+  const supportsMp3 = canPlayMimeType(video, "audio/mpeg");
+  const supportsOpus = canPlayMimeType(video, 'audio/webm; codecs="opus"') ||
+    canPlayMimeType(video, 'audio/ogg; codecs="opus"');
+  const supportsAc3 = canPlayMimeType(video, 'audio/mp4; codecs="ac-3"');
+  const supportsEac3 = canPlayMimeType(video, 'audio/mp4; codecs="ec-3"');
+  return {
+    browserFamily: detectBrowserFamily(),
+    os: detectBrowserOs(),
+    supportsAvc: true,
+    supportsHevc,
+    supportsVp9,
+    supportsAv1,
+    supportsAac,
+    supportsMp3,
+    supportsOpus,
+    supportsAc3,
+    supportsEac3,
+    supportsMse,
+    supportsHlsNatively,
+    supportsHdr: supportsHevc && isAppleDevice(),
+    isPowerEfficient: !isMobileBrowser(),
+  };
+}
+
+async function reportClientCapabilities() {
+  const capabilities = buildClientCapabilities();
+  const signature = JSON.stringify(capabilities);
+  if (state.lastReportedCapabilities === signature) return capabilities;
+  try {
+    await api("/api/telemetry/capabilities", {
+      method: "POST",
+      body: JSON.stringify(capabilities),
+    });
+    state.lastReportedCapabilities = signature;
+  } catch (_) {}
+  return capabilities;
+}
+
 /**
  * Returns true when the prepared compat MP4 is ready for direct <video src> playback.
  * This is the primary path for REMUX/TRANSCODE videos once the job reaches READY.
@@ -344,20 +433,163 @@ function shouldUseDirectCompatMp4(item) {
   );
 }
 
-/**
- * Returns true when the device should use its native HLS engine via a plain
- * <video src="..."> tag rather than hls.js.
- * Covers: all Apple devices (Safari native HLS) and Smart TV browsers.
- * NOT used when a direct compat MP4 is available — all browsers can play that natively.
- */
+function rememberCompatProgress(itemId, status, progressPercent) {
+  if (!itemId) return;
+  if (Number.isFinite(progressPercent)) {
+    state.compatProgressMemory[itemId] = Math.max(0, Math.min(100, progressPercent));
+    return;
+  }
+  if (status === "READY") {
+    state.compatProgressMemory[itemId] = 100;
+    return;
+  }
+  if (isPreparationActiveStatus(status) && state.compatProgressMemory[itemId] == null) {
+    state.compatProgressMemory[itemId] = 0;
+    return;
+  }
+  if (status === "FAILED" || status === "STALLED" || status === "IDLE") {
+    delete state.compatProgressMemory[itemId];
+  }
+}
+
+function compatProgressValue(item) {
+  const explicit = item.compatibilityProgressPercent;
+  if (Number.isFinite(explicit)) return Math.max(0, Math.min(100, explicit));
+  if (item.id && Number.isFinite(state.compatProgressMemory[item.id])) {
+    return state.compatProgressMemory[item.id];
+  }
+  return 0;
+}
+
+function shouldRenderDetailProgress(item) {
+  const status = item.compatibilityStatus || item.status;
+  if (!isPreparationActiveStatus(status)) return false;
+  return item.playbackMode === "TRANSCODE" || item.playbackMode === "TRANSMUX" || item.playbackMode === "REMUX";
+}
+
+function compatibilityProgressLabel(item) {
+  if (item.playbackMode === "TRANSCODE") {
+    return "Converting video...";
+  }
+  return "Preparing video...";
+}
+
+function renderCompatibilityProgress(item) {
+  if (!shouldRenderDetailProgress(item)) {
+    debugTrace(
+      "ui_progress_hidden",
+      `mode=${item.playbackMode} status=${item.compatibilityStatus || item.status || "IDLE"} reason=inactive`,
+    );
+    return `<p class="gs-meta" data-compat-status>${compatibilityStatusText(item, false)}</p>`;
+  }
+  const progress = compatProgressValue(item);
+  debugTrace(
+    "ui_progress_render",
+    `mode=${item.playbackMode} status=${item.compatibilityStatus || item.status} progress=${progress}`,
+  );
+  return `
+    <div class="gs-compat-progress" data-compat-progress-block>
+      <div class="gs-compat-progress-head">
+        <span class="gs-meta" data-compat-progress-label>${compatibilityProgressLabel(item)}</span>
+        <strong data-compat-progress-value>${progress}%</strong>
+      </div>
+      <div class="gs-compat-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}">
+        <span class="gs-compat-progress-fill" data-compat-progress-fill style="width:${progress}%"></span>
+      </div>
+    </div>
+  `;
+}
+
+function resolveStablePlayerSource(item) {
+  if (item.playbackMode === "DIRECT") {
+    return {
+      kind: "direct",
+      url: item.streamUrl,
+      mimeType: item.mimeType || "video/mp4",
+    };
+  }
+  if (shouldUseDirectCompatMp4(item)) {
+    return {
+      kind: "prepared_mp4",
+      url: item.preparedMp4Url,
+      mimeType: "video/mp4",
+    };
+  }
+  if (shouldUseNativeHlsPlayback(item)) {
+    return {
+      kind: "native_hls",
+      url: item.hlsUrl,
+      mimeType: "application/vnd.apple.mpegurl",
+    };
+  }
+  if (shouldUseManagedHlsPlayback(item)) {
+    return {
+      kind: "managed_hls",
+      url: item.hlsUrl,
+      mimeType: "application/x-mpegURL",
+    };
+  }
+  return null;
+}
+
+function lockPlayerSource(item) {
+  const candidate = resolveStablePlayerSource(item);
+  const existing = state.playerSourceLocks[item.id];
+  if (!candidate) {
+    if (existing) {
+      debugTrace("player_rehydrate_blocked", `id=${item.id} reason=waiting_for_stable_source locked=${existing.kind}`);
+    }
+    return null;
+  }
+  if (existing && existing.kind === candidate.kind && existing.url === candidate.url) {
+    debugTrace("player_rehydrate_blocked", `id=${item.id} reason=source_already_locked source=${existing.kind}`);
+    return existing;
+  }
+  if (existing && (existing.kind !== candidate.kind || existing.url !== candidate.url)) {
+    debugTrace(
+      "player_rehydrate_blocked",
+      `id=${item.id} reason=source_locked source=${existing.kind} requested=${candidate.kind}`,
+    );
+    return existing;
+  }
+  debugTrace("playback_source_selected", `id=${item.id} mode=${item.playbackMode} source=${candidate.kind}`);
+  state.playerSourceLocks[item.id] = candidate;
+  debugTrace("player_source_locked", `id=${item.id} source=${candidate.kind}`);
+  return candidate;
+}
+
+function nativeHlsEligibility(item) {
+  if (!item) return { allowed: false, reason: "missing_item" };
+  if (item.playbackMode !== "TRANSCODE") return { allowed: false, reason: "mode_not_transcode" };
+  if (shouldUseDirectCompatMp4(item) || item.compatibilityComplete) {
+    return { allowed: false, reason: "prepared_mp4_preferred" };
+  }
+  if (!item.hlsUrl) return { allowed: false, reason: "no_hls_url" };
+  if (!item.streamReady) return { allowed: false, reason: "not_streamable" };
+  if (!isAppleDevice() && !isTvBrowser()) return { allowed: false, reason: "native_hls_not_required" };
+  if (!buildClientCapabilities().supportsHlsNatively) return { allowed: false, reason: "native_hls_not_supported" };
+  return { allowed: true, reason: isTvBrowser() ? "native_tv_hls" : "native_apple_hls" };
+}
+
 function shouldUseNativeHlsPlayback(item) {
-  // If the prepared MP4 is ready, skip HLS entirely — the browser plays it directly.
-  if (shouldUseDirectCompatMp4(item)) return false;
-  // iOS Safari native HLS has issues with TFHD base-data-offset in fragmented MP4.
-  // Block iOS from live TRANSCODE HLS — wait for the complete regular MP4 instead.
-  const isLiveTranscode = item.playbackMode === "TRANSCODE" && !item.compatibilityComplete;
-  if (isLiveTranscode && isAppleDevice()) return false;
-  return Boolean(item.hlsUrl && item.playbackMode !== "DIRECT" && (isAppleDevice() || isTvBrowser()));
+  return nativeHlsEligibility(item).allowed;
+}
+
+function managedHlsEligibility(item) {
+  if (!item) return { allowed: false, reason: "missing_item" };
+  if (item.playbackMode !== "TRANSCODE") return { allowed: false, reason: "mode_not_transcode" };
+  if (shouldUseDirectCompatMp4(item) || item.compatibilityComplete) {
+    return { allowed: false, reason: "prepared_mp4_preferred" };
+  }
+  if (!item.hlsUrl) return { allowed: false, reason: "no_hls_url" };
+  if (!item.streamReady) return { allowed: false, reason: "not_streamable" };
+  if (isAppleDevice()) return { allowed: false, reason: "apple_disabled" };
+  if (isTvBrowser()) return { allowed: false, reason: "tv_disabled" };
+  if (!isDesktopChromiumBrowser()) return { allowed: false, reason: "browser_not_supported" };
+  if (!(window.Hls && typeof window.Hls.isSupported === "function" && window.Hls.isSupported())) {
+    return { allowed: false, reason: "hlsjs_not_supported" };
+  }
+  return { allowed: true, reason: "desktop_chromium" };
 }
 
 /**
@@ -366,28 +598,10 @@ function shouldUseNativeHlsPlayback(item) {
  * Once READY, shouldUseDirectCompatMp4 takes over and hls.js is not started.
  */
 function canUseManagedHls(item) {
-  // Direct MP4 is available — no need for hls.js.
-  if (shouldUseDirectCompatMp4(item)) return false;
-  
-  // REMUX (Fast-start) does not support progressive HLS playback; it must
-  // wait until the file is complete. TRANSMUX and TRANSCODE use HLS.
-  const isHlsMode = item.playbackMode === "TRANSMUX" || item.playbackMode === "TRANSCODE";
-
-  return Boolean(
-    item.hlsUrl &&
-    isHlsMode &&
-    !isAppleDevice() &&
-    !isTvBrowser() &&
-    typeof window.Hls !== "undefined" &&
-    typeof window.Hls.isSupported === "function" &&
-    window.Hls.isSupported()
-  );
+  return managedHlsEligibility(item).allowed;
 }
 
 function shouldUseManagedHlsPlayback(item) {
-  // Both REMUX and TRANSCODE use hls.js on supported browsers while transcoding is
-  // in progress (preparedMp4Url is null).  Once the job is READY, the direct MP4
-  // path takes over and hls.js is no longer started.
   return canUseManagedHls(item);
 }
 
@@ -398,10 +612,8 @@ function shouldUseManagedHlsPlayback(item) {
  * Android Chrome, desktop browsers etc. all get Plyr + hls.js.
  */
 function shouldUseNativeVideoPlayer(item) {
-  // When playing a direct MP4 (either original or prepared), we use Plyr.
-  // Native video player is only used for Apple/TV HLS streams.
-  if (shouldUseDirectCompatMp4(item) || item.playbackMode === "DIRECT") return false;
-  return shouldUseNativeHlsPlayback(item);
+  const locked = state.playerSourceLocks[item?.id];
+  return locked?.kind === "native_hls" || shouldUseNativeHlsPlayback(item);
 }
 
 function shouldUseHlsPlayback(item) {
@@ -409,9 +621,8 @@ function shouldUseHlsPlayback(item) {
 }
 
 function shouldUseHlsForActiveSession(item) {
-  // If we are already playing via HLS and the session hasn't ended, 
-  // stay on HLS even if the MP4 is ready, to avoid glitches.
-  return (state.hls && state.hlsItemId === item.id) || (state.activeSessionPrefersHls && state.activeSessionPrefersHls[item.id]);
+  const locked = state.playerSourceLocks[item?.id];
+  return locked?.kind === "managed_hls" || locked?.kind === "native_hls" || shouldUseHlsPlayback(item);
 }
 
 /**
@@ -421,16 +632,10 @@ function shouldUseHlsForActiveSession(item) {
  * For direct/progressive, probe the stream URL with a Range header.
  */
 function resolveVideoSourceUrl(item) {
-  if (item.playbackMode === "DIRECT") return item.streamUrl;
-  
-  const prefersHls = shouldUseHlsForActiveSession(item);
-  const effectiveHls = item.effectivePlaybackMode === "LIVE_HLS" || prefersHls;
-  const effectiveMp4 = item.effectivePlaybackMode === "PREPARED_MP4" && !prefersHls;
-
-  if (effectiveMp4 && item.preparedMp4Url) return item.preparedMp4Url;
-  if (effectiveHls && item.hlsUrl) return item.hlsUrl;
-  
-  return item.streamUrl;
+  const source = item.selectedSourceType
+    ? { kind: item.selectedSourceType, url: item.selectedSourceUrl }
+    : (state.playerSourceLocks[item.id] || resolveStablePlayerSource(item));
+  return source?.url || item.streamUrl;
 }
 
 async function probeCompatiblePlaybackSource(item) {
@@ -445,7 +650,10 @@ async function probeCompatiblePlaybackSource(item) {
   const timeoutId = controller ? setTimeout(() => controller.abort(), 2200) : null;
   // HLS playlist URLs (native or managed) must NOT use a Range header — they return
   // the full playlist text. Only progressive MP4 streams support byte-range requests.
-  const useHls = shouldUseNativeHlsPlayback(item) || shouldUseManagedHlsPlayback(item);
+  const selectedSourceKind = item.selectedSourceType ||
+    state.playerSourceLocks[item.id]?.kind ||
+    resolveStablePlayerSource(item)?.kind;
+  const useHls = selectedSourceKind === "managed_hls" || selectedSourceKind === "native_hls" || shouldUseNativeHlsPlayback(item);
   const headers = useHls ? {} : { Range: "bytes=0-1" };
   let response = null;
   try {
@@ -471,14 +679,19 @@ function shouldStartCompatibilityPlayback(item, job = null) {
 
   const effectiveStatus = job?.status || item.compatibilityStatus;
   if (effectiveStatus === "FAILED" || effectiveStatus === "STALLED") return false;
-  if (job?.preparedMp4Url || shouldUseDirectCompatMp4(item)) return true;
-
-  const effectiveHlsUrl = job?.hlsUrl || item.hlsUrl;
-  if (effectiveHlsUrl && (job?.ready || item.streamReady)) return true;
-
-  if (item.compatibilityComplete || effectiveStatus === "READY") return true;
-  if (!job) return false;
-  return Boolean(job.ready || job.compatibilityComplete || job.status === "READY");
+  const effectiveItem = {
+    ...item,
+    playbackMode: job?.playbackMode || item.playbackMode,
+    compatibilityStatus: effectiveStatus,
+    compatibilityComplete: job?.compatibilityComplete ?? item.compatibilityComplete,
+    preparedMp4Url: job?.preparedMp4Url || item.preparedMp4Url,
+    hlsUrl: job?.hlsUrl || item.hlsUrl,
+    streamReady: Boolean(job?.ready ?? item.streamReady),
+  };
+  if (job?.preparedMp4Url || shouldUseDirectCompatMp4(effectiveItem)) return true;
+  if (effectiveItem.compatibilityComplete || effectiveStatus === "READY") return true;
+  if (shouldUseNativeHlsPlayback(effectiveItem) || shouldUseManagedHlsPlayback(effectiveItem)) return true;
+  return false;
 }
 
 function compatibilityHeadline(item, streamLive = item.streamReady) {
@@ -880,15 +1093,32 @@ function downloadItems(items) {
 
 async function renderVideoPlayer(id) {
   const item = await api(`/api/item/${id}`);
+  delete state.playerSourceLocks[id];
   const allowDownloads = !state.bootstrap?.preventDownload && Boolean(item.downloadUrl);
+  rememberCompatProgress(item.id, item.compatibilityStatus, item.compatibilityProgressPercent);
+  const nativeHls = nativeHlsEligibility(item);
+  const hlsEligibility = managedHlsEligibility(item);
+  debugTrace(
+    "browser_detected",
+    `route=/player/video/${id} apple=${isAppleDevice()} tv=${isTvBrowser()} chromiumDesktop=${isDesktopChromiumBrowser()} ua=${navigator.userAgent || ""}`,
+  );
+  debugTrace(
+    nativeHls.allowed || hlsEligibility.allowed ? "inprogress_hls_enabled" : "inprogress_hls_disabled",
+    `route=/player/video/${id} native=${nativeHls.reason} managed=${hlsEligibility.reason}`,
+  );
   
   // Decide the initial view state
   const isDirect = item.playbackMode === "DIRECT";
-  const isStreamLive = Boolean(item.streamReady || item.effectivePlaybackMode === "LIVE_HLS");
-  const isPreparedReady = Boolean(item.preparedMp4Url) && !isStreamLive;
+  const isStreamLive = Boolean(item.streamReady);
+  const isPreparedReady = Boolean(item.preparedMp4Url);
   const isTerminalFailure = item.compatibilityStatus === "FAILED" || item.compatibilityStatus === "STALLED";
   const isPreparationActive = isPreparationActiveStatus(item.compatibilityStatus);
-  const showPlayerImmediately = !isTerminalFailure && (isDirect || isPreparedReady || isStreamLive);
+  const showPlayerImmediately = !isTerminalFailure && (
+    isDirect ||
+    isPreparedReady ||
+    shouldUseNativeHlsPlayback(item) ||
+    shouldUseManagedHlsPlayback(item)
+  );
   state.compatItem = item;
   
   shell(`
@@ -912,7 +1142,7 @@ async function renderVideoPlayer(id) {
               <strong data-compat-title>${compatibilityHeadline(item, isStreamLive)}</strong>
               <p class="gs-meta" data-compat-message>${esc(compatibilityBody(item, isStreamLive))}</p>
             </div>
-            <span class="gs-meta" data-compat-progress>${compatibilityStatusText(item, isStreamLive)}</span>
+            <span class="gs-meta" data-compat-status>${compatibilityStatusText(item, isStreamLive)}</span>
           </div>
         ` : ""}
       </div>
@@ -937,7 +1167,7 @@ function renderVideoStage(item, showPlayer) {
         <span class="gs-badge" data-compat-badge>${compatibilityBadgeLabel(item, false)}</span>
         <h3 data-compat-title>${compatibilityHeadline(item, false)}</h3>
         <p data-compat-message>${esc(compatibilityBody(item, false))}</p>
-        <p class="gs-meta" data-compat-progress>${compatibilityStatusText(item, false)}</p>
+        <div class="gs-compat-progress-shell" data-compat-progress-wrap>${renderCompatibilityProgress(item)}</div>
         <div class="gs-toolbar-actions gs-mt-2">
           ${status === "FAILED" || status === "STALLED"
             ? `<button class="gs-btn gs-btn-accent gs-btn-sm" onclick="retryPreparation('${item.id}')">Retry</button>`
@@ -957,24 +1187,9 @@ function videoMarkup(item) {
   const useNativePlayer = shouldUseNativeVideoPlayer(item);
   const nativeClass = useNativePlayer ? " gs-native-video" : "";
   const preload = useNativePlayer ? "metadata" : "auto";
-
-  // Priority Source Logic:
-  // 1. Session-locked HLS (Stay on HLS if we started there)
-  // 2. Finalized Direct Compat MP4 (If READY and not locked to HLS)
-  // 3. Early HLS (StartupReady/Effective LIVE_HLS)
-  let sourceUrl = null;
-  const sessionLockedHls = shouldUseHlsForActiveSession(item);
-
-  if (item.playbackMode === "DIRECT") {
-    sourceUrl = item.streamUrl;
-  } else if (sessionLockedHls) {
-    sourceUrl = item.hlsUrl;
-  } else if ((item.effectivePlaybackMode === "PREPARED_MP4" || shouldUseDirectCompatMp4(item)) && item.preparedMp4Url) {
-    sourceUrl = item.preparedMp4Url;
-  } else if (shouldUseHlsPlayback(item)) {
-    sourceUrl = (shouldUseNativeHlsPlayback(item) || sessionLockedHls) ? item.hlsUrl : null;
-  }
-  
+  const lockedSource = state.playerSourceLocks[item.id] || resolveStablePlayerSource(item);
+  const selectedSourceType = item.selectedSourceType || lockedSource?.kind || null;
+  const sourceUrl = selectedSourceType === "managed_hls" ? null : (item.selectedSourceUrl || lockedSource?.url || null);
   const sourceAttribute = sourceUrl ? ` src="${sourceUrl}"` : "";
 
   return `
@@ -996,17 +1211,13 @@ function videoMarkup(item) {
 }
 
 function canUseManagedHlsFallback(item, managedHlsAvailable) {
-  // Allow hls.js fallback for REMUX, TRANSMUX, and TRANSCODE if the initial 
-  // native/progressive attempt fails. All these modes produce fMP4 with an HLS playlist.
-  const isHlsCapable = item.playbackMode === "REMUX" || 
-                       item.playbackMode === "TRANSMUX" || 
-                       item.playbackMode === "TRANSCODE";
-  return Boolean(managedHlsAvailable && isHlsCapable);
+  return managedHlsAvailable && Boolean(item?.hlsUrl);
 }
 
 function showCompatibilityWaitingStage(item) {
   destroyPlyr();
   destroyHls();
+  delete state.playerSourceLocks[item.id];
   const stage = document.getElementById("playerStage");
   if (!stage) return;
   stage.innerHTML = renderVideoStage({
@@ -1022,9 +1233,15 @@ function hydrateVideoPlayer(item, options = {}) {
   destroyPlyr();
   destroyHls();
   video.dataset.bound = "true";
+  const selectedSource = state.playerSourceLocks[item.id] || resolveStablePlayerSource(item);
+  if (!selectedSource) {
+    debugTrace("player_rehydrate_blocked", `id=${item.id} reason=no_locked_source`);
+    return;
+  }
   const useNativePlayer = shouldUseNativeVideoPlayer(item);
-  const useDirectMp4 = shouldUseDirectCompatMp4(item);
-  const useManagedHls = shouldUseManagedHlsPlayback(item);
+  const useDirectMp4 = selectedSource.kind === "prepared_mp4" || selectedSource.kind === "direct";
+  const useNativeHls = selectedSource.kind === "native_hls" && shouldUseNativeHlsPlayback(item);
+  const useManagedHls = selectedSource.kind === "managed_hls" && shouldUseManagedHlsPlayback(item);
   const managedHlsAvailable = canUseManagedHls(item);
   const allowManagedHlsFallback = canUseManagedHlsFallback(item, managedHlsAvailable);
   const errorCard = document.getElementById("vError");
@@ -1042,6 +1259,7 @@ function hydrateVideoPlayer(item, options = {}) {
   debugTrace(
     "player_hydrate",
     `id=${item.id} mode=${item.playbackMode} directMp4=${useDirectMp4} ` +
+    `source=${selectedSource.kind} ` +
     `nativePlayer=${useNativePlayer} managedHls=${useManagedHls} ` +
     `nativeHls=${shouldUseNativeHlsPlayback(item)} ` +
     `managedHlsAvailable=${managedHlsAvailable} ` +
@@ -1251,11 +1469,19 @@ function hydrateVideoPlayer(item, options = {}) {
     return true;
   };
 
+  if (useNativeHls) {
+    debugTrace("hls_start", `id=${item.id} url=${selectedSource.url} kind=native`);
+    video.src = selectedSource.url;
+    video.load();
+    if (options.autoplay) {
+      video.play().catch(() => {});
+    }
+  }
+
   if (useManagedHls) {
     if (!startManagedHls()) {
-      // If HLS failed to initialize, try to fall back to the original URL
-      video.src = item.streamUrl;
-      video.load();
+      debugTrace("player_rehydrate_blocked", `id=${item.id} reason=hls_init_failed`);
+      return;
     }
   }
 
@@ -1506,6 +1732,14 @@ function hydrateVideoPlayer(item, options = {}) {
 }
 
 function updateCompatElements(job, streamLive) {
+  const progressItem = {
+    id: job.itemId,
+    playbackMode: job.playbackMode || state.compatItem?.playbackMode,
+    compatibilityStatus: job.status,
+    compatibilityComplete: job.complete || job.compatibilityComplete,
+    compatibilityProgressPercent: job.progressPercent,
+  };
+  rememberCompatProgress(progressItem.id, progressItem.compatibilityStatus, progressItem.compatibilityProgressPercent);
   document.querySelectorAll("[data-compat-message]").forEach((element) => {
     element.textContent = compatibilityBody({
       compatibilityMessage: job.message,
@@ -1514,12 +1748,15 @@ function updateCompatElements(job, streamLive) {
       streamReady: streamLive,
     }, streamLive);
   });
-  document.querySelectorAll("[data-compat-progress]").forEach((element) => {
+  document.querySelectorAll("[data-compat-status]").forEach((element) => {
     element.textContent = compatibilityStatusText({
       compatibilityStatus: job.status,
       compatibilityComplete: job.complete || job.compatibilityComplete,
       streamReady: streamLive,
     }, streamLive);
+  });
+  document.querySelectorAll("[data-compat-progress-wrap]").forEach((element) => {
+    element.innerHTML = renderCompatibilityProgress(progressItem);
   });
   document.querySelectorAll("[data-compat-badge]").forEach((element) => {
     element.textContent = compatibilityBadgeLabel({
@@ -1550,7 +1787,7 @@ function updateCompatElements(job, streamLive) {
        const spinner = stage.querySelector(".gs-spinner");
        if (spinner) spinner.classList.remove("gs-spinner");
        
-       const progress = stage.querySelector("[data-compat-progress]");
+       const progress = stage.querySelector("[data-compat-status]");
        if (progress) progress.textContent = "Stopped";
     }
   }
@@ -1578,40 +1815,39 @@ async function retryPreparation(id) {
 
 async function ensureCompatiblePlayerMounted(item) {
   const mountToken = ++state.compatMountToken;
-  const isHlsEffective = item.effectivePlaybackMode === "LIVE_HLS" || (item.hlsUrl && (item.streamReady || shouldUseHlsForActiveSession(item)));
-  const alreadyReady = Boolean(
-    item.playbackMode === "DIRECT" ||
-    isHlsEffective ||
-    shouldUseDirectCompatMp4(item)
-  );
-  if (item.playbackMode !== "DIRECT" && !alreadyReady) {
-    // If HLS is possible (even if only early HLS), we don't need to probe.
-    // The player will handle hydration and internal retries.
-    const hasHls = Boolean(item.hlsUrl && (shouldUseNativeHlsPlayback(item) || shouldUseManagedHlsPlayback(item)));
-    if (!hasHls) {
-      const ready = await probeCompatiblePlaybackSource(item);
-      if (mountToken !== state.compatMountToken || location.pathname !== `/player/video/${item.id}`) {
-        return false;
-      }
-      if (!ready) {
-        return false;
-      }
-    }
+  const selectedSource = lockPlayerSource(item);
+  if (!selectedSource) {
+    debugTrace(
+      "player_rehydrate_blocked",
+      `id=${item.id} reason=source_not_ready mode=${item.playbackMode} status=${item.compatibilityStatus || "IDLE"}`,
+    );
+    return false;
   }
-
-  // Record that we preferred HLS for this session if we are using it
-  if (isHlsEffective) {
-    if (!state.activeSessionPrefersHls) state.activeSessionPrefersHls = {};
-    state.activeSessionPrefersHls[item.id] = true;
+  const ready = await probeCompatiblePlaybackSource({
+    ...item,
+    selectedSourceUrl: selectedSource.url,
+  });
+  if (mountToken !== state.compatMountToken || location.pathname !== `/player/video/${item.id}`) {
+    return false;
   }
+  if (!ready) {
+    debugTrace("player_rehydrate_blocked", `id=${item.id} reason=source_probe_failed source=${selectedSource.kind}`);
+    return false;
+  }
+  const lockedItem = {
+    ...item,
+    selectedSourceUrl: selectedSource.url,
+    selectedSourceType: selectedSource.kind,
+  };
+  state.compatItem = lockedItem;
   if (document.getElementById("vPlayer")) {
-    hydrateVideoPlayer(item);
+    hydrateVideoPlayer(lockedItem);
     return true;
   }
   const stage = document.getElementById("playerStage");
   if (!stage) return false;
-  stage.innerHTML = videoMarkup(item);
-  hydrateVideoPlayer(item, { autoplay: true });
+  stage.innerHTML = videoMarkup(lockedItem);
+  hydrateVideoPlayer(lockedItem, { autoplay: true });
   return true;
 }
 
@@ -1859,6 +2095,8 @@ async function pollCompat(id, item, options = {}) {
     // 202 Accepted handling: The server might return an ErrorPayload while waiting for 
     // the HLS duration threshold (4-6s) to be met. We treat this as "Opening".
     const normalizedJob = {
+      itemId: job.itemId || id,
+      playbackMode: job.playbackMode || item.playbackMode,
       status: job.status || "ANALYZING", // Default to an active state if status is missing (202 response)
       message: job.message || "Preparing stream...",
       progressPercent: job.progressPercent,
@@ -1893,6 +2131,7 @@ async function pollCompat(id, item, options = {}) {
     }
     const nextItem = {
       ...item,
+      playbackMode: normalizedJob.playbackMode || item.playbackMode,
       streamReady: canStartPlayback,
       effectivePlaybackMode: normalizedJob.effectivePlaybackMode || item.effectivePlaybackMode,
       compatibilityStatus: normalizedJob.status,
