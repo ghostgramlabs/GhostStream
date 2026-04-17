@@ -610,8 +610,10 @@ class KtorGhostStreamServer(
                     return@get
                 }
 
-                // Hard Gate: Reject direct file requests if the preparation is not 100% complete.
-                // Growing files MUST be played via HLS (/hls/...) to ensure correct duration.
+                // Hard Gate: Only expose the direct prepared-file endpoint when the pipeline
+                // has explicitly marked the asset as directly playable for this session.
+                // This still rejects incomplete files unless the worker promoted them via
+                // directReady/PLAYABLE_NOW.
                 if (!preparedAsset.isComplete && !job.directReady) {
                     debugLogSink.log("WebCompat/file", "REJECTED id=${item.id} reason=incomplete")
                     call.respond(HttpStatusCode.Conflict, ErrorPayload("Direct playback is unavailable until conversion is finalized. Please use HLS."))
@@ -624,8 +626,8 @@ class KtorGhostStreamServer(
                         filePath = preparedAsset.filePath,
                         mimeType = "video/mp4",
                         sizeBytes = preparedAsset.sizeBytes,
-                        isComplete = true, // We are certain here because of the gate above
-                        allowGrowing = false, // Never allow growing for the direct-file endpoint
+                        isComplete = preparedAsset.isComplete,
+                        allowGrowing = !preparedAsset.isComplete,
                     ),
                     asAttachment = false,
                     activity = ClientActivity.WATCHING_VIDEO,
@@ -1634,7 +1636,11 @@ class KtorGhostStreamServer(
 
     private fun compatibilityStreamReady(job: CompatibilityJob, allowInProgressHls: Boolean = false): Boolean {
         if (job.decision.mode == PlaybackMode.DIRECT) return true
-        if (job.status == CompatibilityStatus.READY || job.preparedAsset?.isComplete == true || job.directReady) {
+        if (job.status == CompatibilityStatus.READY ||
+            job.status == CompatibilityStatus.PLAYABLE_NOW ||
+            job.preparedAsset?.isComplete == true ||
+            job.directReady
+        ) {
             return true
         }
         return allowInProgressHls &&
@@ -2318,7 +2324,7 @@ class KtorGhostStreamServer(
                 hlsUrl: String?,
                 allowDownloads: Boolean,
             ): BrowserItemDetails {
-                val isComplete = compatibilityJob.status == CompatibilityStatus.READY || compatibilityJob.preparedAsset?.isComplete == true
+                val isComplete = compatibilityJob.isFinalized
                 val hasProgressedAsset = compatibilityJob.preparedAsset != null
                 val decision = compatibilityJob.decision
 
@@ -2343,9 +2349,9 @@ class KtorGhostStreamServer(
                     compatibilityComplete = isComplete,
                     streamReady = streamReady,
                     preparedMp4Url = if (
-                        isComplete &&
                         streamReady &&
                         hasProgressedAsset &&
+                        compatibilityJob.directReady &&
                         decision.mode != PlaybackMode.DIRECT
                     ) {
                         "/api/compat/${item.id}/file"
@@ -2378,7 +2384,7 @@ class KtorGhostStreamServer(
     ) {
         companion object {
             fun from(job: CompatibilityJob, ready: Boolean, hlsUrl: String?): CompatibilityStatusPayload {
-                val isComplete = job.status == CompatibilityStatus.READY || job.directReady
+                val isComplete = job.isFinalized
                 return CompatibilityStatusPayload(
                     itemId = job.itemId,
                     playbackMode = job.decision.mode,

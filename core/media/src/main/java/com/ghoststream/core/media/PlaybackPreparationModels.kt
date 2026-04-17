@@ -10,6 +10,7 @@ enum class CompatibilityStatus {
     ANALYZING,
     PREPARING,
     FINALIZING,
+    PLAYABLE_NOW,
     READY,
     FAILED,
     STALLED,
@@ -86,7 +87,13 @@ data class CompatibilityJob(
     val priority: JobPriority = JobPriority.LOW,
 ) {
     val canServePlayback: Boolean
-        get() = status == CompatibilityStatus.READY || hlsReady || directReady
+        get() = status == CompatibilityStatus.PLAYABLE_NOW ||
+            status == CompatibilityStatus.READY ||
+            hlsReady ||
+            directReady
+
+    val isFinalized: Boolean
+        get() = status == CompatibilityStatus.READY || preparedAsset?.isComplete == true
 
     /**
      * The current ideal mode for playback.
@@ -96,8 +103,8 @@ data class CompatibilityJob(
     val effectivePlaybackMode: EffectivePlaybackMode
         get() = when {
             decision.mode == com.ghoststream.core.model.PlaybackMode.DIRECT -> EffectivePlaybackMode.DIRECT
-            status == CompatibilityStatus.READY || directReady -> EffectivePlaybackMode.PREPARED_MP4
-            streamable -> EffectivePlaybackMode.LIVE_HLS
+            directReady || status == CompatibilityStatus.PLAYABLE_NOW || status == CompatibilityStatus.READY -> EffectivePlaybackMode.PREPARED_MP4
+            hlsReady || streamable -> EffectivePlaybackMode.LIVE_HLS
             else -> EffectivePlaybackMode.PENDING
         }
 

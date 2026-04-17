@@ -6,6 +6,7 @@ import com.ghoststream.core.model.PlaybackMode
 import com.ghoststream.core.model.SharedItem
 import java.io.File
 import java.nio.file.Files
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -275,6 +276,89 @@ class QueuedCompatibilityPipelineTest {
         val inspected = pipeline.inspect(item)
         assertEquals(PlaybackMode.TRANSCODE, inspected.decision.mode)
         assertEquals(PlaybackMode.TRANSCODE, pipeline.currentJob(item.id)?.decision?.mode)
+    }
+
+    @Test
+    fun `high priority playback request runs ahead of low priority manual prepare`() = runTest {
+        val cache = FakePlaybackCache()
+        val executionOrder = CopyOnWriteArrayList<String>()
+        val testScope = CoroutineScope(coroutineContext)
+        val pipeline = QueuedCompatibilityPipeline(
+            cache = cache,
+            worker = object : CompatibilityWorker {
+                override suspend fun prepare(
+                    item: SharedItem,
+                    cache: PlaybackCache,
+                    stabilizedSource: StabilizedSourceInfo?,
+                    startOffsetMs: Long,
+                    onUpdate: (CompatibilityWorkerUpdate) -> Unit,
+                ): CompatibilityWorkerResult {
+                    executionOrder += item.id
+                    val outputFile = cache.newOutputFile(item, "mp4").apply {
+                        parentFile?.mkdirs()
+                        writeText(item.id)
+                    }
+                    return CompatibilityWorkerResult.Success(
+                        preparedAsset = cache.record(
+                            itemId = item.id,
+                            file = outputFile,
+                            mimeType = "video/mp4",
+                        ),
+                        message = "ready",
+                    )
+                }
+            },
+            scope = testScope,
+        )
+        val low = transcodeItem(id = "low-priority")
+        val high = transcodeItem(id = "high-priority")
+
+        pipeline.requestPreparation(low, priority = JobPriority.LOW)
+        pipeline.requestPreparation(high, priority = JobPriority.HIGH)
+        advanceUntilIdle()
+
+        assertEquals(listOf("high-priority", "low-priority"), executionOrder)
+    }
+
+    @Test
+    fun `forced fallback overrides ready direct job before early return`() = runTest {
+        val cache = FakePlaybackCache()
+        val testScope = CoroutineScope(coroutineContext)
+        val pipeline = QueuedCompatibilityPipeline(
+            cache = cache,
+            worker = SuccessfulWorker(),
+            scope = testScope,
+        )
+        val directItem = transcodeItem(id = "video-direct").copy(
+            playbackDecision = PlaybackDecision(
+                mode = PlaybackMode.DIRECT,
+                browserMimeType = "video/mp4",
+                compatibilityLabel = "Direct Play",
+                reason = "Container and codecs are browser-safe for this client",
+            ),
+        )
+        val forcedCompatItem = directItem.copy(
+            playbackDecision = PlaybackDecision(
+                mode = PlaybackMode.REMUX,
+                browserMimeType = "video/mp4",
+                compatibilityLabel = "Preparing compatible version",
+                reason = "Browser rejected direct playback; preparing compatible version",
+            ),
+        )
+
+        val initial = pipeline.inspect(directItem)
+        assertEquals(PlaybackMode.DIRECT, initial.decision.mode)
+        assertEquals(CompatibilityStatus.READY, initial.status)
+
+        val queued = pipeline.requestPreparation(forcedCompatItem, priority = JobPriority.HIGH)
+        assertEquals(PlaybackMode.REMUX, queued.decision.mode)
+        assertEquals(JobPriority.HIGH, queued.priority)
+
+        advanceUntilIdle()
+
+        val completed = pipeline.currentJob(forcedCompatItem.id) ?: error("Expected compatibility job")
+        assertEquals(PlaybackMode.REMUX, completed.decision.mode)
+        assertEquals(CompatibilityStatus.READY, completed.status)
     }
 
     private fun transcodeItem(id: String = "video-1"): SharedItem {

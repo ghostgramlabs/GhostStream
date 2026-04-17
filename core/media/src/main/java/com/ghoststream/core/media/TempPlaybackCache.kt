@@ -64,6 +64,7 @@ class TempPlaybackCache(
         private const val MAX_STABILIZER_CACHE_BYTES = 500L * 1024L * 1024L // 500 MB
         /** Default prepared-asset cache budget: 2 GB */
         const val DEFAULT_CACHE_BUDGET_BYTES = 2L * 1024L * 1024L * 1024L
+        private const val CACHE_POLICY_VERSION = "v2"
     }
 
     /**
@@ -77,9 +78,27 @@ class TempPlaybackCache(
         return "${size}_${mtime}"
     }
 
+    private fun outputContract(item: SharedItem): String {
+        return when (item.playbackDecision.mode) {
+            PlaybackMode.REMUX,
+            PlaybackMode.TRANSMUX -> "direct_mp4"
+            PlaybackMode.TRANSCODE -> "fragmented_then_mp4"
+            PlaybackMode.DIRECT -> "original"
+        }
+    }
+
+    private fun playbackPolicyFingerprint(item: SharedItem): String {
+        return listOf(
+            CACHE_POLICY_VERSION,
+            item.playbackDecision.mode.name,
+            item.playbackDecision.browserMimeType ?: "unknown",
+            outputContract(item),
+        ).joinToString("_")
+    }
+
     /** The base filename (without extension) used for both the .tmp and .mp4 cache files. */
     private fun cacheBaseName(item: SharedItem): String {
-        return "${item.id}_${sourceFingerprint(item)}_prepared"
+        return "${item.id}_${sourceFingerprint(item)}_${playbackPolicyFingerprint(item)}_prepared"
     }
 
     override fun lookup(item: SharedItem): CachedPlaybackAsset? {

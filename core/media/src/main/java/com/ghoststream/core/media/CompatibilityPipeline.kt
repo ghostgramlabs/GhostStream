@@ -63,6 +63,11 @@ class QueuedCompatibilityPipeline(
     private val decisionEngine: SmartPlaybackDecisionEngine = DefaultSmartPlaybackDecisionEngine(),
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
 ) : CompatibilityPipeline {
+    private val terminalFailureTypes = setOf(
+        CompatibilityFailureType.SOURCE,
+        CompatibilityFailureType.VALIDATION,
+    )
+
     
     init {
         scope.launch {
@@ -160,18 +165,58 @@ class QueuedCompatibilityPipeline(
     ): CompatibilityJob {
         // HARD RULE: Only explicit user actions trigger this path.
         val current = currentJob(item.id) ?: inspect(item, capabilities)
-        
-        if (current.isTerminalFailure || current.status == CompatibilityStatus.READY ||
-            (current.status != CompatibilityStatus.IDLE && current.status != CompatibilityStatus.QUEUED && priority == JobPriority.LOW)
+        val forcedCompatibilityOverride = priority != JobPriority.LOW &&
+            current.decision.mode == PlaybackMode.DIRECT &&
+            item.playbackDecision.mode != PlaybackMode.DIRECT
+        val reconciledCurrent = if (forcedCompatibilityOverride) {
+            upsert(
+                current.copy(
+                    decision = item.playbackDecision,
+                    status = CompatibilityStatus.IDLE,
+                    message = queuedMessage(item.playbackDecision.mode, priority),
+                    progressPercent = null,
+                    preparedAsset = null,
+                    hlsReady = false,
+                    directReady = false,
+                    streamable = false,
+                    updatedAtEpochMs = System.currentTimeMillis(),
+                ),
+            )
+        } else {
+            current
+        }
+
+        if (reconciledCurrent.isTerminalFailure) {
+            return reconciledCurrent
+        }
+        if (reconciledCurrent.status == CompatibilityStatus.READY ||
+            reconciledCurrent.status == CompatibilityStatus.PLAYABLE_NOW
         ) {
-             return current
+            return reconciledCurrent
+        }
+        if (reconciledCurrent.status != CompatibilityStatus.IDLE &&
+            reconciledCurrent.status != CompatibilityStatus.QUEUED &&
+            priority == JobPriority.LOW
+        ) {
+            return reconciledCurrent
         }
 
         // Priority Promotion: If a user clicks play (HIGH) on an existing prepare job, elevate it.
-        val effectiveCurrent = if (priority != JobPriority.LOW && current.priority == JobPriority.LOW) {
-            upsert(current.copy(priority = priority, message = queuedMessage(current.decision.mode, priority)))
+        val effectiveCurrent = if (priority != JobPriority.LOW &&
+            (reconciledCurrent.priority == JobPriority.LOW || forcedCompatibilityOverride)
+        ) {
+            upsert(
+                reconciledCurrent.copy(
+                    priority = priority,
+                    decision = if (forcedCompatibilityOverride) item.playbackDecision else reconciledCurrent.decision,
+                    message = queuedMessage(
+                        if (forcedCompatibilityOverride) item.playbackDecision.mode else reconciledCurrent.decision.mode,
+                        priority,
+                    ),
+                ),
+            )
         } else {
-            current
+            reconciledCurrent
         }
 
         if (effectiveCurrent.decision.mode == PlaybackMode.DIRECT) return effectiveCurrent
@@ -179,7 +224,8 @@ class QueuedCompatibilityPipeline(
         if (effectiveCurrent.status == CompatibilityStatus.QUEUED ||
             effectiveCurrent.status == CompatibilityStatus.ANALYZING ||
             effectiveCurrent.status == CompatibilityStatus.PREPARING ||
-            effectiveCurrent.status == CompatibilityStatus.FINALIZING
+            effectiveCurrent.status == CompatibilityStatus.FINALIZING ||
+            effectiveCurrent.status == CompatibilityStatus.PLAYABLE_NOW
         ) {
             return effectiveCurrent
         }
@@ -221,7 +267,10 @@ class QueuedCompatibilityPipeline(
         
         // Seek Optimization: If we are already READY/PREPARED, seeking is handled by the player via range requests.
         // We only need a CRITICAL priority re-spawn if we are in LIVE_HLS mode and need a new segment generation.
-        if (current.status == CompatibilityStatus.READY || current.directReady) {
+        if (current.status == CompatibilityStatus.READY ||
+            current.status == CompatibilityStatus.PLAYABLE_NOW ||
+            current.directReady
+        ) {
             CompatLogger.info("CompatPipeline", "seek_noop id=${item.id} reason=hardware_capable")
             return current
         }
@@ -248,12 +297,25 @@ class QueuedCompatibilityPipeline(
                 source = PlaybackSource.OriginalUri(item.uri, item.mimeType, item.sizeBytes),
                 job = job
             )
-            job.status == CompatibilityStatus.READY || job.directReady -> PlaybackResolution.Ready(
-                source = PlaybackSource.CachedFile(job.preparedAsset!!.filePath, job.preparedAsset.mimeType, job.preparedAsset.sizeBytes, isComplete = true),
+            (job.status == CompatibilityStatus.READY || job.status == CompatibilityStatus.PLAYABLE_NOW || job.directReady) &&
+                job.preparedAsset != null -> PlaybackResolution.Ready(
+                source = PlaybackSource.CachedFile(
+                    job.preparedAsset.filePath,
+                    job.preparedAsset.mimeType,
+                    job.preparedAsset.sizeBytes,
+                    allowGrowing = !job.preparedAsset.isComplete,
+                    isComplete = job.preparedAsset.isComplete,
+                ),
                 job = job
             )
-            job.streamable -> PlaybackResolution.Ready(
-                source = PlaybackSource.CachedFile(job.preparedAsset!!.filePath, job.preparedAsset.mimeType, job.preparedAsset.sizeBytes, allowGrowing = true, isComplete = false),
+            job.streamable && job.preparedAsset != null -> PlaybackResolution.Ready(
+                source = PlaybackSource.CachedFile(
+                    job.preparedAsset.filePath,
+                    job.preparedAsset.mimeType,
+                    job.preparedAsset.sizeBytes,
+                    allowGrowing = true,
+                    isComplete = false,
+                ),
                 job = job
             )
             job.status == CompatibilityStatus.FAILED -> PlaybackResolution.Failed(job)
@@ -335,7 +397,7 @@ class QueuedCompatibilityPipeline(
                     activeRequest = null
                     return@drainQueue
                 }
-                pendingRequests.removeAt(pendingRequests.size - 1).also { activeRequest = it }
+                pendingRequests.removeAt(0).also { activeRequest = it }
             }
             process(next)
         }
@@ -391,7 +453,8 @@ class QueuedCompatibilityPipeline(
                     directReady = false,
                     streamable = false,
                     lastFailureType = result.type,
-                    isTerminalFailure = true,
+                    failureCount = currentJob(item.id)?.failureCount?.plus(1) ?: 1,
+                    isTerminalFailure = result.type in terminalFailureTypes,
                     lastFailureReason = result.message,
                     lastFailureAt = System.currentTimeMillis(),
                     updatedAtEpochMs = System.currentTimeMillis()

@@ -427,13 +427,12 @@ async function reportClientCapabilities() {
  * the TFHD base-data-offset restriction that caused bufferAppendError via MSE/hls.js.
  */
 function shouldUseDirectCompatMp4(item) {
-  // Only use the direct MP4 source once the compatibility job is 100% finished.
-  // Using it earlier (while growing) causes browsers to lock in a short duration.
-  // This covers REMUX (Fast-start), TRANSMUX (Complete), and TRANSCODE (Complete).
+  // The server only exposes preparedMp4Url when it considers the file directly playable
+  // for this session. That may now happen before the background finalize/reuse step reaches
+  // compatibilityComplete=true, so we must not block on the finalization flag here.
   return Boolean(
     item.preparedMp4Url && 
-    item.playbackMode !== "DIRECT" && 
-    item.compatibilityComplete
+    item.playbackMode !== "DIRECT"
   );
 }
 
@@ -692,6 +691,9 @@ function shouldStartCompatibilityPlayback(item, job = null) {
     hlsUrl: job?.hlsUrl || item.hlsUrl,
     streamReady: Boolean(job?.ready ?? item.streamReady),
   };
+  if (effectiveItem.effectivePlaybackMode === "PREPARED_MP4" || effectiveItem.effectivePlaybackMode === "LIVE_HLS") {
+    return true;
+  }
   if (job?.preparedMp4Url || shouldUseDirectCompatMp4(effectiveItem)) return true;
   if (effectiveItem.compatibilityComplete || effectiveStatus === "READY") return true;
   if (shouldUseNativeHlsPlayback(effectiveItem) || shouldUseManagedHlsPlayback(effectiveItem)) return true;
@@ -710,6 +712,9 @@ function compatibilityHeadline(item, streamLive = item.streamReady) {
   }
   if (item.compatibilityStatus === "FINALIZING") {
     return gsStr("web_player_finalizing", "Finalizing browser stream...");
+  }
+  if (item.compatibilityStatus === "PLAYABLE_NOW") {
+    return gsStr("web_player_starting", "Starting playback...");
   }
   if ((item.compatibilityStatus === "IDLE" || !item.compatibilityStatus) && item.playbackMode !== "DIRECT" && !streamLive) {
     return "This video needs preparation for browser playback";
@@ -736,6 +741,9 @@ function compatibilityBody(item, streamLive = item.streamReady) {
   if (item.compatibilityStatus === "FINALIZING") {
     return gsStr("web_player_finalizing_desc", "Almost ready. Completing the browser-compatible stream.");
   }
+  if (item.compatibilityStatus === "PLAYABLE_NOW") {
+    return gsStr("web_player_starting_desc", "The video is starting now. Background optimization will continue.");
+  }
   if ((item.compatibilityStatus === "IDLE" || !item.compatibilityStatus) && item.playbackMode !== "DIRECT" && !streamLive) {
     return "Prepare this video when you want to watch it in the browser.";
   }
@@ -758,6 +766,9 @@ function compatibilityBadgeLabel(item, streamLive = item.streamReady) {
   if (item.compatibilityStatus === "ANALYZING") {
     return gsStr("web_player_status_analyzing", "Analyzing");
   }
+  if (item.compatibilityStatus === "PLAYABLE_NOW") {
+    return gsStr("web_player_status_playing", "Playing");
+  }
   if (item.compatibilityStatus === "FINALIZING") {
     return gsStr("web_player_status_finalizing", "Finalizing");
   }
@@ -774,12 +785,13 @@ function compatibilityBadgeLabel(item, streamLive = item.streamReady) {
 }
 
 function isPreparationActiveStatus(status) {
-  return status === "QUEUED" || status === "ANALYZING" || status === "PREPARING" || status === "FINALIZING";
+  return status === "QUEUED" || status === "ANALYZING" || status === "PREPARING" || status === "FINALIZING" || status === "PLAYABLE_NOW";
 }
 
 function compatibilityStatusText(item, streamLive = item.streamReady) {
   if (item.compatibilityStatus === "FAILED" || item.compatibilityStatus === "STALLED") return gsStr("web_player_status_failed", "Playback unavailable");
   if (item.compatibilityComplete || item.compatibilityStatus === "READY") return gsStr("web_player_status_ready", "Ready");
+  if (item.compatibilityStatus === "PLAYABLE_NOW") return gsStr("web_player_status_playing", "Playing");
   if (isPreparationActiveStatus(item.compatibilityStatus)) return gsStr("web_player_status_opening", "Preparing");
   if (streamLive) return gsStr("web_player_status_playing", "Playing");
   if (item.playbackMode !== "DIRECT") return gsStr("web_prepare_video", "Prepare video");
@@ -1972,7 +1984,13 @@ function card(item, selectable = false) {
     : "gs-btn gs-btn-sm";
   const action = item.category === "video"
     ? (() => {
-        if (item.playbackMode === "DIRECT" || item.compatibilityStatus === "READY") {
+        if (
+          item.playbackMode === "DIRECT" ||
+          item.compatibilityStatus === "READY" ||
+          item.compatibilityStatus === "PLAYABLE_NOW" ||
+          item.effectivePlaybackMode === "PREPARED_MP4" ||
+          item.effectivePlaybackMode === "LIVE_HLS"
+        ) {
           return `<a class="${actionBtnClass}" data-link href="/player/video/${item.id}">${gsStr("common_play", "Play")}</a>`;
         }
         if (item.compatibilityStatus === "FAILED" || item.compatibilityStatus === "STALLED") {

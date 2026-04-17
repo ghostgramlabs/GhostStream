@@ -41,6 +41,25 @@ class Media3FragmentedMp4CompatibilityWorker(
     private val debugLogSink: DebugLogSink = NoOpDebugLogSink,
 ) : CompatibilityWorker {
     private val activeTransforms = ConcurrentHashMap<String, ActiveTransform>()
+    private val copyModeVideoCodecs = setOf(
+        android.media.MediaFormat.MIMETYPE_VIDEO_AVC,
+        android.media.MediaFormat.MIMETYPE_VIDEO_HEVC,
+        "video/x-vnd.on2.vp9",
+        "video/vp9",
+        "video/av01",
+        "video/av1",
+    )
+    private val copyModeAudioCodecs = setOf(
+        android.media.MediaFormat.MIMETYPE_AUDIO_AAC,
+        "audio/mp4a-latm",
+        android.media.MediaFormat.MIMETYPE_AUDIO_MPEG,
+        "audio/mpeg",
+        "audio/x-mp3",
+        "audio/opus",
+        "audio/ac3",
+        "audio/eac3",
+        "audio/ec-3",
+    )
 
     override suspend fun prepare(
         item: SharedItem,
@@ -49,42 +68,7 @@ class Media3FragmentedMp4CompatibilityWorker(
         startOffsetMs: Long,
         onUpdate: (CompatibilityWorkerUpdate) -> Unit,
     ): CompatibilityWorkerResult {
-        val result = runJob(item, cache, stabilizedSource, startOffsetMs, onUpdate)
-
-        // If container-only preparation fails, retry once with a full transcode.
-        return if (result is CompatibilityWorkerResult.Failure &&
-            (item.playbackDecision.mode == PlaybackMode.REMUX || item.playbackDecision.mode == PlaybackMode.TRANSMUX)
-        ) {
-            debugLogSink.log(
-                "CompatWorker",
-                "fallback_triggered id=${item.id} from=${item.playbackDecision.mode} to=TRANSCODE reason=${result.message}",
-            )
-            onUpdate(
-                CompatibilityWorkerUpdate(
-                    decision = item.playbackDecision.copy(
-                        mode = PlaybackMode.TRANSCODE,
-                        reason = FALLBACK_TRANSCODE_REASON,
-                    ),
-                    message = "Lightning optimization failed; retrying with full compatibility conversion...",
-                    status = CompatibilityStatus.PREPARING,
-                    progressPercent = 0,
-                    preparedAsset = null,
-                    hlsReady = false,
-                    directReady = false,
-                    streamable = false,
-                ),
-            )
-            // Force a transcode decision for the retry attempt.
-            val fallbackItem = item.copy(
-                playbackDecision = item.playbackDecision.copy(
-                    mode = PlaybackMode.TRANSCODE,
-                    reason = FALLBACK_TRANSCODE_REASON,
-                ),
-            )
-            runJob(fallbackItem, cache, stabilizedSource, startOffsetMs, onUpdate)
-        } else {
-            result
-        }
+        return runJob(item, cache, stabilizedSource, startOffsetMs, onUpdate)
     }
 
     private suspend fun runJob(
@@ -223,7 +207,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                         val validationResult = validateOutput(
                             file = optimizedFile,
                             cancelled = cancelled,
-                            requireAacAudio = item.playbackDecision.mode == PlaybackMode.TRANSCODE,
+                            profile = validationProfileFor(item),
                         )
                         if (cancelled.get()) return
                         
@@ -264,6 +248,17 @@ class Media3FragmentedMp4CompatibilityWorker(
                             mimeType = "video/mp4",
                             isComplete = true,
                             isFragmentedMp4 = completedIsFragmentedMp4,
+                        )
+                        onUpdate(
+                            CompatibilityWorkerUpdate(
+                                status = CompatibilityStatus.PLAYABLE_NOW,
+                                message = message,
+                                progressPercent = 100,
+                                preparedAsset = asset,
+                                hlsReady = false,
+                                directReady = true,
+                                streamable = true,
+                            ),
                         )
                         
                         android.util.Log.i("GhostStream/Compat", "READY id=${item.id} mode=${item.playbackDecision.mode}")
@@ -635,7 +630,7 @@ class Media3FragmentedMp4CompatibilityWorker(
             val validationResult = validateOutput(
                 file = tmpOutputFile,
                 cancelled = cancelled,
-                requireAacAudio = false,
+                profile = validationProfileFor(item),
             )
             if (!validationResult.isValid) {
                 debugLogSink.log(
@@ -657,6 +652,16 @@ class Media3FragmentedMp4CompatibilityWorker(
                 mimeType = "video/mp4",
                 isComplete = true,
                 isFragmentedMp4 = false,
+            )
+            onUpdate(
+                CompatibilityWorkerUpdate(
+                    status = CompatibilityStatus.PLAYABLE_NOW,
+                    message = "Browser playback is ready.",
+                    progressPercent = 100,
+                    preparedAsset = asset,
+                    directReady = true,
+                    streamable = true,
+                ),
             )
             debugLogSink.log(
                 "CompatWorker",
@@ -691,10 +696,11 @@ class Media3FragmentedMp4CompatibilityWorker(
 
     private fun isMp4MuxableTrack(mime: String, format: android.media.MediaFormat): Boolean {
         return when {
-            mime.startsWith("video/") -> mime == android.media.MediaFormat.MIMETYPE_VIDEO_AVC
+            mime.startsWith("video/") -> mime in copyModeVideoCodecs
             mime == android.media.MediaFormat.MIMETYPE_AUDIO_AAC || mime == "audio/mp4a-latm" ->
                 format.containsKey("csd-0")
             mime == android.media.MediaFormat.MIMETYPE_AUDIO_MPEG || mime == "audio/mpeg" || mime == "audio/x-mp3" -> true
+            mime == "audio/opus" || mime == "audio/ac3" || mime == "audio/eac3" || mime == "audio/ec-3" -> true
             else -> false
         }
     }
@@ -757,6 +763,12 @@ class Media3FragmentedMp4CompatibilityWorker(
     }
 
     private data class ValidationResult(val isValid: Boolean, val error: String? = null)
+    private data class ValidationProfile(
+        val allowedVideoCodecs: Set<String>,
+        val allowedAudioCodecs: Set<String>,
+        val requireAacAudio: Boolean = false,
+        val requireUniversalAvc: Boolean = false,
+    )
 
     /**
      * Inspects the output file to ensure it meets our "Universal Compatibility" standard.
@@ -771,7 +783,7 @@ class Media3FragmentedMp4CompatibilityWorker(
     private fun validateOutput(
         file: File,
         cancelled: AtomicBoolean,
-        requireAacAudio: Boolean,
+        profile: ValidationProfile,
     ): ValidationResult {
         val extractor = MediaExtractor()
         return try {
@@ -786,11 +798,14 @@ class Media3FragmentedMp4CompatibilityWorker(
                 val mime = format.getString(android.media.MediaFormat.KEY_MIME) ?: ""
                 
                 if (mime.startsWith("video/")) {
-                    if (mime != android.media.MediaFormat.MIMETYPE_VIDEO_AVC) {
+                    if (profile.requireUniversalAvc && mime != android.media.MediaFormat.MIMETYPE_VIDEO_AVC) {
                         return ValidationResult(false, "Invalid video codec: $mime (expected H.264/AVC)")
                     }
+                    if (!profile.requireUniversalAvc && mime !in profile.allowedVideoCodecs) {
+                        return ValidationResult(false, "Invalid video codec: $mime")
+                    }
                     
-                    val profile = if (format.containsKey(android.media.MediaFormat.KEY_PROFILE)) {
+                    val codecProfile = if (format.containsKey(android.media.MediaFormat.KEY_PROFILE)) {
                         format.getInteger(android.media.MediaFormat.KEY_PROFILE)
                     } else null
                     
@@ -800,8 +815,11 @@ class Media3FragmentedMp4CompatibilityWorker(
 
                     // Profile check: 100 = AVCProfileHigh, 77 = AVCProfileMain, 66 = AVCProfileBaseline.
                     // These are direct numeric values from MediaCodecInfo.CodecProfileLevel.
-                    if (profile != null && profile > 100) {
-                        return ValidationResult(false, "Incompatible video profile: $profile (expected High=100 or below)")
+                    if (codecProfile != null &&
+                        codecProfile > 100 &&
+                        mime == android.media.MediaFormat.MIMETYPE_VIDEO_AVC
+                    ) {
+                        return ValidationResult(false, "Incompatible video profile: $codecProfile (expected High=100 or below)")
                     }
                     
                     // Level check: Android uses MediaCodecInfo.CodecProfileLevel.AVCLevelXX bitfield constants,
@@ -811,7 +829,10 @@ class Media3FragmentedMp4CompatibilityWorker(
                     // Level 4.1 bitfield constant = 1024 (0x400). Reject anything above 4.1.
                     // NOTE: Do NOT use > 41 here — that incorrectly rejects every real encoder output.
                     val AVC_LEVEL_41 = 0x400 // AVCLevel41 = 1024
-                    if (level != null && level > AVC_LEVEL_41) {
+                    if (level != null &&
+                        level > AVC_LEVEL_41 &&
+                        mime == android.media.MediaFormat.MIMETYPE_VIDEO_AVC
+                    ) {
                         CompatLogger.warn("CompatValidate", "Video level $level (>AVCLevel41=0x400) may not play on all devices, allowing")
                         // Allow but log — do not reject, as the encoder may target a higher
                         // level and many browsers can handle it. Only 10-bit/HDR is truly blocking.
@@ -845,11 +866,15 @@ class Media3FragmentedMp4CompatibilityWorker(
                         mime == "audio/mp4a-latm"
                     val isMp3 = mime == android.media.MediaFormat.MIMETYPE_AUDIO_MPEG ||
                         mime == "audio/mpeg"
-                    if (requireAacAudio && !isAac) {
+                    if (profile.requireAacAudio && !isAac) {
                         return ValidationResult(false, "Invalid audio codec: $mime (expected AAC)")
                     }
-                    if (!requireAacAudio && !isAac && !isMp3) {
-                        return ValidationResult(false, "Invalid audio codec: $mime (expected AAC or MP3)")
+                    if (!profile.requireAacAudio &&
+                        mime !in profile.allowedAudioCodecs &&
+                        !isAac &&
+                        !isMp3
+                    ) {
+                        return ValidationResult(false, "Invalid audio codec: $mime")
                     }
                     audioOk = true
                 }
@@ -862,6 +887,31 @@ class Media3FragmentedMp4CompatibilityWorker(
             ValidationResult(false, "Validation exception: ${e.message}")
         } finally {
             extractor.release()
+        }
+    }
+
+    private fun validationProfileFor(item: SharedItem): ValidationProfile {
+        return when (item.playbackDecision.mode) {
+            PlaybackMode.TRANSCODE -> ValidationProfile(
+                allowedVideoCodecs = setOf(android.media.MediaFormat.MIMETYPE_VIDEO_AVC),
+                allowedAudioCodecs = setOf(
+                    android.media.MediaFormat.MIMETYPE_AUDIO_AAC,
+                    "audio/mp4a-latm",
+                ),
+                requireAacAudio = true,
+                requireUniversalAvc = true,
+            )
+
+            PlaybackMode.REMUX,
+            PlaybackMode.TRANSMUX -> ValidationProfile(
+                allowedVideoCodecs = copyModeVideoCodecs,
+                allowedAudioCodecs = copyModeAudioCodecs,
+            )
+
+            PlaybackMode.DIRECT -> ValidationProfile(
+                allowedVideoCodecs = copyModeVideoCodecs,
+                allowedAudioCodecs = copyModeAudioCodecs,
+            )
         }
     }
 
@@ -1061,7 +1111,7 @@ class Media3FragmentedMp4CompatibilityWorker(
 
                 onUpdate(
                     CompatibilityWorkerUpdate(
-                        status = if (streamable && canStreamDuringPrepare) CompatibilityStatus.FINALIZING else CompatibilityStatus.PREPARING,
+                        status = if (streamable && canStreamDuringPrepare) CompatibilityStatus.PLAYABLE_NOW else CompatibilityStatus.PREPARING,
                         message = when {
                             streamable && item.playbackDecision.mode == PlaybackMode.REMUX ->
                                 "Finalizing the optimized browser stream."
