@@ -86,8 +86,15 @@ class QueuedCompatibilityPipeline(
     override suspend fun inspect(item: SharedItem, capabilities: ClientCapabilities?): CompatibilityJob {
         val cachedAsset = cache.lookup(item)
         val isCacheHealthy = cachedAsset != null && cachedAsset.isComplete
-        val effectiveDecision = item.playbackDecision
         val existing = currentJob(item.id)
+        val effectiveDecision = when {
+            existing != null && (
+                existing.status != CompatibilityStatus.IDLE ||
+                    existing.preparedAsset != null ||
+                    existing.isTerminalFailure
+                ) -> existing.decision
+            else -> item.playbackDecision
+        }
 
         if (existing != null) {
             val refreshed = when {
@@ -346,6 +353,7 @@ class QueuedCompatibilityPipeline(
                 startOffsetMs = request.startOffsetMs,
                 onUpdate = { update ->
                     upsert(currentJob(item.id)?.copy(
+                        decision = update.decision ?: currentJob(item.id)?.decision ?: item.playbackDecision,
                         status = update.status ?: CompatibilityStatus.PREPARING,
                         message = update.message ?: currentJob(item.id)?.message ?: item.playbackDecision.reason,
                         progressPercent = update.progressPercent,

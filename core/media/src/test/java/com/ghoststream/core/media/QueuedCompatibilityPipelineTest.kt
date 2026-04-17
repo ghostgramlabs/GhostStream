@@ -185,6 +185,98 @@ class QueuedCompatibilityPipelineTest {
         advanceUntilIdle()
     }
 
+    @Test
+    fun `worker decision updates replace stale queued decision`() = runTest {
+        val cache = FakePlaybackCache()
+        val testScope = CoroutineScope(coroutineContext)
+        val pipeline = QueuedCompatibilityPipeline(
+            cache = cache,
+            worker = object : CompatibilityWorker {
+                override suspend fun prepare(
+                    item: SharedItem,
+                    cache: PlaybackCache,
+                    stabilizedSource: StabilizedSourceInfo?,
+                    startOffsetMs: Long,
+                    onUpdate: (CompatibilityWorkerUpdate) -> Unit,
+                ): CompatibilityWorkerResult {
+                    onUpdate(
+                        CompatibilityWorkerUpdate(
+                            decision = item.playbackDecision.copy(
+                                mode = PlaybackMode.TRANSCODE,
+                                reason = "Falling back to transcode after remux failure",
+                            ),
+                            status = CompatibilityStatus.PREPARING,
+                            message = "Retrying with full compatibility conversion...",
+                        ),
+                    )
+                    return CompatibilityWorkerResult.Failure("Compatibility conversion failed.")
+                }
+            },
+            scope = testScope,
+        )
+        val item = transcodeItem(id = "video-5").copy(
+            playbackDecision = PlaybackDecision(
+                mode = PlaybackMode.TRANSMUX,
+                browserMimeType = "video/mp4",
+                compatibilityLabel = "Repackage for browser playback",
+                reason = "Container can be repackaged for this browser",
+            ),
+        )
+
+        pipeline.requestPreparation(item)
+        advanceUntilIdle()
+
+        val job = pipeline.currentJob(item.id) ?: error("Expected compatibility job")
+        assertEquals(PlaybackMode.TRANSCODE, job.decision.mode)
+        assertEquals(CompatibilityStatus.FAILED, job.status)
+    }
+
+    @Test
+    fun `inspect preserves active fallback decision instead of restoring original mode`() = runTest {
+        val cache = FakePlaybackCache()
+        val testScope = CoroutineScope(coroutineContext)
+        val pipeline = QueuedCompatibilityPipeline(
+            cache = cache,
+            worker = object : CompatibilityWorker {
+                override suspend fun prepare(
+                    item: SharedItem,
+                    cache: PlaybackCache,
+                    stabilizedSource: StabilizedSourceInfo?,
+                    startOffsetMs: Long,
+                    onUpdate: (CompatibilityWorkerUpdate) -> Unit,
+                ): CompatibilityWorkerResult {
+                    onUpdate(
+                        CompatibilityWorkerUpdate(
+                            decision = item.playbackDecision.copy(
+                                mode = PlaybackMode.TRANSCODE,
+                                reason = "Falling back to transcode after remux failure",
+                            ),
+                            status = CompatibilityStatus.PREPARING,
+                            message = "Retrying with full compatibility conversion...",
+                        ),
+                    )
+                    return CompatibilityWorkerResult.Failure("Compatibility conversion failed.")
+                }
+            },
+            scope = testScope,
+        )
+        val item = transcodeItem(id = "video-6").copy(
+            playbackDecision = PlaybackDecision(
+                mode = PlaybackMode.TRANSMUX,
+                browserMimeType = "video/mp4",
+                compatibilityLabel = "Repackage for browser playback",
+                reason = "Container can be repackaged for this browser",
+            ),
+        )
+
+        pipeline.requestPreparation(item)
+        advanceUntilIdle()
+
+        val inspected = pipeline.inspect(item)
+        assertEquals(PlaybackMode.TRANSCODE, inspected.decision.mode)
+        assertEquals(PlaybackMode.TRANSCODE, pipeline.currentJob(item.id)?.decision?.mode)
+    }
+
     private fun transcodeItem(id: String = "video-1"): SharedItem {
         return SharedItem(
             id = id,

@@ -1,5 +1,6 @@
 package com.ghoststream.core.media
 
+import com.ghoststream.core.model.PlaybackDecision
 import com.ghoststream.core.model.PlaybackMode
 import com.ghoststream.core.model.SharedItem
 import kotlinx.serialization.Serializable
@@ -27,6 +28,7 @@ sealed interface CompatibilityWorkerResult {
 }
 
 data class CompatibilityWorkerUpdate(
+    val decision: PlaybackDecision? = null,
     val status: CompatibilityStatus? = null,
     val message: String? = null,
     val progressPercent: Int? = null,
