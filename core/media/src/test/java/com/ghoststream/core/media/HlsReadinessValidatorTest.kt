@@ -2,9 +2,27 @@ package com.ghoststream.core.media
 
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class HlsReadinessValidatorTest {
+
+    @Test
+    fun `validateFragmentedMp4Playback accepts first committed fragment`() {
+        val ready = HlsReadinessValidator.validateFragmentedMp4Playback(
+            FragmentedMp4HlsIndex(
+                initSegmentLength = 1024,
+                segments = listOf(
+                    HlsMediaSegment(index = 0, offset = 1024, length = 4096, durationSeconds = 2.0),
+                ),
+                fileLength = 5120,
+                videoCodecString = null,
+            ),
+        )
+
+        assertTrue(ready.isReady)
+        assertEquals(1, ready.segmentCount)
+    }
 
     @Test
     fun `validate rejects incomplete fragmented output`() {

@@ -21,6 +21,41 @@ object HlsReadinessValidator {
     )
 
     /**
+     * Checks whether a growing fragmented MP4 is ready for direct browser playback.
+     *
+     * This is intentionally more permissive than HLS readiness: once the init segment and
+     * the first committed fragment are available, the browser can begin playback from the
+     * growing MP4 even while background finalization continues.
+     */
+    fun validateFragmentedMp4Playback(index: FragmentedMp4HlsIndex?): ReadinessResult {
+        if (index == null) {
+            return ReadinessResult(false, 0.0, 0, "No fragmented MP4 index available.")
+        }
+
+        val missingInitSegment = index.initSegmentLength <= 0L
+        val missingFirstSegment = index.segments.isEmpty()
+        val hasInvalidSegment = index.segments.firstOrNull()?.length?.let { it <= 0L } == true
+        val bufferedDuration = index.segments.firstOrNull()?.durationSeconds ?: 0.0
+
+        val diagnosticInfo = when {
+            missingInitSegment -> "Init segment is not locked yet."
+            missingFirstSegment -> "No committed fragmented MP4 segments are available yet."
+            hasInvalidSegment -> "The first committed fragmented MP4 segment is empty."
+            !index.diagnosticInfo.isNullOrBlank() -> index.diagnosticInfo
+            else -> null
+        }
+
+        val isReady = !missingInitSegment && !missingFirstSegment && !hasInvalidSegment
+
+        return ReadinessResult(
+            isReady = isReady,
+            bufferedDurationSeconds = bufferedDuration,
+            segmentCount = index.segments.size,
+            diagnosticInfo = if (!isReady) diagnosticInfo else null,
+        )
+    }
+
+    /**
      * Checks if the given HLS index meets the minimum readiness criteria.
      */
     fun validate(index: FragmentedMp4HlsIndex?): ReadinessResult {

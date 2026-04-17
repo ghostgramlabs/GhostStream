@@ -1072,9 +1072,8 @@ class Media3FragmentedMp4CompatibilityWorker(
                 
                 val currentSize = transform.outputFile.length()
                 
-                // Readiness Check: Instead of a coarse byte threshold or fixed segment count,
-                // we use the HlsReadinessValidator to verify that a minimum buffered duration (4-6s)
-                // exists before marking the stream as playable.
+                // Direct playback readiness is based on the growing fragmented MP4 itself.
+                // HLS remains optional and keeps its stricter buffered-duration threshold.
                 val hlsIndex = if (canStreamDuringPrepare) {
                     runCatching {
                         FragmentedMp4HlsIndexer.read(
@@ -1092,11 +1091,25 @@ class Media3FragmentedMp4CompatibilityWorker(
                     }
                 } else null
                 
-                // Readiness Check: Instead of a coarse byte threshold or fixed segment count,
-                // we use the HlsReadinessValidator to verify that a minimum buffered duration (4-6s)
-                // exists before marking the stream as playable.
-                val readiness = HlsReadinessValidator.validate(hlsIndex)
-                val streamable = readiness.isReady
+                val directReadiness = if (canStreamDuringPrepare) {
+                    HlsReadinessValidator.validateFragmentedMp4Playback(hlsIndex)
+                } else {
+                    HlsReadinessValidator.ReadinessResult(
+                        isReady = false,
+                        bufferedDurationSeconds = 0.0,
+                        segmentCount = 0,
+                    )
+                }
+                val hlsReadiness = if (canStreamDuringPrepare) {
+                    HlsReadinessValidator.validate(hlsIndex)
+                } else {
+                    HlsReadinessValidator.ReadinessResult(
+                        isReady = false,
+                        bufferedDurationSeconds = 0.0,
+                        segmentCount = 0,
+                    )
+                }
+                val streamable = directReadiness.isReady
 
                 if (canStreamDuringPrepare && hlsIndex != null) {
                     if (hlsIndex.initSegmentLength > 0L && hlsIndex.initSegmentLength != lastInitSegmentLength) {
@@ -1141,15 +1154,15 @@ class Media3FragmentedMp4CompatibilityWorker(
                     debugLogSink.log("CompatWorker", "streamable id=${item.id} ttfpf=${ttfpf}ms segments=${hlsIndex?.segments?.size}")
                     debugLogSink.log(
                         "CompatWorker",
-                        "streamability_check_pass id=${item.id} buffered=${"%.2f".format(java.util.Locale.US, readiness.bufferedDurationSeconds)}s segments=${readiness.segmentCount}",
+                        "streamability_check_pass id=${item.id} buffered=${"%.2f".format(java.util.Locale.US, directReadiness.bufferedDurationSeconds)}s segments=${directReadiness.segmentCount}",
                     )
                 }
                 
                 // Log indexer failures to internal trace if we are still not streamable
-                if (!streamable && readiness.diagnosticInfo != null && readiness.diagnosticInfo != lastDiagnosticLogged) {
-                    lastDiagnosticLogged = readiness.diagnosticInfo
-                    android.util.Log.w("GhostStream/Compat", "readiness_pending id=${item.id} reason=\"${readiness.diagnosticInfo}\"")
-                    debugLogSink.log("CompatWorker", "streamability_check_fail id=${item.id} reason=\"${readiness.diagnosticInfo}\" buffered=${"%.2f".format(java.util.Locale.US, readiness.bufferedDurationSeconds)}s segments=${readiness.segmentCount}")
+                if (!streamable && directReadiness.diagnosticInfo != null && directReadiness.diagnosticInfo != lastDiagnosticLogged) {
+                    lastDiagnosticLogged = directReadiness.diagnosticInfo
+                    android.util.Log.w("GhostStream/Compat", "readiness_pending id=${item.id} reason=\"${directReadiness.diagnosticInfo}\"")
+                    debugLogSink.log("CompatWorker", "streamability_check_fail id=${item.id} reason=\"${directReadiness.diagnosticInfo}\" buffered=${"%.2f".format(java.util.Locale.US, directReadiness.bufferedDurationSeconds)}s segments=${directReadiness.segmentCount}")
                 }
 
                 val incompleteAsset = if (canStreamDuringPrepare) {
@@ -1185,7 +1198,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                         },
                         progressPercent = progress,
                         preparedAsset = incompleteAsset,
-                        hlsReady = streamable && canStreamDuringPrepare,
+                        hlsReady = hlsReadiness.isReady && canStreamDuringPrepare,
                         directReady = streamable && canStreamDuringPrepare,
                         streamable = streamable && canStreamDuringPrepare,
                     ),
