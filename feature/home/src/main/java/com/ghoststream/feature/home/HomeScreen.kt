@@ -29,15 +29,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.AddBox
 import androidx.compose.material.icons.outlined.Collections
 import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.NetworkCheck
 import androidx.compose.material.icons.outlined.OpenInBrowser
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material.icons.outlined.VideoLibrary
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.AlertDialog
@@ -99,8 +96,6 @@ fun HomeScreen(
     onRefreshConnection: () -> Unit,
     onRefreshNearby: () -> Unit,
     onOpenNearbyDevice: (NearbyDevice) -> Unit,
-    onAddFiles: () -> Unit,
-    onAddFolder: () -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenHistory: () -> Unit,
@@ -127,15 +122,8 @@ fun HomeScreen(
                 sessionState = sessionState,
                 connectionDiagnostics = connectionDiagnostics,
                 isStartingShare = isStartingShare,
-                onStartSharing = onStartSharing,
-            )
-        }
-
-        item {
-            ActionShelf(
-                onAddFiles = onAddFiles,
-                onAddFolder = onAddFolder,
                 onOpenLibrary = onOpenLibrary,
+                onStartSharing = onStartSharing,
             )
         }
 
@@ -297,6 +285,7 @@ private fun SessionHeroCard(
     sessionState: SessionState,
     connectionDiagnostics: ConnectionDiagnostics,
     isStartingShare: Boolean,
+    onOpenLibrary: () -> Unit,
     onStartSharing: () -> Unit,
 ) {
     val canStartSession = sessionState.networkAvailability.isWifiOrHotspotReady
@@ -401,15 +390,17 @@ private fun SessionHeroCard(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    color = Color.Transparent,
-                    border = BorderStroke(1.dp, Color.LightGray.copy(alpha = 0.4f)),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.54f),
+                    border = BorderStroke(1.dp, ghostAccentBorder()),
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
+                        MinimalChip(label = stringResource(R.string.home_summary_current_share), showAccentDot = true)
+                        Spacer(modifier = Modifier.height(12.dp))
                         Text(
                             text = stringResource(R.string.home_title_start),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
@@ -422,40 +413,65 @@ private fun SessionHeroCard(
                 }
             }
 
-
             Spacer(modifier = Modifier.height(22.dp))
-            Button(
-                onClick = {
-                    if (sessionState.isSharing || canStartSession) {
-                        onStartSharing()
-                    } else {
-                        showNoNetworkDialog = true
-                    }
-                },
-                enabled = !isStartingShare,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(58.dp),
-                shape = RoundedCornerShape(18.dp),
-                colors = ghostPrimaryButtonColors(),
-            ) {
-                if (isStartingShare) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(22.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp,
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(stringResource(R.string.home_button_starting), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                } else {
-                    Icon(Icons.Outlined.PlayArrow, contentDescription = null)
-                    Spacer(modifier = Modifier.width(10.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(
+                    onClick = onOpenLibrary,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(58.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = ghostPrimaryButtonColors(),
+                ) {
                     Text(
-                        if (sessionState.isSharing) stringResource(R.string.home_button_open_session) else stringResource(R.string.home_button_start_session),
+                        text = if (libraryState.summary.totalItems > 0 || libraryState.folders.isNotEmpty()) {
+                            stringResource(R.string.home_button_add_more)
+                        } else {
+                            stringResource(R.string.home_button_add_media)
+                        },
                         style = MaterialTheme.typography.titleMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
+                }
+                OutlinedButton(
+                    onClick = {
+                        if (sessionState.isSharing || canStartSession) {
+                            onStartSharing()
+                        } else {
+                            showNoNetworkDialog = true
+                        }
+                    },
+                    enabled = !isStartingShare,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(58.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = ghostSecondaryButtonColors(),
+                ) {
+                    if (isStartingShare) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(22.dp),
+                            color = MaterialTheme.colorScheme.primary,
+                            strokeWidth = 2.dp,
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            stringResource(R.string.home_button_starting),
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    } else {
+                        Icon(Icons.Outlined.PlayArrow, contentDescription = null)
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            if (sessionState.isSharing) stringResource(R.string.home_button_open_session) else stringResource(R.string.home_button_start_session),
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
             }
             if (!sessionState.isSharing && !canStartSession) {
@@ -480,8 +496,12 @@ private fun SummaryStrip(libraryState: LibraryState) {
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        HeroStat(label = stringResource(R.string.library_section_files), value = libraryState.summary.totalItems.toString())
-        HeroStat(label = stringResource(R.string.library_info_items), value = (libraryState.summary.videos + libraryState.summary.photos + libraryState.summary.music).toString())
+        HeroStat(
+            label = stringResource(R.string.home_summary_current_share),
+            value = libraryState.summary.totalItems.toString(),
+            highlight = libraryState.summary.totalItems > 0 || libraryState.folders.isNotEmpty(),
+        )
+        HeroStat(label = stringResource(R.string.home_summary_media), value = (libraryState.summary.videos + libraryState.summary.photos + libraryState.summary.music).toString())
         HeroStat(label = stringResource(R.string.library_info_size), value = formatBytes(libraryState.summary.totalBytes))
     }
 }
@@ -577,114 +597,6 @@ private fun ConnectedDevicesCard(
                 }
             },
         )
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun ActionShelf(
-    onAddFiles: () -> Unit,
-    onAddFolder: () -> Unit,
-    onOpenLibrary: () -> Unit,
-) {
-    Card(
-        modifier = Modifier
-            .padding(horizontal = GhostSpacing.screenHorizontal)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-    ) {
-        Column(modifier = Modifier.padding(GhostSpacing.card)) {
-            Text(stringResource(R.string.home_action_add_to_share_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                stringResource(R.string.home_action_add_to_share_subtitle),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                softWrap = true,
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            BoxWithConstraints {
-                val tileWidth = (maxWidth - 12.dp) / 3
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        ActionTile(
-                            label = stringResource(R.string.home_action_files),
-                            detail = stringResource(R.string.home_action_files_desc),
-                            icon = Icons.Outlined.AddBox,
-                            onClick = onAddFiles,
-                            modifier = Modifier.width(tileWidth),
-                        )
-                        ActionTile(
-                            label = stringResource(R.string.home_action_folder),
-                            detail = stringResource(R.string.home_action_folder_desc),
-                            icon = Icons.Outlined.FolderOpen,
-                            onClick = onAddFolder,
-                            modifier = Modifier.width(tileWidth),
-                        )
-                        ActionTile(
-                            label = stringResource(R.string.home_action_library),
-                            detail = stringResource(R.string.home_action_library_desc),
-                            icon = Icons.Outlined.VideoLibrary,
-                            onClick = onOpenLibrary,
-                            modifier = Modifier.width(tileWidth),
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ActionTile(
-    label: String,
-    detail: String,
-    icon: ImageVector,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(targetValue = if (pressed) 0.97f else 1f, label = "actionTileScale")
-    val containerColor by animateColorAsState(
-        targetValue = if (pressed) ghostAccentSurface() else MaterialTheme.colorScheme.surfaceVariant,
-        label = "actionTileColor",
-    )
-    Card(
-        modifier = modifier
-            .heightIn(min = 124.dp)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .clickable(
-                interactionSource = interactionSource,
-                indication = LocalIndication.current,
-                onClick = onClick,
-            ),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-    ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp)) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .background(ghostAccentSurface(), RoundedCornerShape(12.dp))
-                    .border(BorderStroke(1.dp, ghostAccentBorder()), RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Spacer(modifier = Modifier.height(3.dp))
-            Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        }
     }
 }
 
@@ -1191,11 +1103,11 @@ private fun StatusChip(sessionState: SessionState) {
 }
 
 @Composable
-private fun HeroStat(label: String, value: String) {
+private fun HeroStat(label: String, value: String, highlight: Boolean = false) {
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        color = if (highlight) ghostAccentSurface() else MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(1.dp, if (highlight) ghostAccentBorder() else MaterialTheme.colorScheme.outline),
     ) {
         Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
             Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -1241,10 +1153,10 @@ private fun heroMessage(
 ): String {
     return when {
         sessionState.isSharing -> stringResource(R.string.home_body_live)
-        libraryState.summary.totalItems == 0 -> stringResource(R.string.network_setup_body)
+        libraryState.summary.totalItems == 0 && libraryState.folders.isEmpty() -> stringResource(R.string.home_body_start)
         diagnostics.actionCount > 0 -> stringResource(R.string.network_setup_body)
-        diagnostics.warningCount > 0 -> stringResource(R.string.home_chip_ready)
-        else -> stringResource(R.string.home_body_live)
+        diagnostics.warningCount > 0 -> stringResource(R.string.home_body_start_secondary)
+        else -> stringResource(R.string.home_body_start_secondary)
     }
 }
 

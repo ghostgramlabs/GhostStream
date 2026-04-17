@@ -158,6 +158,7 @@ input {
   padding: 14px 18px;
   border-radius: 20px;
   background: var(--surface);
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
 }
 
 .gs-logo {
@@ -197,13 +198,19 @@ input {
   padding: 8px 12px;
   border-radius: 999px;
   color: var(--text-secondary);
-  transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+  border: 1px solid transparent;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease, transform 140ms ease;
 }
 
 .gs-tab:hover,
 .gs-tab.on {
-  background: var(--card);
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface));
   color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--border));
+}
+
+.gs-tab:hover {
+  transform: translateY(-1px);
 }
 
 .gs-status-pill {
@@ -234,6 +241,38 @@ input {
   gap: 12px;
   flex-wrap: wrap;
   font-size: 0.92rem;
+}
+
+.gs-media-subnav {
+  margin-top: 14px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gs-media-tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.gs-media-tab:hover,
+.gs-media-tab.on {
+  background: var(--card);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  color: var(--text);
+}
+
+.gs-media-tab:hover {
+  transform: translateY(-1px);
 }
 
 .gs-status-link {
@@ -365,10 +404,13 @@ input {
   margin-top: 20px;
   padding: 28px;
   border-radius: 24px;
-  background: var(--surface);
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 18%, transparent), transparent 38%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface) 92%, var(--accent) 8%), var(--surface));
   display: grid;
   grid-template-columns: 1.25fr 0.8fr;
   gap: 20px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
 }
 
 .gs-eyebrow {
@@ -397,7 +439,7 @@ input {
   display: flex;
   gap: 12px;
   align-items: flex-end;
-  justify-content: flex-end;
+  justify-content: flex-start;
   flex-wrap: wrap;
 }
 
@@ -420,7 +462,7 @@ input {
   padding: 16px;
   border-radius: 18px;
   border: 1px solid var(--border);
-  background: var(--card);
+  background: color-mix(in srgb, var(--card) 80%, var(--surface));
 }
 
 .gs-hero-stat strong {
@@ -442,13 +484,15 @@ input {
   gap: 8px;
   padding: 20px 18px;
   border-radius: 20px;
-  background: var(--card);
-  transition: background 140ms ease, transform 140ms ease;
+  background: color-mix(in srgb, var(--card) 86%, var(--surface));
+  transition: background 140ms ease, transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
 }
 
 .gs-category-card:hover {
   transform: translateY(-2px);
   background: var(--surface);
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
 }
 
 .gs-category-kicker {
@@ -476,6 +520,7 @@ input {
   padding: 20px;
   border-radius: 24px;
   background: var(--surface);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.05);
 }
 
 .gs-toolbar {
@@ -538,12 +583,14 @@ input {
   overflow: hidden;
   border-radius: 20px;
   background: var(--surface);
-  transition: background 140ms ease, transform 140ms ease;
+  transition: background 140ms ease, transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
 }
 
 .gs-card:hover {
   transform: translateY(-2px);
-  background: var(--card);
+  background: color-mix(in srgb, var(--card) 88%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  box-shadow: 0 18px 34px rgba(15, 23, 42, 0.08);
 }
 
 .gs-card-selectable {
@@ -605,6 +652,7 @@ input {
   color: var(--text);
   font-weight: 600;
   line-height: 1.35;
+  font-size: 1rem;
 }
 
 .gs-card-topline {
@@ -642,10 +690,37 @@ input {
   font-size: 0.86rem;
 }
 
+.gs-card-progress {
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.gs-card-progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.gs-card-progress-head strong {
+  font-size: 0.84rem;
+  color: var(--text);
+}
+
 .gs-card-actions {
   margin-top: 6px;
   padding-top: 12px;
   border-top: 1px solid var(--border);
+}
+
+.gs-empty {
+  padding: 36px 24px;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card) 82%, var(--surface));
+  color: var(--text-secondary);
+  text-align: center;
 }
 
 .gs-badges {
@@ -954,25 +1029,49 @@ iframe.gs-preview {
 /* Drop Zone & Upload UI */
 .gs-drop-indicator {
   position: fixed;
-  inset: 0;
+  left: 50%;
+  right: auto;
+  bottom: 18px;
+  top: auto;
+  transform: translateX(-50%) translateY(110%);
   z-index: 100;
-  display: none;
-  flex-direction: column;
+  display: flex;
+  width: min(560px, calc(100vw - 24px));
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: 16px;
-  border: 6px solid var(--accent);
-  background: rgba(125, 211, 252, 0.1);
+  justify-content: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--border));
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--surface) 92%, var(--accent) 8%);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   color: var(--text);
   pointer-events: none;
-  animation: gs-fade-in 140ms ease;
-  text-align: center;
+  opacity: 0;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.18);
+  transition: transform 180ms ease, opacity 180ms ease;
+  text-align: left;
 }
 
 body.gs-dragging .gs-drop-indicator {
-  display: flex;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.gs-drop-indicator h2,
+.gs-drop-indicator p {
+  margin: 0;
+}
+
+.gs-drop-indicator h2 {
+  font-size: 1rem;
+}
+
+.gs-drop-indicator p {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
 }
 
 .gs-upload-zone {

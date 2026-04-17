@@ -290,6 +290,10 @@ function isMobileBrowser() {
   return Boolean(mobileUa || (coarsePointer && narrowViewport));
 }
 
+function isMediaPath(path) {
+  return path === "/" || path === "/videos" || path === "/photos" || path === "/music";
+}
+
 // ---------------------------------------------------------------------------
 // Device / capability detection
 // ---------------------------------------------------------------------------
@@ -469,9 +473,9 @@ function shouldRenderDetailProgress(item) {
 
 function compatibilityProgressLabel(item) {
   if (item.playbackMode === "TRANSCODE") {
-    return "Converting video...";
+    return gsStr("web_player_progress_converting", "Converting for this device");
   }
-  return "Preparing video...";
+  return gsStr("web_player_progress_preparing", "Preparing video");
 }
 
 function renderCompatibilityProgress(item) {
@@ -774,12 +778,32 @@ function isPreparationActiveStatus(status) {
 }
 
 function compatibilityStatusText(item, streamLive = item.streamReady) {
-  if (item.compatibilityStatus === "FAILED" || item.compatibilityStatus === "STALLED") return "Failed";
-  if (item.compatibilityComplete || item.compatibilityStatus === "READY") return "Ready";
-  if (isPreparationActiveStatus(item.compatibilityStatus)) return "Preparing...";
-  if (streamLive) return "Playing";
-  if (item.playbackMode !== "DIRECT") return "Needs preparation";
-  return "Ready";
+  if (item.compatibilityStatus === "FAILED" || item.compatibilityStatus === "STALLED") return gsStr("web_player_status_failed", "Playback unavailable");
+  if (item.compatibilityComplete || item.compatibilityStatus === "READY") return gsStr("web_player_status_ready", "Ready");
+  if (isPreparationActiveStatus(item.compatibilityStatus)) return gsStr("web_player_status_opening", "Preparing");
+  if (streamLive) return gsStr("web_player_status_playing", "Playing");
+  if (item.playbackMode !== "DIRECT") return gsStr("web_prepare_video", "Prepare video");
+  return gsStr("web_player_status_ready", "Ready");
+}
+
+function shouldRenderCardProgress(item) {
+  return item.category === "video" && shouldRenderDetailProgress(item);
+}
+
+function renderCardProgress(item) {
+  if (!shouldRenderCardProgress(item)) return "";
+  const progress = compatProgressValue(item);
+  return `
+    <div class="gs-card-progress">
+      <div class="gs-card-progress-head">
+        <span class="gs-meta">${compatibilityProgressLabel(item)}</span>
+        <strong>${gsStr("web_progress_percent", "%1$d%% complete", progress)}</strong>
+      </div>
+      <div class="gs-compat-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}">
+        <span class="gs-compat-progress-fill" style="width:${progress}%"></span>
+      </div>
+    </div>
+  `;
 }
 
 async function api(url, options = {}) {
@@ -813,6 +837,17 @@ function shell(content, options = {}) {
   }
   const bootstrap = state.bootstrap;
   const path = location.pathname;
+  const mediaActive = isMediaPath(path);
+  const mediaSubnav = mediaActive
+    ? `
+      <div class="gs-media-subnav">
+        <a class="gs-media-tab${path === "/" ? " on" : ""}" data-link href="/">${gsStr("web_nav_media", "Media")}</a>
+        <a class="gs-media-tab${path === "/videos" ? " on" : ""}" data-link href="/videos">${gsStr("web_cat_videos", "Videos")}</a>
+        <a class="gs-media-tab${path === "/photos" ? " on" : ""}" data-link href="/photos">${gsStr("web_cat_photos", "Photos")}</a>
+        <a class="gs-media-tab${path === "/music" ? " on" : ""}" data-link href="/music">${gsStr("web_cat_music", "Music")}</a>
+      </div>
+    `
+    : "";
   const securityLabel = bootstrap?.authEnabled ? gsStr("web_security_pin", "PIN protected") : gsStr("web_security_open", "Open on local network");
   const sessionLink = bootstrap?.sessionUrl
     ? `
@@ -831,12 +866,9 @@ function shell(content, options = {}) {
           <span>${esc(bootstrap?.title || sessionTitle)}</span>
         </a>
         <div class="gs-nav-links">
-          <a class="gs-tab${path === "/" ? " on" : ""}" data-link href="/">${gsStr("web_nav_home", "Home")}</a>
-          <a class="gs-tab${path === "/videos" ? " on" : ""}" data-link href="/videos">${gsStr("web_cat_videos", "Videos")}</a>
-          <a class="gs-tab${path === "/photos" ? " on" : ""}" data-link href="/photos">${gsStr("web_cat_photos", "Photos")}</a>
-          <a class="gs-tab${path === "/music" ? " on" : ""}" data-link href="/music">${gsStr("web_cat_music", "Music")}</a>
-          <a class="gs-tab${path === "/files" ? " on" : ""}" data-link href="/files">${gsStr("web_cat_files", "Files")}</a>
-          <a class="gs-tab${path === "/upload" ? " on" : ""}" data-link href="/upload">${gsStr("web_nav_drop_zone", "Drop Zone")}</a>
+          <a class="gs-tab${mediaActive ? " on" : ""}" data-link href="/">${gsStr("web_nav_media", "Media")}</a>
+          <a class="gs-tab${path === "/files" ? " on" : ""}" data-link href="/files">${gsStr("web_nav_files", "Files")}</a>
+          <a class="gs-tab${path === "/upload" ? " on" : ""}" data-link href="/upload">${gsStr("web_nav_send", "Send")}</a>
         </div>
         <div class="gs-nav-meta">
           <span class="gs-status-pill">${securityLabel}</span>
@@ -854,6 +886,7 @@ function shell(content, options = {}) {
         </div>
         ${sessionLink}
       </div>
+      ${mediaSubnav}
       <main class="gs-main">${content}</main>
       <div class="gs-now${state.nowPlaying ? " is-visible" : ""}" id="nowPlayingBar"></div>
       
@@ -861,22 +894,22 @@ function shell(content, options = {}) {
         <div class="gs-drop-indicator-icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         </div>
-        <h2>${gsStr("web_upload_prompt_title", "Drop files to upload")}</h2>
-        <p>${gsStr("web_upload_subtitle", "Upload files to the host device.")}</p>
+        <h2>${gsStr("web_upload_prompt_title", "Drop media here or choose files")}</h2>
+        <p>${gsStr("web_send_files_to_device", "Send files to this device")}</p>
       </div>
 
       <div class="gs-upload-overlay" id="uploadOverlay">
         <div class="gs-upload-card">
           <div class="gs-upload-header">
             <div class="gs-logo-mark"></div>
-            <h3 class="gs-upload-title" id="uploadTitle">Preparing transfer</h3>
+            <h3 class="gs-upload-title" id="uploadTitle">${gsStr("web_upload_preparing_transfer", "Preparing transfer")}</h3>
           </div>
           <div class="gs-upload-progress-container">
             <div class="gs-upload-progress-fill" id="uploadProgress"></div>
           </div>
-          <div class="gs-upload-status" id="uploadStatus">Connecting...</div>
+          <div class="gs-upload-status" id="uploadStatus">${gsStr("web_upload_connecting", "Connecting...")}</div>
           <div class="gs-upload-actions" id="uploadActions">
-            <button class="gs-btn gs-btn-sm" id="cancelUploadBtn">Cancel</button>
+            <button class="gs-btn gs-btn-sm" id="cancelUploadBtn">${gsStr("web_cancel", "Cancel")}</button>
           </div>
         </div>
       </div>
@@ -891,21 +924,21 @@ function shell(content, options = {}) {
 
 function renderHome() {
   const bootstrap = state.bootstrap;
-  const allowDownloads = !bootstrap?.preventDownload;
   const categories = [
     { key: "videos", label: gsStr("web_cat_videos", "Videos"), count: bootstrap.categories.videos, href: "/videos" },
     { key: "photos", label: gsStr("web_cat_photos", "Photos"), count: bootstrap.categories.photos, href: "/photos" },
     { key: "music", label: gsStr("web_cat_music", "Music"), count: bootstrap.categories.music, href: "/music" },
-    { key: "files", label: gsStr("web_cat_files", "Files"), count: bootstrap.categories.files, href: "/files" },
   ];
   const total = categories.reduce((sum, category) => sum + category.count, 0);
 
   shell(`
     <section class="gs-hero">
       <div class="gs-hero-copy">
-        <span class="gs-eyebrow">${gsStr("web_hero_eyebrow", "Private receiver view")}</span>
-        <h1>${gsStr("web_hero_title", "Stream & share files offline")}</h1>
-        <p>${esc(sessionSubtitle)}. ${gsStr("web_hero_desc1", "Browse, play, preview")}${allowDownloads ? gsStr("web_hero_desc2", ", or download") : ""} ${total}${gsStr("web_hero_desc3", " shared items on the same local network.")}</p>
+        <span class="gs-eyebrow">${gsStr("web_hero_eyebrow", "DirectServe session")}</span>
+        <h1>${gsStr("web_hero_title", "Media")}</h1>
+        <p>${gsStr("web_hero_desc1", "Watch videos, open photos, and play music from this share.")}
+        ${gsStr("web_hero_desc2", "Files and sending stay one tap away.")}
+        ${gsStr("web_hero_desc3", "Everything stays on the same local network.")}</p>
       </div>
       <div class="gs-hero-side">
         <div class="gs-hero-summary">
@@ -921,8 +954,8 @@ function renderHome() {
           </div>
         </div>
         <div class="gs-hero-actions">
-          <a class="gs-btn gs-btn-accent" data-link href="/videos">${gsStr("web_btn_videos", "Browse videos")}</a>
-          ${allowDownloads ? `<button class="gs-btn gs-btn-download" id="downloadAllBtn">${gsStr("web_btn_download_all_files", "Download all files")}</button>` : ""}
+          <a class="gs-btn gs-btn-accent" data-link href="/files">${gsStr("web_nav_files", "Files")}</a>
+          <a class="gs-btn" data-link href="/upload">${gsStr("web_nav_send", "Send")}</a>
         </div>
       </div>
     </section>
@@ -932,7 +965,7 @@ function renderHome() {
         <a class="gs-category-card" data-link href="${category.href}">
           <span class="gs-category-kicker">${category.label}</span>
           <strong>${category.count}</strong>
-          <span class="gs-category-meta">Open ${category.label.toLowerCase()}</span>
+          <span class="gs-category-meta">${gsStr("web_media_open_category", "Open %1$s", category.label)}</span>
         </a>
       `).join("")}
     </section>
@@ -945,13 +978,8 @@ function renderHome() {
         </div>
         <div class="gs-grid">${bootstrap.recent.map((item) => card(item)).join("")}</div>
       </section>
-    ` : ""}
+    ` : `<section class="gs-section"><div class="gs-empty">${gsStr("web_media_empty", "No media is shared right now.")}</div></section>`}
   `);
-
-  document.getElementById("downloadAllBtn")?.addEventListener("click", async () => {
-    const all = await api("/api/items?category=all");
-    downloadItems(all);
-  });
 }
 
 async function renderLibrary(category, title) {
@@ -1945,22 +1973,22 @@ function card(item, selectable = false) {
   const action = item.category === "video"
     ? (() => {
         if (item.playbackMode === "DIRECT" || item.compatibilityStatus === "READY") {
-          return `<a class="${actionBtnClass}" data-link href="/player/video/${item.id}">Play</a>`;
+          return `<a class="${actionBtnClass}" data-link href="/player/video/${item.id}">${gsStr("common_play", "Play")}</a>`;
         }
         if (item.compatibilityStatus === "FAILED" || item.compatibilityStatus === "STALLED") {
-          return `<a class="${actionBtnClass}" data-link href="/player/video/${item.id}">Retry</a>`;
+          return `<a class="${actionBtnClass}" data-link href="/player/video/${item.id}">${gsStr("web_player_try_again", "Retry")}</a>`;
         }
         if (isPreparationActiveStatus(item.compatibilityStatus)) {
-          return `<span class="${actionBtnClass}" aria-disabled="true">Preparing...</span>`;
+          return `<span class="${actionBtnClass}" aria-disabled="true">${gsStr("web_player_status_opening", "Preparing")}</span>`;
         }
-        return `<a class="${actionBtnClass}" data-link href="/player/video/${item.id}">Prepare for browser</a>`;
+        return `<a class="${actionBtnClass}" data-link href="/player/video/${item.id}">${gsStr("web_prepare_video", "Prepare video")}</a>`;
       })()
     : item.category === "photo"
       ? `<a class="${actionBtnClass}" data-link href="/photo/${item.id}">${gsStr("web_photo_view", "View")}</a>`
       : item.category === "music"
-        ? `<button class="${actionBtnClass} music-play-btn" data-audio-item-id="${item.id}" data-title="${esc(item.title)}">Play</button>`
+        ? `<button class="${actionBtnClass} music-play-btn" data-audio-item-id="${item.id}" data-title="${esc(item.title)}">${gsStr("common_play", "Play")}</button>`
         : item.title.toLowerCase().endsWith(".pdf")
-          ? `<a class="${actionBtnClass}" data-link href="/photo/${item.id}">Preview</a>`
+          ? `<a class="${actionBtnClass}" data-link href="/photo/${item.id}">${gsStr("web_photo_view", "View")}</a>`
           : "";
   const showSlowStartHint = item.category === "video" && item.playbackMode !== "DIRECT";
 
@@ -1977,6 +2005,7 @@ function card(item, selectable = false) {
         <div class="gs-card-title">${esc(item.title)}</div>
         <div class="gs-meta">${fmtBytes(item.sizeBytes)}${item.durationMs ? ` | ${fmtDur(item.durationMs)}` : ""}</div>
         ${showSlowStartHint ? `<div class="gs-card-caption">${gsStr("web_player_slow_start_hint")}</div>` : ""}
+        ${renderCardProgress(item)}
         ${item.category === "music" ? `
           <div class="gs-music-row">
             <audio class="gs-audio-player" preload="none" src="${item.streamUrl}">
@@ -2403,7 +2432,7 @@ function titleForPath(path) {
     case "/photos": return gsStr("web_cat_photos", "Photos");
     case "/music": return gsStr("web_cat_music", "Music");
     case "/files": return gsStr("web_cat_files", "Files");
-    default: return gsStr("library_title", "Library");
+    default: return gsStr("web_nav_media", "Media");
   }
 }
 

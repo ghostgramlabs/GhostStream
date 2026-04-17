@@ -61,7 +61,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -95,12 +94,12 @@ fun SharedLibraryScreen(
     onOpenBatchSelect: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val context = LocalContext.current
     var query by rememberSaveable { mutableStateOf("") }
     var selectedCategory by rememberSaveable { mutableStateOf("all") }
     var sortOption by rememberSaveable { mutableStateOf("newest") }
     var sortMenuExpanded by remember { mutableStateOf(false) }
     var showClearAllDialog by rememberSaveable { mutableStateOf(false) }
+    var addMediaExpanded by rememberSaveable { mutableStateOf(false) }
 
     val selectedItemIds = remember { mutableStateListOf<String>() }
     val hasLibraryContent = libraryState.items.isNotEmpty() || libraryState.folders.isNotEmpty()
@@ -175,6 +174,8 @@ fun SharedLibraryScreen(
                 hasNonDirectVideo = libraryState.items.any {
                     it.category == MediaCategory.VIDEO && it.playbackDecision.mode != PlaybackMode.DIRECT
                 },
+                addMediaExpanded = addMediaExpanded,
+                onToggleAddMedia = { addMediaExpanded = !addMediaExpanded },
                 onClearAll = { showClearAllDialog = true },
                 onOpenAddFiles = onOpenAddFiles,
                 onOpenAddFolder = onOpenAddFolder,
@@ -324,7 +325,7 @@ private fun LibraryHeader(
             .padding(horizontal = GhostSpacing.screenHorizontal)
             .fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f)),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
@@ -452,6 +453,8 @@ private fun LibraryControlsCard(
     onSortSelected: (String) -> Unit,
     hasLibraryContent: Boolean,
     hasNonDirectVideo: Boolean,
+    addMediaExpanded: Boolean,
+    onToggleAddMedia: () -> Unit,
     onClearAll: () -> Unit,
     onOpenAddFiles: () -> Unit,
     onOpenAddFolder: () -> Unit,
@@ -472,8 +475,8 @@ private fun LibraryControlsCard(
         ) {
             Surface(
                 shape = RoundedCornerShape(18.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                color = libraryAccentSurface(),
+                border = BorderStroke(1.dp, libraryAccentBorder()),
             ) {
                 Column(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
@@ -531,28 +534,49 @@ private fun LibraryControlsCard(
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 SectionHeader(title = stringResource(R.string.library_add_title), subtitle = stringResource(R.string.library_add_body))
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                Button(
+                    onClick = onToggleAddMedia,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = libraryPrimaryButtonColors(),
                 ) {
-                    OutlinedButton(
-                        onClick = onOpenAddFiles,
-                        modifier = Modifier.heightIn(min = 48.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = librarySecondaryButtonColors(),
-                    ) { Text(stringResource(R.string.library_add_files)) }
-                    OutlinedButton(
-                        onClick = onOpenAddFolder,
-                        modifier = Modifier.heightIn(min = 48.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = librarySecondaryButtonColors(),
-                    ) { Text(stringResource(R.string.library_add_whole_folder)) }
-                    OutlinedButton(
-                        onClick = onOpenBatchSelect,
-                        modifier = Modifier.heightIn(min = 48.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = librarySecondaryButtonColors(),
-                    ) { Text(stringResource(R.string.library_add_from_suggestions)) }
+                    Text(
+                        stringResource(
+                            if (hasLibraryContent) R.string.home_button_add_more else R.string.home_button_add_media
+                        )
+                    )
+                }
+                if (addMediaExpanded) {
+                    Surface(
+                        shape = RoundedCornerShape(18.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.54f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    ) {
+                        FlowRow(
+                            modifier = Modifier.padding(12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            OutlinedButton(
+                                onClick = onOpenBatchSelect,
+                                modifier = Modifier.heightIn(min = 48.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = librarySecondaryButtonColors(),
+                            ) { Text(stringResource(R.string.library_add_from_suggestions)) }
+                            OutlinedButton(
+                                onClick = onOpenAddFiles,
+                                modifier = Modifier.heightIn(min = 48.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = librarySecondaryButtonColors(),
+                            ) { Text(stringResource(R.string.library_add_files)) }
+                            OutlinedButton(
+                                onClick = onOpenAddFolder,
+                                modifier = Modifier.heightIn(min = 48.dp),
+                                shape = RoundedCornerShape(16.dp),
+                                colors = librarySecondaryButtonColors(),
+                            ) { Text(stringResource(R.string.library_add_whole_folder)) }
+                        }
+                    }
                 }
             }
 
