@@ -709,15 +709,15 @@ function shouldStartCompatibilityPlayback(item, job = null) {
     hlsUrl: job?.hlsUrl || item.hlsUrl,
     streamReady: Boolean(job?.ready ?? item.streamReady),
   };
-  if (effectiveItem.effectivePlaybackMode === "PREPARED_MP4" || effectiveItem.effectivePlaybackMode === "LIVE_HLS") {
-    return true;
-  }
-  if (job?.preparedMp4Url || shouldUseDirectCompatMp4(effectiveItem)) return true;
-  if (effectiveStatus === "PLAYABLE_NOW" && (effectiveItem.preparedMp4Url || effectiveItem.hlsUrl || effectiveItem.streamReady)) {
-    return true;
-  }
-  if (effectiveItem.compatibilityComplete || effectiveStatus === "READY") return true;
-  if (shouldUseNativeHlsPlayback(effectiveItem) || shouldUseManagedHlsPlayback(effectiveItem)) return true;
+  const hasPreparedSource = Boolean(job?.preparedMp4Url || effectiveItem.preparedMp4Url);
+  const hasHlsSource = Boolean(effectiveItem.hlsUrl) && (
+    shouldUseNativeHlsPlayback(effectiveItem) ||
+    shouldUseManagedHlsPlayback(effectiveItem)
+  );
+  if (hasPreparedSource || shouldUseDirectCompatMp4(effectiveItem)) return true;
+  if (hasHlsSource) return true;
+  if (effectiveStatus === "PLAYABLE_NOW" && (hasPreparedSource || hasHlsSource)) return true;
+  if ((effectiveItem.compatibilityComplete || effectiveStatus === "READY") && hasPreparedSource) return true;
   return false;
 }
 

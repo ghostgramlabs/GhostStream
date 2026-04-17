@@ -165,9 +165,15 @@ class QueuedCompatibilityPipeline(
     ): CompatibilityJob {
         // HARD RULE: Only explicit user actions trigger this path.
         val current = currentJob(item.id) ?: inspect(item, capabilities)
+        fun modeRank(mode: PlaybackMode): Int = when (mode) {
+            PlaybackMode.DIRECT -> 0
+            PlaybackMode.REMUX -> 1
+            PlaybackMode.TRANSMUX -> 2
+            PlaybackMode.TRANSCODE -> 3
+        }
         val forcedCompatibilityOverride = priority != JobPriority.LOW &&
-            current.decision.mode == PlaybackMode.DIRECT &&
-            item.playbackDecision.mode != PlaybackMode.DIRECT
+            item.playbackDecision.mode != PlaybackMode.DIRECT &&
+            modeRank(item.playbackDecision.mode) > modeRank(current.decision.mode)
         val reconciledCurrent = if (forcedCompatibilityOverride) {
             upsert(
                 current.copy(

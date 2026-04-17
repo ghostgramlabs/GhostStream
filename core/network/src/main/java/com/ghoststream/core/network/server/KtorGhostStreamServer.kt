@@ -102,6 +102,8 @@ class KtorGhostStreamServer(
     private val capabilityCache = java.util.concurrent.ConcurrentHashMap<String, ClientCapabilities>()
     /** Cache of playback decisions by item + client so passive polling does not re-decide repeatedly. */
     private val decisionCache = java.util.concurrent.ConcurrentHashMap<String, PlaybackDecision>()
+    /** Per-client playback overrides used to avoid repeating known-bad browser choices within the same session. */
+    private val playbackOverrideCache = java.util.concurrent.ConcurrentHashMap<String, PlaybackMode>()
     private val thumbnailPlaceholderBytes by lazy { buildThumbnailPlaceholderBytes() }
 
     override suspend fun start(port: Int): ServerBinding {
@@ -153,6 +155,7 @@ class KtorGhostStreamServer(
         engine?.stop(gracePeriodMillis = 500, timeoutMillis = 2_000)
         engine = null
         running.set(false)
+        playbackOverrideCache.clear()
         debugLogSink.log("LocalServer", "engine stopped")
     }
 
@@ -495,15 +498,23 @@ class KtorGhostStreamServer(
                     call.respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_file_unavailable)))
                     return@post
                 }
-                
+                val host = call.request.origin.remoteHost
+                val currentMode = compatibilityPipeline.currentJob(item.id)?.decision?.mode
+                    ?: applyPlaybackOverride(host, item).playbackDecision.mode
+                rememberPlaybackOverride(
+                    host = host,
+                    item = item,
+                    mode = nextBrowserFallbackMode(currentMode),
+                    reason = "manual_retry",
+                )
                 compatibilityPipeline.invalidate(item.id)
                 val job = compatibilitySnapshotFor(
-                    host = call.request.origin.remoteHost,
+                    host = host,
                     item = item,
                     triggerPreparation = true,
                     priority = JobPriority.HIGH,
                 )
-                
+
                 call.respond(
                     CompatibilityStatusPayload.from(
                         job = job,
@@ -531,24 +542,24 @@ class KtorGhostStreamServer(
                     call.respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_file_unavailable)))
                     return@post
                 }
+                val host = call.request.origin.remoteHost
                 // If the browser reports that DIRECT play failed (force=true param),
                 // escalate the file to REMUX so it gets a prepared compatible asset.
                 val forceCompat = call.request.queryParameters["force"] == "true"
-                val effectiveItem = if (forceCompat && item.playbackDecision.mode == PlaybackMode.DIRECT) {
+                if (forceCompat) {
                     debugLogSink.log("WebCompat", "direct_play_escalation id=${item.id} name=${item.displayName} â€” browser reported DIRECT failure, escalating to REMUX")
-                    item.copy(
-                        playbackDecision = item.playbackDecision.copy(
-                            mode = PlaybackMode.REMUX,
-                            reason = "Browser rejected direct playback; preparing compatible version",
-                            compatibilityLabel = "Preparing compatible version",
-                        ),
+                    val currentMode = compatibilityPipeline.currentJob(item.id)?.decision?.mode
+                        ?: applyPlaybackOverride(host, item).playbackDecision.mode
+                    rememberPlaybackOverride(
+                        host = host,
+                        item = item,
+                        mode = nextBrowserFallbackMode(currentMode),
+                        reason = "browser_decode_failed",
                     )
-                } else {
-                    item
                 }
-                val job = compatibilitySnapshotFor(call.request.origin.remoteHost, effectiveItem, triggerPreparation = true, priority = JobPriority.HIGH)
+                val job = compatibilitySnapshotFor(host, item, triggerPreparation = true, priority = JobPriority.HIGH)
                 val allowInProgressHls = supportsInProgressHls(
-                    host = call.request.origin.remoteHost,
+                    host = host,
                     userAgent = call.request.header(HttpHeaders.UserAgent),
                 )
                 val ready = compatibilityStreamReady(job, allowInProgressHls = allowInProgressHls)
@@ -645,16 +656,21 @@ class KtorGhostStreamServer(
                     call.respond(HttpStatusCode.NotFound)
                     return@post
                 }
-                
+                val host = call.request.origin.remoteHost
                 debugLogSink.log("WebCompat/Error", "Client reported playback failure for id=${item.id} name=${item.displayName}")
-                
-                // Invalidate the current asset. This will clear the cache and reset the job.
+                val currentMode = compatibilityPipeline.currentJob(item.id)?.decision?.mode
+                    ?: applyPlaybackOverride(host, item).playbackDecision.mode
+                rememberPlaybackOverride(
+                    host = host,
+                    item = item,
+                    mode = nextBrowserFallbackMode(currentMode),
+                    reason = "client_reported_failure",
+                )
                 compatibilityPipeline.invalidate(item.id)
-                
-                // Re-inspect to trigger a fresh decision. 
-                // The decision engine will see the source again and the next check will
-                // start a new prep job if needed.
-                compatibilityPipeline.inspect(item)
+
+                // Re-inspect using the updated per-host override so the next explicit play/retry
+                // does not fall back to the browser choice that already failed in this session.
+                compatibilitySnapshotFor(host = host, item = item, triggerPreparation = false)
                 
                 call.respond(HttpStatusCode.NoContent)
             }
@@ -1328,7 +1344,10 @@ class KtorGhostStreamServer(
                 }
             }
         }
-        val effectiveItem = if (effectiveDecision == inspectedItem.playbackDecision) inspectedItem else inspectedItem.copy(playbackDecision = effectiveDecision)
+        val effectiveItem = applyPlaybackOverride(
+            host = host,
+            item = if (effectiveDecision == inspectedItem.playbackDecision) inspectedItem else inspectedItem.copy(playbackDecision = effectiveDecision),
+        )
         return if (triggerPreparation && effectiveItem.playbackDecision.mode != PlaybackMode.DIRECT) {
             compatibilityPipeline.requestPreparation(effectiveItem, priority, caps)
         } else {
@@ -1694,6 +1713,62 @@ class KtorGhostStreamServer(
         if (job.status == CompatibilityStatus.READY || job.preparedAsset?.isComplete == true || job.directReady) return null
         if (job.preparedAsset?.isFragmentedMp4 != true || !job.hlsReady || !job.streamable) return null
         return "/hls/${job.itemId}/master.m3u8"
+    }
+
+    private fun playbackOverrideKey(host: String, itemId: String): String = "$host|$itemId"
+
+    private fun playbackModeRank(mode: PlaybackMode): Int = when (mode) {
+        PlaybackMode.DIRECT -> 0
+        PlaybackMode.REMUX -> 1
+        PlaybackMode.TRANSMUX -> 2
+        PlaybackMode.TRANSCODE -> 3
+    }
+
+    private fun nextBrowserFallbackMode(mode: PlaybackMode): PlaybackMode = when (mode) {
+        PlaybackMode.DIRECT -> PlaybackMode.REMUX
+        PlaybackMode.REMUX,
+        PlaybackMode.TRANSMUX,
+        PlaybackMode.TRANSCODE -> PlaybackMode.TRANSCODE
+    }
+
+    private fun rememberPlaybackOverride(
+        host: String,
+        item: SharedItem,
+        mode: PlaybackMode,
+        reason: String,
+    ) {
+        val key = playbackOverrideKey(host, item.id)
+        val currentMode = playbackOverrideCache[key] ?: item.playbackDecision.mode
+        if (playbackModeRank(mode) <= playbackModeRank(currentMode)) return
+        playbackOverrideCache[key] = mode
+        debugLogSink.log(
+            "WebCompat",
+            "playback_override id=${item.id} host=$host from=$currentMode to=$mode reason=$reason",
+        )
+    }
+
+    private fun applyPlaybackOverride(host: String, item: SharedItem): SharedItem {
+        val overrideMode = playbackOverrideCache[playbackOverrideKey(host, item.id)] ?: return item
+        if (playbackModeRank(overrideMode) <= playbackModeRank(item.playbackDecision.mode)) {
+            return item
+        }
+        val overrideReason = when (overrideMode) {
+            PlaybackMode.REMUX -> "Browser rejected direct playback; preparing compatible version"
+            PlaybackMode.TRANSCODE -> "Browser rejected earlier playback attempts; transcoding for compatibility"
+            else -> item.playbackDecision.reason
+        }
+        val overrideLabel = when (overrideMode) {
+            PlaybackMode.REMUX -> "Preparing compatible version"
+            PlaybackMode.TRANSCODE -> "Transcoding for compatibility"
+            else -> item.playbackDecision.compatibilityLabel
+        }
+        return item.copy(
+            playbackDecision = item.playbackDecision.copy(
+                mode = overrideMode,
+                reason = overrideReason,
+                compatibilityLabel = overrideLabel,
+            ),
+        )
     }
 
     private data class InProgressHlsSupport(
