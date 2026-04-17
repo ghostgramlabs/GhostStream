@@ -548,6 +548,15 @@ function lockPlayerSource(item) {
     debugTrace("player_rehydrate_blocked", `id=${item.id} reason=source_already_locked source=${existing.kind}`);
     return existing;
   }
+  if (
+    existing &&
+    existing.kind === "direct" &&
+    (candidate.kind === "prepared_mp4" || candidate.kind === "managed_hls" || candidate.kind === "native_hls")
+  ) {
+    debugTrace("player_source_upgraded", `id=${item.id} from=${existing.kind} to=${candidate.kind}`);
+    state.playerSourceLocks[item.id] = candidate;
+    return candidate;
+  }
   if (existing && (existing.kind !== candidate.kind || existing.url !== candidate.url)) {
     debugTrace(
       "player_rehydrate_blocked",
@@ -561,9 +570,19 @@ function lockPlayerSource(item) {
   return candidate;
 }
 
+function playbackContextSummary(item, selectedSource = null) {
+  return [
+    `container=${item.container || item.mimeType || "unknown"}`,
+    `video=${item.videoCodec || "unknown"}`,
+    `audio=${item.audioCodec || "unknown"}`,
+    `plan=${item.playbackMode || "unknown"}`,
+    `status=${item.compatibilityStatus || "none"}`,
+    `source=${selectedSource?.kind || "unknown"}`,
+  ].join(" ");
+}
+
 function nativeHlsEligibility(item) {
   if (!item) return { allowed: false, reason: "missing_item" };
-  if (item.playbackMode !== "TRANSCODE") return { allowed: false, reason: "mode_not_transcode" };
   if (shouldUseDirectCompatMp4(item) || item.compatibilityComplete) {
     return { allowed: false, reason: "prepared_mp4_preferred" };
   }
@@ -580,7 +599,6 @@ function shouldUseNativeHlsPlayback(item) {
 
 function managedHlsEligibility(item) {
   if (!item) return { allowed: false, reason: "missing_item" };
-  if (item.playbackMode !== "TRANSCODE") return { allowed: false, reason: "mode_not_transcode" };
   if (shouldUseDirectCompatMp4(item) || item.compatibilityComplete) {
     return { allowed: false, reason: "prepared_mp4_preferred" };
   }
@@ -695,6 +713,9 @@ function shouldStartCompatibilityPlayback(item, job = null) {
     return true;
   }
   if (job?.preparedMp4Url || shouldUseDirectCompatMp4(effectiveItem)) return true;
+  if (effectiveStatus === "PLAYABLE_NOW" && (effectiveItem.preparedMp4Url || effectiveItem.hlsUrl || effectiveItem.streamReady)) {
+    return true;
+  }
   if (effectiveItem.compatibilityComplete || effectiveStatus === "READY") return true;
   if (shouldUseNativeHlsPlayback(effectiveItem) || shouldUseManagedHlsPlayback(effectiveItem)) return true;
   return false;
@@ -1278,6 +1299,8 @@ function hydrateVideoPlayer(item, options = {}) {
     debugTrace("player_rehydrate_blocked", `id=${item.id} reason=no_locked_source`);
     return;
   }
+  video.dataset.sourceType = selectedSource.kind;
+  video.dataset.sourceUrl = selectedSource.url || "";
   const useNativePlayer = shouldUseNativeVideoPlayer(item);
   const useDirectMp4 = selectedSource.kind === "prepared_mp4" || selectedSource.kind === "direct";
   const useNativeHls = selectedSource.kind === "native_hls" && shouldUseNativeHlsPlayback(item);
@@ -1308,6 +1331,7 @@ function hydrateVideoPlayer(item, options = {}) {
     `compComplete=${item.compatibilityComplete} ` +
     `streamReady=${item.streamReady}`
   );
+  debugTrace("player_context", `id=${item.id} ${playbackContextSummary(item, selectedSource)}`);
 
   if (!useNativePlayer && typeof window.Plyr === "function") {
     const plyrOptions = {
@@ -1677,9 +1701,13 @@ function hydrateVideoPlayer(item, options = {}) {
     }
   });
   video.addEventListener("error", () => {
+    const mediaError = video.error
+      ? `MediaError(code=${video.error.code} message=${video.error.message || ""})`
+      : "none";
+    const sourceType = video.dataset.sourceType || "unknown";
     debugTrace(
       "video_error",
-      `id=${item.id} mode=${item.playbackMode} code=${video.error?.code || ""} readyState=${video.readyState} currentSrc=${video.currentSrc}`,
+      `id=${item.id} mode=${item.playbackMode} code=${video.error?.code || ""} readyState=${video.readyState} currentSrc=${video.currentSrc} ${playbackContextSummary(item, { kind: sourceType })} browserError=${mediaError}`,
     );
     if (allowManagedHlsFallback && !managedHlsFallbackUsed && !state.hls) {
       managedHlsFallbackUsed = true;
@@ -1712,6 +1740,10 @@ function hydrateVideoPlayer(item, options = {}) {
       return;
     }
     if (errorCard) errorCard.classList.add("is-visible");
+    debugTrace(
+      "browser_playback_failed",
+      `id=${item.id} ${playbackContextSummary(item, { kind: sourceType })} browserError=${mediaError}`,
+    );
     if (errorText) {
       errorText.textContent = item.playbackMode === "DIRECT"
         ? (state.bootstrap?.preventDownload
@@ -1880,11 +1912,22 @@ async function ensureCompatiblePlayerMounted(item) {
     selectedSourceType: selectedSource.kind,
   };
   state.compatItem = lockedItem;
-  if (document.getElementById("vPlayer")) {
-    hydrateVideoPlayer(lockedItem);
+  const existingVideo = document.getElementById("vPlayer");
+  const stage = document.getElementById("playerStage");
+  if (existingVideo) {
+    const currentSourceType = existingVideo.dataset.sourceType || null;
+    const currentSourceUrl = existingVideo.dataset.sourceUrl || null;
+    if (currentSourceType === selectedSource.kind && currentSourceUrl === selectedSource.url) {
+      hydrateVideoPlayer(lockedItem);
+      return true;
+    }
+    if (!stage) return false;
+    destroyPlyr();
+    destroyHls();
+    stage.innerHTML = videoMarkup(lockedItem);
+    hydrateVideoPlayer(lockedItem, { autoplay: true });
     return true;
   }
-  const stage = document.getElementById("playerStage");
   if (!stage) return false;
   stage.innerHTML = videoMarkup(lockedItem);
   hydrateVideoPlayer(lockedItem, { autoplay: true });

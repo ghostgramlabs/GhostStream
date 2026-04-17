@@ -30,7 +30,7 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
                 browserMimeType = inspection.originalMimeType ?: inspection.normalizedMimeType,
                 compatibilityLabel = "Direct Play",
                 reason = "Non-video item bypasses the compatibility pipeline",
-            ).also { logDecision(inspection, capabilities, it) }
+            ).also { logDecision(inspection, capabilities, it, remuxEligible = false, transcodeReason = null) }
         }
 
         val containerSafe = inspection.container == MediaContainer.MP4 || inspection.container == MediaContainer.QUICKTIME
@@ -38,6 +38,8 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
 
         val videoCodec = normalizeVideoCodec(inspection.videoTrackMimeType)
         val audioCodec = normalizeAudioCodec(inspection.audioTrackMimeType)
+        val directContainerSafe = isDirectContainerSafe(inspection, videoCodec, audioCodec, capabilities)
+        val mp4RemuxEligible = isMp4RemuxEligible(inspection, videoCodec)
 
         val hasKnownVideoIncompatibility = when (videoCodec) {
             VideoCodec.AVC, VideoCodec.UNKNOWN -> false
@@ -59,9 +61,18 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
                 (inspection.bitDepth != null && inspection.bitDepth > 8 && !capabilities.supportsHdr) ||
                 (inspection.hdrFormat != null && !capabilities.supportsHdr)
         val needsAudioTranscode = hasKnownAudioIncompatibility
+        val transcodeReason = when {
+            inspection.container == MediaContainer.WEBM && !directContainerSafe && !mp4RemuxEligible ->
+                "WEBM source is not directly browser-safe for this client and cannot be repackaged into a reliable MP4 stream"
+            !mp4RemuxEligible && !directContainerSafe ->
+                "Container/codec combination is not safe to copy into browser-ready MP4 output"
+            needsVideoTranscode ->
+                "Video codec is not browser-safe for this client and must be re-encoded"
+            else -> null
+        }
 
         val decision = when {
-            containerSafe && !needsFaststartFix && !needsVideoTranscode && !needsAudioTranscode -> PlaybackDecision(
+            directContainerSafe && !needsFaststartFix && !needsVideoTranscode && !needsAudioTranscode -> PlaybackDecision(
                 mode = PlaybackMode.DIRECT,
                 browserMimeType = directMimeTypeFor(inspection),
                 compatibilityLabel = "Direct Play",
@@ -75,7 +86,7 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
                 reason = "MP4/MOV needs moov relocation before reliable browser playback",
             )
 
-            !needsVideoTranscode -> PlaybackDecision(
+            mp4RemuxEligible && !needsVideoTranscode -> PlaybackDecision(
                 mode = PlaybackMode.TRANSMUX,
                 browserMimeType = "video/mp4",
                 compatibilityLabel = "Repackaging",
@@ -95,19 +106,55 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
                 mode = PlaybackMode.TRANSCODE,
                 browserMimeType = "video/mp4",
                 compatibilityLabel = "Transcoding",
-                reason = "Video codec is not browser-safe for this client and must be re-encoded",
+                reason = transcodeReason ?: "Video codec is not browser-safe for this client and must be re-encoded",
             )
         }
 
-        logDecision(inspection, capabilities, decision)
+        logDecision(inspection, capabilities, decision, mp4RemuxEligible, transcodeReason)
         return decision
     }
 
     private fun directMimeTypeFor(inspection: MediaInspection): String? {
         return when {
+            inspection.container == MediaContainer.WEBM -> "video/webm"
             inspection.originalMimeType?.startsWith("video/") == true &&
                 (inspection.container == MediaContainer.MP4 || inspection.container == MediaContainer.QUICKTIME) -> "video/mp4"
             else -> inspection.originalMimeType ?: inspection.normalizedMimeType
+        }
+    }
+
+    private fun isDirectContainerSafe(
+        inspection: MediaInspection,
+        videoCodec: VideoCodec,
+        audioCodec: AudioCodec,
+        capabilities: ClientCapabilities,
+    ): Boolean {
+        return when (inspection.container) {
+            MediaContainer.MP4,
+            MediaContainer.QUICKTIME -> true
+            MediaContainer.WEBM -> when (videoCodec) {
+                VideoCodec.VP9 -> capabilities.supportsVp9 && audioCodec in setOf(AudioCodec.NONE, AudioCodec.OPUS, AudioCodec.UNKNOWN)
+                VideoCodec.AV1 -> capabilities.supportsAv1 && audioCodec in setOf(AudioCodec.NONE, AudioCodec.OPUS, AudioCodec.UNKNOWN)
+                else -> false
+            }
+            else -> false
+        }
+    }
+
+    private fun isMp4RemuxEligible(
+        inspection: MediaInspection,
+        videoCodec: VideoCodec,
+    ): Boolean {
+        return when (inspection.container) {
+            MediaContainer.MATROSKA,
+            MediaContainer.AVI,
+            MediaContainer.FLV,
+            MediaContainer.TS,
+            MediaContainer.MPEG,
+            MediaContainer.WEBM -> videoCodec == VideoCodec.AVC
+            MediaContainer.MP4,
+            MediaContainer.QUICKTIME -> true
+            else -> false
         }
     }
 
@@ -140,6 +187,8 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
         inspection: MediaInspection,
         capabilities: ClientCapabilities,
         decision: PlaybackDecision,
+        remuxEligible: Boolean,
+        transcodeReason: String?,
     ) {
         CompatLogger.info(
             "PlaybackDecision",
@@ -147,7 +196,8 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
                 "container=${inspection.container} video=${inspection.videoTrackMimeType ?: "unknown"} " +
                 "audio=${inspection.audioTrackMimeType ?: "unknown"} faststart=${inspection.hasFaststart} " +
                 "target=${capabilities.browserFamily ?: "unknown"}-${capabilities.os ?: "unknown"} " +
-                "mode=${decision.mode} reason=\"${decision.reason}\"",
+                "mode=${decision.mode} remuxEligible=$remuxEligible " +
+                "transcodeReason=\"${transcodeReason ?: ""}\" reason=\"${decision.reason}\"",
         )
     }
 

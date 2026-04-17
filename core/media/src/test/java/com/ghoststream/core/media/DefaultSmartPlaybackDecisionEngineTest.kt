@@ -134,6 +134,42 @@ class DefaultSmartPlaybackDecisionEngineTest {
     }
 
     @Test
+    fun `FLV + H264 + no audio resolves to TRANSMUX`() {
+        val d = engine.decide(inspect(MediaContainer.FLV, audio = null, mime = "video/x-flv", name = "movie.flv"))
+        assertEquals(PlaybackMode.TRANSMUX, d.mode)
+    }
+
+    @Test
+    fun `WEBM + VP9 + Opus resolves to DIRECT for VP9-capable client`() {
+        val d = engine.decide(
+            inspect(
+                MediaContainer.WEBM,
+                video = "video/x-vnd.on2.vp9",
+                audio = "audio/opus",
+                mime = "video/webm",
+                name = "movie.webm",
+            ),
+            ClientCapabilities(supportsVp9 = true, supportsOpus = true),
+        )
+        assertEquals(PlaybackMode.DIRECT, d.mode)
+        assertEquals("video/webm", d.browserMimeType)
+    }
+
+    @Test
+    fun `WEBM + VP9 + Opus resolves to TRANSCODE when VP9 is unsupported`() {
+        val d = engine.decide(
+            inspect(
+                MediaContainer.WEBM,
+                video = "video/x-vnd.on2.vp9",
+                audio = "audio/opus",
+                mime = "video/webm",
+                name = "movie.webm",
+            ),
+        )
+        assertEquals(PlaybackMode.TRANSCODE, d.mode)
+    }
+
+    @Test
     fun `MKV + H264 + DTS resolves to TRANSMUX (video copy + audio transcode)`() {
         val d = engine.decide(inspect(MediaContainer.MATROSKA, audio = "audio/dtshd-ma", name = "movie.mkv"))
         assertEquals(PlaybackMode.TRANSMUX, d.mode)

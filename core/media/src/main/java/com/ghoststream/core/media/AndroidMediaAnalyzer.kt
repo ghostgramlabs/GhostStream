@@ -25,12 +25,13 @@ class AndroidMediaAnalyzer(
 
     override fun inspect(uri: Uri, mimeType: String?, displayName: String): MediaInspection {
         val tracks = inspectTracks(uri)
+        val extension = displayName.substringAfterLast('.', "").lowercase()
         
         return MediaInspection(
             originalMimeType = mimeType,
             normalizedMimeType = mimeType,
             displayName = displayName,
-            extension = uri.toString().substringAfterLast('.', ""),
+            extension = extension,
             container = inferContainer(mimeType, displayName),
             videoTrackMimeType = tracks.videoTrackMimeType,
             audioTrackMimeType = tracks.audioTrackMimeType,
@@ -86,15 +87,15 @@ class AndroidMediaAnalyzer(
 
             for (index in 0 until extractor.trackCount) {
                 val format = extractor.getTrackFormat(index)
-                val mime = format.getString(MediaFormat.KEY_MIME) ?: continue
+                val inferredMime = inferTrackMime(format) ?: continue
                 
                 if (format.containsKey(MediaFormat.KEY_DURATION)) {
                     val d = format.getLong(MediaFormat.KEY_DURATION) / 1000L
                     durationMs = maxOf(durationMs ?: 0L, d)
                 }
 
-                if (mime.startsWith("video/")) {
-                    videoTrackMimeType = mime
+                if (inferredMime.startsWith("video/")) {
+                    videoTrackMimeType = inferredMime
                     videoProfile = if (format.containsKey(MediaFormat.KEY_PROFILE)) format.getInteger(MediaFormat.KEY_PROFILE) else null
                     videoLevel = if (format.containsKey(MediaFormat.KEY_LEVEL)) format.getInteger(MediaFormat.KEY_LEVEL) else null
                     width = if (format.containsKey(MediaFormat.KEY_WIDTH)) format.getInteger(MediaFormat.KEY_WIDTH) else null
@@ -103,8 +104,8 @@ class AndroidMediaAnalyzer(
                     bitrate = if (format.containsKey(MediaFormat.KEY_BIT_RATE)) format.getInteger(MediaFormat.KEY_BIT_RATE).toLong() else null
                     
                     if (format.containsKey("bit-per-sample")) bitDepth = format.getInteger("bit-per-sample")
-                } else if (mime.startsWith("audio/")) {
-                    audioTrackMimeType = mime
+                } else if (inferredMime.startsWith("audio/")) {
+                    audioTrackMimeType = inferredMime
                     audioChannels = if (format.containsKey(MediaFormat.KEY_CHANNEL_COUNT)) format.getInteger(MediaFormat.KEY_CHANNEL_COUNT) else null
                 }
             }
@@ -154,12 +155,35 @@ class AndroidMediaAnalyzer(
             normalizedMime.contains("webm") || extension == "webm" -> MediaContainer.WEBM
             normalizedMime.contains("mp2t") || extension == "ts" -> MediaContainer.TS
             normalizedMime.contains("x-msvideo") || extension == "avi" -> MediaContainer.AVI
+            normalizedMime.contains("x-flv") || extension == "flv" -> MediaContainer.FLV
             normalizedMime.contains("mpeg") && normalizedMime.startsWith("video/") -> MediaContainer.MPEG
+            normalizedMime.contains("3gpp") || extension == "3gp" -> MediaContainer.THREE_GP
             normalizedMime.startsWith("audio/") && extension == "mp3" -> MediaContainer.MPEG_AUDIO
             normalizedMime.startsWith("audio/") && (extension == "m4a" || extension == "aac") -> MediaContainer.AAC_AUDIO
             normalizedMime.startsWith("image/") -> MediaContainer.IMAGE
             normalizedMime == "application/pdf" || extension == "pdf" -> MediaContainer.PDF
             else -> MediaContainer.OTHER
+        }
+    }
+
+    private fun inferTrackMime(format: MediaFormat): String? {
+        val mime = format.getString(MediaFormat.KEY_MIME)?.lowercase()
+        if (!mime.isNullOrBlank()) return mime
+
+        val codecString = format.getString("codecs-string")?.lowercase().orEmpty()
+        if (codecString.isBlank()) return null
+
+        return when {
+            codecString.contains("avc1") || codecString.contains("h264") -> "video/avc"
+            codecString.contains("hvc1") || codecString.contains("hev1") || codecString.contains("h265") -> "video/hevc"
+            codecString.contains("vp09") -> "video/x-vnd.on2.vp9"
+            codecString.contains("av01") -> "video/av01"
+            codecString.contains("mp4a") -> "audio/mp4a-latm"
+            codecString.contains("opus") -> "audio/opus"
+            codecString.contains("ac-3") -> "audio/ac3"
+            codecString.contains("ec-3") -> "audio/eac3"
+            codecString.contains("mp3") -> "audio/mpeg"
+            else -> null
         }
     }
 

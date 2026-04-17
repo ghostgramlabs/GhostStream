@@ -611,11 +611,14 @@ class KtorGhostStreamServer(
                     return@get
                 }
 
-                // Hard Gate: Only expose the direct prepared-file endpoint when the pipeline
-                // has explicitly marked the asset as directly playable for this session.
-                // This still rejects incomplete files unless the worker promoted them via
-                // directReady/PLAYABLE_NOW.
-                if (!preparedAsset.isComplete && !job.directReady) {
+                // Hard Gate: Only expose the prepared-file endpoint once the worker has marked
+                // the growing asset as playable for this session. PLAYABLE_NOW, directReady,
+                // and streamable all qualify here.
+                if (!preparedAsset.isComplete &&
+                    job.status != CompatibilityStatus.PLAYABLE_NOW &&
+                    !job.directReady &&
+                    !job.streamable
+                ) {
                     debugLogSink.log("WebCompat/file", "REJECTED id=${item.id} reason=incomplete")
                     call.respond(HttpStatusCode.Conflict, ErrorPayload("Direct playback is unavailable until conversion is finalized. Please use HLS."))
                     return@get
@@ -1278,27 +1281,54 @@ class KtorGhostStreamServer(
         val forcedBrowserFallback = triggerPreparation &&
             item.playbackDecision.mode != PlaybackMode.DIRECT &&
             item.playbackDecision.reason.contains("Browser rejected direct playback", ignoreCase = true)
+        val refreshedInspection = runCatching {
+            if (
+                item.category == MediaCategory.VIDEO &&
+                (
+                    triggerPreparation ||
+                        item.metadata["video_codec"].isNullOrBlank() ||
+                        item.metadata["video_codec"] == "unknown" ||
+                        item.metadata["audio_codec"] == "unknown" ||
+                        item.metadata["container"].isNullOrBlank()
+                    )
+            ) {
+                mediaAnalyzer.inspect(Uri.parse(item.uri), item.mimeType, item.displayName)
+            } else {
+                null
+            }
+        }.getOrNull()
+        val inspectedItem = refreshedInspection?.let { inspection ->
+            item.copy(
+                metadata = item.metadata + buildMap {
+                    put("container", inspection.container.name)
+                    inspection.videoTrackMimeType?.let { put("video_codec", it) }
+                    inspection.audioTrackMimeType?.let { put("audio_codec", it) }
+                },
+            )
+        } ?: item
 
         val effectiveDecision = when {
-            caps == null || forcedBrowserFallback -> item.playbackDecision
+            caps == null || forcedBrowserFallback -> inspectedItem.playbackDecision
             else -> {
-                val cacheKey = buildDecisionCacheKey(host, item, caps)
-                decisionCache[cacheKey] ?: mediaAnalyzer.decidePlayback(
-                    Uri.parse(item.uri),
-                    item.mimeType,
-                    item.displayName,
-                    caps,
-                ).also { decision ->
+                val cacheKey = buildDecisionCacheKey(host, inspectedItem, caps)
+                decisionCache[cacheKey] ?: (refreshedInspection?.let { mediaAnalyzer.decidePlayback(it, caps) }
+                    ?: mediaAnalyzer.decidePlayback(
+                        Uri.parse(inspectedItem.uri),
+                        inspectedItem.mimeType,
+                        inspectedItem.displayName,
+                        caps,
+                    )).also { decision ->
                     decisionCache[cacheKey] = decision
                     debugLogSink.log(
                         "PlaybackDecision",
-                        "id=${item.id} host=$host mode=${decision.mode} reason=${decision.reason} " +
-                            "mime=${item.mimeType} video=${item.metadata["video_codec"] ?: "unknown"} audio=${item.metadata["audio_codec"] ?: "unknown"}",
+                        "id=${inspectedItem.id} host=$host mode=${decision.mode} reason=${decision.reason} " +
+                            "container=${inspectedItem.metadata["container"] ?: inspectedItem.mimeType ?: "unknown"} " +
+                            "mime=${inspectedItem.mimeType} video=${inspectedItem.metadata["video_codec"] ?: "unknown"} audio=${inspectedItem.metadata["audio_codec"] ?: "unknown"}",
                     )
                 }
             }
         }
-        val effectiveItem = if (effectiveDecision == item.playbackDecision) item else item.copy(playbackDecision = effectiveDecision)
+        val effectiveItem = if (effectiveDecision == inspectedItem.playbackDecision) inspectedItem else inspectedItem.copy(playbackDecision = effectiveDecision)
         return if (triggerPreparation && effectiveItem.playbackDecision.mode != PlaybackMode.DIRECT) {
             compatibilityPipeline.requestPreparation(effectiveItem, priority, caps)
         } else {
@@ -1654,7 +1684,6 @@ class KtorGhostStreamServer(
             return true
         }
         return allowInProgressHls &&
-            job.decision.mode == PlaybackMode.TRANSCODE &&
             job.preparedAsset?.isFragmentedMp4 == true &&
             job.hlsReady &&
             job.streamable
@@ -1662,7 +1691,6 @@ class KtorGhostStreamServer(
 
     private fun compatibilityHlsUrl(job: CompatibilityJob, allowInProgressHls: Boolean): String? {
         if (!allowInProgressHls) return null
-        if (job.decision.mode != PlaybackMode.TRANSCODE) return null
         if (job.status == CompatibilityStatus.READY || job.preparedAsset?.isComplete == true || job.directReady) return null
         if (job.preparedAsset?.isFragmentedMp4 != true || !job.hlsReady || !job.streamable) return null
         return "/hls/${job.itemId}/master.m3u8"
@@ -2302,6 +2330,9 @@ class KtorGhostStreamServer(
         val id: String,
         val title: String,
         val mimeType: String?,
+        val container: String? = null,
+        val videoCodec: String? = null,
+        val audioCodec: String? = null,
         val category: String,
         val streamUrl: String,
         val hlsUrl: String? = null,
@@ -2342,6 +2373,9 @@ class KtorGhostStreamServer(
                     id = item.id,
                     title = item.displayName,
                     mimeType = item.mimeType,
+                    container = item.metadata["container"],
+                    videoCodec = item.metadata["video_codec"],
+                    audioCodec = item.metadata["audio_codec"],
                     category = item.category.name.lowercase(),
                     streamUrl = "/stream/${item.id}",
                     hlsUrl = hlsUrl,
@@ -2361,7 +2395,6 @@ class KtorGhostStreamServer(
                     preparedMp4Url = if (
                         streamReady &&
                         hasProgressedAsset &&
-                        compatibilityJob.directReady &&
                         decision.mode != PlaybackMode.DIRECT
                     ) {
                         "/api/compat/${item.id}/file"
@@ -2404,7 +2437,7 @@ class KtorGhostStreamServer(
                     progressPercent = job.progressPercent,
                     ready = ready,
                     compatibilityComplete = isComplete,
-                    preparedMp4Url = if (job.directReady && job.decision.mode != PlaybackMode.DIRECT && job.preparedAsset != null) "/api/compat/${job.itemId}/file" else null,
+                    preparedMp4Url = if (ready && job.decision.mode != PlaybackMode.DIRECT && job.preparedAsset != null) "/api/compat/${job.itemId}/file" else null,
                     hlsUrl = hlsUrl,
                     width = job.width,
                     height = job.height,
