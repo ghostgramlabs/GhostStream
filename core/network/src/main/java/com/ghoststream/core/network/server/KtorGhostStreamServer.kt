@@ -385,6 +385,8 @@ class KtorGhostStreamServer(
                 val settings = settingsRepository.settings.first()
                 val category = call.request.queryParameters["category"]?.lowercase()
                 val query = call.request.queryParameters["q"]?.trim().orEmpty()
+                val offset = call.request.queryParameters["offset"]?.toIntOrNull()?.coerceAtLeast(0)
+                val limit = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceIn(1, MAX_BROWSER_ITEMS_PAGE_SIZE)
                 val items = sessionManager.sessionState.value.selectedItems
                     .filter { item ->
                         when (category) {
@@ -403,9 +405,14 @@ class KtorGhostStreamServer(
                         query.isBlank() || item.displayName.contains(query, ignoreCase = true)
                     }
                     .sortedByDescending { it.dateAddedEpochMs }
+                val pagedItems = if (offset != null || limit != null) {
+                    items.drop(offset ?: 0).take(limit ?: DEFAULT_BROWSER_ITEMS_PAGE_SIZE)
+                } else {
+                    items
+                }
                 val cards = mutableListOf<BrowserItemCard>()
                 val allowDownloads = !settings.preventDownload
-                for (item in items) {
+                for (item in pagedItems) {
                     cards += BrowserItemCard.from(
                         item = item,
                         compatibilityJob = compatibilitySnapshotFor(call.request.origin.remoteHost, item, triggerPreparation = false),
@@ -413,7 +420,20 @@ class KtorGhostStreamServer(
                         allowDownloads = allowDownloads,
                     )
                 }
-                call.respond(cards)
+                if (offset != null || limit != null) {
+                    val safeOffset = offset ?: 0
+                    call.respond(
+                        BrowserItemsPage(
+                            items = cards,
+                            totalCount = items.size,
+                            offset = safeOffset,
+                            limit = limit ?: DEFAULT_BROWSER_ITEMS_PAGE_SIZE,
+                            hasMore = safeOffset + cards.size < items.size,
+                        ),
+                    )
+                } else {
+                    call.respond(cards)
+                }
             }
 
             get("/api/item/{id}") {
@@ -769,16 +789,22 @@ class KtorGhostStreamServer(
                 }
 
                 val timeMs = call.request.queryParameters["timeMs"]?.toLongOrNull()
+                val requestedSizePx = call.request.queryParameters["size"]?.toIntOrNull()?.coerceIn(
+                    MIN_BROWSER_THUMBNAIL_SIZE_PX,
+                    MAX_BROWSER_THUMBNAIL_SIZE_PX,
+                )
+                val posterSizePx = requestedSizePx ?: DEFAULT_CARD_THUMBNAIL_SIZE_PX
+                val frameSizePx = requestedSizePx ?: DEFAULT_SCRUB_THUMBNAIL_SIZE_PX
 
                 // During heavy prepare, skip frame-at-time extraction (expensive) and only
                 // serve cached/cheap poster thumbnails. This frees CPU for the active transcode.
                 val bytesOrNull = if (hasHeavyPrepareJob && timeMs != null) {
                     // Skip scrubbing frame extraction during heavy prepare â€” just serve poster
-                    mediaAnalyzer.loadThumbnailBytes(item)
+                    mediaAnalyzer.loadThumbnailBytes(item, posterSizePx)
                 } else if (timeMs != null) {
-                    mediaAnalyzer.extractFrameAtMs(item, timeMs) ?: mediaAnalyzer.loadThumbnailBytes(item)
+                    mediaAnalyzer.extractFrameAtMs(item, timeMs, frameSizePx) ?: mediaAnalyzer.loadThumbnailBytes(item, posterSizePx)
                 } else {
-                    mediaAnalyzer.loadThumbnailBytes(item)
+                    mediaAnalyzer.loadThumbnailBytes(item, posterSizePx)
                 }
 
                 if (bytesOrNull == null) {
@@ -2387,7 +2413,7 @@ class KtorGhostStreamServer(
                     showThumbnails &&
                     (item.category == MediaCategory.PHOTO || item.category == MediaCategory.VIDEO)
                 ) {
-                    "/thumb/${item.id}"
+                    "/thumb/${item.id}?size=$DEFAULT_CARD_THUMBNAIL_SIZE_PX"
                 } else {
                     null
                 },
@@ -2402,6 +2428,15 @@ class KtorGhostStreamServer(
             )
         }
     }
+
+    @Serializable
+    private data class BrowserItemsPage(
+        val items: List<BrowserItemCard>,
+        val totalCount: Int,
+        val offset: Int,
+        val limit: Int,
+        val hasMore: Boolean,
+    )
 
     @Serializable
     private data class BrowserItemDetails(
@@ -2537,6 +2572,12 @@ class KtorGhostStreamServer(
     )
 
     companion object {
+        const val DEFAULT_BROWSER_ITEMS_PAGE_SIZE = 24
+        const val MAX_BROWSER_ITEMS_PAGE_SIZE = 100
+        const val DEFAULT_CARD_THUMBNAIL_SIZE_PX = 320
+        const val DEFAULT_SCRUB_THUMBNAIL_SIZE_PX = 320
+        const val MIN_BROWSER_THUMBNAIL_SIZE_PX = 96
+        const val MAX_BROWSER_THUMBNAIL_SIZE_PX = 640
         const val COOKIE_NAME = "ghost_session"
         const val GROWING_FILE_POLL_INTERVAL_MS = 300L
         const val MAX_GROWING_FILE_IDLE_POLLS = 300

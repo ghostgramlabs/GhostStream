@@ -2,6 +2,9 @@ const app = document.getElementById("app");
 const sessionTitle = app.dataset.title || "DirectServe";
 const sessionSubtitle = app.dataset.subtitle || "Local-only streaming";
 const LIBRARY_BATCH_SIZE = 24;
+const LIBRARY_BULK_FETCH_SIZE = 100;
+const THUMBNAIL_MAX_CONCURRENT = 4;
+const THUMBNAIL_PLACEHOLDER_SRC = "data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=";
 
 const state = {
   bootstrap: null,
@@ -10,6 +13,11 @@ const state = {
   selected: new Set(),
   selectMode: false,
   libraryItems: [],
+  libraryCategory: "media",
+  libraryTitle: "",
+  libraryTotalCount: 0,
+  libraryHasMore: false,
+  libraryLoadingMore: false,
   nowPlaying: null,
   plyr: null,
   plyrItemId: null,
@@ -19,7 +27,6 @@ const state = {
   musicPlayers: [],
   pendingUploadFiles: [],
   searchTimer: null,
-  libraryRenderCount: 0,
   compatPollToken: 0,
   compatPollTimer: null,
   compatMountToken: 0,
@@ -29,6 +36,9 @@ const state = {
   playerSourceLocks: {},
   lastReportedCapabilities: null,
   ratioLocked: {}, // Track locked ratios per itemId to prevent placeholder overwrite
+  thumbObserver: null,
+  thumbQueue: [],
+  thumbActiveCount: 0,
 };
 
 const routes = {
@@ -220,6 +230,7 @@ async function boot() {
   destroyPlyr();
   destroyHls();
   destroyMusicPlayers();
+  resetThumbnailLoader();
   const path = location.pathname;
 
   try {
@@ -297,6 +308,14 @@ function isMobileBrowser() {
 
 function isMediaPath(path) {
   return path === "/" || path === "/videos" || path === "/photos" || path === "/music";
+}
+
+function isImmersiveMediaPath(path) {
+  return path.startsWith("/player/video/") || path.startsWith("/photo/");
+}
+
+function shouldShowFloatingSendBar(path) {
+  return path !== "/upload" && !isImmersiveMediaPath(path);
 }
 
 // ---------------------------------------------------------------------------
@@ -876,6 +895,7 @@ function shell(content, options = {}) {
   const bootstrap = state.bootstrap;
   const path = location.pathname;
   const mediaActive = isMediaPath(path);
+  const showFloatingSendBar = shouldShowFloatingSendBar(path);
   const mediaSubnav = mediaActive
     ? `
       <div class="gs-media-subnav">
@@ -906,7 +926,6 @@ function shell(content, options = {}) {
         <div class="gs-nav-links">
           <a class="gs-tab${mediaActive ? " on" : ""}" data-link href="/">${gsStr("web_nav_media", "Media")}</a>
           <a class="gs-tab${path === "/files" ? " on" : ""}" data-link href="/files">${gsStr("web_nav_files", "Files")}</a>
-          <a class="gs-tab${path === "/upload" ? " on" : ""}" data-link href="/upload">${gsStr("web_nav_send", "Send")}</a>
         </div>
         <div class="gs-nav-meta">
           <span class="gs-status-pill">${securityLabel}</span>
@@ -926,6 +945,17 @@ function shell(content, options = {}) {
       </div>
       ${mediaSubnav}
       <main class="gs-main">${content}</main>
+      ${showFloatingSendBar ? `
+        <a class="gs-send-bar${state.nowPlaying ? " is-raised" : ""}" id="floatingSendBar" data-link href="/upload">
+          <span class="gs-send-bar-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </span>
+          <span class="gs-send-bar-copy">
+            <strong>${gsStr("web_send_floating_title", "Send to device")}</strong>
+            <span>${gsStr("web_send_floating_subtitle", "Upload photos, videos, and files")}</span>
+          </span>
+        </a>
+      ` : ""}
       <div class="gs-now${state.nowPlaying ? " is-visible" : ""}" id="nowPlayingBar"></div>
       
       <div class="gs-drop-indicator" id="dropIndicator">
@@ -1018,9 +1048,12 @@ function renderHome() {
       </section>
     ` : `<section class="gs-section"><div class="gs-empty">${gsStr("web_media_empty", "No media is shared right now.")}</div></section>`}
   `);
+  initDeferredThumbnails(app);
 }
 
 async function renderLibrary(category, title) {
+  state.libraryCategory = category;
+  state.libraryTitle = title;
   const allowDownloads = !state.bootstrap?.preventDownload;
   shell(`
     <section class="gs-section">
@@ -1056,10 +1089,133 @@ async function renderLibrary(category, title) {
     state.searchTimer = setTimeout(() => renderLibrary(category, title), 180);
   });
 
-  state.libraryItems = await api(`/api/items?category=${encodeURIComponent(category)}&q=${encodeURIComponent(state.query || "")}`);
-  state.libraryRenderCount = Math.min(state.libraryItems.length, LIBRARY_BATCH_SIZE);
+  const page = await fetchLibraryPage(category, state.query, 0, LIBRARY_BATCH_SIZE);
+  state.libraryItems = page.items;
+  state.libraryTotalCount = page.totalCount;
+  state.libraryHasMore = page.hasMore;
+  state.libraryLoadingMore = false;
   renderLibraryGrid();
   bindLibraryControls();
+}
+
+function resetThumbnailLoader() {
+  if (state.thumbObserver) {
+    state.thumbObserver.disconnect();
+    state.thumbObserver = null;
+  }
+  state.thumbQueue = [];
+  state.thumbActiveCount = 0;
+}
+
+function initDeferredThumbnails(root = document) {
+  const thumbnails = Array.from(root.querySelectorAll("img.gs-card-img[data-thumb-src]"));
+  if (!thumbnails.length) return;
+
+  if ("IntersectionObserver" in window) {
+    if (!state.thumbObserver) {
+      state.thumbObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          state.thumbObserver?.unobserve(entry.target);
+          queueThumbnailLoad(entry.target);
+        });
+      }, { rootMargin: "300px 0px" });
+    }
+    thumbnails.forEach((thumbnail) => state.thumbObserver.observe(thumbnail));
+    return;
+  }
+
+  thumbnails.forEach(queueThumbnailLoad);
+}
+
+function queueThumbnailLoad(img) {
+  if (!(img instanceof HTMLImageElement)) return;
+  if (!img.dataset.thumbSrc) return;
+  if (img.dataset.thumbState === "queued" || img.dataset.thumbState === "loading" || img.dataset.thumbState === "done") return;
+  img.dataset.thumbState = "queued";
+  state.thumbQueue.push(img);
+  drainThumbnailQueue();
+}
+
+function drainThumbnailQueue() {
+  while (state.thumbActiveCount < THUMBNAIL_MAX_CONCURRENT && state.thumbQueue.length) {
+    const next = state.thumbQueue.shift();
+    if (!(next instanceof HTMLImageElement) || !next.isConnected || !next.dataset.thumbSrc) {
+      continue;
+    }
+    startThumbnailLoad(next);
+  }
+}
+
+function startThumbnailLoad(img) {
+  state.thumbActiveCount += 1;
+  img.dataset.thumbState = "loading";
+
+  const finalize = (stateName) => {
+    img.dataset.thumbState = stateName;
+    state.thumbActiveCount = Math.max(0, state.thumbActiveCount - 1);
+    drainThumbnailQueue();
+  };
+
+  const handleLoad = () => {
+    img.removeEventListener("load", handleLoad);
+    img.removeEventListener("error", handleError);
+    finalize("done");
+  };
+
+  const handleError = () => {
+    img.removeEventListener("load", handleLoad);
+    img.removeEventListener("error", handleError);
+    finalize("error");
+  };
+
+  img.addEventListener("load", handleLoad);
+  img.addEventListener("error", handleError);
+  img.src = img.dataset.thumbSrc;
+}
+
+async function fetchLibraryPage(category, query, offset, limit) {
+  const response = await api(
+    `/api/items?category=${encodeURIComponent(category)}&q=${encodeURIComponent(query || "")}&offset=${offset}&limit=${limit}`,
+  );
+  return {
+    items: Array.isArray(response?.items) ? response.items : [],
+    totalCount: Number.isFinite(response?.totalCount) ? response.totalCount : 0,
+    hasMore: Boolean(response?.hasMore),
+  };
+}
+
+async function fetchAllLibraryItems(category, query) {
+  const items = [];
+  let offset = 0;
+  let hasMore = true;
+  while (hasMore) {
+    const page = await fetchLibraryPage(category, query, offset, LIBRARY_BULK_FETCH_SIZE);
+    items.push(...page.items);
+    offset += page.items.length;
+    hasMore = page.hasMore && page.items.length > 0;
+  }
+  return items;
+}
+
+async function loadMoreLibraryItems() {
+  if (state.libraryLoadingMore || !state.libraryHasMore) return;
+  state.libraryLoadingMore = true;
+  renderLibraryGrid();
+  try {
+    const page = await fetchLibraryPage(
+      state.libraryCategory,
+      state.query,
+      state.libraryItems.length,
+      LIBRARY_BATCH_SIZE,
+    );
+    state.libraryItems = state.libraryItems.concat(page.items);
+    state.libraryTotalCount = page.totalCount;
+    state.libraryHasMore = page.hasMore;
+  } finally {
+    state.libraryLoadingMore = false;
+    renderLibraryGrid();
+  }
 }
 
 function bindLibraryControls() {
@@ -1068,15 +1224,21 @@ function bindLibraryControls() {
     if (!state.selectMode) {
       state.selected.clear();
     }
-    renderLibrary(location.pathname.slice(1), titleForPath(location.pathname));
+    renderLibrary(state.libraryCategory, state.libraryTitle);
   });
 
-  document.getElementById("downloadAllBtn")?.addEventListener("click", () => {
-    downloadItems(state.libraryItems);
+  document.getElementById("downloadAllBtn")?.addEventListener("click", async () => {
+    const items = state.libraryHasMore
+      ? await fetchAllLibraryItems(state.libraryCategory, state.query)
+      : state.libraryItems;
+    downloadItems(items);
   });
 
-  document.getElementById("selectAllBtn")?.addEventListener("click", () => {
-    state.libraryItems.forEach((item) => state.selected.add(item.id));
+  document.getElementById("selectAllBtn")?.addEventListener("click", async () => {
+    const items = state.libraryHasMore
+      ? await fetchAllLibraryItems(state.libraryCategory, state.query)
+      : state.libraryItems;
+    items.forEach((item) => state.selected.add(item.id));
     updateSelectionUi();
   });
 
@@ -1086,16 +1248,14 @@ function bindLibraryControls() {
   });
 
   document.getElementById("downloadSelectedBtn")?.addEventListener("click", () => {
-    const selectedItems = state.libraryItems.filter((item) => state.selected.has(item.id));
-    downloadItems(selectedItems);
-  });
-
-  document.getElementById("loadMoreBtn")?.addEventListener("click", () => {
-    state.libraryRenderCount = Math.min(
-      state.libraryItems.length,
-      state.libraryRenderCount + LIBRARY_BATCH_SIZE,
-    );
-    renderLibraryGrid();
+    const downloadSelected = async () => {
+      const sourceItems = state.libraryHasMore
+        ? await fetchAllLibraryItems(state.libraryCategory, state.query)
+        : state.libraryItems;
+      const selectedItems = sourceItems.filter((item) => state.selected.has(item.id));
+      downloadItems(selectedItems);
+    };
+    downloadSelected();
   });
 }
 
@@ -1152,25 +1312,19 @@ function renderLibraryGrid() {
     return;
   }
 
-  const visibleItems = state.libraryItems.slice(0, state.libraryRenderCount);
-  grid.innerHTML = visibleItems.map((item) => card(item, true)).join("");
-  footer.innerHTML = state.libraryRenderCount < state.libraryItems.length
+  grid.innerHTML = state.libraryItems.map((item) => card(item, true)).join("");
+  footer.innerHTML = state.libraryHasMore
     ? `
-      <span class="gs-meta">${gsStr("web_library_showing_count", "Showing %1$d of %2$d", state.libraryRenderCount, state.libraryItems.length)}</span>
-      <button class="gs-btn" id="loadMoreBtn">${gsStr("web_btn_load_more", "Load more")}</button>
+      <span class="gs-meta">${gsStr("web_library_showing_count", "Showing %1$d of %2$d", state.libraryItems.length, state.libraryTotalCount)}</span>
+      <button class="gs-btn" id="loadMoreBtn" ${state.libraryLoadingMore ? "disabled" : ""}>${state.libraryLoadingMore ? gsStr("web_player_status_opening", "Preparing") : gsStr("web_btn_load_more", "Load more")}</button>
     `
-    : `<span class="gs-meta">${gsStr("web_library_showing_count", "Showing %1$d of %2$d", state.libraryItems.length, state.libraryItems.length)}</span>`;
+    : `<span class="gs-meta">${gsStr("web_library_showing_count", "Showing %1$d of %2$d", state.libraryItems.length, state.libraryTotalCount)}</span>`;
 
   attachMusicPlayers();
+  initDeferredThumbnails(grid);
   bindSelectableCards();
   updateSelectionUi();
-  document.getElementById("loadMoreBtn")?.addEventListener("click", () => {
-    state.libraryRenderCount = Math.min(
-      state.libraryItems.length,
-      state.libraryRenderCount + LIBRARY_BATCH_SIZE,
-    );
-    renderLibraryGrid();
-  });
+  document.getElementById("loadMoreBtn")?.addEventListener("click", loadMoreLibraryItems);
 }
 
 function downloadItems(items) {
@@ -2147,7 +2301,7 @@ function card(item, selectable = false) {
     <article class="gs-card${selectable && state.selectMode ? " gs-card-selectable" : ""}${state.selected.has(item.id) ? " is-selected" : ""}" data-select-card="${selectable ? item.id : ""}">
       ${selectable ? `<button class="gs-card-toggle${state.selectMode ? " is-visible" : ""}" data-select-toggle="${item.id}">${state.selected.has(item.id) ? "Selected" : "Select"}</button>` : ""}
       ${item.thumbnailUrl
-        ? `<img class="gs-card-img" loading="lazy" src="${item.thumbnailUrl}" alt="">`
+        ? `<img class="gs-card-img" loading="lazy" decoding="async" fetchpriority="low" src="${THUMBNAIL_PLACEHOLDER_SRC}" data-thumb-src="${item.thumbnailUrl}" data-thumb-state="idle" alt="">`
         : `<div class="gs-card-img gs-card-placeholder"><span>${esc(item.category.toUpperCase())}</span></div>`}
       <div class="gs-card-body">
         <div class="gs-card-topline">
@@ -2534,14 +2688,17 @@ function clearNowPlaying(element) {
 
 function renderNowPlayingBar() {
   const bar = document.getElementById("nowPlayingBar");
+  const floatingSendBar = document.getElementById("floatingSendBar");
   if (!bar) return;
   if (!state.nowPlaying) {
     bar.className = "gs-now";
     bar.innerHTML = "";
+    floatingSendBar?.classList.remove("is-raised");
     return;
   }
 
   bar.className = "gs-now is-visible";
+  floatingSendBar?.classList.add("is-raised");
   bar.innerHTML = `
     <div>
       <div class="gs-now-label">${gsStr("web_now_playing", "Now playing")}</div>
