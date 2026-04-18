@@ -1026,7 +1026,7 @@ private fun RecentSessionsCard(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                text = "Recent shares",
+                text = stringResource(R.string.home_recent_shares),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
             )

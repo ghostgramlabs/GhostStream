@@ -186,7 +186,7 @@ private fun HistoryItem(
             )
             
             Text(
-                text = "$dateStr at $timeStr",
+                text = stringResource(R.string.history_date_time_format, dateStr, timeStr),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

@@ -32,10 +32,10 @@ const state = {
 const routes = {
   "/": renderHome,
   "/login": () => renderLogin(),
-  "/videos": () => renderLibrary("videos", "Videos"),
-  "/photos": () => renderLibrary("photos", "Photos"),
-  "/music": () => renderLibrary("music", "Music"),
-  "/files": () => renderLibrary("files", "Files"),
+  "/videos": () => renderLibrary("videos", titleForPath("/videos")),
+  "/photos": () => renderLibrary("photos", titleForPath("/photos")),
+  "/music": () => renderLibrary("music", titleForPath("/music")),
+  "/files": () => renderLibrary("files", titleForPath("/files")),
   "/upload": renderUpload,
 };
 
@@ -145,7 +145,7 @@ async function handleFilesUpload(files, hooks = {}) {
     requestId = response.requestId;
 
     if (!response.accepted) {
-      throw new Error("Upload transfer was denied by the device owner.");
+      throw new Error(gsStr("web_upload_denied", "Upload transfer was denied by the device owner."));
     }
 
     title.textContent = fileCount === 1 ? gsStr("web_upload_selection_single", `Sending ${files[0].name}`, files[0].name) : gsStr("web_upload_selection_multiple", `Sending ${fileCount} files`, fileCount);
@@ -173,11 +173,11 @@ async function handleFilesUpload(files, hooks = {}) {
         if (currentUploadXhr.status >= 200 && currentUploadXhr.status < 300) {
           resolve();
         } else {
-          reject(new Error("Upload failed (" + currentUploadXhr.status + ")"));
+          reject(new Error(gsStr("web_upload_failed_status", "Upload failed (%1$d)", currentUploadXhr.status)));
         }
       };
-      currentUploadXhr.onerror = () => reject(new Error("Network error - please check your connection."));
-      currentUploadXhr.onabort = () => reject(new Error("Transfer cancelled."));
+      currentUploadXhr.onerror = () => reject(new Error(gsStr("web_upload_network_error", "Network error - please check your connection.")));
+      currentUploadXhr.onabort = () => reject(new Error(gsStr("web_upload_cancelled", "Transfer cancelled.")));
     });
 
     const formData = new FormData();
@@ -243,7 +243,7 @@ async function boot() {
       navigate("/login", true);
       return;
     }
-    renderError(error.message || "Unable to load DirectServe.");
+    renderError(error.message || gsStr("web_error_load_failed", "Unable to load DirectServe."));
   }
 }
 
@@ -738,13 +738,13 @@ function compatibilityHeadline(item, streamLive = item.streamReady) {
     return gsStr("web_player_starting", "Starting playback...");
   }
   if ((item.compatibilityStatus === "IDLE" || !item.compatibilityStatus) && item.playbackMode !== "DIRECT" && !streamLive) {
-    return "This video needs preparation for browser playback";
+    return gsStr("web_player_needs_prepare", "This video needs preparation for browser playback.");
   }
   if (!streamLive) {
     return gsStr("web_player_opening", "Preparing for web playback...");
   }
   if (item.compatibilityComplete || item.compatibilityStatus === "READY") {
-    return gsStr("web_player_ready", "Playback Ready");
+    return gsStr("web_player_ready", "Ready");
   }
   return gsStr("web_player_starting", "Starting playback...");
 }
@@ -766,7 +766,7 @@ function compatibilityBody(item, streamLive = item.streamReady) {
     return gsStr("web_player_starting_desc", "The video is starting now. Background optimization will continue.");
   }
   if ((item.compatibilityStatus === "IDLE" || !item.compatibilityStatus) && item.playbackMode !== "DIRECT" && !streamLive) {
-    return "Prepare this video when you want to watch it in the browser.";
+    return gsStr("web_player_needs_prepare_desc", "Prepare this video when you want to watch it in the browser.");
   }
   if (!streamLive) {
     return gsStr("web_player_wait_desc", "Preparing a browser-compatible version. Keep this page open.");
@@ -1032,7 +1032,7 @@ async function renderLibrary(category, title) {
           </div>
         </div>
         <div class="gs-select-bar${state.selectMode ? " is-visible" : ""}" id="selectBar">
-          <span id="selectCount">0 selected</span>
+          <span id="selectCount">${gsStr("web_selection_count", "0 selected", 0)}</span>
           <div class="gs-toolbar-actions">
             <button class="gs-btn gs-btn-sm" id="selectAllBtn">${gsStr("web_btn_select_all")}</button>
             <button class="gs-btn gs-btn-sm" id="clearSelectBtn">${gsStr("web_btn_clear_selection")}</button>
