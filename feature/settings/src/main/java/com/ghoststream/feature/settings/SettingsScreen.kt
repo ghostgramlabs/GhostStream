@@ -75,6 +75,7 @@ fun SettingsScreen(
     onToggleAutoOptimizeLibrary: (Boolean) -> Unit,
     onBack: () -> Unit,
     onOpenLanguage: () -> Unit,
+    onOpenReceivedFilesLocation: () -> Unit,
     onOpenWifiSettings: () -> Unit,
     onOpenHotspotSettings: () -> Unit,
     onOpenHelp: () -> Unit,
@@ -196,6 +197,11 @@ fun SettingsScreen(
                 }
                 SettingsToggleRow(stringResource(R.string.settings_approve_file_uploads), stringResource(R.string.settings_approve_file_uploads_desc), settings.requireUploadApproval, onToggleRequireUploadApproval)
                 SettingsToggleRow(stringResource(R.string.settings_approve_per_device), stringResource(R.string.settings_approve_per_device_desc), settings.requireDeviceApproval, onToggleRequireDeviceApproval)
+                SettingsChoiceRow(
+                    stringResource(R.string.settings_received_files_location),
+                    stringResource(R.string.settings_received_files_location_value),
+                    onOpenReceivedFilesLocation,
+                )
             }
         }
 

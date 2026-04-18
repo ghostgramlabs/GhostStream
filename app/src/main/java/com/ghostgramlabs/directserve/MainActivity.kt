@@ -592,6 +592,19 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onManualPinChanged = { pin -> viewModel.updateSettings { current -> current.copy(manualPin = pin) } },
                     onBack = { navController.popBackStack() },
                     onOpenLanguage = { navController.navigate(Routes.LanguageSettings) },
+                    onOpenReceivedFilesLocation = {
+                        runCatching {
+                            context.startActivity(
+                                Intent(android.app.DownloadManager.ACTION_VIEW_DOWNLOADS).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                },
+                            )
+                        }.onFailure {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(context.getString(SharedR.string.main_no_file_app))
+                            }
+                        }
+                    },
                     onOpenWifiSettings = { context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS)) },
                     onOpenHotspotSettings = { context.startActivity(Intent("android.settings.TETHER_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) },
                     onOpenHelp = { navController.navigate(Routes.Help) },

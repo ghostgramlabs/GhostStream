@@ -75,6 +75,8 @@
     <string name="settings_approve_file_uploads_desc">Ask you before browsers can upload files to this device.</string>
     <string name="settings_approve_per_device">Approve per device</string>
     <string name="settings_approve_per_device_desc">Approve once per device, not per upload.</string>
+    <string name="settings_received_files_location">Received files location</string>
+    <string name="settings_received_files_location_value">Downloads</string>
     <string name="settings_show_thumbnails">Show thumbnails</string>
     <string name="settings_show_thumbnails_desc">Show quick previews for media.</string>
     <string name="settings_large_tv_layout">Large TV layout</string>
