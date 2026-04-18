@@ -1,6 +1,7 @@
 const app = document.getElementById("app");
 const sessionTitle = app.dataset.title || "DirectServe";
 const sessionSubtitle = app.dataset.subtitle || "Local-only streaming";
+const LIBRARY_BATCH_SIZE = 24;
 
 const state = {
   bootstrap: null,
@@ -18,6 +19,7 @@ const state = {
   musicPlayers: [],
   pendingUploadFiles: [],
   searchTimer: null,
+  libraryRenderCount: 0,
   compatPollToken: 0,
   compatPollTimer: null,
   compatMountToken: 0,
@@ -30,7 +32,7 @@ const state = {
 };
 
 const routes = {
-  "/": renderHome,
+  "/": () => renderLibrary("media", titleForPath("/")),
   "/login": () => renderLogin(),
   "/videos": () => renderLibrary("videos", titleForPath("/videos")),
   "/photos": () => renderLibrary("photos", titleForPath("/photos")),
@@ -221,9 +223,11 @@ async function boot() {
   const path = location.pathname;
 
   try {
-    state.bootstrap = await api("/api/bootstrap");
-    applyBootstrapUi();
-    await reportClientCapabilities();
+    if (!state.bootstrap) {
+      state.bootstrap = await api("/api/bootstrap");
+      applyBootstrapUi();
+      await reportClientCapabilities();
+    }
     debugTrace("bootstrap_loaded", `route=${path} auth=${state.bootstrap?.authEnabled} theme=${state.bootstrap?.themeMode}`);
     if (path === "/login") {
       renderLogin();
@@ -237,9 +241,10 @@ async function boot() {
       renderPhotoViewer(path.split("/").pop());
       return;
     }
-    (routes[path] || renderHome)();
+    await (routes[path] || routes["/"])();
   } catch (error) {
     if (error.status === 401) {
+      state.bootstrap = null;
       navigate("/login", true);
       return;
     }
@@ -1041,6 +1046,7 @@ async function renderLibrary(category, title) {
         </div>
       </div>
       <div class="gs-grid" id="grid">${skeletons(6)}</div>
+      <div class="gs-library-footer" id="libraryFooter"></div>
     </section>
   `);
 
@@ -1051,15 +1057,9 @@ async function renderLibrary(category, title) {
   });
 
   state.libraryItems = await api(`/api/items?category=${encodeURIComponent(category)}&q=${encodeURIComponent(state.query || "")}`);
-  const grid = document.getElementById("grid");
-  grid.innerHTML = state.libraryItems.length
-    ? state.libraryItems.map((item) => card(item, true)).join("")
-    : `<div class="gs-empty">${gsStr("web_library_empty")}</div>`;
-
-  attachMusicPlayers();
-  bindSelectableCards();
+  state.libraryRenderCount = Math.min(state.libraryItems.length, LIBRARY_BATCH_SIZE);
+  renderLibraryGrid();
   bindLibraryControls();
-  updateSelectionUi();
 }
 
 function bindLibraryControls() {
@@ -1088,6 +1088,14 @@ function bindLibraryControls() {
   document.getElementById("downloadSelectedBtn")?.addEventListener("click", () => {
     const selectedItems = state.libraryItems.filter((item) => state.selected.has(item.id));
     downloadItems(selectedItems);
+  });
+
+  document.getElementById("loadMoreBtn")?.addEventListener("click", () => {
+    state.libraryRenderCount = Math.min(
+      state.libraryItems.length,
+      state.libraryRenderCount + LIBRARY_BATCH_SIZE,
+    );
+    renderLibraryGrid();
   });
 }
 
@@ -1130,6 +1138,38 @@ function updateSelectionUi() {
   }
   document.querySelectorAll("[data-select-card]").forEach((cardElement) => {
     cardElement.classList.toggle("is-selected", state.selected.has(cardElement.dataset.selectCard));
+  });
+}
+
+function renderLibraryGrid() {
+  const grid = document.getElementById("grid");
+  const footer = document.getElementById("libraryFooter");
+  if (!grid || !footer) return;
+
+  if (!state.libraryItems.length) {
+    grid.innerHTML = `<div class="gs-empty">${gsStr("web_library_empty")}</div>`;
+    footer.innerHTML = "";
+    return;
+  }
+
+  const visibleItems = state.libraryItems.slice(0, state.libraryRenderCount);
+  grid.innerHTML = visibleItems.map((item) => card(item, true)).join("");
+  footer.innerHTML = state.libraryRenderCount < state.libraryItems.length
+    ? `
+      <span class="gs-meta">${gsStr("web_library_showing_count", "Showing %1$d of %2$d", state.libraryRenderCount, state.libraryItems.length)}</span>
+      <button class="gs-btn" id="loadMoreBtn">${gsStr("web_btn_load_more", "Load more")}</button>
+    `
+    : `<span class="gs-meta">${gsStr("web_library_showing_count", "Showing %1$d of %2$d", state.libraryItems.length, state.libraryItems.length)}</span>`;
+
+  attachMusicPlayers();
+  bindSelectableCards();
+  updateSelectionUi();
+  document.getElementById("loadMoreBtn")?.addEventListener("click", () => {
+    state.libraryRenderCount = Math.min(
+      state.libraryItems.length,
+      state.libraryRenderCount + LIBRARY_BATCH_SIZE,
+    );
+    renderLibraryGrid();
   });
 }
 
@@ -1192,6 +1232,7 @@ async function renderVideoPlayer(id) {
           </div>
           <div class="gs-toolbar-actions">
             <a class="gs-btn gs-btn-sm" data-link href="/videos">${gsStr("web_btn_back", "Back to videos")}</a>
+            <button class="gs-btn gs-btn-sm" type="button" id="fullscreenBtn">${gsStr("web_btn_fullscreen", "Full screen")}</button>
             ${allowDownloads ? `<a class="gs-btn gs-btn-download" href="${item.downloadUrl}">${gsStr("web_btn_download_original", "Download original")}</a>` : ""}
           </div>
         </div>
@@ -1243,6 +1284,68 @@ function renderVideoStage(item, showPlayer) {
     `;
 }
 
+function parseRatioString(ratio) {
+  if (!ratio || typeof ratio !== "string" || !ratio.includes(":")) return null;
+  const [widthText, heightText] = ratio.split(":");
+  const width = Number(widthText);
+  const height = Number(heightText);
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+    return null;
+  }
+  return { width, height };
+}
+
+function preferredVideoRatio(item) {
+  if (item?.width && item?.height) {
+    return `${item.width}:${item.height}`;
+  }
+  return state.ratioLocked[item?.id] || "16:9";
+}
+
+function applyAspectRatioLayout(video, item, ratio = preferredVideoRatio(item)) {
+  if (!video || !item?.id) return;
+  const parsed = parseRatioString(ratio);
+  if (!parsed) return;
+  const { width, height } = parsed;
+  const ratioCss = `${width} / ${height}`;
+  const wrap = video.closest(".gs-video-wrap");
+  if (wrap) {
+    wrap.style.aspectRatio = ratioCss;
+    wrap.classList.toggle("is-portrait", height > width);
+  }
+  video.style.aspectRatio = ratioCss;
+  if (state.plyr && state.plyrItemId === item.id) {
+    state.plyr.ratio = `${width}:${height}`;
+  }
+}
+
+function toggleVideoFullscreen(video) {
+  if (!video) return;
+  const wrap = video.closest(".gs-video-wrap");
+  if (state.plyr?.fullscreen) {
+    state.plyr.fullscreen.toggle();
+    return;
+  }
+  if (document.fullscreenElement && document.exitFullscreen) {
+    document.exitFullscreen().catch?.(() => {});
+    return;
+  }
+  if (typeof video.webkitEnterFullscreen === "function") {
+    try {
+      video.webkitEnterFullscreen();
+      return;
+    } catch (_) {}
+  }
+  const fullscreenTarget = wrap || video;
+  if (fullscreenTarget.requestFullscreen) {
+    fullscreenTarget.requestFullscreen().catch?.(() => {});
+    return;
+  }
+  if (fullscreenTarget.webkitRequestFullscreen) {
+    fullscreenTarget.webkitRequestFullscreen();
+  }
+}
+
 function videoMarkup(item) {
   const allowDownloads = !state.bootstrap?.preventDownload && Boolean(item.downloadUrl);
   const useNativePlayer = shouldUseNativeVideoPlayer(item);
@@ -1252,9 +1355,13 @@ function videoMarkup(item) {
   const selectedSourceType = item.selectedSourceType || lockedSource?.kind || null;
   const sourceUrl = selectedSourceType === "managed_hls" ? null : (item.selectedSourceUrl || lockedSource?.url || null);
   const sourceAttribute = sourceUrl ? ` src="${sourceUrl}"` : "";
+  const initialRatio = preferredVideoRatio(item);
+  const parsedRatio = parseRatioString(initialRatio);
+  const portraitClass = parsedRatio && parsedRatio.height > parsedRatio.width ? " is-portrait" : "";
+  const aspectRatioStyle = parsedRatio ? ` style="aspect-ratio:${parsedRatio.width} / ${parsedRatio.height};"` : "";
 
   return `
-    <div class="gs-video-wrap">
+    <div class="gs-video-wrap${portraitClass}"${aspectRatioStyle}>
       <video id="vPlayer" class="gs-plyr-target${nativeClass}" controls playsinline webkit-playsinline="true" x-webkit-airplay="allow" preload="${preload}"${sourceAttribute}>
         ${item.subtitleUrl ? `<track kind="subtitles" src="${item.subtitleUrl}" srclang="en" label="Subtitle" default>` : ""}
       </video>
@@ -1316,6 +1423,7 @@ function hydrateVideoPlayer(item, options = {}) {
   if (playerStructural) playerStructural.style.aspectRatio = "";
   if (wrapStructural) wrapStructural.style.aspectRatio = "";
   video.style.aspectRatio = "";
+  applyAspectRatioLayout(video, item);
 
   let autoRetryUsed = false;
   let managedHlsFallbackUsed = false;
@@ -1349,14 +1457,7 @@ function hydrateVideoPlayer(item, options = {}) {
     // Explicitly set ratio from metadata if available
     if (item.width && item.height) {
       state.ratioLocked[item.id] = `${item.width}:${item.height}`;
-      state.plyr.ratio = `${item.width}:${item.height}`;
-      const wrapStructural = video.closest(".gs-video-wrap");
-      if (wrapStructural) {
-        wrapStructural.style.aspectRatio = `${item.width} / ${item.height}`;
-        if (item.height > item.width) {
-          wrapStructural.classList.add("is-portrait");
-        }
-      }
+      applyAspectRatioLayout(video, item, state.ratioLocked[item.id]);
     }
     
     setupScrubbingPreviews(item, state.plyr);
@@ -1553,6 +1654,10 @@ function hydrateVideoPlayer(item, options = {}) {
     if (errorCard) errorCard.classList.remove("is-visible");
   };
 
+  const fullscreenBtn = document.getElementById("fullscreenBtn");
+  fullscreenBtn?.addEventListener("click", () => toggleVideoFullscreen(video));
+  video.addEventListener("dblclick", () => toggleVideoFullscreen(video));
+
   const markPlaybackStable = () => {
     state.compatPlaybackFailures[item.id] = 0;
     clearVideoError();
@@ -1577,8 +1682,7 @@ function hydrateVideoPlayer(item, options = {}) {
         break;
       case "KeyF":
         e.preventDefault();
-        if (state.plyr) state.plyr.fullscreen.toggle();
-        else if (video.requestFullscreen) video.requestFullscreen();
+        toggleVideoFullscreen(video);
         break;
       case "KeyM":
         e.preventDefault();
@@ -1613,23 +1717,14 @@ function hydrateVideoPlayer(item, options = {}) {
 
     if (state.ratioLocked[item.id]) {
         debugTrace("ratio_override_blocked", `id=${item.id} locked=${state.ratioLocked[item.id]} attempt=${w}x${h}`);
-        if (state.plyr && state.plyr.ratio !== state.ratioLocked[item.id]) {
-            state.plyr.ratio = state.ratioLocked[item.id];
-        }
+        applyAspectRatioLayout(video, item, state.ratioLocked[item.id]);
         return;
     }
 
     if (metadataRatio) {
         state.ratioLocked[item.id] = metadataRatio;
         debugTrace("ratio_locked_authoritative", `id=${item.id} ratio=${metadataRatio}`);
-        if (state.plyr) state.plyr.ratio = metadataRatio;
-        const wrapStructural = video.closest(".gs-video-wrap");
-        if (wrapStructural) {
-            wrapStructural.style.aspectRatio = metadataRatio.replace(":", " / ");
-            if (item.height > item.width) {
-                wrapStructural.classList.add("is-portrait");
-            }
-        }
+        applyAspectRatioLayout(video, item, metadataRatio);
         return;
     }
 
@@ -1637,12 +1732,7 @@ function hydrateVideoPlayer(item, options = {}) {
         const ratioStr = `${w}:${h}`;
         state.ratioLocked[item.id] = ratioStr;
         debugTrace("ratio_locked_real", `id=${item.id} ratio=${ratioStr} source=${src}`);
-        
-        if (state.plyr) {
-            state.plyr.ratio = ratioStr;
-        } else {
-            video.style.aspectRatio = `${w} / ${h}`;
-        }
+        applyAspectRatioLayout(video, item, ratioStr);
     }
   });
   video.addEventListener("canplay", () => {

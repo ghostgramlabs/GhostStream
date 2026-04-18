@@ -389,6 +389,9 @@ class KtorGhostStreamServer(
                     .filter { item ->
                         when (category) {
                             null, "", "all" -> true
+                            "media" -> item.category == MediaCategory.VIDEO ||
+                                item.category == MediaCategory.PHOTO ||
+                                item.category == MediaCategory.MUSIC
                             "videos" -> item.category == MediaCategory.VIDEO
                             "photos" -> item.category == MediaCategory.PHOTO
                             "music" -> item.category == MediaCategory.MUSIC

@@ -578,6 +578,15 @@ input {
   gap: 16px;
 }
 
+.gs-library-footer {
+  margin-top: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .gs-card {
   position: relative;
   overflow: hidden;
@@ -799,7 +808,9 @@ input {
 }
 
 .gs-video-wrap .plyr:fullscreen,
-.gs-video-wrap .plyr--fullscreen-fallback {
+.gs-video-wrap .plyr--fullscreen-fallback,
+.gs-video-wrap:fullscreen,
+.gs-video-wrap:-webkit-full-screen {
   border: 0 !important;
   border-radius: 0 !important;
   background: #000 !important;
@@ -808,7 +819,9 @@ input {
 .gs-video-wrap .plyr:fullscreen .plyr__video-wrapper,
 .gs-video-wrap .plyr--fullscreen-fallback .plyr__video-wrapper,
 .gs-video-wrap .plyr:fullscreen video,
-.gs-video-wrap .plyr--fullscreen-fallback video {
+.gs-video-wrap .plyr--fullscreen-fallback video,
+.gs-video-wrap:fullscreen video,
+.gs-video-wrap:-webkit-full-screen video {
   border: 0 !important;
   border-radius: 0 !important;
   background: #000 !important;
