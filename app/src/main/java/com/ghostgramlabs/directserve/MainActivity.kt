@@ -113,7 +113,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
     var pendingStartService by remember { mutableStateOf(false) }
     var pendingBatchSelectNavigation by remember { mutableStateOf(false) }
     var launchHandled by remember { mutableStateOf(false) }
-    var lastSessionMessage by remember { mutableStateOf<String?>(null) }
+    var lastSessionMessage by remember { mutableStateOf<String?>(uiState.sessionState.message) }
     var allowHomeBackToResumeSession by remember { mutableStateOf(false) }
     val startForegroundSharingService = remember(context, viewModel) {
         {
@@ -314,9 +314,16 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                 SplashRoute()
             }
             composable(Routes.Onboarding) {
+                val finishOnboarding = {
+                    viewModel.completeOnboarding()
+                    navController.navigate(Routes.Home) {
+                        popUpTo(Routes.Onboarding) { inclusive = true }
+                        launchSingleTop = true
+                    }
+                }
                 OnboardingScreen(
-                    onSkip = viewModel::completeOnboarding,
-                    onGetStarted = viewModel::completeOnboarding,
+                    onSkip = finishOnboarding,
+                    onGetStarted = finishOnboarding,
                     modifier = Modifier.padding(innerPadding),
                 )
             }

@@ -78,7 +78,7 @@ fun LanguageSelectionScreen(
 
         items(AppLanguages.supported, key = { it.tag }) { language ->
             val selected = language.tag == selectedTag
-            val showEnglishName = language.englishName.trim() != language.nativeName.trim()
+            val showEnglishName = !language.englishName.trim().equals(language.nativeName.trim(), ignoreCase = true)
             Surface(
                 shape = RoundedCornerShape(20.dp),
                 color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface,

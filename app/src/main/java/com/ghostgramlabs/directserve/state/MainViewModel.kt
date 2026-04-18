@@ -139,7 +139,6 @@ class MainViewModel(
     fun completeOnboarding() {
         viewModelScope.launch {
             container.settingsRepository.markOnboardingCompleted()
-            _events.emit(AppEvent.NavigateHome)
         }
     }
 
@@ -609,4 +608,4 @@ private fun NearbyDiscoveryState.filterCurrentSession(sessionState: SessionState
             else -> application.getString(R.string.nearby_helper_open_on_other_device)
         },
     )
-}
+}

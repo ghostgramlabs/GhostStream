@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -71,14 +72,32 @@ fun HistoryScreen(
             ) {
                 TabRow(
                     selectedTabIndex = selectedTab,
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = Color.Transparent,
                     divider = {},
+                    indicator = {},
                 ) {
                     tabs.forEachIndexed { index, title ->
                         Tab(
                             selected = selectedTab == index,
                             onClick = { selectedTab = index },
-                            text = { Text(title) }
+                            selectedContentColor = MaterialTheme.colorScheme.primary,
+                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            text = {
+                                Surface(
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = if (selectedTab == index) {
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                    } else {
+                                        Color.Transparent
+                                    },
+                                ) {
+                                    Text(
+                                        text = title,
+                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+                                        fontWeight = if (selectedTab == index) FontWeight.SemiBold else FontWeight.Medium,
+                                    )
+                                }
+                            }
                         )
                     }
                 }
