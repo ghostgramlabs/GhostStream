@@ -49,6 +49,7 @@ class MainViewModel(
     private val libraryImportingCount = MutableStateFlow(0)
     private val connectingNearbyDeviceId = MutableStateFlow<String?>(null)
     private val _browserPrepManuallyTriggered = MutableStateFlow(false)
+    private val _hasAllFilesAccess = MutableStateFlow(false)
     private val _events = MutableSharedFlow<AppEvent>(extraBufferCapacity = 8)
     private var dlnaAnnouncer: DlnaAnnouncer? = null
 
@@ -71,6 +72,7 @@ class MainViewModel(
         container.sessionManager.pendingUploadRequest,
         container.historyRepository.allHistory,
         _browserPrepManuallyTriggered,
+        _hasAllFilesAccess,
     ) { values ->
         val settings = values[0] as AppSettings
         val library = values[1] as LibraryState
@@ -87,6 +89,7 @@ class MainViewModel(
         val pendingUpload = values[12] as com.ghoststream.core.model.UploadRequest?
         val history = values[13] as List<com.ghoststream.core.model.TransferRecord>
         val manuallyTriggered = values[14] as Boolean
+        val allFilesAccess = values[15] as Boolean
         val filteredNearbyDiscoveryState = nearbyDiscoveryState.filterCurrentSession(session, application)
         MainUiState(
             isReady = true,
@@ -110,6 +113,7 @@ class MainViewModel(
             pendingUploadRequest = pendingUpload,
             transferHistory = history,
             browserPrepManuallyTriggered = manuallyTriggered,
+            hasAllFilesAccess = allFilesAccess,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -142,6 +146,26 @@ class MainViewModel(
         ) { settings, session ->
             syncDlnaAnnouncer(settings.dlnaEnabled, session)
         }.launchIn(viewModelScope)
+    }
+
+    fun refreshAllFilesAccessStatus() {
+        _hasAllFilesAccess.value = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            android.os.Environment.isExternalStorageManager()
+        } else {
+            true
+        }
+    }
+
+    fun requestAllFilesAccess() {
+        viewModelScope.launch {
+            _events.emit(AppEvent.RequestAllFilesAccess)
+        }
+    }
+
+    fun showMessage(message: String) {
+        viewModelScope.launch {
+            _events.emit(AppEvent.ShowMessage(message))
+        }
     }
 
     fun completeOnboarding() {

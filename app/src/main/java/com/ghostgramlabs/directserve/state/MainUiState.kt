@@ -29,6 +29,7 @@ data class MainUiState(
     val pendingUploadRequest: com.ghoststream.core.model.UploadRequest? = null,
     val transferHistory: List<TransferRecord> = emptyList(),
     val browserPrepManuallyTriggered: Boolean = false,
+    val hasAllFilesAccess: Boolean = false,
 )
 
 sealed interface AppEvent {
@@ -43,4 +44,5 @@ sealed interface AppEvent {
     data class OpenExternalUrl(val url: String) : AppEvent
     data object NavigateHistory : AppEvent
     data class OpenFile(val fileUri: String) : AppEvent
+    data object RequestAllFilesAccess : AppEvent
 }

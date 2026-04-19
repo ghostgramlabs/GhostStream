@@ -52,6 +52,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -82,6 +83,7 @@ import com.ghoststream.core.model.deviceIdentity
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HomeScreen(
+    hasAllFilesAccess: Boolean,
     libraryState: LibraryState,
     sessionState: SessionState,
     settings: com.ghoststream.core.model.AppSettings,
@@ -103,9 +105,54 @@ fun HomeScreen(
     libraryImportingCount: Int,
     onImportAllMedia: () -> Unit,
     onClearAllMedia: () -> Unit,
+    onRequestAllFilesAccess: () -> Unit,
+    onShowMessage: (String) -> Unit,
     onResolveUploadRequest: (String, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var showAllFilesDialog by rememberSaveable { mutableStateOf(false) }
+    var nudgeShown by rememberSaveable { mutableStateOf(false) }
+
+    val nudgeText = stringResource(R.string.home_all_files_nudge_text)
+    LaunchedEffect(hasAllFilesAccess, settings.onboardingCompleted) {
+        if (!nudgeShown && !hasAllFilesAccess && settings.onboardingCompleted) {
+            nudgeShown = true
+            onShowMessage(nudgeText)
+        }
+    }
+
+    if (showAllFilesDialog) {
+        AlertDialog(
+            onDismissRequest = { showAllFilesDialog = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            icon = { Icon(Icons.Outlined.Collections, contentDescription = null) },
+            title = { Text(stringResource(R.string.home_all_files_access_title)) },
+            text = { Text(stringResource(R.string.home_all_files_access_body)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showAllFilesDialog = false
+                        onRequestAllFilesAccess()
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ghostPrimaryButtonColors(),
+                ) {
+                    Text(stringResource(R.string.home_all_files_access_grant))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showAllFilesDialog = false
+                        onImportAllMedia()
+                    }
+                ) {
+                    Text(stringResource(R.string.home_all_files_access_media_only))
+                }
+            }
+        )
+    }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -121,18 +168,20 @@ fun HomeScreen(
         }
 
         item {
-            SessionHeroCard(
-                libraryState = libraryState,
-                sessionState = sessionState,
-                settings = settings,
-                connectionDiagnostics = connectionDiagnostics,
-                isStartingShare = isStartingShare,
-                onOpenLibrary = onOpenLibrary,
-                onStartSharing = onStartSharing,
-                onImportAllMedia = onImportAllMedia,
-                onClearAllMedia = onClearAllMedia,
-                libraryImportingCount = libraryImportingCount,
-            )
+                SessionHeroCard(
+                    hasAllFilesAccess = hasAllFilesAccess,
+                    libraryState = libraryState,
+                    sessionState = sessionState,
+                    settings = settings,
+                    connectionDiagnostics = connectionDiagnostics,
+                    isStartingShare = isStartingShare,
+                    onOpenLibrary = onOpenLibrary,
+                    onStartSharing = onStartSharing,
+                    onImportAllMedia = onImportAllMedia,
+                    onClearAllMedia = onClearAllMedia,
+                    libraryImportingCount = libraryImportingCount,
+                    onRequestAllFilesAccess = { showAllFilesDialog = true },
+                )
         }
 
         item {
@@ -289,6 +338,7 @@ private fun TopBrandHeader(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SessionHeroCard(
+    hasAllFilesAccess: Boolean,
     libraryState: LibraryState,
     sessionState: SessionState,
     settings: com.ghoststream.core.model.AppSettings,
@@ -299,6 +349,7 @@ private fun SessionHeroCard(
     onImportAllMedia: () -> Unit,
     onClearAllMedia: () -> Unit,
     libraryImportingCount: Int,
+    onRequestAllFilesAccess: () -> Unit,
 ) {
     val canStartSession = sessionState.networkAvailability.isWifiOrHotspotReady
     var showNoNetworkDialog by rememberSaveable { mutableStateOf(false) }
@@ -450,8 +501,10 @@ private fun SessionHeroCard(
                     onClick = {
                         if (settings.mediaServerMode) {
                             onClearAllMedia()
-                        } else {
+                        } else if (hasAllFilesAccess) {
                             onImportAllMedia()
+                        } else {
+                            onRequestAllFilesAccess()
                         }
                     },
                     enabled = libraryImportingCount == 0,
@@ -555,8 +608,18 @@ private fun SummaryStrip(libraryState: LibraryState) {
             value = libraryState.summary.totalItems.toString(),
             highlight = libraryState.summary.totalItems > 0 || libraryState.folders.isNotEmpty(),
         )
-        HeroStat(label = stringResource(R.string.home_summary_media), value = (libraryState.summary.videos + libraryState.summary.photos + libraryState.summary.music).toString())
-        HeroStat(label = stringResource(R.string.library_info_size), value = formatBytes(libraryState.summary.totalBytes))
+        HeroStat(
+            label = stringResource(R.string.home_summary_media),
+            value = (libraryState.summary.videos + libraryState.summary.photos + libraryState.summary.music).toString()
+        )
+        HeroStat(
+            label = stringResource(R.string.home_summary_files),
+            value = libraryState.summary.files.toString()
+        )
+        HeroStat(
+            label = stringResource(R.string.library_info_size),
+            value = formatBytes(libraryState.summary.totalBytes)
+        )
     }
 }
 

@@ -347,6 +347,21 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                         }
                     }
                 }
+                AppEvent.RequestAllFilesAccess -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        runCatching {
+                            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                                data = android.net.Uri.parse("package:${context.packageName}")
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            context.startActivity(intent)
+                        }.onFailure {
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Unable to open settings")
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -402,7 +417,10 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                         launchSingleTop = true
                     }
                 }
-                ResumeRefreshEffect(onResume = viewModel::refreshNetwork)
+                ResumeRefreshEffect(onResume = {
+                    viewModel.refreshNetwork()
+                    viewModel.refreshAllFilesAccessStatus()
+                })
                 LaunchedEffect(uiState.sessionState.isSharing) {
                     if (uiState.sessionState.isSharing) {
                         viewModel.stopNearbyDiscovery()
@@ -414,6 +432,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onDispose { viewModel.stopNearbyDiscovery() }
                 }
                 HomeScreen(
+                    hasAllFilesAccess = uiState.hasAllFilesAccess,
                     libraryState = uiState.libraryState,
                     sessionState = uiState.sessionState,
                     settings = uiState.settings,
@@ -443,6 +462,8 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onOpenHistory = viewModel::navigateToHistory,
                     onImportAllMedia = startMediaServerWithPermission,
                     onClearAllMedia = viewModel::clearAllMedia,
+                    onRequestAllFilesAccess = viewModel::requestAllFilesAccess,
+                    onShowMessage = viewModel::showMessage,
                     libraryImportingCount = uiState.libraryImportingCount,
                     onResolveUploadRequest = viewModel::resolveUploadRequest,
                     modifier = Modifier.padding(innerPadding),

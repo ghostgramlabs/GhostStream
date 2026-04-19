@@ -7,6 +7,7 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
+import android.util.Log
 import com.ghoststream.core.media.MediaAnalyzer
 import com.ghoststream.core.model.MediaCategory
 import com.ghoststream.core.model.SharedFolder
@@ -19,10 +20,13 @@ class MediaStoreScanner(
     private val context: Context,
     private val mediaAnalyzer: MediaAnalyzer,
 ) {
+    private val TAG = "MediaStoreScanner"
 
     suspend fun scanAllDeviceMedia(): Pair<List<SharedItem>, List<SharedFolder>> = withContext(Dispatchers.IO) {
         val items = mutableListOf<SharedItem>()
         val foldersMap = mutableMapOf<String, SharedFolderBuilder>()
+
+        Log.d(TAG, "Starting full device media scan...")
 
         scanCollection(
             collection = MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
@@ -46,6 +50,16 @@ class MediaStoreScanner(
             isAudio = true
         )
 
+        scanCollection(
+            collection = MediaStore.Files.getContentUri("external"),
+            category = MediaCategory.FILE,
+            items = items,
+            foldersMap = foldersMap,
+            selection = "${MediaStore.Files.FileColumns.MEDIA_TYPE} = ${MediaStore.Files.FileColumns.MEDIA_TYPE_NONE}"
+        )
+
+        Log.d(TAG, "Scan complete. Found ${items.size} items across ${foldersMap.size} folders.")
+
         val folders = foldersMap.values.map {
             SharedFolder(
                 id = it.id,
@@ -67,7 +81,11 @@ class MediaStoreScanner(
         items: MutableList<SharedItem>,
         foldersMap: MutableMap<String, SharedFolderBuilder>,
         isAudio: Boolean = false,
+        selection: String? = null,
+        selectionArgs: Array<String>? = null,
     ) {
+        Log.d(TAG, "Scanning collection: $collection (Category: $category)")
+
         val projection = mutableListOf(
             MediaStore.MediaColumns._ID,
             MediaStore.MediaColumns.DISPLAY_NAME,
@@ -81,8 +99,14 @@ class MediaStoreScanner(
                 add(MediaStore.Audio.Media.ALBUM)
                 add(MediaStore.Audio.Media.DURATION)
             } else {
-                add(MediaStore.MediaColumns.BUCKET_ID)
-                add(MediaStore.MediaColumns.BUCKET_DISPLAY_NAME)
+                // Documents in MediaStore.Files might not always support BUCKET columns gracefully on all providers
+                try {
+                    add(MediaStore.MediaColumns.BUCKET_ID)
+                    add(MediaStore.MediaColumns.BUCKET_DISPLAY_NAME)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Bucket columns not available for this collection")
+                }
+                
                 if (category == MediaCategory.VIDEO) {
                     add(MediaStore.Video.Media.DURATION)
                 }
@@ -92,25 +116,28 @@ class MediaStoreScanner(
         val sortOrder = "${MediaStore.MediaColumns.DATE_ADDED} DESC"
 
         try {
-            context.contentResolver.query(collection, projection, null, null, sortOrder)?.use { cursor ->
-                val idIdx = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
-                val nameIdx = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DISPLAY_NAME)
-                val mimeIdx = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.MIME_TYPE)
-                val sizeIdx = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.SIZE)
-                val addedIdx = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_ADDED)
-                val modifiedIdx = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATE_MODIFIED)
+            context.contentResolver.query(collection, projection, selection, selectionArgs, sortOrder)?.use { cursor ->
+                val idIdx = cursor.getColumnIndex(MediaStore.MediaColumns._ID)
+                val nameIdx = cursor.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME)
+                val mimeIdx = cursor.getColumnIndex(MediaStore.MediaColumns.MIME_TYPE)
+                val sizeIdx = cursor.getColumnIndex(MediaStore.MediaColumns.SIZE)
+                val addedIdx = cursor.getColumnIndex(MediaStore.MediaColumns.DATE_ADDED)
+                val modifiedIdx = cursor.getColumnIndex(MediaStore.MediaColumns.DATE_MODIFIED)
                 
                 val folderIdIdx = cursor.getColumnIndex(if (isAudio) MediaStore.Audio.Media.ALBUM_ID else MediaStore.MediaColumns.BUCKET_ID)
                 val folderNameIdx = cursor.getColumnIndex(if (isAudio) MediaStore.Audio.Media.ALBUM else MediaStore.MediaColumns.BUCKET_DISPLAY_NAME)
                 val durationIdx = cursor.getColumnIndex(if (isAudio) MediaStore.Audio.Media.DURATION else MediaStore.Video.Media.DURATION)
 
+                var count = 0
                 while (cursor.moveToNext()) {
+                    if (idIdx < 0) continue
+                    
                     val id = cursor.getLong(idIdx)
                     val name = cursor.getStringOrNull(nameIdx) ?: "Unknown"
                     val mime = cursor.getStringOrNull(mimeIdx) ?: "application/octet-stream"
                     val size = cursor.getLong(sizeIdx)
-                    val added = cursor.getLong(addedIdx) * 1000L
-                    val modified = cursor.getLong(modifiedIdx) * 1000L
+                    val added = if (addedIdx >= 0) cursor.getLong(addedIdx) * 1000L else System.currentTimeMillis()
+                    val modified = if (modifiedIdx >= 0) cursor.getLong(modifiedIdx) * 1000L else System.currentTimeMillis()
                     val contentUri = ContentUris.withAppendedId(collection, id)
 
                     val folderIdRaw = if (folderIdIdx >= 0) cursor.getStringOrNull(folderIdIdx) else null
@@ -151,10 +178,12 @@ class MediaStoreScanner(
                             }
                         )
                     )
+                    count++
                 }
-            }
+                Log.d(TAG, "Processed $count items from $collection")
+            } ?: Log.w(TAG, "Cursor was null for $collection")
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(TAG, "Failed to scan collection $collection", e)
         }
     }
 

@@ -311,11 +311,11 @@ function isMobileBrowser() {
 }
 
 function isMediaPath(path) {
-  return path === "/" || path === "/videos" || path === "/photos" || path === "/music";
+  return path === "/" || path === "/videos" || path === "/photos" || path === "/music" || path === "/folders" || path === "/files";
 }
 
 function isImmersiveMediaPath(path) {
-  return path.startsWith("/player/video/") || path.startsWith("/photo/");
+  return path.startsWith("/player/video/") || path.startsWith("/photo/") || path.startsWith("/pdf/");
 }
 
 function shouldShowFloatingSendBar(path) {
@@ -900,6 +900,20 @@ function shell(content, options = {}) {
   const path = location.pathname;
   const mediaActive = isMediaPath(path);
   const showFloatingSendBar = shouldShowFloatingSendBar(path);
+  const immersive = isImmersiveMediaPath(path);
+  document.body.classList.toggle("gs-is-immersive", immersive);
+
+  // Sync header height for sticky search offsets
+  if (!immersive) {
+    setTimeout(() => {
+      const header = document.querySelector(".gs-header");
+      if (header) {
+        const height = header.offsetHeight;
+        document.documentElement.style.setProperty("--gs-header-height", `${height}px`);
+      }
+    }, 0);
+  }
+
   const mediaSubnav = mediaActive
     ? `
       <div class="gs-media-subnav">
@@ -911,6 +925,7 @@ function shell(content, options = {}) {
       </div>
     `
     : "";
+
   const securityLabel = bootstrap?.authEnabled ? gsStr("web_security_pin", "PIN protected") : gsStr("web_security_open", "Open on local network");
   const sessionLink = bootstrap?.sessionUrl
     ? `
@@ -921,34 +936,42 @@ function shell(content, options = {}) {
     `
     : "";
 
+  const headerHtml = immersive
+    ? ""
+    : `
+      <header class="gs-header">
+        <nav class="gs-nav">
+          <a class="gs-logo" data-link href="/">
+            <div class="gs-logo-mark"></div>
+            <span>${esc(bootstrap?.title || sessionTitle)}</span>
+          </a>
+          <div class="gs-nav-links">
+            <a class="gs-tab${mediaActive ? " on" : ""}" data-link href="/">${gsStr("web_nav_media", "Media")}</a>
+            <a class="gs-tab${path === "/files" ? " on" : ""}" data-link href="/files">${gsStr("web_nav_files", "Files")}</a>
+          </div>
+          <div class="gs-nav-meta">
+            <span class="gs-status-pill">${securityLabel}</span>
+            ${bootstrap?.authEnabled ? `<button class="gs-btn gs-btn-sm" id="logoutBtn">${gsStr("web_nav_logout", "Log out")}</button>` : ""}
+          </div>
+        </nav>
+        <div class="gs-status-strip">
+          <div class="gs-inline-note">
+            <span class="gs-inline-note-label">${gsStr("web_strip_session", "Session")}</span>
+            <span>${esc(bootstrap?.subtitle || sessionSubtitle)}</span>
+          </div>
+          <div class="gs-inline-note">
+            <span class="gs-inline-note-label">${gsStr("web_strip_device", "Device")}</span>
+            <span>${bootstrap?.deviceName ? `${esc(bootstrap.deviceName)} • ${esc(bootstrap.deviceIp)}` : gsStr("web_status_unknown", "Unknown")}</span>
+          </div>
+          ${sessionLink}
+        </div>
+        ${mediaSubnav}
+      </header>
+    `;
+
   app.innerHTML = `
     <div class="gs-shell">
-      <nav class="gs-nav">
-        <a class="gs-logo" data-link href="/">
-          <span class="gs-logo-mark"></span>
-          <span>${esc(bootstrap?.title || sessionTitle)}</span>
-        </a>
-        <div class="gs-nav-links">
-          <a class="gs-tab${mediaActive ? " on" : ""}" data-link href="/">${gsStr("web_nav_media", "Media")}</a>
-          <a class="gs-tab${path === "/files" ? " on" : ""}" data-link href="/files">${gsStr("web_nav_files", "Files")}</a>
-        </div>
-        <div class="gs-nav-meta">
-          <span class="gs-status-pill">${securityLabel}</span>
-          ${bootstrap?.authEnabled ? `<button class="gs-btn gs-btn-sm" id="logoutBtn">${gsStr("web_nav_logout", "Log out")}</button>` : ""}
-        </div>
-      </nav>
-      <div class="gs-status-strip">
-        <div class="gs-inline-note">
-          <span class="gs-inline-note-label">${gsStr("web_strip_session", "Session")}</span>
-          <span>${esc(bootstrap?.subtitle || sessionSubtitle)}</span>
-        </div>
-        <div class="gs-inline-note">
-          <span class="gs-inline-note-label">${gsStr("web_strip_device", "Device")}</span>
-          <span>${bootstrap?.deviceName ? `${esc(bootstrap.deviceName)} • ${esc(bootstrap.deviceIp)}` : gsStr("web_status_unknown", "Unknown")}</span>
-        </div>
-        ${sessionLink}
-      </div>
-      ${mediaSubnav}
+      ${headerHtml}
       <main class="gs-main">${content}</main>
       ${showFloatingSendBar ? `
         <a class="gs-send-bar${state.nowPlaying ? " is-raised" : ""}" id="floatingSendBar" data-link href="/upload">
@@ -1081,14 +1104,16 @@ async function renderLibrary(category, title) {
         <h2>${esc(title)}</h2>
         <span class="gs-section-meta">${allowDownloads ? gsStr("web_library_desc_download") : gsStr("web_library_desc_browse")}</span>
       </div>
-      <div class="gs-control-card">
+      <div class="gs-control-card sticky-search">
         <div class="gs-toolbar">
           <input class="gs-search" id="libSearch" placeholder="${gsStr("web_search_placeholder")}" value="${esc(state.query)}">
           <div class="gs-toolbar-actions">
             <button class="gs-btn" id="selectBtn">${state.selectMode ? gsStr("web_status_selection_on") : gsStr("web_btn_select_files")}</button>
             ${allowDownloads ? `
               <button class="gs-btn gs-btn-download" id="downloadAllBtn">${gsStr("web_btn_download_all", "Download all")}</button>
-              <button class="gs-btn gs-btn-download" id="downloadAllZipBtn" title="${gsStr("web_action_download_zip", "Download as ZIP")}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+              <button class="gs-btn gs-btn-download" id="downloadAllZipBtn" title="${gsStr("web_action_download_zip", "Download as ZIP")}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              </button>
             ` : ""}
           </div>
         </div>
@@ -1099,7 +1124,9 @@ async function renderLibrary(category, title) {
             <button class="gs-btn gs-btn-sm" id="clearSelectBtn">${gsStr("web_btn_clear_selection")}</button>
             ${allowDownloads ? `
               <button class="gs-btn gs-btn-accent gs-btn-sm" id="downloadSelectedBtn">${gsStr("web_btn_download_selected", "Download selected")}</button>
-              <button class="gs-btn gs-btn-accent gs-btn-sm" id="downloadSelectedZipBtn">${gsStr("web_action_download_zip", "ZIP")}</button>
+              <button class="gs-btn gs-btn-accent gs-btn-sm" id="downloadSelectedZipBtn" title="${gsStr("web_action_download_zip", "Download as ZIP")}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              </button>
             ` : ""}
           </div>
         </div>
@@ -1133,7 +1160,7 @@ async function renderFolders(title) {
         <h2>${esc(title)}</h2>
         <span class="gs-section-meta">${gsStr("web_library_desc_browse")}</span>
       </div>
-      <div class="gs-control-card">
+      <div class="gs-control-card sticky-search">
         <div class="gs-toolbar">
           <input class="gs-search" id="folderSearch" placeholder="${gsStr("web_search_placeholder")}" value="${esc(state.query)}">
         </div>
@@ -1157,17 +1184,28 @@ async function renderFolders(title) {
     return;
   }
 
-  grid.innerHTML = folders.map(folder => `
-    <a class="gs-folder-card" data-link href="/?folderId=${encodeURIComponent(folder.id)}&folderName=${encodeURIComponent(folder.displayName)}">
-      <div class="gs-folder-icon">
-        <svg fill="currentColor" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+  grid.innerHTML = folders.map(folder => {
+    const isSelected = state.selected.has(folder.id);
+    const item = { id: folder.id, title: folder.displayName, category: "folder" };
+    return `
+      <div class="gs-folder-card${state.selectMode ? " gs-card-selectable" : ""}${isSelected ? " is-selected" : ""}" data-select-card="${folder.id}">
+        ${state.selectMode ? `<button class="gs-card-toggle is-visible" data-select-toggle="${folder.id}">${isSelected ? "Selected" : "Select"}</button>` : ""}
+        <a class="gs-folder-link" data-link href="/?folderId=${encodeURIComponent(folder.id)}&folderName=${encodeURIComponent(folder.displayName)}">
+          <div class="gs-folder-icon">
+            <svg fill="currentColor" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+          </div>
+          <div class="gs-folder-info">
+            <h3>${esc(folder.displayName)}</h3>
+            <span class="gs-meta">${gsStr("web_folder_items", "%1$d items", folder.fileCount)}</span>
+          </div>
+        </a>
       </div>
-      <div class="gs-folder-info">
-        <h3>${esc(folder.displayName)}</h3>
-        <span class="gs-meta">${gsStr("web_folder_items", "%1$d items", folder.fileCount)}</span>
-      </div>
-    </a>
-  `).join("");
+    `;
+  }).join("");
+  
+  if (state.selectMode) {
+    bindSelectableCards();
+  }
 }
 
 function resetThumbnailLoader() {
@@ -1259,12 +1297,12 @@ async function fetchLibraryPage(category, query, offset, limit, folderId) {
   };
 }
 
-async function fetchAllLibraryItems(category, query) {
+async function fetchAllLibraryItems(category, query, folderId) {
   const items = [];
   let offset = 0;
   let hasMore = true;
   while (hasMore) {
-    const page = await fetchLibraryPage(category, query, offset, LIBRARY_BULK_FETCH_SIZE);
+    const page = await fetchLibraryPage(category, query, offset, LIBRARY_BULK_FETCH_SIZE, folderId);
     items.push(...page.items);
     offset += page.items.length;
     hasMore = page.hasMore && page.items.length > 0;
@@ -1304,16 +1342,15 @@ function bindLibraryControls() {
 
   document.getElementById("downloadAllBtn")?.addEventListener("click", async () => {
     const items = state.libraryHasMore
-      ? await fetchAllLibraryItems(state.libraryCategory, state.query)
+      ? await fetchAllLibraryItems(state.libraryCategory, state.query, state.folderId)
       : state.libraryItems;
     downloadItems(items);
   });
 
-  document.getElementById("selectAllBtn")?.addEventListener("click", async () => {
-    const items = state.libraryHasMore
-      ? await fetchAllLibraryItems(state.libraryCategory, state.query)
-      : state.libraryItems;
-    items.forEach((item) => state.selected.add(item.id));
+  document.getElementById("selectAllBtn")?.addEventListener("click", () => {
+    // Select only what is currently loaded to avoid massive background fetches.
+    // The user can load more if they need more.
+    state.libraryItems.forEach((item) => state.selected.add(item.id));
     updateSelectionUi();
   });
 
@@ -1323,32 +1360,29 @@ function bindLibraryControls() {
   });
 
   document.getElementById("downloadSelectedBtn")?.addEventListener("click", () => {
-    const downloadSelected = async () => {
-      const sourceItems = state.libraryHasMore
-        ? await fetchAllLibraryItems(state.libraryCategory, state.query)
-        : state.libraryItems;
-      const selectedItems = sourceItems.filter((item) => state.selected.has(item.id));
-      downloadItems(selectedItems);
-    };
-    downloadSelected();
+    // Only download items that we have metadata for (currently loaded in libraryItems).
+    const selectedItems = state.libraryItems.filter((item) => state.selected.has(item.id));
+    if (selectedItems.length === 0 && state.selected.size > 0) {
+      alert(gsStr("web_error_selection_not_loaded", "Selected items are no longer in view. Please re-select or load more."));
+      return;
+    }
+    downloadItems(selectedItems);
   });
 
   document.getElementById("downloadSelectedZipBtn")?.addEventListener("click", () => {
-    const downloadSelected = async () => {
-      const sourceItems = state.libraryHasMore
-        ? await fetchAllLibraryItems(state.libraryCategory, state.query)
-        : state.libraryItems;
-      const selectedItems = sourceItems.filter((item) => state.selected.has(item.id));
-      downloadZip(selectedItems);
-    };
-    downloadSelected();
+    if (state.selected.size === 0) return;
+    // ZIP download only needs IDs, which we already have in state.selected.
+    // This avoids the massive "fetch all" bottleneck.
+    downloadZip(Array.from(state.selected).map(id => ({ id })));
   });
 
-  document.getElementById("downloadAllZipBtn")?.addEventListener("click", async () => {
-    const items = state.libraryHasMore
-      ? await fetchAllLibraryItems(state.libraryCategory, state.query)
-      : state.libraryItems;
-    downloadZip(items);
+  document.getElementById("downloadAllZipBtn")?.addEventListener("click", () => {
+    // Highly efficient bulk ZIP using server-side filtering
+    downloadZip([], {
+      category: state.libraryCategory,
+      query: state.query,
+      folderId: state.folderId
+    });
   });
 }
 
@@ -1426,6 +1460,13 @@ function downloadItems(items) {
     alert(gsStr("web_error_downloads_disabled", "Downloads are disabled by the device owner."));
     return;
   }
+
+  if (items.length > 1) {
+    showToast(gsStr("web_download_started_hint", "Batch download started. Large files may take a moment to appear."));
+  }
+
+  // Restore "Usual Download": Sequential individual downloads.
+  // We use a small delay between triggers to encourage the browser to allow them.
   items.filter((item) => item.downloadUrl).forEach((item, index) => {
     setTimeout(() => {
       const anchor = document.createElement("a");
@@ -1435,19 +1476,33 @@ function downloadItems(items) {
       document.body.appendChild(anchor);
       anchor.click();
       document.body.removeChild(anchor);
-    }, index * 280);
+    }, index * 400); // 400ms is safer for sequential triggers
   });
 }
 
-function downloadZip(items) {
-  if (!items.length) return;
+function downloadZip(items, filters = null) {
   if (state.bootstrap?.preventDownload) {
     alert(gsStr("web_error_downloads_disabled", "Downloads are disabled by the device owner."));
     return;
   }
-  const ids = items.map(item => item.id).join(",");
+
+  showToast(gsStr("web_download_started_hint", "Batch download started. Large files may take a moment to appear."));
+
   const anchor = document.createElement("a");
-  anchor.href = `/api/download/zip?ids=${encodeURIComponent(ids)}`;
+  let url = "/api/download/zip?";
+  
+  if (filters) {
+    const params = new URLSearchParams();
+    if (filters.category) params.set("category", filters.category);
+    if (filters.query) params.set("query", filters.query);
+    if (filters.folderId) params.set("folderId", filters.folderId);
+    url += params.toString();
+  } else {
+    const ids = items.map(item => item.id).join(",");
+    url += `ids=${encodeURIComponent(ids)}`;
+  }
+
+  anchor.href = url;
   anchor.style.display = "none";
   document.body.appendChild(anchor);
   anchor.click();
@@ -2369,7 +2424,7 @@ async function renderPhotoViewer(id) {
   let prev = null;
   let next = null;
   try {
-    const all = await api("/api/items?category=photos");
+    const all = state.libraryItems && state.libraryItems.length > 0 ? state.libraryItems : await api("/api/items?category=photos&limit=100");
     const index = all.findIndex((photo) => photo.id === id);
     if (index > 0) prev = all[index - 1].id;
     if (index >= 0 && index < all.length - 1) next = all[index + 1].id;
@@ -2444,6 +2499,27 @@ function renderError(message) {
         <p class="gs-error-text">${esc(message)}</p>
       </div>
     </div>`;
+}
+
+function showToast(message, duration = 4000) {
+  let container = document.querySelector(".gs-toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.className = "gs-toast-container";
+    document.body.appendChild(container);
+  }
+
+  const toast = document.createElement("div");
+  toast.className = "gs-toast";
+  toast.textContent = message;
+  container.appendChild(toast);
+
+  const leave = () => {
+    toast.classList.add("is-leaving");
+    toast.addEventListener("animationend", () => toast.remove());
+  };
+
+  setTimeout(leave, duration);
 }
 
 function card(item, selectable = false) {

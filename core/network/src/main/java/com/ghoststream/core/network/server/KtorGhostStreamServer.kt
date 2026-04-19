@@ -70,6 +70,7 @@ import io.ktor.utils.io.writeFully
 import io.ktor.util.date.GMTDate
 import java.io.File
 import java.io.InputStream
+import kotlin.io.copyTo
 import java.io.RandomAccessFile
 import java.net.ServerSocket
 import java.util.Locale
@@ -299,6 +300,20 @@ class KtorGhostStreamServer(
                 call.respondBytes(
                     bytes = assetLoader.readBytes("web/plyr.svg"),
                     contentType = ContentType.parse("image/svg+xml"),
+                )
+            }
+
+            get("/uppy.min.js") {
+                call.respondBytes(
+                    bytes = assetLoader.readBytes("web/uppy.min.js"),
+                    contentType = ContentType.Application.JavaScript,
+                )
+            }
+
+            get("/uppy.min.css") {
+                call.respondBytes(
+                    bytes = assetLoader.readBytes("web/uppy.min.css"),
+                    contentType = ContentType.Text.CSS,
                 )
             }
 
@@ -955,21 +970,47 @@ class KtorGhostStreamServer(
 
             get("/api/download/zip") {
                 if (!call.authorizeBrowserCall()) return@get
+                val localizedContext = localizedContext()
                 val settings = settingsRepository.settings.first()
                 if (settings.preventDownload) {
-                    call.respond(HttpStatusCode.Forbidden, ErrorPayload(localizedContext().getString(R.string.web_error_downloads_disabled)))
+                    call.respond(HttpStatusCode.Forbidden, ErrorPayload(localizedContext.getString(R.string.web_error_downloads_disabled)))
                     return@get
                 }
                 
                 val ids = call.request.queryParameters["ids"]?.split(",")?.filter { it.isNotBlank() }
-                if (ids.isNullOrEmpty()) {
-                    call.respond(HttpStatusCode.BadRequest, ErrorPayload("No items selected for download."))
-                    return@get
+                val category = call.request.queryParameters["category"]?.lowercase()
+                val query = call.request.queryParameters["query"]?.lowercase()
+                val folderId = call.request.queryParameters["folderId"]
+
+                val items = when {
+                    !ids.isNullOrEmpty() -> ids.mapNotNull { storageRepository.findItemById(it) }
+                    category != null || folderId != null || query != null -> {
+                        // Resolve items by filter on the server side to avoid sending thousands of IDs in URL
+                        // We use the session state as the authoritative source of shared items
+                        sessionManager.sessionState.value.selectedItems.filter { item ->
+                            val matchesCategory = when (category) {
+                                null, "", "all" -> true
+                                "media" -> item.category == MediaCategory.VIDEO ||
+                                    item.category == MediaCategory.PHOTO ||
+                                    item.category == MediaCategory.MUSIC
+                                "videos" -> item.category == MediaCategory.VIDEO
+                                "photos" -> item.category == MediaCategory.PHOTO
+                                "music" -> item.category == MediaCategory.MUSIC
+                                "files" -> item.category == MediaCategory.FILE
+                                else -> true
+                            }
+                            val matchesQuery = query.isNullOrBlank() || 
+                                item.displayName.contains(query, ignoreCase = true)
+                            val matchesFolder = folderId == null || item.sourceFolderId == folderId
+                            
+                            matchesCategory && matchesQuery && matchesFolder
+                        }
+                    }
+                    else -> emptyList()
                 }
 
-                val items = ids.mapNotNull { storageRepository.findItemById(it) }
                 if (items.isEmpty()) {
-                    call.respond(HttpStatusCode.NotFound, ErrorPayload("Selected items no longer available."))
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext.getString(R.string.browser_file_unavailable)))
                     return@get
                 }
 
@@ -994,18 +1035,13 @@ class KtorGhostStreamServer(
                             usedNames.add(entryName)
 
                             try {
-                                val entry = ZipEntry(entryName)
-                                zip.putNextEntry(entry)
-                                this@KtorGhostStreamServer.context.contentResolver.openInputStream(Uri.parse(item.uri))?.use { input: java.io.InputStream ->
-                                    input.copyTo(zip)
-                                }
-                                zip.closeEntry()
+                                addFileToZip(item, zip)
                                 sessionManager.onTransferProgress(call.remoteHost(), item.sizeBytes, ClientActivity.DOWNLOADING)
                             } catch (e: Exception) {
-                                // Skip failing items in the ZIP
                                 debugLogSink.log("WebZip", "Failed to add ${item.displayName} to zip", e)
                             }
                         }
+                        zip.flush()
                     }
                 }
             }
@@ -1038,6 +1074,7 @@ class KtorGhostStreamServer(
                     MediaCategory.MUSIC -> ClientActivity.PLAYING_MUSIC
                     MediaCategory.FILE -> ClientActivity.BROWSING
                 }
+                debugLogSink.log("WebStream", "serving id=${item.id} name=${item.displayName} category=${item.category} mime=${item.mimeType}")
                 call.streamItem(
                     itemId = itemId,
                     asAttachment = false,
@@ -2444,6 +2481,17 @@ class KtorGhostStreamServer(
     }
 
 
+
+    private fun addFileToZip(item: SharedItem, zip: ZipOutputStream) {
+        val entryName = item.displayName
+        val entry = ZipEntry(entryName)
+        zip.putNextEntry(entry)
+        context.contentResolver.openInputStream(Uri.parse(item.uri))?.use { input ->
+            input.copyTo(zip)
+        }
+        zip.flush()
+        zip.closeEntry()
+    }
 
     private fun readText(uri: Uri): String? {
         return runCatching {

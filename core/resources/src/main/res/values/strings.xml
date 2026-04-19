@@ -164,15 +164,16 @@
     <string name="home_title_live">Current Share is live</string>
     <string name="home_title_start">Current Share</string>
     <string name="home_body_live">People nearby can open this share right now.</string>
-    <string name="home_body_start">Add media to start sharing nearby.</string>
+    <string name="home_body_start">Add media and files to start sharing nearby.</string>
     <string name="home_body_start_secondary">Use Phone Library, Pick Files, or Pick Folder from Add Media.</string>
     <string name="home_button_start_session">Start Sharing</string>
     <string name="home_button_open_session">Open Session</string>
     <string name="home_button_starting">Starting...</string>
-    <string name="home_button_add_media">Add Media</string>
+    <string name="home_button_add_media">Add Media &amp; Files</string>
     <string name="home_button_add_more">Add More</string>
     <string name="home_summary_current_share">Current Share</string>
     <string name="home_summary_media">Media</string>
+    <string name="home_summary_files">Files</string>
     <string name="home_no_network">No Wi-Fi or hotspot detected</string>
     <string name="network_setup_title">Local network needed</string>
     <string name="network_setup_body">DirectServe works when both devices are on the same Wi-Fi or your phone hotspot.</string>
@@ -318,7 +319,7 @@
     <string name="library_info_folders">Folders</string>
     <string name="library_info_size">Size</string>
     <string name="library_empty_title">Nothing in this share yet</string>
-    <string name="library_empty_body">Add media to start sharing nearby.</string>
+    <string name="library_empty_body">Add media and files to start sharing nearby.</string>
     <string name="library_section_folders">Folders</string>
     <string name="library_section_folders_body">These folders stay linked to your current share.</string>
     <string name="library_empty_filter_title">Nothing matches this view</string>
@@ -343,7 +344,7 @@
     <string name="library_category_photos">Photos</string>
     <string name="library_category_music">Music</string>
     <string name="library_category_files">Files</string>
-    <string name="library_add_title">Add Media</string>
+    <string name="library_add_title">Add Media &amp; Files</string>
     <string name="library_add_body">Choose how you want to bring more content into this share.</string>
     <string name="library_add_files">Pick Files</string>
     <string name="library_add_whole_folder">Pick Folder</string>
@@ -426,6 +427,11 @@
     <string name="message_saved_share_named">Saved share \"%1$s\".</string>
     <string name="message_unable_save_share">Unable to save this share right now.</string>
     <string name="message_saved_share_ready">Saved share ready with %1$d items.</string>
+    <string name="home_all_files_access_title">Include non-media files?</string>
+    <string name="home_all_files_access_body">To find documents, PDFs, and archives in the global scan, DirectServe needs \"All Files Access\".</string>
+    <string name="home_all_files_access_grant">Grant Access</string>
+    <string name="home_all_files_access_media_only">Media Only</string>
+    <string name="home_all_files_nudge_text">Document sharing is ready! Grant \"All Files Access\" to include them in the global scan.</string>
     <string name="message_unable_open_saved_share">Unable to open that saved share right now.</string>
     <string name="message_saved_share_removed">Saved share removed.</string>
     <string name="message_something_went_wrong">Something went wrong. Please try again.</string>
@@ -485,10 +491,10 @@
     <string name="home_action_folder_desc">Link</string>
     <string name="home_action_library">Use Phone Library</string>
     <string name="home_action_library_desc">Browse</string>
-    <string name="home_button_share_all_media">Add All Media</string>
+    <string name="home_button_share_all_media">Add All Media &amp; Files</string>
     <string name="home_button_adding_all">Adding all…</string>
     <string name="home_media_server_active">Full Phone Library Added</string>
-    <string name="home_btn_stop_media_server">Clear All Media</string>
+    <string name="home_btn_stop_media_server">Clear All Selection</string>
     <string name="web_folders_title">Folders</string>
     <string name="web_folder_items">%1$d items</string>
     <string name="web_btn_back_to_folders">Back to folders</string>
@@ -705,4 +711,6 @@
     <string name="web_action_download_zip">Download as ZIP</string>
     <string name="web_btn_download_all_zip">Download all as ZIP</string>
     <string name="web_btn_download_selected_zip">Download selected (ZIP)</string>
+    <string name="web_error_no_items_selected">No items selected for download.</string>
+    <string name="web_download_started_hint">Batch download started. Large files may take a moment to appear.</string>
 </resources>
