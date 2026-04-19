@@ -702,4 +702,5 @@
     <string name="settings_dlna">DLNA Media Server</string>
     <string name="settings_dlna_desc">Allow Smart TVs, Kodi, and VLC to find this device over the network.</string>
     <string name="dlna_server_name">DirectServe Media Server</string>
+    <string name="dlna_server_name_template">DirectServe (%1$s)</string>
 </resources>

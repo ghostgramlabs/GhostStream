@@ -1,6 +1,7 @@
 package com.ghoststream.core.network.server
 
 import android.content.Context
+import android.os.Build
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -102,7 +103,7 @@ class KtorGhostStreamServer(
     private val dlnaService by lazy {
         val session = sessionManager.sessionState.value
         DlnaService(
-            deviceName = DeviceNameGenerator.generateName(""),
+            deviceName = context.getString(R.string.dlna_server_name_template, Build.MODEL),
             deviceUuid = UUID.nameUUIDFromBytes(context.packageName.toByteArray()).toString(),
             serverUrl = "http://${session.networkAvailability.localAddress ?: "127.0.0.1"}:${session.serverPort ?: 0}"
         )

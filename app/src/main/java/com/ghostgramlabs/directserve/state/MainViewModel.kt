@@ -1,6 +1,7 @@
 package com.ghostgramlabs.directserve.state
 
 import android.app.Application
+import android.os.Build
 import android.net.Uri
 import com.ghostgramlabs.directserve.BuildConfig
 import com.ghostgramlabs.directserve.core.resources.R
@@ -633,7 +634,7 @@ class MainViewModel(
             if (dlnaAnnouncer == null || dlnaAnnouncer?.ipAddress != ip) {
                 dlnaAnnouncer?.stop()
                 dlnaAnnouncer = DlnaAnnouncer(
-                    deviceName = application.getString(R.string.dlna_server_name),
+                    deviceName = application.getString(R.string.dlna_server_name_template, Build.MODEL),
                     deviceUuid = java.util.UUID.nameUUIDFromBytes(application.packageName.toByteArray()).toString(),
                     serverPort = session.serverPort ?: 8080,
                     ipAddress = ip
