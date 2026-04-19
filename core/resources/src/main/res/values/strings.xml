@@ -703,4 +703,7 @@
     <string name="settings_dlna_desc">Allow Smart TVs, Kodi, and VLC to find this device over the network.</string>
     <string name="dlna_server_name">DirectServe Media Server</string>
     <string name="dlna_server_name_template">DirectServe (%1$s)</string>
+    <string name="web_action_download_zip">Download as ZIP</string>
+    <string name="web_btn_download_all_zip">Download all as ZIP</string>
+    <string name="web_btn_download_selected_zip">Download selected (ZIP)</string>
 </resources>

@@ -1086,7 +1086,10 @@ async function renderLibrary(category, title) {
           <input class="gs-search" id="libSearch" placeholder="${gsStr("web_search_placeholder")}" value="${esc(state.query)}">
           <div class="gs-toolbar-actions">
             <button class="gs-btn" id="selectBtn">${state.selectMode ? gsStr("web_status_selection_on") : gsStr("web_btn_select_files")}</button>
-            ${allowDownloads ? `<button class="gs-btn gs-btn-download" id="downloadAllBtn">${gsStr("web_btn_download_all", "Download all")}</button>` : ""}
+            ${allowDownloads ? `
+              <button class="gs-btn gs-btn-download" id="downloadAllBtn">${gsStr("web_btn_download_all", "Download all")}</button>
+              <button class="gs-btn gs-btn-download" id="downloadAllZipBtn" title="${gsStr("web_action_download_zip", "Download as ZIP")}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+            ` : ""}
           </div>
         </div>
         <div class="gs-select-bar${state.selectMode ? " is-visible" : ""}" id="selectBar">
@@ -1094,7 +1097,10 @@ async function renderLibrary(category, title) {
           <div class="gs-toolbar-actions">
             <button class="gs-btn gs-btn-sm" id="selectAllBtn">${gsStr("web_btn_select_all")}</button>
             <button class="gs-btn gs-btn-sm" id="clearSelectBtn">${gsStr("web_btn_clear_selection")}</button>
-            ${allowDownloads ? `<button class="gs-btn gs-btn-accent gs-btn-sm" id="downloadSelectedBtn">${gsStr("web_btn_download_selected", "Download selected")}</button>` : ""}
+            ${allowDownloads ? `
+              <button class="gs-btn gs-btn-accent gs-btn-sm" id="downloadSelectedBtn">${gsStr("web_btn_download_selected", "Download selected")}</button>
+              <button class="gs-btn gs-btn-accent gs-btn-sm" id="downloadSelectedZipBtn">${gsStr("web_action_download_zip", "ZIP")}</button>
+            ` : ""}
           </div>
         </div>
       </div>
@@ -1326,6 +1332,24 @@ function bindLibraryControls() {
     };
     downloadSelected();
   });
+
+  document.getElementById("downloadSelectedZipBtn")?.addEventListener("click", () => {
+    const downloadSelected = async () => {
+      const sourceItems = state.libraryHasMore
+        ? await fetchAllLibraryItems(state.libraryCategory, state.query)
+        : state.libraryItems;
+      const selectedItems = sourceItems.filter((item) => state.selected.has(item.id));
+      downloadZip(selectedItems);
+    };
+    downloadSelected();
+  });
+
+  document.getElementById("downloadAllZipBtn")?.addEventListener("click", async () => {
+    const items = state.libraryHasMore
+      ? await fetchAllLibraryItems(state.libraryCategory, state.query)
+      : state.libraryItems;
+    downloadZip(items);
+  });
 }
 
 function bindSelectableCards() {
@@ -1413,6 +1437,21 @@ function downloadItems(items) {
       document.body.removeChild(anchor);
     }, index * 280);
   });
+}
+
+function downloadZip(items) {
+  if (!items.length) return;
+  if (state.bootstrap?.preventDownload) {
+    alert(gsStr("web_error_downloads_disabled", "Downloads are disabled by the device owner."));
+    return;
+  }
+  const ids = items.map(item => item.id).join(",");
+  const anchor = document.createElement("a");
+  anchor.href = `/api/download/zip?ids=${encodeURIComponent(ids)}`;
+  anchor.style.display = "none";
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
 }
 
 async function renderVideoPlayer(id) {

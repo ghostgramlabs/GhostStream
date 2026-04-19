@@ -58,6 +58,10 @@ import io.ktor.http.content.forEachPart
 import io.ktor.http.content.streamProvider
 import com.ghoststream.core.model.UploadRequest
 import java.util.UUID
+import java.util.zip.ZipOutputStream
+import java.util.zip.ZipEntry
+import java.text.SimpleDateFormat
+import java.util.Date
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
@@ -947,6 +951,63 @@ class KtorGhostStreamServer(
                     asAttachment = true,
                     activity = ClientActivity.DOWNLOADING,
                 )
+            }
+
+            get("/api/download/zip") {
+                if (!call.authorizeBrowserCall()) return@get
+                val settings = settingsRepository.settings.first()
+                if (settings.preventDownload) {
+                    call.respond(HttpStatusCode.Forbidden, ErrorPayload(localizedContext().getString(R.string.web_error_downloads_disabled)))
+                    return@get
+                }
+                
+                val ids = call.request.queryParameters["ids"]?.split(",")?.filter { it.isNotBlank() }
+                if (ids.isNullOrEmpty()) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorPayload("No items selected for download."))
+                    return@get
+                }
+
+                val items = ids.mapNotNull { storageRepository.findItemById(it) }
+                if (items.isEmpty()) {
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload("Selected items no longer available."))
+                    return@get
+                }
+
+                val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.US).format(Date())
+                val zipFileName = "DirectServe_$timestamp.zip"
+
+                call.response.header(HttpHeaders.ContentDisposition, ContentDisposition.Attachment.withParameter(ContentDisposition.Parameters.FileName, zipFileName).toString())
+                
+                call.respondOutputStream(ContentType.Application.Zip, HttpStatusCode.OK) {
+                    ZipOutputStream(this).use { zip ->
+                        val usedNames = mutableSetOf<String>()
+                        items.forEach { item ->
+                            var entryName = item.displayName
+                            // Basic collision avoidance
+                            var attempt = 1
+                            while (usedNames.contains(entryName)) {
+                                val base = item.displayName.substringBeforeLast(".")
+                                val ext = item.displayName.substringAfterLast(".", "")
+                                entryName = if (ext.isNotEmpty()) "$base ($attempt).$ext" else "${item.displayName} ($attempt)"
+                                attempt++
+                            }
+                            usedNames.add(entryName)
+
+                            try {
+                                val entry = ZipEntry(entryName)
+                                zip.putNextEntry(entry)
+                                this@KtorGhostStreamServer.context.contentResolver.openInputStream(Uri.parse(item.uri))?.use { input: java.io.InputStream ->
+                                    input.copyTo(zip)
+                                }
+                                zip.closeEntry()
+                                sessionManager.onTransferProgress(call.remoteHost(), item.sizeBytes, ClientActivity.DOWNLOADING)
+                            } catch (e: Exception) {
+                                // Skip failing items in the ZIP
+                                debugLogSink.log("WebZip", "Failed to add ${item.displayName} to zip", e)
+                            }
+                        }
+                    }
+                }
             }
 
             get("/stream/{id}") {
