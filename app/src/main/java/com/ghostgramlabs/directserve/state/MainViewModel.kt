@@ -144,11 +144,19 @@ class MainViewModel(
 
     fun selectLanguage(languageTag: String, completeSelection: Boolean) {
         val canonicalTag = AppLanguages.canonicalize(languageTag)
-        LocaleManager.applyLanguageTag(canonicalTag)
-        viewModelScope.launch {
-            if (completeSelection) {
+        if (completeSelection) {
+            // Persist BEFORE applying the locale, because
+            // AppCompatDelegate.setApplicationLocales() immediately
+            // recreates the Activity.  If the DataStore write hasn't
+            // finished by then, languageSelectionCompleted is still
+            // false and the user sees the language screen a second time.
+            viewModelScope.launch {
                 container.settingsRepository.completeLanguageSelection(canonicalTag)
-            } else {
+                LocaleManager.applyLanguageTag(canonicalTag)
+            }
+        } else {
+            LocaleManager.applyLanguageTag(canonicalTag)
+            viewModelScope.launch {
                 container.settingsRepository.update { current ->
                     current.copy(languageTag = canonicalTag)
                 }
