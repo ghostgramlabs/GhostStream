@@ -21,6 +21,7 @@ import androidx.media3.transformer.InAppMuxer
 import androidx.media3.transformer.ProgressHolder
 import androidx.media3.transformer.Transformer
 import androidx.media3.transformer.TransformationRequest
+import com.ghoststream.core.model.PlaybackDecision
 import com.ghoststream.core.model.PlaybackMode
 import com.ghoststream.core.model.SharedItem
 import java.io.File
@@ -503,8 +504,20 @@ class Media3FragmentedMp4CompatibilityWorker(
     }
 
     private fun adjustedItemForSourceProbe(item: SharedItem, sourceProbe: SourceProbe): SharedItem {
-        if (item.playbackDecision.mode == PlaybackMode.TRANSCODE) return item
-        val fallbackReason = sourceProbe.transcodeFallbackReason ?: return item
+        val metadataUpdates = buildMap<String, String> {
+            sourceProbe.videoMime?.let { put("video_codec", it) }
+            sourceProbe.audioMime?.let { put("audio_codec", it) }
+        }
+        val upgradedDecision = upgradedDecisionForSourceProbe(item, sourceProbe)
+        if (upgradedDecision != null) {
+            return item.copy(
+                playbackDecision = upgradedDecision,
+                metadata = item.metadata + metadataUpdates,
+            )
+        }
+        val fallbackReason = sourceProbe.transcodeFallbackReason ?: return item.copy(
+            metadata = item.metadata + metadataUpdates,
+        )
         return item.copy(
             playbackDecision = item.playbackDecision.copy(
                 mode = PlaybackMode.TRANSCODE,
@@ -512,9 +525,27 @@ class Media3FragmentedMp4CompatibilityWorker(
                 browserMimeType = "video/mp4",
                 reason = "$FALLBACK_TRANSCODE_REASON_PREFIX: $fallbackReason",
             ),
-            metadata = item.metadata + buildMap {
-                sourceProbe.videoMime?.let { put("video_codec", it) }
-                sourceProbe.audioMime?.let { put("audio_codec", it) }
+            metadata = item.metadata + metadataUpdates,
+        )
+    }
+
+    private fun upgradedDecisionForSourceProbe(item: SharedItem, sourceProbe: SourceProbe): PlaybackDecision? {
+        if (item.playbackDecision.mode != PlaybackMode.TRANSCODE) return null
+        if (!sourceProbe.remuxEligibleToMp4 || sourceProbe.transcodeFallbackReason != null) return null
+
+        val needsAudioTranscode = sourceProbe.audioMime != null &&
+            !sourceProbe.audioCopySafeToMp4 &&
+            !sourceProbe.audioMissingCodecConfig
+
+        return PlaybackDecision(
+            mode = PlaybackMode.TRANSMUX,
+            compatibilityLabel = "Repackaging",
+            browserMimeType = "video/mp4",
+            reason = when {
+                needsAudioTranscode ->
+                    "Video can be copied, but audio must be converted to a browser-safe format"
+                else ->
+                    "Codecs are acceptable, but the container must be repackaged for the browser"
             },
         )
     }
@@ -1199,7 +1230,10 @@ class Media3FragmentedMp4CompatibilityWorker(
                         progressPercent = progress,
                         preparedAsset = incompleteAsset,
                         hlsReady = hlsReadiness.isReady && canStreamDuringPrepare,
-                        directReady = streamable && canStreamDuringPrepare,
+                        // This asset is streamable, but it is still the in-progress fragmented file.
+                        // Reserve directReady for finalized prepared assets so server/UI completion
+                        // signals do not claim the temporary file is fully complete.
+                        directReady = false,
                         streamable = streamable && canStreamDuringPrepare,
                     ),
                 )

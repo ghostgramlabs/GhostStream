@@ -76,23 +76,25 @@ class GhostStreamForegroundService : Service() {
                     // ── DEBOUNCE: Only update foreground notification on meaningful changes ──
                     val now = System.currentTimeMillis()
                     val clientCount = state.connectedClients.size
-                    val isMeaningfulChange = lastNotificationIsSharing != state.isSharing ||
+                    val contentChanged = lastNotificationIsSharing != state.isSharing ||
                         lastNotificationUrl != state.sessionUrl ||
                         lastNotificationClientCount != clientCount ||
-                        newClients.isNotEmpty() ||
-                        (now - lastNotificationUpdateMs > NOTIFICATION_MIN_INTERVAL_MS)
+                        newClients.isNotEmpty()
+                    val heartbeatExpired = now - lastNotificationUpdateMs > NOTIFICATION_HEARTBEAT_MS
 
-                    if (isMeaningfulChange) {
+                    if (contentChanged || heartbeatExpired) {
                         NotificationManagerCompat.from(this@GhostStreamForegroundService)
                             .notify(NOTIFICATION_ID, buildNotification(state))
                         lastNotificationIsSharing = state.isSharing
                         lastNotificationUrl = state.sessionUrl
                         lastNotificationClientCount = clientCount
                         lastNotificationUpdateMs = now
-                        debugLogRepository.log(
-                            "ForegroundService",
-                            "notification updated isSharing=${state.isSharing} url=${state.sessionUrl} clients=$clientCount",
-                        )
+                        if (contentChanged) {
+                            debugLogRepository.log(
+                                "ForegroundService",
+                                "notification updated isSharing=${state.isSharing} url=${state.sessionUrl} clients=$clientCount",
+                            )
+                        }
                     }
 
                     if (state.isSharing && newClients.isNotEmpty()) {
@@ -548,8 +550,8 @@ class GhostStreamForegroundService : Service() {
     }
 
     companion object {
-        /** Minimum interval between notification updates (ms) */
-        private const val NOTIFICATION_MIN_INTERVAL_MS = 2_000L
+        /** Slow heartbeat for unchanged foreground notifications (ms) */
+        private const val NOTIFICATION_HEARTBEAT_MS = 60_000L
         private const val CHANNEL_ID = "ghoststream_sharing"
         private const val REQUEST_CHANNEL_ID = "ghoststream_requests"
         private const val CONNECTION_CHANNEL_ID = "ghoststream_connections"

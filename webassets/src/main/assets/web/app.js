@@ -33,6 +33,7 @@ const state = {
   compatPlaybackFailures: {},
   compatProgressMemory: {},
   compatItem: null,
+  pendingCompatSeekOffset: {},
   playerSourceLocks: {},
   lastReportedCapabilities: null,
   ratioLocked: {}, // Track locked ratios per itemId to prevent placeholder overwrite
@@ -1570,6 +1571,7 @@ function hydrateVideoPlayer(item, options = {}) {
   const allowManagedHlsFallback = canUseManagedHlsFallback(item, managedHlsAvailable);
   const errorCard = document.getElementById("vError");
   const errorText = document.getElementById("vErrorText");
+  const pendingSeekOffset = state.pendingCompatSeekOffset[item.id];
   
   // Aspect Ratio Reset: clear previous ratio to prevent portrait/landscape leakage
   const playerStructural = video.closest(".gs-player");
@@ -1594,6 +1596,21 @@ function hydrateVideoPlayer(item, options = {}) {
     `streamReady=${item.streamReady}`
   );
   debugTrace("player_context", `id=${item.id} ${playbackContextSummary(item, selectedSource)}`);
+
+  if (Number.isFinite(pendingSeekOffset) && pendingSeekOffset >= 0) {
+    video.addEventListener("loadedmetadata", () => {
+      const targetTime = state.pendingCompatSeekOffset[item.id];
+      if (!Number.isFinite(targetTime)) return;
+      delete state.pendingCompatSeekOffset[item.id];
+      try {
+        video.currentTime = Math.max(0, Math.min(targetTime, video.duration || targetTime));
+        debugTrace("video_seek_resume", `id=${item.id} offset=${targetTime.toFixed(1)}s source=${selectedSource.kind}`);
+      } catch (_) {}
+      if (options.autoplay) {
+        video.play().catch(() => {});
+      }
+    }, { once: true });
+  }
 
   if (!useNativePlayer && typeof window.Plyr === "function") {
     const plyrOptions = {
@@ -1897,9 +1914,15 @@ function hydrateVideoPlayer(item, options = {}) {
   });
 
   video.addEventListener("seeked", async () => {
-    // Only handle seeks if we are using the HLS compatibility pipeline.
-    // Native MP4 (DIRECT) already supports byte-range seeking out of the box.
-    if (item.playbackMode === "DIRECT" || !state.hls || state.hlsItemId !== item.id) return;
+    // DIRECT playback is satisfied by normal byte-range requests.
+    // Compatibility playback may need an explicit restart when the seek target
+    // is beyond the currently prepared region.
+    if (item.playbackMode === "DIRECT") return;
+
+    const sourceType = video.dataset.sourceType || selectedSource.kind;
+    const usingManagedHls = Boolean(state.hls && state.hlsItemId === item.id);
+    const usingGrowingPreparedMp4 = sourceType === "prepared_mp4" && !item.compatibilityComplete;
+    if (!usingManagedHls && !usingGrowingPreparedMp4) return;
 
     const currentTime = video.currentTime;
     // We check if the target time is already within the browser's buffer.
@@ -1929,16 +1952,44 @@ function hydrateVideoPlayer(item, options = {}) {
       }
 
       try {
-        const url = `/api/compat/${item.id}/seek?offsetMs=${Math.floor(currentTime * 1000)}`;
-        const resp = await fetch(url, { method: "POST" });
-        if (resp.ok) {
+        const seekJob = await api(`/api/compat/${item.id}/seek?offsetMs=${Math.floor(currentTime * 1000)}`, {
+          method: "POST",
+        });
+        const nextItem = {
+          ...item,
+          streamReady: Boolean(seekJob.ready),
+          effectivePlaybackMode: seekJob.effectivePlaybackMode || item.effectivePlaybackMode,
+          compatibilityStatus: seekJob.status || item.compatibilityStatus || "QUEUED",
+          compatibilityMessage: seekJob.message || item.compatibilityMessage,
+          compatibilityProgressPercent: seekJob.progressPercent ?? item.compatibilityProgressPercent,
+          compatibilityComplete: Boolean(seekJob.compatibilityComplete),
+          preparedMp4Url: seekJob.preparedMp4Url || item.preparedMp4Url || null,
+          hlsUrl: seekJob.hlsUrl || item.hlsUrl || null,
+          width: seekJob.width || item.width,
+          height: seekJob.height || item.height,
+          totalDurationMs: seekJob.totalDurationMs || item.totalDurationMs || item.durationMs,
+        };
+        state.compatItem = nextItem;
+
+        if (usingManagedHls && nextItem.hlsUrl) {
           // Tell hls.js to reload the manifest to find the new segments at the offset.
-          state.hls.loadSource(item.hlsUrl);
+          state.hls.loadSource(nextItem.hlsUrl);
           // Standard hls.js behavior will start from the beginning of the manifest,
           // so we ensure the video element stays at our target time.
           video.currentTime = currentTime;
           video.play().catch(() => {});
+          return;
         }
+
+        state.pendingCompatSeekOffset[item.id] = currentTime;
+        const waitingItem = {
+          ...nextItem,
+          streamReady: false,
+          compatibilityComplete: false,
+          compatibilityMessage: gsStr("web_player_preparing_segment", "Preparing this segment for you..."),
+        };
+        showCompatibilityWaitingStage(waitingItem);
+        pollCompat(item.id, waitingItem, { startPreparation: false });
       } catch (err) {
         console.error("Seeking failed:", err);
       }
@@ -3042,6 +3093,7 @@ function setupScrubbingPreviews(item, plyr) {
   if (!plyr || !plyr.elements || !plyr.elements.progress) return;
   const progress = plyr.elements.progress;
   const container = plyr.elements.container;
+  const media = plyr.media || container.querySelector("video");
 
   let preview = container.querySelector(".gs-scrub-preview");
   if (!preview) {
@@ -3058,20 +3110,39 @@ function setupScrubbingPreviews(item, plyr) {
   const timeLabel = preview.querySelector(".gs-scrub-preview-time");
   let lastFetchTime = 0;
   let currentTargetTimeMs = -1;
+  let pointerActive = false;
 
-  const updatePreview = (e) => {
+  const getClientX = (event) => {
+    if (!event) return null;
+    if (typeof event.clientX === "number") return event.clientX;
+    const touch = event.touches?.[0] || event.changedTouches?.[0];
+    return typeof touch?.clientX === "number" ? touch.clientX : null;
+  };
+
+  const shouldFetchPreviewFrame = () => {
+    if (pointerActive) return true;
+    if (!media) return true;
+    return media.paused || media.ended || media.readyState < 2;
+  };
+
+  const updatePreview = (event) => {
+    const clientX = getClientX(event);
+    if (!Number.isFinite(clientX)) return;
     const rect = progress.getBoundingClientRect();
-    const percent = Math.max(0, Math.min(1, (e.pageX - rect.left) / rect.width));
+    if (!rect.width) return;
+    const percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     const duration = plyr.duration || 0;
     if (duration <= 0) return;
 
     const timeSec = percent * duration;
-    const timeMs = Math.floor(timeSec * 1000);
+    const timeMs = Math.floor(timeSec) * 1000;
 
     // Position the tooltip
     preview.style.left = `${percent * 100}%`;
     timeLabel.textContent = formatTime(timeSec);
     preview.classList.add("is-visible");
+
+    if (!shouldFetchPreviewFrame()) return;
 
     // Throttled fetch (at most every 400ms) to avoid overloading the server/hardware
     const now = Date.now();
@@ -3100,11 +3171,48 @@ function setupScrubbingPreviews(item, plyr) {
   const hidePreview = () => {
     preview.classList.remove("is-visible");
     currentTargetTimeMs = -1;
+    pointerActive = false;
   };
 
-  progress.addEventListener("mousemove", updatePreview);
-  progress.addEventListener("mouseenter", updatePreview);
-  progress.addEventListener("mouseleave", hidePreview);
-  progress.addEventListener("touchstart", updatePreview, { passive: true });
-  progress.addEventListener("touchend", hidePreview, { passive: true });
+  const handlePointerDown = (event) => {
+    pointerActive = true;
+    if (window.PointerEvent && typeof event.pointerId === "number" && progress.setPointerCapture) {
+      try {
+        progress.setPointerCapture(event.pointerId);
+      } catch (_) {}
+    }
+    updatePreview(event);
+  };
+
+  const handlePointerMove = (event) => {
+    updatePreview(event);
+  };
+
+  const handlePointerUp = (event) => {
+    updatePreview(event);
+    pointerActive = false;
+  };
+
+  if (window.PointerEvent) {
+    progress.addEventListener("pointerdown", handlePointerDown);
+    progress.addEventListener("pointermove", handlePointerMove);
+    progress.addEventListener("pointerup", handlePointerUp);
+    progress.addEventListener("pointerleave", hidePreview);
+    progress.addEventListener("pointercancel", hidePreview);
+    progress.addEventListener("lostpointercapture", hidePreview);
+  } else {
+    progress.addEventListener("mousedown", handlePointerDown);
+    progress.addEventListener("mousemove", handlePointerMove);
+    progress.addEventListener("mouseup", handlePointerUp);
+    progress.addEventListener("mouseenter", handlePointerMove);
+    progress.addEventListener("mouseleave", hidePreview);
+    progress.addEventListener("touchstart", handlePointerDown, { passive: true });
+    progress.addEventListener("touchmove", handlePointerMove, { passive: true });
+    progress.addEventListener("touchend", handlePointerUp, { passive: true });
+    progress.addEventListener("touchcancel", hidePreview, { passive: true });
+  }
+
+  media?.addEventListener("playing", () => {
+    hidePreview();
+  });
 }

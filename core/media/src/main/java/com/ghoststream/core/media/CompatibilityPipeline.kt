@@ -271,12 +271,10 @@ class QueuedCompatibilityPipeline(
     override suspend fun requestSeek(item: SharedItem, offsetMs: Long): CompatibilityJob {
         val current = currentJob(item.id) ?: inspect(item)
         
-        // Seek Optimization: If we are already READY/PREPARED, seeking is handled by the player via range requests.
-        // We only need a CRITICAL priority re-spawn if we are in LIVE_HLS mode and need a new segment generation.
-        if (current.status == CompatibilityStatus.READY ||
-            current.status == CompatibilityStatus.PLAYABLE_NOW ||
-            current.directReady
-        ) {
+        // Fully finalized prepared assets can satisfy seeks through normal range requests.
+        // PLAYABLE_NOW is still an in-progress state, so explicit seeks must remain request-driven
+        // and may need a CRITICAL restart from the new offset.
+        if (current.status == CompatibilityStatus.READY || current.directReady) {
             CompatLogger.info("CompatPipeline", "seek_noop id=${item.id} reason=hardware_capable")
             return current
         }
