@@ -51,6 +51,7 @@ import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondOutputStream
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.response.respondText
+import io.ktor.server.response.header
 import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
 import io.ktor.http.content.streamProvider
@@ -97,6 +98,15 @@ class KtorGhostStreamServer(
     private val running = AtomicBoolean(false)
     /** Throttled compat poll logging: tracks last logged state key per item to avoid log spam */
     private val lastCompatLogKey = java.util.concurrent.ConcurrentHashMap<String, String>()
+
+    private val dlnaService by lazy {
+        val session = sessionManager.sessionState.value
+        DlnaService(
+            deviceName = DeviceNameGenerator.generateName(""),
+            deviceUuid = UUID.nameUUIDFromBytes(context.packageName.toByteArray()).toString(),
+            serverUrl = "http://${session.networkAvailability.localAddress ?: "127.0.0.1"}:${session.serverPort ?: 0}"
+        )
+    }
 
     /** Cache of client capabilities by remote host (IP). */
     private val capabilityCache = java.util.concurrent.ConcurrentHashMap<String, ClientCapabilities>()
@@ -169,6 +179,79 @@ class KtorGhostStreamServer(
             get("/photos") { call.serveShellPage() }
             get("/music") { call.serveShellPage() }
             get("/files") { call.serveShellPage() }
+            get("/dlna/description.xml") {
+                call.respondText(dlnaService.getDeviceDescription(), ContentType.parse("text/xml"))
+            }
+            get("/dlna/ContentDirectory.xml") {
+                call.respondText(dlnaService.getContentDirectoryScpd(), ContentType.parse("text/xml"))
+            }
+            get("/dlna/ConnectionManager.xml") {
+                call.respondText(dlnaService.getConnectionManagerScpd(), ContentType.parse("text/xml"))
+            }
+            post("/dlna/control/ContentDirectory") {
+                val soapAction = call.request.header("SOAPACTION") ?: ""
+                val body = call.receiveNullable<String>() ?: ""
+                
+                if (soapAction.contains("Browse")) {
+                    val objectId = Regex("<ObjectID>(.*?)</ObjectID>").find(body)?.groupValues?.get(1) ?: "0"
+                    val browseFlag = Regex("<BrowseFlag>(.*?)</BrowseFlag>").find(body)?.groupValues?.get(1) ?: "BrowseDirectChildren"
+                    
+                    val state = sessionManager.sessionState.value
+                    val resultXml = if (browseFlag == "BrowseMetadata") {
+                        // Return metadata for the object itself
+                        if (objectId == "0") {
+                            dlnaService.buildDidlLite(emptyList(), emptyList()) // Root metadata
+                        } else {
+                            // Find item or folder
+                            val id = objectId.substringAfter(":")
+                            if (objectId.startsWith("folder:")) {
+                                dlnaService.buildDidlLite(state.selectedFolders.filter { it.id == id }, emptyList())
+                            } else {
+                                dlnaService.buildDidlLite(emptyList(), state.selectedItems.filter { it.id == id })
+                            }
+                        }
+                    } else {
+                        // Browse children
+                        when (objectId) {
+                            "0" -> dlnaService.buildDidlLite(state.selectedFolders, state.selectedItems.filter { it.sourceFolderId == null })
+                            else -> {
+                                val folderId = objectId.substringAfter(":")
+                                dlnaService.buildDidlLite(emptyList(), state.selectedItems.filter { it.sourceFolderId == folderId })
+                            }
+                        }
+                    }
+
+                    val response = dlnaService.buildSoapResponse("""
+                        <u:BrowseResponse xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">
+                            <Result>${resultXml.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")}</Result>
+                            <NumberReturned>1</NumberReturned>
+                            <TotalMatches>1</TotalMatches>
+                            <UpdateID>1</UpdateID>
+                        </u:BrowseResponse>
+                    """.trimIndent())
+                    call.respondText(response, ContentType.parse("text/xml"))
+                } else if (soapAction.contains("GetSortCapabilities")) {
+                    val response = dlnaService.buildSoapResponse("""
+                        <u:GetSortCapabilitiesResponse xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1">
+                            <SortCaps>dc:title,dc:date,upnp:class</SortCaps>
+                        </u:GetSortCapabilitiesResponse>
+                    """.trimIndent())
+                    call.respondText(response, ContentType.parse("text/xml"))
+                }
+            }
+            post("/dlna/control/ConnectionManager") {
+                val soapAction = call.request.header("SOAPACTION") ?: ""
+                if (soapAction.contains("GetProtocolInfo")) {
+                    val response = dlnaService.buildSoapResponse("""
+                        <u:GetProtocolInfoResponse xmlns:u="urn:schemas-upnp-org:service:ConnectionManager:1">
+                            <Source>http-get:*:video/mp4:*,http-get:*:audio/mpeg:*,http-get:*:image/jpeg:*</Source>
+                            <Sink></Sink>
+                        </u:GetProtocolInfoResponse>
+                    """.trimIndent())
+                    call.respondText(response, ContentType.parse("text/xml"))
+                }
+            }
+
             get("/player/video/{id}") { call.serveShellPage() }
             get("/photo/{id}") { call.serveShellPage() }
 
@@ -260,6 +343,7 @@ class KtorGhostStreamServer(
                             photos = if (isAuthorized) state.selectedItems.count { it.category == MediaCategory.PHOTO } else 0,
                             music = if (isAuthorized) state.selectedItems.count { it.category == MediaCategory.MUSIC } else 0,
                             files = if (isAuthorized) state.selectedItems.count { it.category == MediaCategory.FILE } else 0,
+                            folders = if (isAuthorized) state.selectedFolders.size else 0,
                         ),
                         recent = recentCards,
                         themeMode = settings.themeMode,
@@ -340,6 +424,10 @@ class KtorGhostStreamServer(
                             "web_library_desc_browse" to localizedContext.getString(R.string.web_library_desc_browse),
                             "web_search_placeholder" to localizedContext.getString(R.string.web_search_placeholder),
                             "web_library_empty" to localizedContext.getString(R.string.web_library_empty),
+                            "web_folders_title" to localizedContext.getString(R.string.web_folders_title),
+                            "web_folder_items" to localizedContext.getString(R.string.web_folder_items),
+                            "web_btn_back_to_folders" to localizedContext.getString(R.string.web_btn_back_to_folders),
+                            "web_all_media" to localizedContext.getString(R.string.web_all_media),
                             "library_title" to localizedContext.getString(R.string.library_title),
                             "web_upload_requesting" to localizedContext.getString(R.string.web_upload_requesting),
                             "web_upload_waiting" to localizedContext.getString(R.string.web_upload_waiting),
@@ -384,6 +472,7 @@ class KtorGhostStreamServer(
                 if (!call.authorizeBrowserCall()) return@get
                 val settings = settingsRepository.settings.first()
                 val category = call.request.queryParameters["category"]?.lowercase()
+                val folderId = call.request.queryParameters["folderId"]
                 val query = call.request.queryParameters["q"]?.trim().orEmpty()
                 val offset = call.request.queryParameters["offset"]?.toIntOrNull()?.coerceAtLeast(0)
                 val limit = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceIn(1, MAX_BROWSER_ITEMS_PAGE_SIZE)
@@ -400,6 +489,9 @@ class KtorGhostStreamServer(
                             "files" -> item.category == MediaCategory.FILE
                             else -> true
                         }
+                    }
+                    .filter { item ->
+                        folderId == null || item.sourceFolderId == folderId
                     }
                     .filter { item ->
                         query.isBlank() || item.displayName.contains(query, ignoreCase = true)
@@ -434,6 +526,19 @@ class KtorGhostStreamServer(
                 } else {
                     call.respond(cards)
                 }
+            }
+
+            get("/api/folders") {
+                if (!call.authorizeBrowserCall()) return@get
+                val state = sessionManager.sessionState.value
+                val query = call.request.queryParameters["q"]?.trim().orEmpty()
+                val folders = state.selectedFolders
+                    .filter { folder ->
+                        query.isBlank() || folder.displayName.contains(query, ignoreCase = true)
+                    }
+                    .sortedBy { it.displayName.lowercase() }
+
+                call.respond(folders)
             }
 
             get("/api/item/{id}") {
@@ -904,6 +1009,9 @@ class KtorGhostStreamServer(
                         "WebHls",
                         "hls_start_allowed id=${source.item.id} browser=${support.reason} status=${source.job.status}",
                     )
+                    call.response.header("contentFeatures.dlna.org", "DLNA.ORG_OP=01;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=01700000000000000000000000000000")
+                    call.response.header("transferMode.dlna.org", "Streaming")
+                    call.response.header("realTimeInfo.dlna.org", "DLNA.ORG_TLAG=0")
                     val ua = call.request.header(HttpHeaders.UserAgent) ?: ""
                     // Read the video codec string from the fMP4 init segment (fast, non-blocking â€”
                     // the moov box is only a few KB).  Returns null if the file is not yet written
@@ -993,6 +1101,9 @@ class KtorGhostStreamServer(
                         call.request.header(HttpHeaders.UserAgent),
                         ClientActivity.WATCHING_VIDEO,
                     )
+                    call.response.header("contentFeatures.dlna.org", "DLNA.ORG_OP=01;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=01700000000000000000000000000000")
+                    call.response.header("transferMode.dlna.org", "Streaming")
+                    call.response.header("realTimeInfo.dlna.org", "DLNA.ORG_TLAG=0")
                     val ua = call.request.header(HttpHeaders.UserAgent) ?: ""
                     val hlsContentType = if (ua.contains("Safari", ignoreCase = true) && !ua.contains("Chrome", ignoreCase = true)) {
                         "application/vnd.apple.mpegurl"
@@ -1394,6 +1505,11 @@ class KtorGhostStreamServer(
         asAttachment: Boolean,
         activity: ClientActivity,
     ) {
+        response.apply {
+            header("contentFeatures.dlna.org", "DLNA.ORG_OP=01;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=01700000000000000000000000000000")
+            header("transferMode.dlna.org", "Streaming")
+            header("realTimeInfo.dlna.org", "DLNA.ORG_TLAG=0")
+        }
         val item = resolveItem(itemId) ?: run {
             respond(HttpStatusCode.NotFound, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_file_unavailable)))
             return
@@ -1450,6 +1566,11 @@ class KtorGhostStreamServer(
         asAttachment: Boolean,
         activity: ClientActivity,
     ) {
+        response.apply {
+            header("contentFeatures.dlna.org", "DLNA.ORG_OP=01;DLNA.ORG_CI=0;DLNA.ORG_FLAGS=01700000000000000000000000000000")
+            header("transferMode.dlna.org", "Streaming")
+            header("realTimeInfo.dlna.org", "DLNA.ORG_TLAG=0")
+        }
         val resolver = context.contentResolver
         val descriptor = try {
             resolver.openAssetFileDescriptor(Uri.parse(playbackSource.uriString), "r")
@@ -2383,6 +2504,7 @@ class KtorGhostStreamServer(
         val photos: Int,
         val music: Int,
         val files: Int,
+        val folders: Int,
     )
 
     @Serializable

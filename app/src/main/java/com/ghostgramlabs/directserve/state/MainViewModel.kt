@@ -20,6 +20,7 @@ import com.ghoststream.core.model.RecentSession
 import com.ghoststream.core.model.buildConnectionDiagnostics
 import com.ghoststream.core.media.CompatibilityJob
 import com.ghoststream.core.media.JobPriority
+import com.ghoststream.core.network.server.DlnaAnnouncer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,6 +49,7 @@ class MainViewModel(
     private val connectingNearbyDeviceId = MutableStateFlow<String?>(null)
     private val _browserPrepManuallyTriggered = MutableStateFlow(false)
     private val _events = MutableSharedFlow<AppEvent>(extraBufferCapacity = 8)
+    private var dlnaAnnouncer: DlnaAnnouncer? = null
 
 
     val events = _events.asSharedFlow()
@@ -133,7 +135,12 @@ class MainViewModel(
             }
             .launchIn(viewModelScope)
 
-
+        combine(
+            container.settingsRepository.settings,
+            container.sessionManager.sessionState,
+        ) { settings, session ->
+            syncDlnaAnnouncer(settings.dlnaEnabled, session)
+        }.launchIn(viewModelScope)
     }
 
     fun completeOnboarding() {
@@ -250,6 +257,30 @@ class MainViewModel(
         }
     }
 
+    fun startMediaServerMode() {
+        viewModelScope.launch {
+            try {
+                libraryImportingCount.value += 1
+                container.storageRepository.loadAllDeviceMedia()
+                container.settingsRepository.update { current ->
+                    current.copy(mediaServerMode = true)
+                }
+                requestStartSharing()
+            } finally {
+                libraryImportingCount.value = (libraryImportingCount.value - 1).coerceAtLeast(0)
+            }
+        }
+    }
+
+    fun stopMediaServerMode() {
+        viewModelScope.launch {
+            container.storageRepository.clearSelection()
+            container.settingsRepository.update { current ->
+                current.copy(mediaServerMode = false)
+            }
+        }
+    }
+
 
     fun requestStartSharing() {
         viewModelScope.launch {
@@ -314,6 +345,8 @@ class MainViewModel(
     fun requestStopSharing() {
         viewModelScope.launch {
             container.debugLogRepository.log("MainViewModel", "requestStopSharing")
+            dlnaAnnouncer?.stop()
+            dlnaAnnouncer = null
             pendingShareAfterNetworkReady.value = false
             startSharingInProgress.value = false
             container.sharingCoordinator.stopSharing()
@@ -532,6 +565,9 @@ class MainViewModel(
         }) {
             is ShareStartResult.Started -> {
                 container.debugLogRepository.log("MainViewModel", "share started url=${startResult.url}")
+                
+                // DLNA handling will be triggered by session state change automatically via syncDlnaAnnouncer in init
+
                 pendingShareAfterNetworkReady.value = false
                 startSharingInProgress.value = false
                 container.debugLogRepository.log("MainViewModel", "emitting StartSharingService")
@@ -539,7 +575,7 @@ class MainViewModel(
                 container.debugLogRepository.log("MainViewModel", "emitting NavigateSession")
                 _events.emit(AppEvent.NavigateSession)
             }
-
+            
             is ShareStartResult.Failure -> {
                 container.debugLogRepository.log("MainViewModel", "share failed message=${startResult.message}")
                 pendingShareAfterNetworkReady.value = false
@@ -587,6 +623,29 @@ class MainViewModel(
                     val application = container.application
                     return MainViewModel(application, container) as T
                 }
+            }
+        }
+    }
+
+    private fun syncDlnaAnnouncer(enabled: Boolean, session: SessionState) {
+        if (enabled && session.isSharing && session.networkAvailability.localAddress != null) {
+            val ip = session.networkAvailability.localAddress!!
+            if (dlnaAnnouncer == null || dlnaAnnouncer?.ipAddress != ip) {
+                dlnaAnnouncer?.stop()
+                dlnaAnnouncer = DlnaAnnouncer(
+                    deviceName = application.getString(R.string.dlna_server_name),
+                    deviceUuid = java.util.UUID.nameUUIDFromBytes(application.packageName.toByteArray()).toString(),
+                    serverPort = session.serverPort ?: 8080,
+                    ipAddress = ip
+                )
+                dlnaAnnouncer?.start()
+                container.debugLogRepository.log("MainViewModel", "DLNA Announcer started (ip=$ip)")
+            }
+        } else {
+            if (dlnaAnnouncer != null) {
+                dlnaAnnouncer?.stop()
+                dlnaAnnouncer = null
+                container.debugLogRepository.log("MainViewModel", "DLNA Announcer stopped")
             }
         }
     }

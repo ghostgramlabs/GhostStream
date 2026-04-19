@@ -3,6 +3,8 @@ package com.ghoststream.feature.settings
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,6 +55,7 @@ fun SettingsScreen(
     currentLanguageLabel: String,
     appVersionLabel: String,
     onToggleKeepScreenAwake: (Boolean) -> Unit,
+    onToggleDlna: (Boolean) -> Unit,
     onToggleHaptics: (Boolean) -> Unit,
     onToggleRecentSessions: (Boolean) -> Unit,
     onToggleRequirePin: (Boolean) -> Unit,
@@ -225,6 +228,7 @@ fun SettingsScreen(
 
         item {
             SettingsGroup(title = stringResource(R.string.settings_group_network)) {
+                SettingsToggleRow(stringResource(R.string.settings_dlna), stringResource(R.string.settings_dlna_desc), settings.dlnaEnabled, onToggleDlna)
                 SettingsChoiceRow(stringResource(R.string.settings_wifi_settings), stringResource(R.string.settings_wifi_settings_desc), onOpenWifiSettings)
                 SettingsChoiceRow(stringResource(R.string.settings_hotspot_settings), stringResource(R.string.settings_hotspot_settings_desc), onOpenHotspotSettings)
             }
@@ -272,7 +276,11 @@ fun HelpScreen(
                 vertical = GhostSpacing.screenVertical,
             ),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(GhostSpacing.section)) {
+        val scrollState = rememberScrollState()
+        Column(
+            modifier = Modifier.verticalScroll(scrollState),
+            verticalArrangement = Arrangement.spacedBy(GhostSpacing.section)
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
                     Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back))
@@ -304,6 +312,36 @@ fun HelpScreen(
                     stringResource(R.string.help_line_open_session),
                     stringResource(R.string.help_line_same_network),
                     stringResource(R.string.help_line_multiple_browse),
+                ),
+            )
+            HelpSectionCard(
+                title = stringResource(R.string.help_section_media_server),
+                lines = listOf(
+                    stringResource(R.string.help_line_media_server_1),
+                    stringResource(R.string.help_line_media_server_2),
+                ),
+            )
+            HelpSectionCard(
+                title = stringResource(R.string.help_section_folders_nav),
+                lines = listOf(
+                    stringResource(R.string.help_line_folders_1),
+                    stringResource(R.string.help_line_folders_2),
+                ),
+            )
+            HelpSectionCard(
+                title = stringResource(R.string.help_section_dlna_tv),
+                lines = listOf(
+                    stringResource(R.string.help_line_dlna_1),
+                    stringResource(R.string.help_line_dlna_2),
+                    stringResource(R.string.help_line_dlna_3),
+                    stringResource(R.string.help_line_dlna_4),
+                ),
+            )
+            HelpSectionCard(
+                title = stringResource(R.string.help_section_search_sticky),
+                lines = listOf(
+                    stringResource(R.string.help_line_search_1),
+                    stringResource(R.string.help_line_search_2),
                 ),
             )
             HelpSectionCard(

@@ -17,6 +17,7 @@ interface StorageRepository {
     suspend fun removeFolder(folderId: String)
     suspend fun refreshAvailability()
     suspend fun clearSelection()
+    suspend fun loadAllDeviceMedia(): LibraryState
     suspend fun loadSmartSelectionGroups(): List<SmartSelectionGroup>
     fun findItemById(itemId: String): SharedItem?
     suspend fun verifyAvailability(item: SharedItem): Boolean

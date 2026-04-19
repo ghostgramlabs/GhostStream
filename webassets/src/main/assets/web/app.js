@@ -37,6 +37,8 @@ const state = {
   playerSourceLocks: {},
   lastReportedCapabilities: null,
   ratioLocked: {}, // Track locked ratios per itemId to prevent placeholder overwrite
+  folderId: null,
+  folderName: null,
   thumbObserver: null,
   thumbQueue: [],
   thumbActiveCount: 0,
@@ -49,6 +51,7 @@ const routes = {
   "/photos": () => renderLibrary("photos", titleForPath("/photos")),
   "/music": () => renderLibrary("music", titleForPath("/music")),
   "/files": () => renderLibrary("files", titleForPath("/files")),
+  "/folders": () => renderFolders(titleForPath("/folders")),
   "/upload": renderUpload,
 };
 
@@ -904,6 +907,7 @@ function shell(content, options = {}) {
         <a class="gs-media-tab${path === "/videos" ? " on" : ""}" data-link href="/videos">${gsStr("web_cat_videos", "Videos")}</a>
         <a class="gs-media-tab${path === "/photos" ? " on" : ""}" data-link href="/photos">${gsStr("web_cat_photos", "Photos")}</a>
         <a class="gs-media-tab${path === "/music" ? " on" : ""}" data-link href="/music">${gsStr("web_cat_music", "Music")}</a>
+        ${bootstrap?.categories?.folders > 0 ? `<a class="gs-media-tab${path === "/folders" ? " on" : ""}" data-link href="/folders">${gsStr("web_folders_title", "Folders")}</a>` : ""}
       </div>
     `
     : "";
@@ -1055,9 +1059,24 @@ function renderHome() {
 async function renderLibrary(category, title) {
   state.libraryCategory = category;
   state.libraryTitle = title;
+  
+  // Extract folderId if present
+  const params = new URLSearchParams(location.search);
+  const folderId = params.get("folderId");
+  const folderName = params.get("folderName");
+  state.folderId = folderId;
+  state.folderName = folderName;
+
   const allowDownloads = !state.bootstrap?.preventDownload;
   shell(`
     <section class="gs-section">
+      ${folderId ? `
+        <nav class="gs-breadcrumb">
+          <a class="gs-breadcrumb-item" data-link href="/folders">${gsStr("web_folders_title", "Folders")}</a>
+          <span class="gs-breadcrumb-sep">/</span>
+          <span class="gs-breadcrumb-item on">${esc(folderName || gsStr("web_all_media"))}</span>
+        </nav>
+      ` : ""}
       <div class="gs-section-head">
         <h2>${esc(title)}</h2>
         <span class="gs-section-meta">${allowDownloads ? gsStr("web_library_desc_download") : gsStr("web_library_desc_browse")}</span>
@@ -1090,13 +1109,59 @@ async function renderLibrary(category, title) {
     state.searchTimer = setTimeout(() => renderLibrary(category, title), 180);
   });
 
-  const page = await fetchLibraryPage(category, state.query, 0, LIBRARY_BATCH_SIZE);
+  const page = await fetchLibraryPage(category, state.query, 0, LIBRARY_BATCH_SIZE, folderId);
   state.libraryItems = page.items;
   state.libraryTotalCount = page.totalCount;
   state.libraryHasMore = page.hasMore;
   state.libraryLoadingMore = false;
   renderLibraryGrid();
   bindLibraryControls();
+}
+
+async function renderFolders(title) {
+  state.libraryCategory = "folders";
+  state.libraryTitle = title;
+  shell(`
+    <section class="gs-section">
+      <div class="gs-section-head">
+        <h2>${esc(title)}</h2>
+        <span class="gs-section-meta">${gsStr("web_library_desc_browse")}</span>
+      </div>
+      <div class="gs-control-card">
+        <div class="gs-toolbar">
+          <input class="gs-search" id="folderSearch" placeholder="${gsStr("web_search_placeholder")}" value="${esc(state.query)}">
+        </div>
+      </div>
+      <div class="gs-grid" id="grid">${skeletons(6)}</div>
+    </section>
+  `);
+
+  document.getElementById("folderSearch")?.addEventListener("input", (event) => {
+    state.query = event.target.value;
+    clearTimeout(state.searchTimer);
+    state.searchTimer = setTimeout(() => renderFolders(title), 180);
+  });
+
+  const folders = await api(`/api/folders?q=${encodeURIComponent(state.query)}`);
+  const grid = document.getElementById("grid");
+  if (!grid) return;
+
+  if (!folders.length) {
+    grid.innerHTML = `<div class="gs-empty">${gsStr("web_library_empty")}</div>`;
+    return;
+  }
+
+  grid.innerHTML = folders.map(folder => `
+    <a class="gs-folder-card" data-link href="/?folderId=${encodeURIComponent(folder.id)}&folderName=${encodeURIComponent(folder.displayName)}">
+      <div class="gs-folder-icon">
+        <svg fill="currentColor" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
+      </div>
+      <div class="gs-folder-info">
+        <h3>${esc(folder.displayName)}</h3>
+        <span class="gs-meta">${gsStr("web_folder_items", "%1$d items", folder.fileCount)}</span>
+      </div>
+    </a>
+  `).join("");
 }
 
 function resetThumbnailLoader() {
@@ -1175,9 +1240,11 @@ function startThumbnailLoad(img) {
   img.src = img.dataset.thumbSrc;
 }
 
-async function fetchLibraryPage(category, query, offset, limit) {
+async function fetchLibraryPage(category, query, offset, limit, folderId) {
+  const qStr = query ? `&q=${encodeURIComponent(query)}` : "";
+  const fStr = folderId ? `&folderId=${encodeURIComponent(folderId)}` : "";
   const response = await api(
-    `/api/items?category=${encodeURIComponent(category)}&q=${encodeURIComponent(query || "")}&offset=${offset}&limit=${limit}`,
+    `/api/items?category=${encodeURIComponent(category)}${qStr}${fStr}&offset=${offset}&limit=${limit}`,
   );
   return {
     items: Array.isArray(response?.items) ? response.items : [],
@@ -1209,6 +1276,7 @@ async function loadMoreLibraryItems() {
       state.query,
       state.libraryItems.length,
       LIBRARY_BATCH_SIZE,
+      state.folderId
     );
     state.libraryItems = state.libraryItems.concat(page.items);
     state.libraryTotalCount = page.totalCount;

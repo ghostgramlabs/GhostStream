@@ -58,6 +58,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.ghostgramlabs.directserve.service.GhostStreamForegroundService
+import android.net.wifi.WifiManager
 import com.ghostgramlabs.directserve.localization.LanguageSelectionScreen
 import com.ghostgramlabs.directserve.state.AppEvent
 import com.ghostgramlabs.directserve.state.MainViewModel
@@ -110,6 +111,31 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
     val context = androidx.compose.ui.platform.LocalContext.current
     val clipboardManager = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
+    
+    // DLNA Multicast Lock
+    DisposableEffect(uiState.sessionState.isSharing) {
+        var lock: WifiManager.MulticastLock? = null
+        if (uiState.sessionState.isSharing) {
+            val wifiManager = context.applicationContext.getSystemService(android.content.Context.WIFI_SERVICE) as WifiManager
+            lock = wifiManager.createMulticastLock("DirectServeDlnaLock")
+            lock.setReferenceCounted(false)
+            try {
+                lock.acquire()
+            } catch (e: Exception) {
+                android.util.Log.e("MainActivity", "Failed to acquire multicast lock", e)
+            }
+        }
+        onDispose {
+            try {
+                if (lock?.isHeld == true) {
+                    lock.release()
+                }
+            } catch (e: Exception) {
+                // Ignore
+            }
+        }
+    }
+
     var pendingStartService by remember { mutableStateOf(false) }
     var pendingBatchSelectNavigation by remember { mutableStateOf(false) }
     var launchHandled by remember { mutableStateOf(false) }
@@ -169,6 +195,29 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
             viewModel.loadSmartGroups()
         } else {
             pendingBatchSelectNavigation = false
+            batchMediaPermissionLauncher.launch(requiredBatchSelectionPermissions())
+        }
+    }
+    val mediaServerPermissionLauncher = rememberLauncherForActivityResult(RequestMultiplePermissions()) { results ->
+        if (results.values.all { it }) {
+            viewModel.startMediaServerMode()
+        } else {
+            scope.launch {
+                snackbarHostState.showSnackbar(context.getString(SharedR.string.main_batch_media_access_needed))
+            }
+        }
+    }
+    val startMediaServerWithPermission = {
+        if (hasBatchSelectionMediaAccess(context)) {
+            viewModel.startMediaServerMode()
+        } else {
+            mediaServerPermissionLauncher.launch(requiredBatchSelectionPermissions())
+        }
+    }
+
+    // Permission request on launch as requested
+    LaunchedEffect(uiState.settings.onboardingCompleted) {
+        if (uiState.settings.onboardingCompleted && !hasBatchSelectionMediaAccess(context)) {
             batchMediaPermissionLauncher.launch(requiredBatchSelectionPermissions())
         }
     }
@@ -367,6 +416,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                 HomeScreen(
                     libraryState = uiState.libraryState,
                     sessionState = uiState.sessionState,
+                    settings = uiState.settings,
                     recentSessions = uiState.recentSessions,
 
                     connectionDiagnostics = uiState.connectionDiagnostics,
@@ -391,6 +441,8 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onOpenLibrary = { navController.navigate(Routes.Library) },
                     onOpenSettings = { navController.navigate(Routes.Settings) },
                     onOpenHistory = viewModel::navigateToHistory,
+                    onStartMediaServer = startMediaServerWithPermission,
+                    onStopMediaServer = viewModel::stopMediaServerMode,
                     onResolveUploadRequest = viewModel::resolveUploadRequest,
                     modifier = Modifier.padding(innerPadding),
                 )
@@ -562,6 +614,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     currentLanguageLabel = selectedLanguageLabel(uiState.settings.languageTag),
                     appVersionLabel = viewModel.versionLabel(),
                     onToggleKeepScreenAwake = { viewModel.updateSettings { current -> current.copy(keepScreenAwake = it) } },
+                    onToggleDlna = { viewModel.updateSettings { current -> current.copy(dlnaEnabled = it) } },
                     onToggleHaptics = { viewModel.updateSettings { current -> current.copy(hapticOnDeviceConnect = it) } },
                     onToggleRecentSessions = { viewModel.updateSettings { current -> current.copy(showRecentSessions = it) } },
                     onToggleRequirePin = { viewModel.updateSettings { current -> current.copy(requireSessionPin = it) } },

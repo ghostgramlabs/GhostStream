@@ -84,6 +84,7 @@ import com.ghoststream.core.model.deviceIdentity
 fun HomeScreen(
     libraryState: LibraryState,
     sessionState: SessionState,
+    settings: com.ghoststream.core.model.AppSettings,
     recentSessions: List<RecentSession>,
 
     connectionDiagnostics: ConnectionDiagnostics,
@@ -99,6 +100,8 @@ fun HomeScreen(
     onOpenLibrary: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenHistory: () -> Unit,
+    onStartMediaServer: () -> Unit,
+    onStopMediaServer: () -> Unit,
     onResolveUploadRequest: (String, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -120,10 +123,13 @@ fun HomeScreen(
             SessionHeroCard(
                 libraryState = libraryState,
                 sessionState = sessionState,
+                settings = settings,
                 connectionDiagnostics = connectionDiagnostics,
                 isStartingShare = isStartingShare,
                 onOpenLibrary = onOpenLibrary,
                 onStartSharing = onStartSharing,
+                onStartMediaServer = onStartMediaServer,
+                onStopMediaServer = onStopMediaServer,
             )
         }
 
@@ -283,10 +289,13 @@ private fun TopBrandHeader(
 private fun SessionHeroCard(
     libraryState: LibraryState,
     sessionState: SessionState,
+    settings: com.ghoststream.core.model.AppSettings,
     connectionDiagnostics: ConnectionDiagnostics,
     isStartingShare: Boolean,
     onOpenLibrary: () -> Unit,
     onStartSharing: () -> Unit,
+    onStartMediaServer: () -> Unit,
+    onStopMediaServer: () -> Unit,
 ) {
     val canStartSession = sessionState.networkAvailability.isWifiOrHotspotReady
     var showNoNetworkDialog by rememberSaveable { mutableStateOf(false) }
@@ -339,7 +348,7 @@ private fun SessionHeroCard(
             }
 
             Spacer(modifier = Modifier.height(18.dp))
-            if (sessionState.isSharing) {
+            if (sessionState.isSharing || settings.mediaServerMode) {
                 Surface(
                     shape = RoundedCornerShape(18.dp),
                     color = ghostLiveSurface(),
@@ -356,7 +365,7 @@ private fun SessionHeroCard(
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = stringResource(R.string.home_live_banner),
+                            text = if (settings.mediaServerMode) stringResource(R.string.home_media_server_active) else stringResource(R.string.home_live_banner),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -367,7 +376,7 @@ private fun SessionHeroCard(
                 }
                 Spacer(modifier = Modifier.height(18.dp))
             }
-            if (sessionState.isSharing) {
+            if (sessionState.isSharing || settings.mediaServerMode) {
                 Text(
                     text = stringResource(R.string.home_title_live),
                     style = MaterialTheme.typography.headlineSmall,
@@ -429,6 +438,32 @@ private fun SessionHeroCard(
                         } else {
                             stringResource(R.string.home_button_add_media)
                         },
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                OutlinedButton(
+                    onClick = {
+                        if (settings.mediaServerMode) {
+                            onStopMediaServer()
+                        } else {
+                            onStartMediaServer()
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(58.dp),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = ghostSecondaryButtonColors(),
+                ) {
+                    Icon(
+                        if (settings.mediaServerMode) Icons.Outlined.History else Icons.Outlined.PlayArrow,
+                        contentDescription = null
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        if (settings.mediaServerMode) stringResource(R.string.home_btn_stop_media_server) else stringResource(R.string.home_button_share_all_media),
                         style = MaterialTheme.typography.titleMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

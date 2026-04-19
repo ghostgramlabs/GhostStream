@@ -153,6 +153,19 @@ class AndroidStorageRepository(
         }
     }
 
+    override suspend fun loadAllDeviceMedia(): LibraryState {
+        val scanner = MediaStoreScanner(context, mediaAnalyzer)
+        val (items, folders) = scanner.scanAllDeviceMedia()
+        return stateMutex.withLock {
+            val newState = LibraryState(
+                items = items,
+                folders = folders
+            ).withSummary()
+            persistAndPublish(newState)
+            newState
+        }
+    }
+
     override suspend fun loadSmartSelectionGroups(): List<SmartSelectionGroup> = withContext(Dispatchers.IO) {
         val nowSeconds = System.currentTimeMillis() / 1_000L
         val daySeconds = 24L * 60L * 60L

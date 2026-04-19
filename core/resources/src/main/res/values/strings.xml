@@ -485,6 +485,15 @@
     <string name="home_action_folder_desc">Link</string>
     <string name="home_action_library">Use Phone Library</string>
     <string name="home_action_library_desc">Browse</string>
+    <string name="home_button_share_all_media">Share All Media</string>
+    <string name="home_media_server_desc">Turn your phone into a media server. All photos, videos, and music will be available to browse.</string>
+    <string name="home_media_server_scanning">Scanning device media…</string>
+    <string name="home_media_server_active">Media Server active</string>
+    <string name="home_btn_stop_media_server">Stop Media Server</string>
+    <string name="web_folders_title">Folders</string>
+    <string name="web_folder_items">%1$d items</string>
+    <string name="web_btn_back_to_folders">Back to folders</string>
+    <string name="web_all_media">All Media</string>
     <string name="home_nearby_title">Nearby &amp; network</string>
     <string name="home_nearby_subtitle">Make sure your local network is ready, then look for another DirectServe device if you want to open it in the app.</string>
     <string name="home_nearby_refresh_status">Refresh status</string>
@@ -676,4 +685,21 @@
     <string name="common_unit_tb">TB</string>
     <string name="service_file_index_pattern">%1$s (%2$d/%3$d)</string>
     <string name="service_upload_progress_subtext_pattern">%1$s / %2$s</string>
+    <string name="help_section_media_server">Media Server Mode</string>
+    <string name="help_line_media_server_1">Turn your phone into a complete media server by selecting \"Share All Media\".</string>
+    <string name="help_line_media_server_2">All your device photos, videos, and music will be automatically listed and organized for nearby devices.</string>
+    <string name="help_section_folders_nav">Smart Navigation &amp; Folders</string>
+    <string name="help_line_folders_1">Browse your media library by folders to find specific content exactly where you saved it.</string>
+    <string name="help_line_folders_2">Content is automatically grouped into Videos, Photos, and Music for quick access.</string>
+    <string name="help_section_dlna_tv">DLNA &amp; TV Streaming</string>
+    <string name="help_line_dlna_1">DirectServe is fully DLNA/UPnP compatible. Your Smart TVs, Consoles, and VLC will find your phone automatically.</string>
+    <string name="help_line_dlna_2">Most TVs will show \"DirectServe Media Server\" in their source or media center list once sharing is active.</string>
+    <string name="help_line_dlna_3">If you can\'t find the phone, make sure \"DLNA Media Server\" is enabled in Network Settings.</string>
+    <string name="help_line_dlna_4">Compatible with VLC, Kodi, Windows Media Player, and most Smart TVs.</string>
+    <string name="help_section_search_sticky">Persistent Search</string>
+    <string name="help_line_search_1">Use the search bar in the browser to instantly find files by name across your entire shared library.</string>
+    <string name="help_line_search_2">The search bar stays visible at the top of the browser view for quick access while scrolling.</string>
+    <string name="settings_dlna">DLNA Media Server</string>
+    <string name="settings_dlna_desc">Allow Smart TVs, Kodi, and VLC to find this device over the network.</string>
+    <string name="dlna_server_name">DirectServe Media Server</string>
 </resources>
