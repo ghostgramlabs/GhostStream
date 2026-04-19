@@ -258,7 +258,7 @@ class MainViewModel(
         }
     }
 
-    fun startMediaServerMode() {
+    fun importAllMedia() {
         viewModelScope.launch {
             try {
                 libraryImportingCount.value += 1
@@ -266,14 +266,13 @@ class MainViewModel(
                 container.settingsRepository.update { current ->
                     current.copy(mediaServerMode = true)
                 }
-                requestStartSharing()
             } finally {
                 libraryImportingCount.value = (libraryImportingCount.value - 1).coerceAtLeast(0)
             }
         }
     }
 
-    fun stopMediaServerMode() {
+    fun clearAllMedia() {
         viewModelScope.launch {
             container.storageRepository.clearSelection()
             container.settingsRepository.update { current ->

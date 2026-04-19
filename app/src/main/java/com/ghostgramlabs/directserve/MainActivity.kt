@@ -200,7 +200,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
     }
     val mediaServerPermissionLauncher = rememberLauncherForActivityResult(RequestMultiplePermissions()) { results ->
         if (results.values.all { it }) {
-            viewModel.startMediaServerMode()
+            viewModel.importAllMedia()
         } else {
             scope.launch {
                 snackbarHostState.showSnackbar(context.getString(SharedR.string.main_batch_media_access_needed))
@@ -209,7 +209,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
     }
     val startMediaServerWithPermission = {
         if (hasBatchSelectionMediaAccess(context)) {
-            viewModel.startMediaServerMode()
+            viewModel.importAllMedia()
         } else {
             mediaServerPermissionLauncher.launch(requiredBatchSelectionPermissions())
         }
@@ -441,8 +441,9 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onOpenLibrary = { navController.navigate(Routes.Library) },
                     onOpenSettings = { navController.navigate(Routes.Settings) },
                     onOpenHistory = viewModel::navigateToHistory,
-                    onStartMediaServer = startMediaServerWithPermission,
-                    onStopMediaServer = viewModel::stopMediaServerMode,
+                    onImportAllMedia = startMediaServerWithPermission,
+                    onClearAllMedia = viewModel::clearAllMedia,
+                    libraryImportingCount = uiState.libraryImportingCount,
                     onResolveUploadRequest = viewModel::resolveUploadRequest,
                     modifier = Modifier.padding(innerPadding),
                 )

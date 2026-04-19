@@ -100,8 +100,9 @@ fun HomeScreen(
     onOpenLibrary: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenHistory: () -> Unit,
-    onStartMediaServer: () -> Unit,
-    onStopMediaServer: () -> Unit,
+    libraryImportingCount: Int,
+    onImportAllMedia: () -> Unit,
+    onClearAllMedia: () -> Unit,
     onResolveUploadRequest: (String, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -128,8 +129,9 @@ fun HomeScreen(
                 isStartingShare = isStartingShare,
                 onOpenLibrary = onOpenLibrary,
                 onStartSharing = onStartSharing,
-                onStartMediaServer = onStartMediaServer,
-                onStopMediaServer = onStopMediaServer,
+                onImportAllMedia = onImportAllMedia,
+                onClearAllMedia = onClearAllMedia,
+                libraryImportingCount = libraryImportingCount,
             )
         }
 
@@ -294,8 +296,9 @@ private fun SessionHeroCard(
     isStartingShare: Boolean,
     onOpenLibrary: () -> Unit,
     onStartSharing: () -> Unit,
-    onStartMediaServer: () -> Unit,
-    onStopMediaServer: () -> Unit,
+    onImportAllMedia: () -> Unit,
+    onClearAllMedia: () -> Unit,
+    libraryImportingCount: Int,
 ) {
     val canStartSession = sessionState.networkAvailability.isWifiOrHotspotReady
     var showNoNetworkDialog by rememberSaveable { mutableStateOf(false) }
@@ -443,31 +446,47 @@ private fun SessionHeroCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                OutlinedButton(
+                Button(
                     onClick = {
                         if (settings.mediaServerMode) {
-                            onStopMediaServer()
+                            onClearAllMedia()
                         } else {
-                            onStartMediaServer()
+                            onImportAllMedia()
                         }
                     },
+                    enabled = libraryImportingCount == 0,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(58.dp),
                     shape = RoundedCornerShape(18.dp),
-                    colors = ghostSecondaryButtonColors(),
+                    colors = ghostPrimaryButtonColors(),
                 ) {
-                    Icon(
-                        if (settings.mediaServerMode) Icons.Outlined.History else Icons.Outlined.PlayArrow,
-                        contentDescription = null
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        if (settings.mediaServerMode) stringResource(R.string.home_btn_stop_media_server) else stringResource(R.string.home_button_share_all_media),
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    if (libraryImportingCount > 0) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(22.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp,
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            stringResource(R.string.home_button_adding_all),
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    } else {
+                        Icon(
+                            if (settings.mediaServerMode) Icons.Outlined.History else Icons.Outlined.PlayArrow,
+                            contentDescription = null
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Text(
+                            if (settings.mediaServerMode) stringResource(R.string.home_btn_stop_media_server) else stringResource(R.string.home_button_share_all_media),
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
                 OutlinedButton(
                     onClick = {

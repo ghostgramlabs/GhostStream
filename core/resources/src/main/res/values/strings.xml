@@ -485,11 +485,10 @@
     <string name="home_action_folder_desc">Link</string>
     <string name="home_action_library">Use Phone Library</string>
     <string name="home_action_library_desc">Browse</string>
-    <string name="home_button_share_all_media">Share All Media</string>
-    <string name="home_media_server_desc">Turn your phone into a media server. All photos, videos, and music will be available to browse.</string>
-    <string name="home_media_server_scanning">Scanning device media…</string>
-    <string name="home_media_server_active">Media Server active</string>
-    <string name="home_btn_stop_media_server">Stop Media Server</string>
+    <string name="home_button_share_all_media">Add All Media</string>
+    <string name="home_button_adding_all">Adding all…</string>
+    <string name="home_media_server_active">Full Phone Library Added</string>
+    <string name="home_btn_stop_media_server">Clear All Media</string>
     <string name="web_folders_title">Folders</string>
     <string name="web_folder_items">%1$d items</string>
     <string name="web_btn_back_to_folders">Back to folders</string>
