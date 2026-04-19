@@ -467,6 +467,19 @@ class Media3FragmentedMp4CompatibilityWorker(
                 if (mime.startsWith("video/") && videoMime == null) {
                     videoMime = mime
                     videoCopySafeToMp4 = isMp4MuxableTrack(mime, format)
+                    // AV1 requires codec-specific data (OBU sequence header) for
+                    // FragmentedMp4Muxer to write the av1C box.  If MediaExtractor
+                    // did not propagate csd-0, copy-mux will crash with
+                    // "csd-0 is not found in the format".  Fall back to transcode.
+                    if (videoCopySafeToMp4 && (mime == "video/av01" || mime == "video/av1")) {
+                        if (!format.containsKey("csd-0")) {
+                            CompatLogger.warn(
+                                "CompatProbe",
+                                "AV1 track missing csd-0 — marking as copy-unsafe",
+                            )
+                            videoCopySafeToMp4 = false
+                        }
+                    }
                 } else if (mime.startsWith("audio/") && audioMime == null) {
                     audioMime = mime
                     audioCopySafeToMp4 = isMp4MuxableTrack(mime, format)

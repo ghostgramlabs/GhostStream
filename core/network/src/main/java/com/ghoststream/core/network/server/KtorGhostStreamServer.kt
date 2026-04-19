@@ -579,6 +579,11 @@ class KtorGhostStreamServer(
                         mode = nextBrowserFallbackMode(currentMode),
                         reason = "browser_decode_failed",
                     )
+                    // Clear the stale DIRECT job so the re-snapshot picks up the
+                    // override and returns the updated mode.  Without this, the
+                    // response still says IDLE/DIRECT and the browser re-locks the
+                    // failing source in a loop.  (Mirrors the retry endpoint logic.)
+                    compatibilityPipeline.invalidate(item.id)
                 }
                 val job = compatibilitySnapshotFor(host, item, triggerPreparation = true, priority = JobPriority.HIGH)
                 val allowInProgressHls = supportsInProgressHls(

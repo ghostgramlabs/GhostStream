@@ -1907,6 +1907,11 @@ function hydrateVideoPlayer(item, options = {}) {
     }
   });
   video.addEventListener("canplay", () => {
+    // Throttle: Chrome fires canplay on every buffer extension during a growing
+    // fragmented MP4, producing 60+ events/sec.  Limit trace to once per 2s.
+    const now = Date.now();
+    if (now - (state._lastCanplayTrace || 0) < 2000) return;
+    state._lastCanplayTrace = now;
     debugTrace("video_canplay", `id=${item.id} readyState=${video.readyState}`);
   });
   video.addEventListener("playing", () => {
@@ -1942,7 +1947,25 @@ function hydrateVideoPlayer(item, options = {}) {
       const duration = (item.totalDurationMs || item.durationMs || 0) / 1000;
       const progressPercent = item.compatibilityProgressPercent || 0;
       const preparedSeconds = (progressPercent / 100) * duration;
-      
+
+      // GROWING MP4 GUARD: During an in-progress transmux/remux served as a
+      // growing prepared_mp4, the file is written linearly.  Sending a
+      // server-side seek request would restart the entire transcode from the
+      // new offset, discarding all work done so far, and causing the video
+      // to oscillate between positions.  Instead, clamp to the end of the
+      // current buffer so the browser stays at the latest available point
+      // and the worker continues writing forward.
+      if (usingGrowingPreparedMp4 && !usingManagedHls) {
+        const bufEnd = video.buffered.length > 0
+          ? video.buffered.end(video.buffered.length - 1)
+          : 0;
+        if (currentTime > bufEnd + 1) {
+          debugTrace("video_seek_clamped", `id=${item.id} requested=${currentTime.toFixed(1)}s bufferEnd=${bufEnd.toFixed(1)}s`);
+          video.currentTime = Math.max(0, bufEnd - 0.5);
+        }
+        return;
+      }
+
       if (currentTime > preparedSeconds + 2 && !item.compatibilityComplete) {
          showCompatibilityWaitingStage({ 
             ...item, 
@@ -2021,6 +2044,10 @@ function hydrateVideoPlayer(item, options = {}) {
     state.compatPlaybackFailures[item.id] = failureCount;
     if (item.playbackMode === "DIRECT" && failureCount <= 2) {
       debugTrace("video_error_direct_compat_fallback", `id=${item.id} failures=${failureCount} triggering compat preparation`);
+      // Clear the source lock so the poll loop picks up the new compat
+      // source (e.g. prepared_mp4 or HLS) instead of re-locking the
+      // failing direct URL that just errored.
+      delete state.playerSourceLocks[item.id];
       showCompatibilityWaitingStage({
         ...item,
         streamReady: false,
