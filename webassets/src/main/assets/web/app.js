@@ -45,14 +45,82 @@ const state = {
 };
 
 const routes = {
-  "/": () => renderLibrary("media", titleForPath("/")),
+  "/": () => {
+    const e = state.bootstrap?.enabledCategories;
+    if (e && !e.videos && !e.photos && !e.music && e.files) {
+      renderLibrary("files", titleForPath("/files"));
+    } else {
+      renderLibrary("media", titleForPath("/"));
+    }
+  },
   "/login": () => renderLogin(),
-  "/videos": () => renderLibrary("videos", titleForPath("/videos")),
-  "/photos": () => renderLibrary("photos", titleForPath("/photos")),
-  "/music": () => renderLibrary("music", titleForPath("/music")),
-  "/files": () => renderLibrary("files", titleForPath("/files")),
+  "/videos": () => {
+    if (!isCategoryEnabled("videos")) { navigate("/", true); return; }
+    renderLibrary("videos", titleForPath("/videos"));
+  },
+  "/photos": () => {
+    if (!isCategoryEnabled("photos")) { navigate("/", true); return; }
+    renderLibrary("photos", titleForPath("/photos"));
+  },
+  "/music": () => {
+    if (!isCategoryEnabled("music")) { navigate("/", true); return; }
+    renderLibrary("music", titleForPath("/music"));
+  },
+  "/files": () => {
+    if (!isCategoryEnabled("files")) { navigate("/", true); return; }
+    renderLibrary("files", titleForPath("/files"));
+  },
   "/folders": () => renderFolders(titleForPath("/folders")),
   "/upload": renderUpload,
+};
+
+function isCategoryEnabled(cat) {
+  const e = state.bootstrap?.enabledCategories;
+  if (!e) return true;
+  return e[cat] !== false;
+}
+
+function isBrowserPreviewable(mimeType) {
+  if (!mimeType) return false;
+  return mimeType === "application/pdf" || mimeType.startsWith("text/");
+}
+
+function fileTypeLabel(mimeType, title) {
+  const ext = title ? title.split(".").pop().toLowerCase() : "";
+  if (!mimeType || mimeType === "application/octet-stream") {
+    return ext && ext.length <= 5 ? ext.toUpperCase() : "FILE";
+  }
+  if (mimeType === "application/pdf") return "PDF";
+  if (mimeType === "application/vnd.android.package-archive") return "APK";
+  if (mimeType === "application/epub+zip") return "EPUB";
+  if (mimeType === "application/zip" || mimeType.startsWith("application/x-zip")) return "ZIP";
+  if (mimeType.includes("rar")) return "RAR";
+  if (mimeType.includes("7z")) return "7Z";
+  if (mimeType === "application/json") return "JSON";
+  if (mimeType === "application/xml" || mimeType === "text/xml") return "XML";
+  if (mimeType === "application/msword") return "DOC";
+  if (mimeType.startsWith("application/vnd.openxmlformats-officedocument.spreadsheet")) return "XLSX";
+  if (mimeType.startsWith("application/vnd.openxmlformats-officedocument.presentation")) return "PPTX";
+  if (mimeType.startsWith("application/vnd.openxmlformats-officedocument")) return "DOCX";
+  if (mimeType.startsWith("application/vnd.ms-excel")) return "XLS";
+  if (mimeType.startsWith("application/vnd.ms-powerpoint")) return "PPT";
+  if (mimeType.startsWith("application/vnd.oasis.opendocument")) return "ODT";
+  if (mimeType.startsWith("font/")) return "FONT";
+  if (mimeType.startsWith("text/")) {
+    if (ext === "md") return "MD";
+    if (ext === "csv") return "CSV";
+    if (ext === "html" || ext === "htm") return "HTML";
+    return "TXT";
+  }
+  return ext && ext.length <= 5 ? ext.toUpperCase() : "FILE";
+}
+
+const CATEGORY_ICONS = {
+  videos: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>`,
+  photos: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`,
+  music: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`,
+  files: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>`,
+  media: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/></svg>`,
 };
 
 function gsStr(key, defaultVal, ...args) {
@@ -918,9 +986,9 @@ function shell(content, options = {}) {
     ? `
       <div class="gs-media-subnav">
         <a class="gs-media-tab${path === "/" ? " on" : ""}" data-link href="/">${gsStr("web_nav_media", "Media")}</a>
-        <a class="gs-media-tab${path === "/videos" ? " on" : ""}" data-link href="/videos">${gsStr("web_cat_videos", "Videos")}</a>
-        <a class="gs-media-tab${path === "/photos" ? " on" : ""}" data-link href="/photos">${gsStr("web_cat_photos", "Photos")}</a>
-        <a class="gs-media-tab${path === "/music" ? " on" : ""}" data-link href="/music">${gsStr("web_cat_music", "Music")}</a>
+        ${isCategoryEnabled("videos") ? `<a class="gs-media-tab${path === "/videos" ? " on" : ""}" data-link href="/videos">${gsStr("web_cat_videos", "Videos")}</a>` : ""}
+        ${isCategoryEnabled("photos") ? `<a class="gs-media-tab${path === "/photos" ? " on" : ""}" data-link href="/photos">${gsStr("web_cat_photos", "Photos")}</a>` : ""}
+        ${isCategoryEnabled("music") ? `<a class="gs-media-tab${path === "/music" ? " on" : ""}" data-link href="/music">${gsStr("web_cat_music", "Music")}</a>` : ""}
         ${bootstrap?.categories?.folders > 0 ? `<a class="gs-media-tab${path === "/folders" ? " on" : ""}" data-link href="/folders">${gsStr("web_folders_title", "Folders")}</a>` : ""}
       </div>
     `
@@ -947,7 +1015,7 @@ function shell(content, options = {}) {
           </a>
           <div class="gs-nav-links">
             <a class="gs-tab${mediaActive ? " on" : ""}" data-link href="/">${gsStr("web_nav_media", "Media")}</a>
-            <a class="gs-tab${path === "/files" ? " on" : ""}" data-link href="/files">${gsStr("web_nav_files", "Files")}</a>
+            ${isCategoryEnabled("files") ? `<a class="gs-tab${path === "/files" ? " on" : ""}" data-link href="/files">${gsStr("web_nav_files", "Files")}</a>` : ""}
           </div>
           <div class="gs-nav-meta">
             <span class="gs-status-pill">${securityLabel}</span>
@@ -1020,12 +1088,20 @@ function shell(content, options = {}) {
 
 function renderHome() {
   const bootstrap = state.bootstrap;
-  const categories = [
+  const e = bootstrap?.enabledCategories || { videos: true, photos: true, music: true, files: true };
+
+  const allCategories = [
     { key: "videos", label: gsStr("web_cat_videos", "Videos"), count: bootstrap.categories.videos, href: "/videos" },
     { key: "photos", label: gsStr("web_cat_photos", "Photos"), count: bootstrap.categories.photos, href: "/photos" },
     { key: "music", label: gsStr("web_cat_music", "Music"), count: bootstrap.categories.music, href: "/music" },
+    { key: "files", label: gsStr("web_cat_files", "Files"), count: bootstrap.categories.files, href: "/files" },
   ];
-  const total = categories.reduce((sum, category) => sum + category.count, 0);
+  const categories = allCategories.filter(c => e[c.key]);
+  const mediaCategories = categories.filter(c => c.key !== "files");
+  const total = categories.reduce((sum, c) => sum + c.count, 0);
+
+  const hasAnyContent = total > 0;
+  const filesEnabled = e.files;
 
   shell(`
     <section class="gs-hero">
@@ -1033,7 +1109,6 @@ function renderHome() {
         <span class="gs-eyebrow">${gsStr("web_hero_eyebrow", "DirectServe session")}</span>
         <h1>${gsStr("web_hero_title", "Media")}</h1>
         <p>${gsStr("web_hero_desc1", "Watch videos, open photos, and play music from this share.")}
-        ${gsStr("web_hero_desc2", "Files and sending stay one tap away.")}
         ${gsStr("web_hero_desc3", "Everything stays on the same local network.")}</p>
       </div>
       <div class="gs-hero-side">
@@ -1050,21 +1125,24 @@ function renderHome() {
           </div>
         </div>
         <div class="gs-hero-actions">
-          <a class="gs-btn gs-btn-accent" data-link href="/files">${gsStr("web_nav_files", "Files")}</a>
+          ${filesEnabled ? `<a class="gs-btn gs-btn-accent" data-link href="/files">${gsStr("web_nav_files", "Files")}</a>` : ""}
           <a class="gs-btn" data-link href="/upload">${gsStr("web_nav_send", "Send")}</a>
         </div>
       </div>
     </section>
 
-    <section class="gs-category-grid">
-      ${categories.map((category) => `
-        <a class="gs-category-card" data-link href="${category.href}">
-          <span class="gs-category-kicker">${category.label}</span>
-          <strong>${category.count}</strong>
-          <span class="gs-category-meta">${gsStr("web_media_open_category", "Open %1$s", category.label)}</span>
-        </a>
-      `).join("")}
-    </section>
+    ${categories.length > 0 ? `
+      <section class="gs-category-grid">
+        ${categories.map((category) => `
+          <a class="gs-category-card gs-category-card--icon" data-link href="${category.href}">
+            <span class="gs-category-icon">${CATEGORY_ICONS[category.key] || CATEGORY_ICONS.media}</span>
+            <span class="gs-category-kicker">${category.label}</span>
+            <strong>${category.count}</strong>
+            <span class="gs-category-meta">${gsStr("web_media_open_category", "Open %1$s", category.label)}</span>
+          </a>
+        `).join("")}
+      </section>
+    ` : `<section class="gs-section"><div class="gs-empty">${gsStr("web_media_empty", "No media is shared right now.")}</div></section>`}
 
     ${bootstrap.recent.length ? `
       <section class="gs-section">
@@ -1074,7 +1152,7 @@ function renderHome() {
         </div>
         <div class="gs-grid">${bootstrap.recent.map((item) => card(item)).join("")}</div>
       </section>
-    ` : `<section class="gs-section"><div class="gs-empty">${gsStr("web_media_empty", "No media is shared right now.")}</div></section>`}
+    ` : (hasAnyContent ? "" : `<section class="gs-section"><div class="gs-empty">${gsStr("web_media_empty", "No media is shared right now.")}</div></section>`)}
   `);
   initDeferredThumbnails(app);
 }
@@ -2553,8 +2631,8 @@ function card(item, selectable = false) {
       ? `<a class="${actionBtnClass}" data-link href="/photo/${item.id}">${gsStr("web_photo_view", "View")}</a>`
       : item.category === "music"
         ? `<button class="${actionBtnClass} music-play-btn" data-audio-item-id="${item.id}" data-title="${esc(item.title)}">${gsStr("common_play", "Play")}</button>`
-        : item.title.toLowerCase().endsWith(".pdf")
-          ? `<a class="${actionBtnClass}" data-link href="/photo/${item.id}">${gsStr("web_photo_view", "View")}</a>`
+        : isBrowserPreviewable(item.mimeType)
+          ? `<a class="${actionBtnClass}" href="${item.streamUrl}" target="_blank" rel="noopener noreferrer">${gsStr("web_action_view", "View")}</a>`
           : "";
   const showSlowStartHint = item.category === "video" && item.playbackMode !== "DIRECT";
 
@@ -2563,10 +2641,10 @@ function card(item, selectable = false) {
       ${selectable ? `<button class="gs-card-toggle${state.selectMode ? " is-visible" : ""}" data-select-toggle="${item.id}">${state.selected.has(item.id) ? "Selected" : "Select"}</button>` : ""}
       ${item.thumbnailUrl
         ? `<img class="gs-card-img" loading="lazy" decoding="async" fetchpriority="low" src="${THUMBNAIL_PLACEHOLDER_SRC}" data-thumb-src="${item.thumbnailUrl}" data-thumb-state="idle" alt="">`
-        : `<div class="gs-card-img gs-card-placeholder"><span>${esc(item.category.toUpperCase())}</span></div>`}
+        : `<div class="gs-card-img gs-card-placeholder"><span>${item.category === "file" ? fileTypeLabel(item.mimeType, item.title) : esc(item.category.toUpperCase())}</span></div>`}
       <div class="gs-card-body">
         <div class="gs-card-topline">
-          <span class="gs-card-type">${esc(item.category)}</span>
+          <span class="gs-card-type">${item.category === "file" ? fileTypeLabel(item.mimeType, item.title) : esc(item.category)}</span>
         </div>
         <div class="gs-card-title">${esc(item.title)}</div>
         <div class="gs-meta">${fmtBytes(item.sizeBytes)}${item.durationMs ? ` | ${fmtDur(item.durationMs)}` : ""}</div>

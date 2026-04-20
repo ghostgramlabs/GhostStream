@@ -466,6 +466,10 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onShowMessage = viewModel::showMessage,
                     libraryImportingCount = uiState.libraryImportingCount,
                     onResolveUploadRequest = viewModel::resolveUploadRequest,
+                    onToggleShareVideos = { viewModel.updateSettings { s -> s.copy(shareVideos = it) } },
+                    onToggleShareMusic = { viewModel.updateSettings { s -> s.copy(shareMusic = it) } },
+                    onToggleSharePhotos = { viewModel.updateSettings { s -> s.copy(sharePhotos = it) } },
+                    onToggleShareFiles = { viewModel.updateSettings { s -> s.copy(shareFiles = it) } },
                     modifier = Modifier.padding(innerPadding),
                 )
             }

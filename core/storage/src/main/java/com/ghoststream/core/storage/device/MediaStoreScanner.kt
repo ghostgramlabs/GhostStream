@@ -135,6 +135,7 @@ class MediaStoreScanner(
                     val id = cursor.getLong(idIdx)
                     val name = cursor.getStringOrNull(nameIdx) ?: "Unknown"
                     val mime = cursor.getStringOrNull(mimeIdx) ?: "application/octet-stream"
+                    if (category == MediaCategory.FILE && !isShareableFileType(mime, name)) continue
                     val size = cursor.getLong(sizeIdx)
                     val added = if (addedIdx >= 0) cursor.getLong(addedIdx) * 1000L else System.currentTimeMillis()
                     val modified = if (modifiedIdx >= 0) cursor.getLong(modifiedIdx) * 1000L else System.currentTimeMillis()
@@ -197,5 +198,46 @@ class MediaStoreScanner(
 
     private fun stableId(value: String): String {
         return UUID.nameUUIDFromBytes(value.toByteArray()).toString()
+    }
+
+    companion object {
+        private val SHAREABLE_MIME_PREFIXES = listOf(
+            "text/",
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument",
+            "application/vnd.ms-excel",
+            "application/vnd.ms-powerpoint",
+            "application/vnd.oasis.opendocument",
+            "application/vnd.android.package-archive",
+            "application/zip",
+            "application/x-zip",
+            "application/x-rar-compressed",
+            "application/vnd.rar",
+            "application/x-7z-compressed",
+            "application/gzip",
+            "application/x-tar",
+            "application/x-bzip2",
+            "application/epub+zip",
+            "application/x-mobipocket-ebook",
+            "application/json",
+            "application/xml",
+            "font/",
+        )
+        private val SHAREABLE_EXTENSIONS = setOf(
+            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx",
+            "odt", "ods", "odp", "pages", "numbers", "key",
+            "txt", "md", "rtf", "csv", "json", "xml", "html", "htm",
+            "zip", "rar", "7z", "tar", "gz", "bz2", "xz",
+            "apk", "xapk", "epub", "mobi", "azw", "azw3",
+            "ttf", "otf", "woff", "woff2",
+            "srt", "vtt", "ass", "sub",
+        )
+
+        fun isShareableFileType(mimeType: String, displayName: String): Boolean {
+            if (SHAREABLE_MIME_PREFIXES.any { mimeType.startsWith(it) }) return true
+            val ext = displayName.substringAfterLast('.', "").lowercase()
+            return ext in SHAREABLE_EXTENSIONS
+        }
     }
 }

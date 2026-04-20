@@ -46,6 +46,10 @@ data class AppSettings(
     val mediaServerMode: Boolean = false,
     val dlnaEnabled: Boolean = false,
     val deviceNicknames: Map<String, String> = emptyMap(), // ipAddress -> nickname
+    val shareVideos: Boolean = true,
+    val shareMusic: Boolean = true,
+    val sharePhotos: Boolean = true,
+    val shareFiles: Boolean = true,
 )
 
 @Serializable

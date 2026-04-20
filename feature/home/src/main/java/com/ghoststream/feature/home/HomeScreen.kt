@@ -30,10 +30,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Collections
+import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Image
+import androidx.compose.material.icons.outlined.LibraryMusic
 import androidx.compose.material.icons.outlined.NetworkCheck
 import androidx.compose.material.icons.outlined.OpenInBrowser
 import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Settings
@@ -108,6 +112,10 @@ fun HomeScreen(
     onRequestAllFilesAccess: () -> Unit,
     onShowMessage: (String) -> Unit,
     onResolveUploadRequest: (String, Boolean) -> Unit,
+    onToggleShareVideos: (Boolean) -> Unit,
+    onToggleShareMusic: (Boolean) -> Unit,
+    onToggleSharePhotos: (Boolean) -> Unit,
+    onToggleShareFiles: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var showAllFilesDialog by rememberSaveable { mutableStateOf(false) }
@@ -182,6 +190,17 @@ fun HomeScreen(
                     libraryImportingCount = libraryImportingCount,
                     onRequestAllFilesAccess = { showAllFilesDialog = true },
                 )
+        }
+
+        item {
+            ContentFilterCard(
+                settings = settings,
+                libraryState = libraryState,
+                onToggleVideos = onToggleShareVideos,
+                onToggleMusic = onToggleShareMusic,
+                onTogglePhotos = onToggleSharePhotos,
+                onToggleFiles = onToggleShareFiles,
+            )
         }
 
         item {
@@ -1230,6 +1249,154 @@ private fun HeroStat(label: String, value: String, highlight: Boolean = false) {
             Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(modifier = Modifier.height(4.dp))
             Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ContentFilterCard(
+    settings: com.ghoststream.core.model.AppSettings,
+    libraryState: LibraryState,
+    onToggleVideos: (Boolean) -> Unit,
+    onToggleMusic: (Boolean) -> Unit,
+    onTogglePhotos: (Boolean) -> Unit,
+    onToggleFiles: (Boolean) -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .padding(horizontal = GhostSpacing.screenHorizontal)
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Column(modifier = Modifier.padding(GhostSpacing.card)) {
+            Text(
+                text = stringResource(R.string.home_content_filter_title),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.home_content_filter_subtitle),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            BoxWithConstraints {
+                val tileWidth = (maxWidth - 10.dp) / 2
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        ContentTypeToggle(
+                            label = stringResource(R.string.home_content_filter_videos),
+                            count = libraryState.summary.videos,
+                            icon = Icons.Outlined.PlayCircle,
+                            enabled = settings.shareVideos,
+                            onToggle = onToggleVideos,
+                            modifier = Modifier.width(tileWidth),
+                        )
+                        ContentTypeToggle(
+                            label = stringResource(R.string.home_content_filter_music),
+                            count = libraryState.summary.music,
+                            icon = Icons.Outlined.LibraryMusic,
+                            enabled = settings.shareMusic,
+                            onToggle = onToggleMusic,
+                            modifier = Modifier.width(tileWidth),
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        ContentTypeToggle(
+                            label = stringResource(R.string.home_content_filter_photos),
+                            count = libraryState.summary.photos,
+                            icon = Icons.Outlined.Image,
+                            enabled = settings.sharePhotos,
+                            onToggle = onTogglePhotos,
+                            modifier = Modifier.width(tileWidth),
+                        )
+                        ContentTypeToggle(
+                            label = stringResource(R.string.home_content_filter_files),
+                            count = libraryState.summary.files,
+                            icon = Icons.Outlined.Description,
+                            enabled = settings.shareFiles,
+                            onToggle = onToggleFiles,
+                            modifier = Modifier.width(tileWidth),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ContentTypeToggle(
+    label: String,
+    count: Int,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    enabled: Boolean,
+    onToggle: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val pressed by interactionSource.collectIsPressedAsState()
+    val containerColor by animateColorAsState(
+        targetValue = when {
+            enabled -> ghostAccentSurface()
+            pressed -> ghostAccentSurface()
+            else -> MaterialTheme.colorScheme.surfaceVariant
+        },
+        label = "contentTypeContainer",
+    )
+    val borderColor by animateColorAsState(
+        targetValue = if (enabled) ghostAccentBorder() else MaterialTheme.colorScheme.outline,
+        label = "contentTypeBorder",
+    )
+    Card(
+        modifier = modifier
+            .clickable(
+                interactionSource = interactionSource,
+                indication = LocalIndication.current,
+                onClick = { onToggle(!enabled) },
+            ),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        border = BorderStroke(1.dp, borderColor),
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .background(
+                        if (enabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant,
+                        RoundedCornerShape(8.dp),
+                    )
+                    .border(
+                        BorderStroke(1.dp, if (enabled) ghostAccentBorder() else MaterialTheme.colorScheme.outline),
+                        RoundedCornerShape(8.dp),
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(15.dp),
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                count.toString(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

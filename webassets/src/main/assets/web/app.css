@@ -711,6 +711,23 @@ input {
   font-size: 0.92rem;
 }
 
+.gs-category-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.gs-category-card--icon .gs-category-kicker {
+  margin-top: 2px;
+}
+
 .gs-control-card,
 .gs-player,
 .gs-login,

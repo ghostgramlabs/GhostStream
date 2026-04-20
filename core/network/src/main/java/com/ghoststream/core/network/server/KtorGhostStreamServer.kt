@@ -333,7 +333,7 @@ class KtorGhostStreamServer(
                 val recentCards = mutableListOf<BrowserItemCard>()
                 val allowDownloads = !settings.preventDownload
                 if (isAuthorized) {
-                    for (item in state.selectedItems.take(8)) {
+                    for (item in state.selectedItems.filter { it.isEnabledBySettings(settings) }.take(8)) {
                         recentCards += BrowserItemCard.from(
                             item = item,
                             compatibilityJob = compatibilitySnapshotFor(call.request.origin.remoteHost, item, triggerPreparation = false),
@@ -359,11 +359,17 @@ class KtorGhostStreamServer(
                         },
                         sessionPort = if (isAuthorized) state.serverPort else null,
                         categories = BrowserCategories(
-                            videos = if (isAuthorized) state.selectedItems.count { it.category == MediaCategory.VIDEO } else 0,
-                            photos = if (isAuthorized) state.selectedItems.count { it.category == MediaCategory.PHOTO } else 0,
-                            music = if (isAuthorized) state.selectedItems.count { it.category == MediaCategory.MUSIC } else 0,
-                            files = if (isAuthorized) state.selectedItems.count { it.category == MediaCategory.FILE } else 0,
+                            videos = if (isAuthorized && settings.shareVideos) state.selectedItems.count { it.category == MediaCategory.VIDEO } else 0,
+                            photos = if (isAuthorized && settings.sharePhotos) state.selectedItems.count { it.category == MediaCategory.PHOTO } else 0,
+                            music = if (isAuthorized && settings.shareMusic) state.selectedItems.count { it.category == MediaCategory.MUSIC } else 0,
+                            files = if (isAuthorized && settings.shareFiles) state.selectedItems.count { it.category == MediaCategory.FILE } else 0,
                             folders = if (isAuthorized) state.selectedFolders.size else 0,
+                        ),
+                        enabledCategories = EnabledCategories(
+                            videos = settings.shareVideos,
+                            photos = settings.sharePhotos,
+                            music = settings.shareMusic,
+                            files = settings.shareFiles,
                         ),
                         recent = recentCards,
                         themeMode = settings.themeMode,
@@ -425,6 +431,7 @@ class KtorGhostStreamServer(
                             "web_upload_how_title" to localizedContext.getString(R.string.web_upload_how_title),
                             "web_upload_how_body" to localizedContext.getString(R.string.web_upload_how_body),
                             "web_action_download" to localizedContext.getString(R.string.web_action_download),
+                            "web_action_view" to localizedContext.getString(R.string.web_action_view),
                             "web_photo_view" to localizedContext.getString(R.string.web_photo_view),
                             "web_btn_download_all" to localizedContext.getString(R.string.web_btn_download_all),
                             "web_btn_download_selected" to localizedContext.getString(R.string.web_btn_download_selected),
@@ -497,6 +504,7 @@ class KtorGhostStreamServer(
                 val offset = call.request.queryParameters["offset"]?.toIntOrNull()?.coerceAtLeast(0)
                 val limit = call.request.queryParameters["limit"]?.toIntOrNull()?.coerceIn(1, MAX_BROWSER_ITEMS_PAGE_SIZE)
                 val items = sessionManager.sessionState.value.selectedItems
+                    .filter { item -> item.isEnabledBySettings(settings) }
                     .filter { item ->
                         when (category) {
                             null, "", "all" -> true
@@ -2596,6 +2604,7 @@ class KtorGhostStreamServer(
         val sessionUrl: String?,
         val sessionPort: Int?,
         val categories: BrowserCategories,
+        val enabledCategories: EnabledCategories,
         val recent: List<BrowserItemCard>,
         val themeMode: ThemeMode,
         val showThumbnails: Boolean,
@@ -2618,10 +2627,19 @@ class KtorGhostStreamServer(
     )
 
     @Serializable
+    private data class EnabledCategories(
+        val videos: Boolean,
+        val photos: Boolean,
+        val music: Boolean,
+        val files: Boolean,
+    )
+
+    @Serializable
     private data class BrowserItemCard(
         val id: String,
         val title: String,
         val category: String,
+        val mimeType: String,
         val sizeBytes: Long,
         val durationMs: Long?,
         val thumbnailUrl: String?,
@@ -2644,6 +2662,7 @@ class KtorGhostStreamServer(
                 id = item.id,
                 title = item.displayName,
                 category = item.category.name.lowercase(),
+                mimeType = item.mimeType ?: "application/octet-stream",
                 sizeBytes = item.sizeBytes,
                 durationMs = item.durationMs,
                 thumbnailUrl = if (
@@ -2830,4 +2849,11 @@ class KtorGhostStreamServer(
         val TV_TOKEN_REGEX = Regex("\\bTV\\b", RegexOption.IGNORE_CASE)
         val APPLE_TV_EXCLUSION_UA_REGEX = Regex("iPhone|iPad|AppleTV", RegexOption.IGNORE_CASE)
     }
+}
+
+private fun SharedItem.isEnabledBySettings(settings: AppSettings): Boolean = when (category) {
+    MediaCategory.VIDEO -> settings.shareVideos
+    MediaCategory.PHOTO -> settings.sharePhotos
+    MediaCategory.MUSIC -> settings.shareMusic
+    MediaCategory.FILE -> settings.shareFiles
 }
