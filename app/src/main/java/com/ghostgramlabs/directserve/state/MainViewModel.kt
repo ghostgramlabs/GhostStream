@@ -1,6 +1,11 @@
 package com.ghostgramlabs.directserve.state
 
 import android.app.Application
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.LinkProperties
+import android.net.Network
+import android.net.NetworkRequest
 import android.os.Build
 import android.net.Uri
 import com.ghostgramlabs.directserve.BuildConfig
@@ -41,6 +46,12 @@ class MainViewModel(
     private val application: Application,
     private val container: AppContainer,
 ) : ViewModel() {
+
+    private val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) { refreshNetwork() }
+        override fun onLost(network: Network) { refreshNetwork() }
+        override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) { refreshNetwork() }
+    }
 
     private val smartGroups = MutableStateFlow(emptyList<SmartSelectionGroup>())
     private val smartGroupsLoading = MutableStateFlow(false)
@@ -123,6 +134,10 @@ class MainViewModel(
 
     init {
         refreshNetwork()
+        runCatching {
+            val cm = application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            cm.registerDefaultNetworkCallback(networkCallback)
+        }
         container.debugLogRepository.log("MainViewModel", "initialized")
         container.compatibilityPipeline.jobs
             .onEach { jobs ->
@@ -649,6 +664,15 @@ class MainViewModel(
                 }
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        runCatching {
+            val cm = application.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+            cm.unregisterNetworkCallback(networkCallback)
+        }
+        dlnaAnnouncer?.stop()
     }
 
     private fun syncDlnaAnnouncer(enabled: Boolean, session: SessionState) {

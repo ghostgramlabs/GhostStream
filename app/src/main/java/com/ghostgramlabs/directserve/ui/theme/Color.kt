@@ -8,7 +8,7 @@ val GhostDarkCard = Color(0xFF0F172A)
 val GhostDarkTextPrimary = Color(0xFFE5E7EB)
 val GhostDarkTextSecondary = Color(0xFF9CA3AF)
 val GhostDarkMuted = Color(0xFF6B7280)
-val GhostDarkBorder = Color(0x0DFFFFFF)
+val GhostDarkBorder = Color(0x1AFFFFFF)
 
 val GhostLightBackground = Color(0xFFF8FAFC)
 val GhostLightSurface = Color(0xFFFFFFFF)

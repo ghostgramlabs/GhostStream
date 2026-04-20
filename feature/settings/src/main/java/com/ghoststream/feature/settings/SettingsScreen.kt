@@ -604,10 +604,10 @@ private fun settingsPrimaryButtonColors() = ButtonDefaults.buttonColors(
 
 @Composable
 private fun settingsSecondaryButtonColors() = ButtonDefaults.outlinedButtonColors(
-    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
-    contentColor = MaterialTheme.colorScheme.onSurface,
-    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.44f),
-    disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.46f),
+    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+    contentColor = MaterialTheme.colorScheme.primary,
+    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
+    disabledContentColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.46f),
 )
 
 @Composable

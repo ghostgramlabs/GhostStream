@@ -394,6 +394,6 @@ private fun selectionPrimaryButtonColors() = ButtonDefaults.buttonColors(
 
 @Composable
 private fun selectionSecondaryButtonColors() = ButtonDefaults.outlinedButtonColors(
-    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
-    contentColor = MaterialTheme.colorScheme.onSurface,
+    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+    contentColor = MaterialTheme.colorScheme.primary,
 )

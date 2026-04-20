@@ -210,9 +210,11 @@ fun ActiveSessionScreen(
         val requesterIdentity = deviceIdentity(request.requesterIp)
         AlertDialog(
             onDismissRequest = { onResolveUploadRequest(request.id, false) },
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            tonalElevation = 0.dp,
             titleContentColor = MaterialTheme.colorScheme.onSurface,
             textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            iconContentColor = MaterialTheme.colorScheme.primary,
             icon = { Icon(Icons.Outlined.Collections, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
             title = { Text(stringResource(R.string.home_upload_request_title)) },
             text = {
@@ -1242,10 +1244,10 @@ private fun sessionPrimaryButtonColors() = ButtonDefaults.buttonColors(
 
 @Composable
 private fun sessionSecondaryButtonColors() = ButtonDefaults.outlinedButtonColors(
-    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
-    contentColor = MaterialTheme.colorScheme.onSurface,
-    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.44f),
-    disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.46f),
+    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+    contentColor = MaterialTheme.colorScheme.primary,
+    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
+    disabledContentColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.46f),
 )
 
 @Composable

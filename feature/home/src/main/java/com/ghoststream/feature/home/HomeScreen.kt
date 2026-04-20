@@ -132,7 +132,11 @@ fun HomeScreen(
     if (showAllFilesDialog) {
         AlertDialog(
             onDismissRequest = { showAllFilesDialog = false },
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            tonalElevation = 0.dp,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            iconContentColor = MaterialTheme.colorScheme.primary,
             icon = { Icon(Icons.Outlined.Collections, contentDescription = null) },
             title = { Text(stringResource(R.string.home_all_files_access_title)) },
             text = { Text(stringResource(R.string.home_all_files_access_body)) },
@@ -228,9 +232,11 @@ fun HomeScreen(
         val requesterIdentity = deviceIdentity(request.requesterIp)
         AlertDialog(
             onDismissRequest = { onResolveUploadRequest(request.id, false) },
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            tonalElevation = 0.dp,
             titleContentColor = MaterialTheme.colorScheme.onSurface,
             textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            iconContentColor = MaterialTheme.colorScheme.primary,
             icon = { Icon(Icons.Outlined.Collections, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
             title = { Text(stringResource(R.string.home_upload_request_title)) },
             text = {
@@ -386,6 +392,11 @@ private fun SessionHeroCard(
     if (showNoNetworkDialog) {
         AlertDialog(
             onDismissRequest = { showNoNetworkDialog = false },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            tonalElevation = 0.dp,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            iconContentColor = MaterialTheme.colorScheme.primary,
             icon = { Icon(Icons.Outlined.NetworkCheck, contentDescription = null) },
             title = { Text(stringResource(R.string.home_network_required_title)) },
             text = { 
@@ -700,6 +711,10 @@ private fun ConnectedDevicesCard(
         
         AlertDialog(
             onDismissRequest = { editingClientId = null },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            tonalElevation = 0.dp,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             title = { Text(stringResource(R.string.home_rename_device)) },
             text = {
                 Column {
@@ -866,7 +881,8 @@ private fun DateRangePickerDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        tonalElevation = 0.dp,
         titleContentColor = MaterialTheme.colorScheme.onSurface,
         textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         title = { Text(stringResource(R.string.home_date_range_title)) },
@@ -1411,10 +1427,10 @@ private fun ghostPrimaryButtonColors() = ButtonDefaults.buttonColors(
 
 @Composable
 private fun ghostSecondaryButtonColors() = ButtonDefaults.outlinedButtonColors(
-    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
-    contentColor = MaterialTheme.colorScheme.onSurface,
-    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.44f),
-    disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.46f),
+    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+    contentColor = MaterialTheme.colorScheme.primary,
+    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
+    disabledContentColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.46f),
 )
 
 @Composable
