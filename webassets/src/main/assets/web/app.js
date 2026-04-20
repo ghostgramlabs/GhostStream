@@ -2235,11 +2235,10 @@ function hydrateVideoPlayer(item, options = {}) {
         state.compatItem = nextItem;
 
         if (usingManagedHls && nextItem.hlsUrl) {
-          // Tell hls.js to reload the manifest to find the new segments at the offset.
+          // Reload the manifest. The new fMP4 segments have tfdt.baseMediaDecodeTime
+          // offset by startOffsetMs, so hls.js will naturally land at the seek position
+          // once the first segment is appended — no manual currentTime assignment needed.
           state.hls.loadSource(nextItem.hlsUrl);
-          // Standard hls.js behavior will start from the beginning of the manifest,
-          // so we ensure the video element stays at our target time.
-          video.currentTime = currentTime;
           video.play().catch(() => {});
           return;
         }
@@ -2758,7 +2757,7 @@ async function pollCompat(id, item, options = {}) {
    */
   function getAdaptiveInterval(attempts, job) {
     if (job.status === "FAILED" || job.status === "STALLED" || job.status === "IDLE") return 0;
-    if (attempts < 3) return 500;
+    if (attempts < 10) return 500;
     if (attempts > 60) return 2000;
     if (attempts > 20 || (job.progressPercent != null && job.progressPercent < 50 && attempts > 10)) return 1500;
     return 1000;

@@ -22,6 +22,12 @@ data class FragmentedMp4HlsIndex(
     val height: Int? = null,
     /** Diagnostic info for why indexing might have failed or found zero segments. */
     val diagnosticInfo: String? = null,
+    /**
+     * Maps track_id → media timescale (ticks per second), read from each trak/mdia/mdhd box.
+     * Used by MseTfhdPatcher to offset tfdt.baseMediaDecodeTime when serving seek-restarted
+     * streams, so that browser currentTime stays on the original video timeline.
+     */
+    val timescales: Map<Int, Long> = emptyMap(),
 )
 
 data class HlsMediaSegment(
@@ -200,6 +206,7 @@ object FragmentedMp4HlsIndexer {
                 audioCodecString = moovMetadata.audioCodecString,
                 width = moovMetadata.width,
                 height = moovMetadata.height,
+                timescales = moovMetadata.timescales,
             )
         }
     }
@@ -212,9 +219,13 @@ object FragmentedMp4HlsIndexer {
         var audioCodec: String? = null
         var width: Int? = null
         var height: Int? = null
+        val timescales = mutableMapOf<Int, Long>()
         for (trak in readChildBoxes(raf, moovBox.offset + 8, moovEnd)) {
             if (trak.type != "trak") continue
             val metadata = readTrakMetadata(raf, trak) ?: continue
+            if (metadata.trackId > 0 && metadata.timescale > 0) {
+                timescales[metadata.trackId] = metadata.timescale
+            }
             when (metadata.handlerType) {
                 "vide" -> {
                     if (videoCodec == null) videoCodec = metadata.codecString
@@ -232,14 +243,44 @@ object FragmentedMp4HlsIndexer {
             audioCodecString = audioCodec,
             width = width,
             height = height,
+            timescales = timescales,
         )
     }
 
     private fun readTrakMetadata(raf: RandomAccessFile, trak: Mp4TopLevelBox): TrackMetadata? {
         val trakEnd = trak.offset + trak.size
-        val mdia = readChildBoxes(raf, trak.offset + 8, trakEnd).firstOrNull { it.type == "mdia" } ?: return null
+        val trakChildren = readChildBoxes(raf, trak.offset + 8, trakEnd)
+
+        // Read track_id from tkhd box (mandatory in every trak)
+        val tkhd = trakChildren.firstOrNull { it.type == "tkhd" }
+        val trackId = if (tkhd != null) {
+            runCatching {
+                raf.seek(tkhd.offset + 8)
+                val version = raf.read() and 0xFF
+                // version 0: creation(4) + modification(4) + track_id at offset 20
+                // version 1: creation(8) + modification(8) + track_id at offset 28
+                val trackIdOffset = tkhd.offset + 8 + 4 + if (version == 0) 8L else 16L
+                raf.seek(trackIdOffset)
+                raf.readInt()
+            }.getOrDefault(0)
+        } else 0
+
+        val mdia = trakChildren.firstOrNull { it.type == "mdia" } ?: return null
         val mdiaEnd = mdia.offset + mdia.size
         val mdiaChildren = readChildBoxes(raf, mdia.offset + 8, mdiaEnd)
+
+        // Read timescale from mdhd box
+        val timescale = mdiaChildren.firstOrNull { it.type == "mdhd" }?.let { mdhd ->
+            runCatching {
+                raf.seek(mdhd.offset + 8)
+                val version = raf.read() and 0xFF
+                // version 0: creation(4) + modification(4) + timescale at offset 20
+                // version 1: creation(8) + modification(8) + timescale at offset 28
+                val timescaleOffset = mdhd.offset + 8 + 4 + if (version == 0) 8L else 16L
+                raf.seek(timescaleOffset)
+                raf.readInt().toLong() and 0xFFFFFFFFL
+            }.getOrDefault(0L)
+        } ?: 0L
 
         val hdlr = mdiaChildren.firstOrNull { it.type == "hdlr" } ?: return null
         val handlerTypeOffset = hdlr.offset + 8 + 4 + 4
@@ -265,11 +306,13 @@ object FragmentedMp4HlsIndexer {
         val entryType = entryTypeBuf.toString(Charsets.US_ASCII)
         val entryEnd = firstEntryStart + entrySize
 
-        return when (handlerType) {
+        val codecMetadata = when (handlerType) {
             "vide" -> readVideoSampleDescription(raf, entryType, firstEntryStart, entryEnd)
             "soun" -> readAudioSampleDescription(entryType)
             else -> null
-        }
+        } ?: return null
+
+        return codecMetadata.copy(trackId = trackId, timescale = timescale)
     }
 
     private fun readVideoSampleDescription(
@@ -420,6 +463,8 @@ object FragmentedMp4HlsIndexer {
         val codecString: String?,
         val width: Int? = null,
         val height: Int? = null,
+        val trackId: Int = 0,
+        val timescale: Long = 0,
     )
 
     private data class MoovMetadata(
@@ -427,6 +472,7 @@ object FragmentedMp4HlsIndexer {
         val audioCodecString: String? = null,
         val width: Int? = null,
         val height: Int? = null,
+        val timescales: Map<Int, Long> = emptyMap(),
     )
 
     private const val MIN_BOX_HEADER_SIZE = 8L

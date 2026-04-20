@@ -10,6 +10,43 @@ package com.ghoststream.core.network.server
  */
 internal object MseTfhdPatcher {
 
+    /**
+     * Offsets tfdt.baseMediaDecodeTime in every track fragment by startOffsetMs so that
+     * the browser's video.currentTime stays on the original video timeline after a seek
+     * restart. Media3 resets timestamps to 0 when clipping starts at an offset, so without
+     * this patch the seek bar would reset to 0 after each seek.
+     *
+     * timescales maps track_id → ticks-per-second from the moov/trak/mdhd box.
+     * If startOffsetMs == 0 or timescales is empty this is a no-op.
+     */
+    fun patchTimestamps(segmentBytes: ByteArray, startOffsetMs: Long, timescales: Map<Int, Long>): ByteArray {
+        if (startOffsetMs <= 0L || timescales.isEmpty()) return segmentBytes
+        val result = segmentBytes.copyOf()
+        val moofPositions = findBoxPositions(result, "moof")
+        for (moofStart in moofPositions) {
+            val moofSize = readU32(result, moofStart).toInt()
+            val trafPositions = findBoxPositions(result, "traf", moofStart + 8, moofStart + moofSize)
+            for (trafStart in trafPositions) {
+                val trafSize = readU32(result, trafStart).toInt()
+                val trafEnd = trafStart + trafSize
+                val tfhdStart = findFirstChild(result, trafStart + 8, trafEnd, "tfhd") ?: continue
+                val trackId = readU32(result, tfhdStart + 12).toInt()
+                val timescale = timescales[trackId] ?: continue
+                val timeOffset = startOffsetMs * timescale / 1000L
+                val tfdtStart = findFirstChild(result, trafStart + 8, trafEnd, "tfdt") ?: continue
+                val version = result[tfdtStart + 8].toInt() and 0xFF
+                if (version == 0) {
+                    val bdt = readU32(result, tfdtStart + 12)
+                    writeU32(result, tfdtStart + 12, (bdt + timeOffset).toInt())
+                } else {
+                    val bdt = readU64(result, tfdtStart + 12)
+                    writeU64(result, tfdtStart + 12, bdt + timeOffset)
+                }
+            }
+        }
+        return result
+    }
+
     fun patch(segmentBytes: ByteArray, segmentFileOffset: Long): ByteArray {
         val moofPositions = findBoxPositions(segmentBytes, "moof")
         if (moofPositions.isEmpty()) return segmentBytes
@@ -205,4 +242,8 @@ internal object MseTfhdPatcher {
     }
 
     private fun writeS32(buf: ByteArray, at: Int, v: Int) = writeU32(buf, at, v)
+
+    private fun writeU64(buf: ByteArray, at: Int, v: Long) {
+        for (i in 7 downTo 0) buf[at + (7 - i)] = ((v ushr (i * 8)) and 0xFF).toByte()
+    }
 }

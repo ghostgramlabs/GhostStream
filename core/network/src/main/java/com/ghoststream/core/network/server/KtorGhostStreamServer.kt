@@ -1283,15 +1283,10 @@ class KtorGhostStreamServer(
                         return@get
                     }
 
-                    // Map the manifest segment index to the actual segment index in the
-                    // current fragmented MP4 file (which may have been started at an offset).
-                    val jobStartSegIndex = (source.job.startOffsetMs / 1000.0 / HLS_SEGMENT_DURATION_SECONDS).toInt()
-                    val targetFileSegIndex = indexInManifest - jobStartSegIndex
-
-                    if (targetFileSegIndex < 0) {
-                        call.respond(HttpStatusCode.NotFound, ErrorPayload("Segment is before seek point"))
-                        return@get
-                    }
+                    // Segments in the manifest are 0-indexed from the start of the current
+                    // fMP4 file. The file always starts at segment 0 regardless of seek offset
+                    // (timestamps are adjusted in-flight via MseTfhdPatcher.patchTimestamps).
+                    val targetFileSegIndex = indexInManifest
 
                     // Media Heartbeat: protects this preparation session from preemption
                     compatibilityPipeline.markMediaServed(source.item.id)
@@ -1340,7 +1335,8 @@ class KtorGhostStreamServer(
                         return@get
                     }
                     val segmentBytes = try {
-                        MseTfhdPatcher.patch(rawSegmentBytes, segment.offset)
+                        val afterTfhd = MseTfhdPatcher.patch(rawSegmentBytes, segment.offset)
+                        MseTfhdPatcher.patchTimestamps(afterTfhd, source.job.startOffsetMs, index.timescales)
                     } catch (e: Exception) {
                         debugLogSink.log("WebHls", "Patching failed id=${source.item.id} index=$targetFileSegIndex", e)
                         rawSegmentBytes // Fallback to unpatched; might fail in browser but better than 500
@@ -2230,17 +2226,10 @@ class KtorGhostStreamServer(
         }.getOrNull()
 
         fun FragmentedMp4HlsIndex?.meetsRequirements(): Boolean {
-            val job = compatibilityPipeline.currentJob(itemId)
-            val startSegIndex = ((job?.startOffsetMs ?: 0L) / 1000.0 / HLS_SEGMENT_DURATION_SECONDS).toInt()
-            
             val hasInitSegment = this?.initSegmentLength?.let { it > 0L } == true
             val hasFirstSegment = !requireFirstSegment || (this?.segments?.isNotEmpty() == true)
-            
-            // Map the manifest index to the actual index in the current file.
-            val mappedRequiredIndex = requiredSegmentIndex?.let { it - startSegIndex }
-            val hasRequiredSegment = mappedRequiredIndex == null ||
-                (mappedRequiredIndex >= 0 && this?.segments?.getOrNull(mappedRequiredIndex) != null)
-                
+            val hasRequiredSegment = requiredSegmentIndex == null ||
+                this?.segments?.getOrNull(requiredSegmentIndex) != null
             return hasInitSegment && hasFirstSegment && hasRequiredSegment
         }
 
@@ -2351,8 +2340,6 @@ class KtorGhostStreamServer(
                 }
             )
             appendLine("#EXT-X-INDEPENDENT-SEGMENTS")
-            // Signals to iOS Safari that it should start at the beginning of the VOD timeline.
-            appendLine("#EXT-X-START:TIME-OFFSET=0")
             appendLine("#EXT-X-MAP:URI=\"/hls/$itemId/init.mp4\"")
 
             // Only publish committed segments. Never advertise speculative segments that
