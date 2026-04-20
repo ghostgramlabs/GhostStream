@@ -432,7 +432,7 @@ private fun SessionHeroCard(
             }
 
             Spacer(modifier = Modifier.height(18.dp))
-            if (sessionState.isSharing || settings.mediaServerMode) {
+            if (sessionState.isSharing) {
                 Surface(
                     shape = RoundedCornerShape(18.dp),
                     color = ghostLiveSurface(),
@@ -460,7 +460,7 @@ private fun SessionHeroCard(
                 }
                 Spacer(modifier = Modifier.height(18.dp))
             }
-            if (sessionState.isSharing || settings.mediaServerMode) {
+            if (sessionState.isSharing) {
                 Text(
                     text = stringResource(R.string.home_title_live),
                     style = MaterialTheme.typography.headlineSmall,
