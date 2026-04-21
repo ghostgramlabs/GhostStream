@@ -298,9 +298,9 @@ fun HelpScreen(
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
                     Text(stringResource(R.string.help_about_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
-                    Text(stringResource(R.string.help_about_1), style = MaterialTheme.typography.bodyLarge)
-                    Text(stringResource(R.string.help_about_2), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(stringResource(R.string.help_about_3), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.help_about_1), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.help_about_2), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.help_about_3), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             HelpSectionCard(
@@ -443,11 +443,11 @@ fun PrivacyPolicyScreen(
                     modifier = Modifier.padding(GhostSpacing.heroCard),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Text(stringResource(R.string.privacy_policy_intro), style = MaterialTheme.typography.bodyLarge)
-                    Text(stringResource(R.string.privacy_policy_line_1), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(stringResource(R.string.privacy_policy_line_2), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(stringResource(R.string.privacy_policy_line_3), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(stringResource(R.string.privacy_policy_line_4), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.privacy_policy_intro), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.privacy_policy_line_1), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.privacy_policy_line_2), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.privacy_policy_line_3), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.privacy_policy_line_4), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -470,7 +470,7 @@ private fun HelpSectionCard(
             modifier = Modifier.padding(GhostSpacing.card),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
             lines.forEach { line ->
                 Text(
                     text = line,
@@ -517,7 +517,7 @@ private fun SettingsToggleRow(title: String, description: String, checked: Boole
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(title)
+            Text(title, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
             Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Switch(checked = checked, onCheckedChange = onCheckedChange)
