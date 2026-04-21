@@ -2654,7 +2654,12 @@ class KtorGhostStreamServer(
                 durationMs = item.durationMs,
                 thumbnailUrl = if (
                     showThumbnails &&
-                    (item.category == MediaCategory.PHOTO || item.category == MediaCategory.VIDEO)
+                    (
+                        item.category == MediaCategory.PHOTO ||
+                            item.category == MediaCategory.VIDEO ||
+                            item.mimeType == "application/pdf" ||
+                            item.displayName.endsWith(".pdf", ignoreCase = true)
+                    )
                 ) {
                     "/thumb/${item.id}?size=$DEFAULT_CARD_THUMBNAIL_SIZE_PX"
                 } else {

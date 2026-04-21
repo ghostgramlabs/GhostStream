@@ -3,6 +3,10 @@ package com.ghoststream.core.media
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
+import android.graphics.Matrix
+import android.graphics.pdf.PdfRenderer
+import android.media.ExifInterface
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaMetadataRetriever
@@ -133,9 +137,12 @@ class AndroidMediaAnalyzer(
 
     override suspend fun loadThumbnailBytes(item: SharedItem, maxSizePx: Int): ByteArray? = withContext(Dispatchers.IO) {
         val uri = Uri.parse(item.uri)
+        val isPdf = item.mimeType == "application/pdf" ||
+            item.displayName.endsWith(".pdf", ignoreCase = true)
         when {
             item.mimeType?.startsWith("image/") == true -> loadImageThumbnail(uri, maxSizePx)
             item.mimeType?.startsWith("video/") == true -> extractVideoFrame(uri, null, maxSizePx)
+            isPdf -> loadPdfThumbnail(uri, maxSizePx)
             else -> null
         }
     }
@@ -204,12 +211,71 @@ class AndroidMediaAnalyzer(
 
     private fun loadImageThumbnail(uri: Uri, maxSizePx: Int): ByteArray? {
         return runCatching {
+            val orientation = readExifOrientation(uri)
             context.contentResolver.openInputStream(uri)?.use { stream ->
                 BitmapFactory.decodeStream(stream)
             }?.let { bitmap ->
-                bitmap.useScaledJpeg(maxSizePx)
+                val oriented = bitmap.applyExifOrientation(orientation)
+                if (oriented !== bitmap) bitmap.recycle()
+                oriented.useScaledJpeg(maxSizePx)
             }
         }.getOrNull()
+    }
+
+    private fun loadPdfThumbnail(uri: Uri, maxSizePx: Int): ByteArray? {
+        return runCatching {
+            context.contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
+                PdfRenderer(pfd).use { renderer ->
+                    if (renderer.pageCount == 0) return@use null
+                    renderer.openPage(0).use { page ->
+                        val aspect = page.width.toFloat() / page.height.toFloat()
+                        val targetWidth: Int
+                        val targetHeight: Int
+                        if (aspect >= 1f) {
+                            targetWidth = maxSizePx
+                            targetHeight = (maxSizePx / aspect).toInt().coerceAtLeast(1)
+                        } else {
+                            targetHeight = maxSizePx
+                            targetWidth = (maxSizePx * aspect).toInt().coerceAtLeast(1)
+                        }
+                        val bitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
+                        bitmap.eraseColor(Color.WHITE)
+                        page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                        bitmap.useScaledJpeg(maxSizePx)
+                    }
+                }
+            }
+        }.getOrNull()
+    }
+
+    private fun readExifOrientation(uri: Uri): Int {
+        return runCatching {
+            context.contentResolver.openInputStream(uri)?.use { stream ->
+                ExifInterface(stream).getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL,
+                )
+            } ?: ExifInterface.ORIENTATION_NORMAL
+        }.getOrDefault(ExifInterface.ORIENTATION_NORMAL)
+    }
+
+    private fun Bitmap.applyExifOrientation(orientation: Int): Bitmap {
+        val matrix = Matrix()
+        when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+            ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+            ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.preScale(-1f, 1f)
+            ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.preScale(1f, -1f)
+            ExifInterface.ORIENTATION_TRANSPOSE -> {
+                matrix.postRotate(90f); matrix.preScale(-1f, 1f)
+            }
+            ExifInterface.ORIENTATION_TRANSVERSE -> {
+                matrix.postRotate(270f); matrix.preScale(-1f, 1f)
+            }
+            else -> return this
+        }
+        return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
     }
 
     private fun extractVideoFrame(uri: Uri, timeMs: Long?, maxSizePx: Int): ByteArray? {

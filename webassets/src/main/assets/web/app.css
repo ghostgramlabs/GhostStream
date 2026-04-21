@@ -869,6 +869,13 @@ input {
   display: block;
   object-fit: cover;
   background: var(--card);
+  image-orientation: from-image;
+}
+
+.gs-card--photo .gs-card-img,
+.gs-card--file img.gs-card-img {
+  object-fit: contain;
+  background: var(--bg);
 }
 
 .gs-card-placeholder {
@@ -1012,6 +1019,7 @@ input {
   border-radius: 20px;
   border: 1px solid var(--border);
   background: var(--bg);
+  image-orientation: from-image;
 }
 
 .gs-video-wrap .plyr {
