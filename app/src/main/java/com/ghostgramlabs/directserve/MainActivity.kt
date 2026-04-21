@@ -215,13 +215,6 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
         }
     }
 
-    // Permission request on launch as requested
-    LaunchedEffect(uiState.settings.onboardingCompleted) {
-        if (uiState.settings.onboardingCompleted && !hasBatchSelectionMediaAccess(context)) {
-            batchMediaPermissionLauncher.launch(requiredBatchSelectionPermissions())
-        }
-    }
-
     LaunchedEffect(
         uiState.isReady,
         uiState.settings.languageSelectionCompleted,
@@ -463,7 +456,6 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onImportAllMedia = startMediaServerWithPermission,
                     onClearAllMedia = viewModel::clearAllMedia,
                     onRequestAllFilesAccess = viewModel::requestAllFilesAccess,
-                    onShowMessage = viewModel::showMessage,
                     libraryImportingCount = uiState.libraryImportingCount,
                     onResolveUploadRequest = viewModel::resolveUploadRequest,
                     onToggleShareVideos = { viewModel.updateSettings { s -> s.copy(shareVideos = it) } },

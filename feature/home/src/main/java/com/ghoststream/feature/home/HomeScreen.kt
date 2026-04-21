@@ -117,7 +117,6 @@ fun HomeScreen(
     onImportAllMedia: () -> Unit,
     onClearAllMedia: () -> Unit,
     onRequestAllFilesAccess: () -> Unit,
-    onShowMessage: (String) -> Unit,
     onResolveUploadRequest: (String, Boolean) -> Unit,
     onToggleShareVideos: (Boolean) -> Unit,
     onToggleShareMusic: (Boolean) -> Unit,
@@ -126,15 +125,6 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
 ) {
     var showAllFilesDialog by rememberSaveable { mutableStateOf(false) }
-    var nudgeShown by rememberSaveable { mutableStateOf(false) }
-
-    val nudgeText = stringResource(R.string.home_all_files_nudge_text)
-    LaunchedEffect(hasAllFilesAccess, settings.onboardingCompleted) {
-        if (!nudgeShown && !hasAllFilesAccess && settings.onboardingCompleted) {
-            nudgeShown = true
-            onShowMessage(nudgeText)
-        }
-    }
 
     if (showAllFilesDialog) {
         AlertDialog(
