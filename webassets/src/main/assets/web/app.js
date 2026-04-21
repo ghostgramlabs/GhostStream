@@ -42,7 +42,23 @@ const state = {
   thumbObserver: null,
   thumbQueue: [],
   thumbActiveCount: 0,
+  libraryCache: new Map(),
 };
+
+function libraryCacheKey(category, query, folderId) {
+  return `${category}|${query || ""}|${folderId || ""}`;
+}
+
+function saveLibraryScroll() {
+  if (!state.libraryCategory || !state.libraryItems.length) return;
+  const key = libraryCacheKey(state.libraryCategory, state.query, state.folderId);
+  state.libraryCache.set(key, {
+    items: state.libraryItems.slice(),
+    totalCount: state.libraryTotalCount,
+    hasMore: state.libraryHasMore,
+    scrollY: window.scrollY || window.pageYOffset || 0,
+  });
+}
 
 const routes = {
   "/": () => {
@@ -366,6 +382,7 @@ function debugTrace(event, details = "") {
 
 function navigate(path, replace = false) {
   cancelCompatPolling();
+  if (isMediaPath(location.pathname)) saveLibraryScroll();
   history[replace ? "replaceState" : "pushState"]({}, "", path);
   boot();
 }
@@ -1217,8 +1234,24 @@ async function renderLibrary(category, title) {
   document.getElementById("libSearch")?.addEventListener("input", (event) => {
     state.query = event.target.value;
     clearTimeout(state.searchTimer);
-    state.searchTimer = setTimeout(() => renderLibrary(category, title), 180);
+    state.searchTimer = setTimeout(() => {
+      state.libraryCache.delete(libraryCacheKey(category, state.query, folderId));
+      renderLibrary(category, title);
+    }, 180);
   });
+
+  const cacheKey = libraryCacheKey(category, state.query, folderId);
+  const cached = state.libraryCache.get(cacheKey);
+  if (cached && cached.items.length) {
+    state.libraryItems = cached.items.slice();
+    state.libraryTotalCount = cached.totalCount;
+    state.libraryHasMore = cached.hasMore;
+    state.libraryLoadingMore = false;
+    renderLibraryGrid();
+    bindLibraryControls();
+    requestAnimationFrame(() => window.scrollTo(0, cached.scrollY || 0));
+    return;
+  }
 
   const page = await fetchLibraryPage(category, state.query, 0, LIBRARY_BATCH_SIZE, folderId);
   state.libraryItems = page.items;
@@ -1714,9 +1747,27 @@ function applyAspectRatioLayout(video, item, ratio = preferredVideoRatio(item)) 
   }
 }
 
+function isIosDevice() {
+  const ua = navigator.userAgent || "";
+  if (/iPad|iPhone|iPod/.test(ua)) return true;
+  // iPadOS 13+ reports as Mac but has touch
+  return ua.includes("Mac") && "ontouchend" in document;
+}
+
 function toggleVideoFullscreen(video) {
   if (!video) return;
   const wrap = video.closest(".gs-video-wrap");
+  // iOS Safari only supports fullscreen on <video>, not on div containers.
+  // Prefer webkitEnterFullscreen before Plyr / requestFullscreen on iOS.
+  if (isIosDevice()) {
+    const mediaEl = state.plyr?.media || video;
+    if (mediaEl.webkitDisplayingFullscreen && typeof mediaEl.webkitExitFullscreen === "function") {
+      try { mediaEl.webkitExitFullscreen(); return; } catch (_) {}
+    }
+    if (typeof mediaEl.webkitEnterFullscreen === "function") {
+      try { mediaEl.webkitEnterFullscreen(); return; } catch (_) {}
+    }
+  }
   if (state.plyr?.fullscreen) {
     state.plyr.fullscreen.toggle();
     return;
@@ -1855,6 +1906,7 @@ function hydrateVideoPlayer(item, options = {}) {
   if (!useNativePlayer && typeof window.Plyr === "function") {
     const plyrOptions = {
       iconUrl: "/plyr.svg",
+      fullscreen: { enabled: true, iosNative: true },
     };
     
     // Initialize with the true total duration from analyzed metadata

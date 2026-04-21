@@ -1043,7 +1043,7 @@ class KtorGhostStreamServer(
                             usedNames.add(entryName)
 
                             try {
-                                addFileToZip(item, zip)
+                                addFileToZip(item, entryName, zip)
                                 sessionManager.onTransferProgress(call.remoteHost(), item.sizeBytes, ClientActivity.DOWNLOADING)
                             } catch (e: Exception) {
                                 debugLogSink.log("WebZip", "Failed to add ${item.displayName} to zip", e)
@@ -2477,8 +2477,7 @@ class KtorGhostStreamServer(
 
 
 
-    private fun addFileToZip(item: SharedItem, zip: ZipOutputStream) {
-        val entryName = item.displayName
+    private fun addFileToZip(item: SharedItem, entryName: String, zip: ZipOutputStream) {
         val entry = ZipEntry(entryName)
         zip.putNextEntry(entry)
         context.contentResolver.openInputStream(Uri.parse(item.uri))?.use { input ->
