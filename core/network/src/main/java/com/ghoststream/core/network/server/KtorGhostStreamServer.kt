@@ -425,6 +425,8 @@ class KtorGhostStreamServer(
                             "web_upload_prompt_desktop" to localizedContext.getString(R.string.web_upload_prompt_desktop),
                             "web_upload_prompt_mobile" to localizedContext.getString(R.string.web_upload_prompt_mobile),
                             "web_upload_button_browse" to localizedContext.getString(R.string.web_upload_button_browse),
+                            "web_upload_button_photos" to localizedContext.getString(R.string.web_upload_button_photos),
+                            "web_upload_button_any_file" to localizedContext.getString(R.string.web_upload_button_any_file),
                             "web_upload_target_kicker" to localizedContext.getString(R.string.web_upload_target_kicker),
                             "web_upload_target_status" to localizedContext.getString(R.string.web_upload_target_status),
                             "web_upload_how_kicker" to localizedContext.getString(R.string.web_upload_how_kicker),

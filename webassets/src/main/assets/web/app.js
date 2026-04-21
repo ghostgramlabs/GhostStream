@@ -3190,12 +3190,17 @@ async function renderUpload() {
           <h3>${gsStr("web_upload_prompt_title", "Select files to send")}</h3>
           <p class="gs-desktop-only">${gsStr("web_upload_prompt_desktop", "Drag and drop here, or tap the button below")}</p>
           <p class="gs-mobile-only">${gsStr("web_upload_prompt_mobile", "Tap the button to select files from your library")}</p>
+          <input id="photoVideoInput" class="gs-upload-native-input" type="file" accept="image/*,video/*" multiple>
           <input id="nativeUploadInput" class="gs-upload-native-input" type="file" multiple>
           <div class="gs-upload-zone-actions">
-            <button class="gs-btn gs-btn-accent gs-btn-block gs-upload-primary-btn" id="uppyBrowseBtn">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              ${gsStr("web_upload_button_browse", "Browse Files")}
-            </button>
+            <label class="gs-btn gs-btn-accent gs-btn-block gs-upload-primary-btn" for="photoVideoInput" id="uppyPhotoVideoBtn">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              ${gsStr("web_upload_button_photos", "Photos & Videos")}
+            </label>
+            <label class="gs-btn gs-btn-block" for="nativeUploadInput" id="uppyBrowseBtn">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              ${gsStr("web_upload_button_any_file", "Any File")}
+            </label>
             <button class="gs-btn gs-btn-block" id="uppyUploadBtn" disabled>${gsStr("web_upload_button_send", "Upload")}</button>
           </div>
           <div class="gs-upload-selection" id="uploadSelectionStatus">${gsStr("web_upload_selection_empty", "No files selected yet.")}</div>
@@ -3234,11 +3239,12 @@ async function renderUpload() {
 function mountUploadDashboard() {
   const zone = document.getElementById("uploadZone");
   const dashboardTarget = document.getElementById("uploadDashboard");
-  const browseBtn = document.getElementById("uppyBrowseBtn");
   const uploadBtn = document.getElementById("uppyUploadBtn");
   const nativeInput = document.getElementById("nativeUploadInput");
+  const photoVideoInput = document.getElementById("photoVideoInput");
   const selectionStatus = document.getElementById("uploadSelectionStatus");
-  if (!browseBtn || !uploadBtn || !nativeInput) return;
+  if (!uploadBtn || !nativeInput) return;
+  const fileInputs = [nativeInput, photoVideoInput].filter(Boolean);
 
   const setSelectionStatus = (files) => {
     if (selectionStatus) {
@@ -3255,13 +3261,14 @@ function mountUploadDashboard() {
   };
 
   if (!window.Uppy?.Uppy || !window.Uppy?.Dashboard || !dashboardTarget) {
-    browseBtn.addEventListener("click", () => {
-      nativeInput.value = "";
-      nativeInput.click();
-    });
-    nativeInput.addEventListener("change", () => {
-      state.pendingUploadFiles = Array.from(nativeInput.files || []);
-      refreshFallbackToolbar();
+    fileInputs.forEach((input) => {
+      input.addEventListener("change", () => {
+        const picked = Array.from(input.files || []);
+        if (picked.length === 0) return;
+        state.pendingUploadFiles = picked;
+        input.value = "";
+        refreshFallbackToolbar();
+      });
     });
     uploadBtn.addEventListener("click", async () => {
       if (state.pendingUploadFiles.length === 0) return;
@@ -3269,7 +3276,6 @@ function mountUploadDashboard() {
       try {
         await handleFilesUpload(state.pendingUploadFiles);
         state.pendingUploadFiles = [];
-        nativeInput.value = "";
       } finally {
         refreshFallbackToolbar();
       }
@@ -3305,14 +3311,13 @@ function mountUploadDashboard() {
     setSelectionStatus(files);
   };
 
-  browseBtn.addEventListener("click", () => {
-    nativeInput.value = "";
-    nativeInput.click();
-  });
-  nativeInput.addEventListener("change", () => {
-    const files = Array.from(nativeInput.files || []);
-    if (files.length === 0) return;
-    addFilesToUppy(files);
+  fileInputs.forEach((input) => {
+    input.addEventListener("change", () => {
+      const files = Array.from(input.files || []);
+      input.value = "";
+      if (files.length === 0) return;
+      addFilesToUppy(files);
+    });
   });
   uploadBtn.addEventListener("click", () => {
     uppy.upload().catch(() => {});

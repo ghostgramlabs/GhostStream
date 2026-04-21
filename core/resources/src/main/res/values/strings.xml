@@ -596,6 +596,8 @@
     <string name="web_upload_prompt_desktop">Drag and drop here, or choose files below.</string>
     <string name="web_upload_prompt_mobile">Choose files from your device to send them here.</string>
     <string name="web_upload_button_browse">Browse Files</string>
+    <string name="web_upload_button_photos">Photos &amp; Videos</string>
+    <string name="web_upload_button_any_file">Any File</string>
     <string name="web_upload_target_kicker">Target Device</string>
     <string name="web_upload_target_status">Status: Connected and ready for transfers</string>
     <string name="web_upload_how_kicker">How it works</string>
