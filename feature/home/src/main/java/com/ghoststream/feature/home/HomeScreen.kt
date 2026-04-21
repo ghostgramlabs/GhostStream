@@ -1384,7 +1384,7 @@ private fun ContentTypeToggle(
                 modifier = Modifier
                     .size(28.dp)
                     .background(
-                        if (enabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else MaterialTheme.colorScheme.surfaceVariant,
+                        if (enabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.28f) else MaterialTheme.colorScheme.surfaceVariant,
                         RoundedCornerShape(8.dp),
                     )
                     .border(
@@ -1427,17 +1427,17 @@ private fun ghostPrimaryButtonColors() = ButtonDefaults.buttonColors(
 
 @Composable
 private fun ghostSecondaryButtonColors() = ButtonDefaults.outlinedButtonColors(
-    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+    containerColor = Color.Transparent,
     contentColor = MaterialTheme.colorScheme.primary,
-    disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.06f),
+    disabledContainerColor = Color.Transparent,
     disabledContentColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.46f),
 )
 
 @Composable
-private fun ghostAccentSurface() = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+private fun ghostAccentSurface() = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
 
 @Composable
-private fun ghostAccentBorder() = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
+private fun ghostAccentBorder() = MaterialTheme.colorScheme.primary.copy(alpha = 0.40f)
 
 @Composable
 private fun ghostLiveSurface() = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)

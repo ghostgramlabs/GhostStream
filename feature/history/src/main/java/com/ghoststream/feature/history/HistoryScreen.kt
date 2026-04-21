@@ -66,9 +66,8 @@ fun HistoryScreen(
                         vertical = 12.dp,
                     ),
                 shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                tonalElevation = 1.dp,
             ) {
                 TabRow(
                     selectedTabIndex = selectedTab,

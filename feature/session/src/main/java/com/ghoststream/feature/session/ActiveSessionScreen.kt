@@ -548,7 +548,7 @@ private fun LiveFeedbackBanner(
 ) {
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = sessionLiveSurface(),
+        color = Color.Transparent,
         border = androidx.compose.foundation.BorderStroke(1.dp, sessionLiveBorder()),
     ) {
         Row(
@@ -660,7 +660,7 @@ private fun SessionAccessPanel(
         ) {
             Surface(
                 shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surface,
+                color = Color.Transparent,
                 border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             ) {
                 Column(

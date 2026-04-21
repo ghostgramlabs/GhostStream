@@ -47,10 +47,20 @@ class MainViewModel(
     private val container: AppContainer,
 ) : ViewModel() {
 
+    private var networkRefreshJob: kotlinx.coroutines.Job? = null
+
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
-        override fun onAvailable(network: Network) { refreshNetwork() }
-        override fun onLost(network: Network) { refreshNetwork() }
-        override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) { refreshNetwork() }
+        override fun onAvailable(network: Network) { scheduleNetworkRefresh() }
+        override fun onLost(network: Network) { scheduleNetworkRefresh() }
+        override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) { scheduleNetworkRefresh() }
+    }
+
+    private fun scheduleNetworkRefresh() {
+        networkRefreshJob?.cancel()
+        networkRefreshJob = viewModelScope.launch {
+            kotlinx.coroutines.delay(300)
+            refreshNetwork()
+        }
     }
 
     private val smartGroups = MutableStateFlow(emptyList<SmartSelectionGroup>())

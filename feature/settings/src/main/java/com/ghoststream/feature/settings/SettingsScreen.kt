@@ -75,7 +75,6 @@ fun SettingsScreen(
     onAutoStopSelected: (AutoStopOption) -> Unit,
     onPreferredPortChanged: (String) -> Unit,
     onManualPinChanged: (String) -> Unit,
-    onToggleAutoOptimizeLibrary: (Boolean) -> Unit,
     onBack: () -> Unit,
     onOpenLanguage: () -> Unit,
     onOpenReceivedFilesLocation: () -> Unit,
@@ -221,7 +220,6 @@ fun SettingsScreen(
                 SettingsToggleRow(stringResource(R.string.settings_sign_out_on_stop), stringResource(R.string.settings_sign_out_on_stop_desc), settings.clearAuthOnStop, onToggleClearAuthOnStop)
                 SettingsToggleRow(stringResource(R.string.settings_clear_temporary_files), stringResource(R.string.settings_clear_temporary_files_desc), settings.ghostMode, onToggleGhostMode)
                 SettingsToggleRow(stringResource(R.string.settings_prevent_downloads), stringResource(R.string.settings_prevent_downloads_desc), settings.preventDownload, onTogglePreventDownload)
-                SettingsToggleRow(stringResource(R.string.settings_auto_optimize_library), stringResource(R.string.settings_auto_optimize_library_desc), settings.autoOptimizeLibrary, onToggleAutoOptimizeLibrary)
                 ManualPortRow(currentPort = settings.preferredPort.toString(), onPortChanged = onPreferredPortChanged)
             }
         }
