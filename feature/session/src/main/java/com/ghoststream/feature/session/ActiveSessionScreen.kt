@@ -2,6 +2,13 @@ package com.ghoststream.feature.session
 
 import android.graphics.Bitmap
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -47,11 +54,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -546,20 +555,29 @@ private fun LiveFeedbackBanner(
     title: String,
     subtitle: String,
 ) {
+    val borderPulse by rememberInfiniteTransition(label = "sessionLiveBannerBorder")
+        .animateFloat(
+            initialValue = 0.28f,
+            targetValue = 0.72f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1600, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "sessionLiveBannerBorderAlpha",
+        )
     Surface(
         shape = RoundedCornerShape(20.dp),
         color = Color.Transparent,
-        border = androidx.compose.foundation.BorderStroke(1.dp, sessionLiveBorder()),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.primary.copy(alpha = borderPulse),
+        ),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(999.dp)),
-            )
+            PulsingLiveDot(dotColor = MaterialTheme.colorScheme.primary)
             Spacer(modifier = Modifier.width(10.dp))
             Column {
                 Text(
@@ -576,6 +594,65 @@ private fun LiveFeedbackBanner(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun PulsingLiveDot(
+    dotColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    val transition = rememberInfiniteTransition(label = "sessionLivePulse")
+    val ringScale by transition.animateFloat(
+        initialValue = 1f,
+        targetValue = 2.4f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1600, easing = LinearOutSlowInEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "sessionLivePulseRingScale",
+    )
+    val ringAlpha by transition.animateFloat(
+        initialValue = 0.55f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1600, easing = LinearOutSlowInEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "sessionLivePulseRingAlpha",
+    )
+    val coreScale by transition.animateFloat(
+        initialValue = 0.88f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(900, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "sessionLivePulseCoreScale",
+    )
+    Box(
+        modifier = modifier.size(24.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .graphicsLayer {
+                    scaleX = ringScale
+                    scaleY = ringScale
+                    alpha = ringAlpha
+                }
+                .background(dotColor, RoundedCornerShape(999.dp)),
+        )
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .graphicsLayer {
+                    scaleX = coreScale
+                    scaleY = coreScale
+                }
+                .background(dotColor, RoundedCornerShape(999.dp)),
+        )
     }
 }
 
@@ -1084,6 +1161,19 @@ private fun SessionStatePill(sessionState: SessionState) {
         sessionState.networkAvailability.isReady -> stringResource(R.string.session_state_preparing)
         else -> stringResource(R.string.session_state_network_needed)
     }
+    val dotScale = if (sessionState.isSharing) {
+        rememberInfiniteTransition(label = "sessionPillDotScale").animateFloat(
+            initialValue = 0.82f,
+            targetValue = 1f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(900, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "sessionPillDotScaleValue",
+        ).value
+    } else {
+        1f
+    }
     Surface(
         shape = RoundedCornerShape(999.dp),
         color = if (sessionState.isSharing || sessionState.networkAvailability.isReady) sessionAccentSurface() else Color.Transparent,
@@ -1099,6 +1189,10 @@ private fun SessionStatePill(sessionState: SessionState) {
             Box(
                 modifier = Modifier
                     .size(8.dp)
+                    .graphicsLayer {
+                        scaleX = dotScale
+                        scaleY = dotScale
+                    }
                     .background(
                         color = if (sessionState.isSharing || sessionState.networkAvailability.isReady) {
                             MaterialTheme.colorScheme.primary

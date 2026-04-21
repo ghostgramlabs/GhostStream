@@ -2,7 +2,14 @@ package com.ghoststream.feature.home
 
 import android.text.format.DateUtils
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -433,20 +440,26 @@ private fun SessionHeroCard(
 
             Spacer(modifier = Modifier.height(18.dp))
             if (sessionState.isSharing) {
+                val liveBorderPulse by rememberInfiniteTransition(label = "homeLiveBorderPulse")
+                    .animateFloat(
+                        initialValue = 0.28f,
+                        targetValue = 0.72f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(1600, easing = FastOutSlowInEasing),
+                            repeatMode = RepeatMode.Reverse,
+                        ),
+                        label = "homeLiveBorderPulseAlpha",
+                    )
                 Surface(
                     shape = RoundedCornerShape(18.dp),
                     color = ghostLiveSurface(),
-                    border = BorderStroke(1.dp, ghostLiveBorder()),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = liveBorderPulse)),
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .size(10.dp)
-                                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(999.dp)),
-                        )
+                        PulsingLiveDot(dotColor = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             text = if (settings.mediaServerMode) stringResource(R.string.home_media_server_active) else stringResource(R.string.home_live_banner),
@@ -1414,6 +1427,65 @@ private fun ContentTypeToggle(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+@Composable
+private fun PulsingLiveDot(
+    dotColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    val transition = rememberInfiniteTransition(label = "homeLivePulse")
+    val ringScale by transition.animateFloat(
+        initialValue = 1f,
+        targetValue = 2.4f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1600, easing = LinearOutSlowInEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "homeLivePulseRingScale",
+    )
+    val ringAlpha by transition.animateFloat(
+        initialValue = 0.55f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1600, easing = LinearOutSlowInEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "homeLivePulseRingAlpha",
+    )
+    val coreScale by transition.animateFloat(
+        initialValue = 0.88f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(900, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "homeLivePulseCoreScale",
+    )
+    Box(
+        modifier = modifier.size(24.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .graphicsLayer {
+                    scaleX = ringScale
+                    scaleY = ringScale
+                    alpha = ringAlpha
+                }
+                .background(dotColor, RoundedCornerShape(999.dp)),
+        )
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .graphicsLayer {
+                    scaleX = coreScale
+                    scaleY = coreScale
+                }
+                .background(dotColor, RoundedCornerShape(999.dp)),
+        )
     }
 }
 
