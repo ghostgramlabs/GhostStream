@@ -483,7 +483,7 @@ private fun SessionHeroCard(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.54f),
+                    color = Color.Transparent,
                     border = BorderStroke(1.dp, ghostAccentBorder()),
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {

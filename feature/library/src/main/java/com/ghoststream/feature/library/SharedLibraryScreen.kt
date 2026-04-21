@@ -329,7 +329,7 @@ private fun LibraryHeader(
             .padding(horizontal = GhostSpacing.screenHorizontal)
             .fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.52f)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
@@ -553,7 +553,7 @@ private fun LibraryControlsCard(
                 if (addMediaExpanded) {
                     Surface(
                         shape = RoundedCornerShape(18.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.54f),
+                        color = Color.Transparent,
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     ) {
                         FlowRow(
@@ -622,7 +622,7 @@ private fun LibraryControlsCard(
             if (hasNonDirectVideo) {
                 Surface(
                     shape = RoundedCornerShape(18.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    color = Color.Transparent,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 ) {
                     Column(
@@ -772,7 +772,7 @@ private fun LibraryItemRow(
                 if (item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT) {
                     Surface(
                         shape = RoundedCornerShape(18.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        color = Color.Transparent,
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     ) {
                         Column(
