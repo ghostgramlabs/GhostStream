@@ -642,35 +642,45 @@ function renderCompatibilityProgress(item) {
 }
 
 function resolveStablePlayerSource(item) {
+  const hlsUsable = hasUsableHlsPath(item);
+  let selectedSource = null;
+
   if (item.playbackMode === "DIRECT") {
-    return {
+    selectedSource = {
       kind: "direct",
       url: item.streamUrl,
       mimeType: item.mimeType || "video/mp4",
     };
-  }
-  if (shouldUseDirectCompatMp4(item)) {
-    return {
+  } else if (shouldUseDirectCompatMp4(item)) {
+    selectedSource = {
       kind: "prepared_mp4",
       url: item.preparedMp4Url,
       mimeType: "video/mp4",
     };
-  }
-  if (shouldUseNativeHlsPlayback(item)) {
-    return {
+  } else if (shouldUseNativeHlsPlayback(item)) {
+    selectedSource = {
       kind: "native_hls",
       url: item.hlsUrl,
       mimeType: "application/vnd.apple.mpegurl",
     };
-  }
-  if (shouldUseManagedHlsPlayback(item)) {
-    return {
+  } else if (shouldUseManagedHlsPlayback(item)) {
+    selectedSource = {
       kind: "managed_hls",
       url: item.hlsUrl,
       mimeType: "application/x-mpegURL",
     };
   }
-  return null;
+
+  if (selectedSource) {
+    debugTrace(
+      "source_resolution_decision",
+      `id=${item.id} playbackMode=${item.playbackMode} ` +
+      `compatComplete=${item.compatibilityComplete} streamReady=${item.streamReady} ` +
+      `hasPreparedMp4=${Boolean(item.preparedMp4Url)} hasHlsUrl=${Boolean(item.hlsUrl)} ` +
+      `hlsUsable=${hlsUsable} selectedSource=${selectedSource.kind}`,
+    );
+  }
+  return selectedSource;
 }
 
 function lockPlayerSource(item) {
@@ -691,7 +701,15 @@ function lockPlayerSource(item) {
     existing.kind === "direct" &&
     (candidate.kind === "prepared_mp4" || candidate.kind === "managed_hls" || candidate.kind === "native_hls")
   ) {
-    debugTrace("player_source_upgraded", `id=${item.id} from=${existing.kind} to=${candidate.kind}`);
+    const upgradeReason = candidate.kind === "prepared_mp4"
+      ? "prepared_mp4_ready"
+      : candidate.kind === "managed_hls"
+      ? "managed_hls_streamable"
+      : "native_hls_streamable";
+    debugTrace(
+      "source_resolution_upgrade",
+      `id=${item.id} previousSource=${existing.kind} newSource=${candidate.kind} reason=${upgradeReason}`,
+    );
     state.playerSourceLocks[item.id] = candidate;
     return candidate;
   }
