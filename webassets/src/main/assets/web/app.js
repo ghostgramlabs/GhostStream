@@ -542,13 +542,20 @@ async function reportClientCapabilities() {
  * the TFHD base-data-offset restriction that caused bufferAppendError via MSE/hls.js.
  */
 function shouldUseDirectCompatMp4(item) {
-  // The server only exposes preparedMp4Url when it considers the file directly playable
-  // for this session. That may now happen before the background finalize/reuse step reaches
-  // compatibilityComplete=true, so we must not block on the finalization flag here.
-  return Boolean(
-    item.preparedMp4Url && 
-    item.playbackMode !== "DIRECT"
-  );
+  if (!item.preparedMp4Url || item.playbackMode === "DIRECT") return false;
+  // Once the prepared file is finalized, prepared MP4 is the cheapest path
+  // (progressive Range, no MSE overhead).
+  if (item.compatibilityComplete) return true;
+  // While the prepared .tmp is still growing, far seeks land beyond the
+  // writer head and the browser snaps back. HLS handles seek-beyond-buffer
+  // gracefully (managed segment refetch + worker CRITICAL re-seek), so when
+  // an HLS path is also available for this client, prefer it over the
+  // in-progress prepared MP4. Once the file finalizes, future opens take the
+  // prepared path again on the next selection pass.
+  if (item.hlsUrl && (shouldUseManagedHlsPlayback(item) || shouldUseNativeHlsPlayback(item))) {
+    return false;
+  }
+  return true;
 }
 
 function rememberCompatProgress(itemId, status, progressPercent) {

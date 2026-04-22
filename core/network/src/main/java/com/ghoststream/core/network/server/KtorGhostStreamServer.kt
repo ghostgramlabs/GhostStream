@@ -2481,6 +2481,13 @@ class KtorGhostStreamServer(
             if (finalized || failed) {
                 return available
             }
+            // Far-future seek into a growing fragmented MP4: the writer hasn't
+            // gotten anywhere near here, and waiting the full 90 s budget will
+            // not help. Return fast so the browser receives 416 quickly and
+            // the source-switch fallback (HLS) can engage instead of stalling.
+            if (isFragmentedMp4 && requiredOffset > available * 4L && available > 0L) {
+                return available
+            }
 
             idlePolls += 1
             Thread.sleep(GROWING_FILE_POLL_INTERVAL_MS)
