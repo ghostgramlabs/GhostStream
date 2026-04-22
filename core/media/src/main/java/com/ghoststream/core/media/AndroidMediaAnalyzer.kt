@@ -30,14 +30,13 @@ class AndroidMediaAnalyzer(
     override fun inspect(uri: Uri, mimeType: String?, displayName: String): MediaInspection {
         val tracks = inspectTracks(uri)
         val extension = displayName.substringAfterLast('.', "").lowercase()
-        val container = inferContainer(mimeType, displayName)
-
+        
         return MediaInspection(
             originalMimeType = mimeType,
             normalizedMimeType = mimeType,
             displayName = displayName,
             extension = extension,
-            container = container,
+            container = inferContainer(mimeType, displayName),
             videoTrackMimeType = tracks.videoTrackMimeType,
             audioTrackMimeType = tracks.audioTrackMimeType,
             browserSafe = false, // Engine decides this
@@ -47,100 +46,14 @@ class AndroidMediaAnalyzer(
             videoProfile = tracks.videoProfile,
             videoLevel = tracks.videoLevel,
             bitDepth = tracks.bitDepth,
-            hasFaststart = probeFaststart(uri, container),
+            hasFaststart = null, // Requires deeper probe
             width = tracks.width,
             height = tracks.height,
             frameRate = tracks.frameRate,
             bitrate = tracks.bitrate,
             audioChannels = tracks.audioChannels,
             hdrFormat = tracks.hdrFormat,
-            audioInitDataOk = tracks.audioInitDataOk,
         )
-    }
-
-    // Top-level box walk to determine moov-before-mdat (faststart) vs moov-at-end.
-    // Returns null when the container isn't MP4/MOV, when probing fails, or when
-    // the probe budget is exhausted before both boxes are seen — callers must treat
-    // null as "unknown" and not as a remux trigger.
-    private fun probeFaststart(uri: Uri, container: MediaContainer): Boolean? {
-        if (container != MediaContainer.MP4 && container != MediaContainer.QUICKTIME) return null
-        return runCatching {
-            context.contentResolver.openInputStream(uri)?.use { stream ->
-                val header = ByteArray(8)
-                val largeBuf = ByteArray(8)
-                var pos = 0L
-                var moovOffset = -1L
-                var mdatOffset = -1L
-                val maxScanBytes = 256L * 1024L * 1024L
-                while (pos < maxScanBytes) {
-                    if (!stream.readFullyOrReturnFalse(header)) break
-                    val size32 = ((header[0].toLong() and 0xff) shl 24) or
-                        ((header[1].toLong() and 0xff) shl 16) or
-                        ((header[2].toLong() and 0xff) shl 8) or
-                        (header[3].toLong() and 0xff)
-                    val type = String(header, 4, 4, Charsets.US_ASCII)
-                    val boxSize: Long
-                    val headerSize: Long
-                    when {
-                        size32 == 1L -> {
-                            if (!stream.readFullyOrReturnFalse(largeBuf)) return@use null
-                            boxSize = java.nio.ByteBuffer.wrap(largeBuf).long
-                            headerSize = 16L
-                        }
-                        size32 == 0L -> {
-                            // Box extends to EOF — last box. Decide based on what we've already seen.
-                            if (type == "moov" && moovOffset < 0) moovOffset = pos
-                            if (type == "mdat" && mdatOffset < 0) mdatOffset = pos
-                            break
-                        }
-                        else -> {
-                            boxSize = size32
-                            headerSize = 8L
-                        }
-                    }
-                    if (type == "moov" && moovOffset < 0) moovOffset = pos
-                    if (type == "mdat" && mdatOffset < 0) mdatOffset = pos
-                    if (moovOffset >= 0 && mdatOffset >= 0) break
-                    if (boxSize <= 0) break
-                    val bodySize = boxSize - headerSize
-                    if (bodySize < 0) break
-                    if (!stream.skipFullyExact(bodySize)) break
-                    pos += boxSize
-                }
-                when {
-                    moovOffset < 0 -> null
-                    mdatOffset < 0 -> true
-                    else -> moovOffset < mdatOffset
-                }
-            }
-        }.getOrNull()
-    }
-
-    private fun java.io.InputStream.readFullyOrReturnFalse(buf: ByteArray): Boolean {
-        var read = 0
-        while (read < buf.size) {
-            val n = read(buf, read, buf.size - read)
-            if (n < 0) return false
-            read += n
-        }
-        return true
-    }
-
-    private fun java.io.InputStream.skipFullyExact(n: Long): Boolean {
-        var remaining = n
-        val scratch = ByteArray(8 * 1024)
-        while (remaining > 0) {
-            val skipped = skip(remaining)
-            if (skipped > 0) {
-                remaining -= skipped
-                continue
-            }
-            val toRead = remaining.coerceAtMost(scratch.size.toLong()).toInt()
-            val r = read(scratch, 0, toRead)
-            if (r < 0) return false
-            remaining -= r
-        }
-        return true
     }
 
     override fun decidePlayback(inspection: MediaInspection, capabilities: ClientCapabilities): PlaybackDecision {
@@ -175,12 +88,11 @@ class AndroidMediaAnalyzer(
             var bitrate: Long? = null
             var audioChannels: Int? = null
             var hdrFormat: String? = null
-            var audioInitDataOk: Boolean? = null
 
             for (index in 0 until extractor.trackCount) {
                 val format = extractor.getTrackFormat(index)
                 val inferredMime = inferTrackMime(format) ?: continue
-
+                
                 if (format.containsKey(MediaFormat.KEY_DURATION)) {
                     val d = format.getLong(MediaFormat.KEY_DURATION) / 1000L
                     durationMs = maxOf(durationMs ?: 0L, d)
@@ -194,31 +106,11 @@ class AndroidMediaAnalyzer(
                     height = if (format.containsKey(MediaFormat.KEY_HEIGHT)) format.getInteger(MediaFormat.KEY_HEIGHT) else null
                     frameRate = if (format.containsKey(MediaFormat.KEY_FRAME_RATE)) format.getFloat(MediaFormat.KEY_FRAME_RATE) else null
                     bitrate = if (format.containsKey(MediaFormat.KEY_BIT_RATE)) format.getInteger(MediaFormat.KEY_BIT_RATE).toLong() else null
-
-                    // "bit-per-sample" is a non-standard MediaFormat key populated by some
-                    // 10-bit HEVC sources but missing on others. Prefer the explicit value
-                    // when present, otherwise infer from the HEVC Main10 profile (== 2),
-                    // which always implies 10-bit luma.
-                    bitDepth = when {
-                        format.containsKey("bit-per-sample") -> format.getInteger("bit-per-sample")
-                        inferredMime == "video/hevc" && videoProfile == 2 -> 10
-                        else -> bitDepth
-                    }
-
-                    hdrFormat = inferHdrFormat(format) ?: hdrFormat
+                    
+                    if (format.containsKey("bit-per-sample")) bitDepth = format.getInteger("bit-per-sample")
                 } else if (inferredMime.startsWith("audio/")) {
                     audioTrackMimeType = inferredMime
                     audioChannels = if (format.containsKey(MediaFormat.KEY_CHANNEL_COUNT)) format.getInteger(MediaFormat.KEY_CHANNEL_COUNT) else null
-                    if (inferredMime == "audio/mp4a-latm") {
-                        // AAC requires a non-empty AudioSpecificConfig (csd-0) for browser MSE init.
-                        // Missing/empty csd-0 is the most common cause of "audio decode error" in
-                        // hls.js after the init segment. Surface as audioInitDataOk = false so the
-                        // decision engine forces an audio re-encode.
-                        val csd0 = runCatching { format.getByteBuffer("csd-0") }.getOrNull()
-                        audioInitDataOk = csd0 != null && csd0.remaining() >= 2
-                    } else if (audioInitDataOk == null) {
-                        audioInitDataOk = true
-                    }
                 }
             }
             
@@ -235,7 +127,6 @@ class AndroidMediaAnalyzer(
                 bitrate = bitrate,
                 audioChannels = audioChannels,
                 hdrFormat = hdrFormat,
-                audioInitDataOk = audioInitDataOk,
             )
         } catch (e: Exception) {
             TrackInspection()
@@ -316,21 +207,7 @@ class AndroidMediaAnalyzer(
         val bitrate: Long? = null,
         val audioChannels: Int? = null,
         val hdrFormat: String? = null,
-        val audioInitDataOk: Boolean? = null,
     )
-
-    // Inspect MediaFormat color metadata for an HDR transfer function.
-    // Returns null when the format does not advertise HDR (SDR or unknown).
-    private fun inferHdrFormat(format: MediaFormat): String? {
-        val transfer = if (format.containsKey(MediaFormat.KEY_COLOR_TRANSFER)) {
-            format.getInteger(MediaFormat.KEY_COLOR_TRANSFER)
-        } else return null
-        return when (transfer) {
-            MediaFormat.COLOR_TRANSFER_ST2084 -> "HDR10"
-            MediaFormat.COLOR_TRANSFER_HLG -> "HLG"
-            else -> null
-        }
-    }
 
     private fun loadImageThumbnail(uri: Uri, maxSizePx: Int): ByteArray? {
         return runCatching {

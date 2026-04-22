@@ -1111,16 +1111,9 @@ class KtorGhostStreamServer(
                             "WebHls",
                             "hls_start_blocked id=${source.item.id} reason=stream_not_safe browser=${support.reason} status=${source.job.status}",
                         )
-                        // hls.js treats 425 TooEarly as a fatal networkError. Use 503 +
-                        // Retry-After so it retries without blowing up the pipeline.
-                        call.response.headers.append(HttpHeaders.RetryAfter, "1")
-                        call.respond(HttpStatusCode.ServiceUnavailable, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
+                        call.respond(HttpStatusCode.TooEarly, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
                         return@get
                     }
-                    // Media Heartbeat: master.m3u8 is the first media-bearing request in the
-                    // HLS flow. Marking it prevents preemption during the MSE startup window
-                    // before the first segment/init request arrives.
-                    compatibilityPipeline.markMediaServed(source.item.id)
                     debugLogSink.log(
                         "WebHls",
                         "hls_start_allowed id=${source.item.id} browser=${support.reason} status=${source.job.status}",
@@ -1991,14 +1984,10 @@ class KtorGhostStreamServer(
         PlaybackMode.TRANSCODE -> 3
     }
 
-    // One-step escalation ladder. Skipping REMUX→TRANSMUX (jumping straight to
-    // TRANSCODE) used to make every browser-reported failure pay a full re-encode
-    // even when a cheaper repackage would have worked. Walk the ladder one rung at
-    // a time; TRANSCODE is the terminal mode.
     private fun nextBrowserFallbackMode(mode: PlaybackMode): PlaybackMode = when (mode) {
         PlaybackMode.DIRECT -> PlaybackMode.REMUX
-        PlaybackMode.REMUX -> PlaybackMode.TRANSMUX
-        PlaybackMode.TRANSMUX -> PlaybackMode.TRANSCODE
+        PlaybackMode.REMUX,
+        PlaybackMode.TRANSMUX,
         PlaybackMode.TRANSCODE -> PlaybackMode.TRANSCODE
     }
 

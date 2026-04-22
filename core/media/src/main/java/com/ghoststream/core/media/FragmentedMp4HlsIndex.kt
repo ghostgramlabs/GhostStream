@@ -104,8 +104,6 @@ object FragmentedMp4HlsIndexer {
             } else {
                 MoovMetadata()
             }
-            val videoTrackId = moovMetadata.videoTrackId
-            val videoTimescale = moovMetadata.timescales[videoTrackId] ?: 0L
 
             val moovIndex = boxes.indexOfLast { it.type == "moov" }
             if (moovIndex < 0) {
@@ -200,17 +198,9 @@ object FragmentedMp4HlsIndexer {
                 }
             }
 
-            // Replace each segment's hardcoded duration with the actual one derived from
-            // the video track's tfdt deltas. Hardcoded EXTINF drifts from reality whenever
-            // the source GOP isn't exactly fragmentDurationSeconds long, which causes
-            // hls.js to either stall (real > advertised) or hit "gap in playlist" warnings.
-            val measuredSegments = if (videoTrackId > 0 && videoTimescale > 0L) {
-                computeSegmentDurations(raf, segments, boxes, videoTrackId, videoTimescale, fragmentDurationSeconds)
-            } else segments
-
             return FragmentedMp4HlsIndex(
                 initSegmentLength = initSegmentLength,
-                segments = measuredSegments,
+                segments = segments,
                 fileLength = fileLength,
                 videoCodecString = moovMetadata.videoCodecString,
                 audioCodecString = moovMetadata.audioCodecString,
@@ -221,65 +211,6 @@ object FragmentedMp4HlsIndexer {
         }
     }
 
-    private fun computeSegmentDurations(
-        raf: RandomAccessFile,
-        segments: List<HlsMediaSegment>,
-        boxes: List<Mp4TopLevelBox>,
-        videoTrackId: Int,
-        videoTimescale: Long,
-        fallbackDurationSeconds: Double,
-    ): List<HlsMediaSegment> {
-        if (segments.isEmpty()) return segments
-        // Parse tfdt baseMediaDecodeTime for each segment's video traf.
-        val tfdts = LongArray(segments.size) { -1L }
-        for ((idx, seg) in segments.withIndex()) {
-            val moofIndex = boxes.indexOfFirst { it.offset == seg.offset && it.type == "moof" }
-            val moofBox = if (moofIndex >= 0) boxes[moofIndex] else
-                boxes.firstOrNull { it.type == "moof" && it.offset >= seg.offset && it.offset < seg.offset + seg.length }
-            if (moofBox == null) continue
-            tfdts[idx] = runCatching { readVideoTfdt(raf, moofBox, videoTrackId) }.getOrNull() ?: -1L
-        }
-        return segments.mapIndexed { i, seg ->
-            val measured = when {
-                tfdts[i] < 0 -> fallbackDurationSeconds
-                i + 1 < segments.size && tfdts[i + 1] > tfdts[i] ->
-                    (tfdts[i + 1] - tfdts[i]).toDouble() / videoTimescale.toDouble()
-                // Last segment — reuse the previous measured duration if available.
-                i > 0 && tfdts[i - 1] >= 0 && tfdts[i] > tfdts[i - 1] ->
-                    (tfdts[i] - tfdts[i - 1]).toDouble() / videoTimescale.toDouble()
-                else -> fallbackDurationSeconds
-            }
-            // Guard against pathological values from malformed boxes.
-            val safe = if (measured.isFinite() && measured in 0.05..30.0) measured else fallbackDurationSeconds
-            seg.copy(durationSeconds = safe)
-        }
-    }
-
-    private fun readVideoTfdt(
-        raf: RandomAccessFile,
-        moofBox: Mp4TopLevelBox,
-        videoTrackId: Int,
-    ): Long? {
-        val moofEnd = moofBox.offset + moofBox.size
-        for (traf in readChildBoxes(raf, moofBox.offset + 8, moofEnd)) {
-            if (traf.type != "traf") continue
-            val trafEnd = traf.offset + traf.size
-            val trafChildren = readChildBoxes(raf, traf.offset + 8, trafEnd)
-            val tfhd = trafChildren.firstOrNull { it.type == "tfhd" } ?: continue
-            // tfhd body layout: version(1) + flags(3) + track_id(4) + ...
-            raf.seek(tfhd.offset + 8 + 4)
-            val trackId = raf.readInt()
-            if (trackId != videoTrackId) continue
-            val tfdt = trafChildren.firstOrNull { it.type == "tfdt" } ?: return null
-            // tfdt body: version(1) + flags(3) + baseMediaDecodeTime(4 or 8)
-            raf.seek(tfdt.offset + 8)
-            val version = raf.read() and 0xFF
-            raf.seek(tfdt.offset + 8 + 4)
-            return if (version == 1) raf.readLong() else (raf.readInt().toLong() and 0xFFFFFFFFL)
-        }
-        return null
-    }
-
     // ── Codec detection ────────────────────────────────────────────────────────────────────────
 
     private fun readTrackMetadataFromMoov(raf: RandomAccessFile, moovBox: Mp4TopLevelBox): MoovMetadata {
@@ -288,7 +219,6 @@ object FragmentedMp4HlsIndexer {
         var audioCodec: String? = null
         var width: Int? = null
         var height: Int? = null
-        var videoTrackId = 0
         val timescales = mutableMapOf<Int, Long>()
         for (trak in readChildBoxes(raf, moovBox.offset + 8, moovEnd)) {
             if (trak.type != "trak") continue
@@ -301,7 +231,6 @@ object FragmentedMp4HlsIndexer {
                     if (videoCodec == null) videoCodec = metadata.codecString
                     if (width == null) width = metadata.width
                     if (height == null) height = metadata.height
-                    if (videoTrackId == 0) videoTrackId = metadata.trackId
                 }
 
                 "soun" -> {
@@ -315,7 +244,6 @@ object FragmentedMp4HlsIndexer {
             width = width,
             height = height,
             timescales = timescales,
-            videoTrackId = videoTrackId,
         )
     }
 
@@ -545,7 +473,6 @@ object FragmentedMp4HlsIndexer {
         val width: Int? = null,
         val height: Int? = null,
         val timescales: Map<Int, Long> = emptyMap(),
-        val videoTrackId: Int = 0,
     )
 
     private const val MIN_BOX_HEADER_SIZE = 8L

@@ -29,4 +29,3 @@ bin/
 out/
 .DS_Store
 *.tmp
-.graphify-out/

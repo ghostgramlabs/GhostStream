@@ -1016,19 +1016,69 @@ class Media3FragmentedMp4CompatibilityWorker(
     }
 
     /**
-     * Returns the fragmented MP4 as-is. The previous implementation re-muxed the
-     * completed fMP4 into a non-fragmented MP4 for cached reuse, but that second
-     * extract+mux pass doubled tail latency at the exact moment the user starts
-     * watching. Modern browsers play fragmented MP4 directly via MSE, and the HLS
-     * indexer also re-uses the fMP4 file, so no conversion is required to mark the
-     * asset READY.
-     *
-     * The downstream cache.record path already handles `isFragmentedMp4 = true`
-     * (set when optimizedFile == tmpOutputFile), so callers continue to work
-     * unchanged.
+     * Converts the in-progress fragmented MP4 into a regular MP4 for cached reuse once
+     * foreground playback no longer depends on the growing file.
      */
     private fun finalizePlaybackAsset(item: SharedItem, inputFile: File, cancelled: AtomicBoolean): File {
-        return inputFile
+        if (!shouldUseFragmentedMp4(item)) return inputFile
+        // Small files don't benefit from re-muxing
+        if (inputFile.length() < 1024 * 50) return inputFile
+
+        val optimizedFile = File(inputFile.parentFile, "${inputFile.name}.opt")
+        val extractor = MediaExtractor()
+        var muxer: android.media.MediaMuxer? = null
+
+        return try {
+            if (cancelled.get()) return inputFile
+            extractor.setDataSource(inputFile.absolutePath)
+            muxer = android.media.MediaMuxer(
+                optimizedFile.absolutePath,
+                android.media.MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4,
+            )
+
+            val trackCount = extractor.trackCount
+            val trackMap = mutableMapOf<Int, Int>()
+
+            for (i in 0 until trackCount) {
+                if (cancelled.get()) return inputFile
+                val format = extractor.getTrackFormat(i)
+                trackMap[i] = muxer.addTrack(format)
+            }
+
+            muxer.start()
+
+            val bufferSize = 1024 * 1024
+            val buffer = java.nio.ByteBuffer.allocate(bufferSize)
+            val bufferInfo = android.media.MediaCodec.BufferInfo()
+
+            for (i in 0 until trackCount) {
+                if (cancelled.get()) return inputFile
+                extractor.selectTrack(i)
+                while (true) {
+                    if (cancelled.get()) return inputFile
+                    bufferInfo.size = extractor.readSampleData(buffer, 0)
+                    if (bufferInfo.size < 0) break
+                    bufferInfo.presentationTimeUs = extractor.sampleTime
+                    bufferInfo.flags = extractor.sampleFlags
+                    bufferInfo.offset = 0
+                    val outputTrackIndex = trackMap[i] ?: continue
+                    muxer.writeSampleData(outputTrackIndex, buffer, bufferInfo)
+                    extractor.advance()
+                }
+                extractor.unselectTrack(i)
+            }
+
+            muxer.stop()
+            runCatching { inputFile.delete() }
+            optimizedFile
+        } catch (e: Exception) {
+            CompatLogger.warn("CompatExport", "Finalization re-mux failed for ${item.id}", e)
+            runCatching { optimizedFile.delete() }
+            inputFile // Fall back to the fragmented version
+        } finally {
+            extractor.release()
+            runCatching { muxer?.release() }
+        }
     }
 
     private fun scheduleProgressUpdates(
