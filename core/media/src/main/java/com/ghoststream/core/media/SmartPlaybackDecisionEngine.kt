@@ -39,7 +39,7 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
         val videoCodec = normalizeVideoCodec(inspection.videoTrackMimeType)
         val audioCodec = normalizeAudioCodec(inspection.audioTrackMimeType)
         val directContainerSafe = isDirectContainerSafe(inspection, videoCodec, audioCodec, capabilities)
-        val mp4RemuxEligible = isMp4RemuxEligible(inspection, videoCodec)
+        val mp4RemuxEligible = isMp4RemuxEligible(inspection, videoCodec, capabilities)
 
         val hasKnownVideoIncompatibility = when (videoCodec) {
             VideoCodec.AVC, VideoCodec.UNKNOWN -> false
@@ -60,7 +60,11 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
             hasKnownVideoIncompatibility ||
                 (inspection.bitDepth != null && inspection.bitDepth > 8 && !capabilities.supportsHdr) ||
                 (inspection.hdrFormat != null && !capabilities.supportsHdr)
-        val needsAudioTranscode = hasKnownAudioIncompatibility
+        // Missing/corrupt AAC csd-0 cannot be fixed by a copy mux — the audio init
+        // segment will fail in the browser. Force a re-encode so MediaCodec emits a
+        // valid AudioSpecificConfig.
+        val needsAudioTranscode = hasKnownAudioIncompatibility ||
+            inspection.audioInitDataOk == false
         val transcodeReason = when {
             inspection.container == MediaContainer.WEBM && !directContainerSafe && !mp4RemuxEligible ->
                 "WEBM source is not directly browser-safe for this client and cannot be repackaged into a reliable MP4 stream"
@@ -129,6 +133,14 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
         audioCodec: AudioCodec,
         capabilities: ClientCapabilities,
     ): Boolean {
+        // H.264 and many MP4-bound decoders reject odd dimensions; reject DIRECT
+        // when we can prove odd, but stay permissive when width/height are unknown.
+        val width = inspection.width
+        val height = inspection.height
+        val oddDims = (width != null && width % 2 != 0) || (height != null && height % 2 != 0)
+        if (oddDims) return false
+        // Missing AAC init data cannot be served as DIRECT — browser will fail audio decode.
+        if (inspection.audioInitDataOk == false) return false
         return when (inspection.container) {
             MediaContainer.MP4,
             MediaContainer.QUICKTIME -> true
@@ -144,14 +156,19 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
     private fun isMp4RemuxEligible(
         inspection: MediaInspection,
         videoCodec: VideoCodec,
+        capabilities: ClientCapabilities,
     ): Boolean {
+        // Allow HEVC remux when the client signals HEVC support (Safari/iOS, Edge, modern Chrome).
+        // The Media3-driven worker emits an fMP4 with `hvc1` codec strings.
+        val nonMp4VideoCopyable = videoCodec == VideoCodec.AVC ||
+            (videoCodec == VideoCodec.HEVC && capabilities.supportsHevc)
         return when (inspection.container) {
             MediaContainer.MATROSKA,
             MediaContainer.AVI,
             MediaContainer.FLV,
             MediaContainer.TS,
             MediaContainer.MPEG,
-            MediaContainer.WEBM -> videoCodec == VideoCodec.AVC
+            MediaContainer.WEBM -> nonMp4VideoCopyable
             MediaContainer.MP4,
             MediaContainer.QUICKTIME -> true
             else -> false

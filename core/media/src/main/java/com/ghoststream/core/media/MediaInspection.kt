@@ -82,4 +82,10 @@ data class MediaInspection(
      * HDR format details (e.g. "HDR10", "HLG", "Dolby Vision") if available.
      */
     val hdrFormat: String? = null,
+    /**
+     * True when the audio track's required init data (e.g. AAC csd-0 / AudioSpecificConfig)
+     * is present and parseable. False when the analyzer detected a missing/corrupt header.
+     * Null means unknown — callers must NOT treat null as a failure.
+     */
+    val audioInitDataOk: Boolean? = null,
 )
