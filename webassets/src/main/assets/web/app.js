@@ -533,6 +533,24 @@ async function reportClientCapabilities() {
   return capabilities;
 }
 
+// Raw HLS-path check: preconditions only, no prepared-MP4 gate. Callable from
+// inside shouldUseDirectCompatMp4 without recursing through the eligibility
+// helpers (which themselves guard against prepared MP4).
+function hasUsableHlsPath(item) {
+  if (!item || !item.hlsUrl || !item.streamReady) return false;
+  if (isAppleDevice() || isTvBrowser()) {
+    return buildClientCapabilities().supportsHlsNatively === true;
+  }
+  if (isDesktopChromiumBrowser()) {
+    return Boolean(
+      window.Hls &&
+        typeof window.Hls.isSupported === "function" &&
+        window.Hls.isSupported(),
+    );
+  }
+  return false;
+}
+
 /**
  * Returns true when the prepared compat MP4 is ready for direct <video src> playback.
  * This is the primary path for REMUX/TRANSCODE videos once the job reaches READY.
@@ -550,9 +568,7 @@ function shouldUseDirectCompatMp4(item) {
   // an HLS path is also available for this client, prefer it over the
   // in-progress prepared MP4. Once the file finalizes, future opens take the
   // prepared path again on the next selection pass.
-  if (item.hlsUrl && (shouldUseManagedHlsPlayback(item) || shouldUseNativeHlsPlayback(item))) {
-    return false;
-  }
+  if (hasUsableHlsPath(item)) return false;
   return true;
 }
 
