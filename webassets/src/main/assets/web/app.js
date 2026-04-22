@@ -642,45 +642,35 @@ function renderCompatibilityProgress(item) {
 }
 
 function resolveStablePlayerSource(item) {
-  const hlsUsable = hasUsableHlsPath(item);
-  let selectedSource = null;
-
   if (item.playbackMode === "DIRECT") {
-    selectedSource = {
+    return {
       kind: "direct",
       url: item.streamUrl,
       mimeType: item.mimeType || "video/mp4",
     };
-  } else if (shouldUseDirectCompatMp4(item)) {
-    selectedSource = {
+  }
+  if (shouldUseDirectCompatMp4(item)) {
+    return {
       kind: "prepared_mp4",
       url: item.preparedMp4Url,
       mimeType: "video/mp4",
     };
-  } else if (shouldUseNativeHlsPlayback(item)) {
-    selectedSource = {
+  }
+  if (shouldUseNativeHlsPlayback(item)) {
+    return {
       kind: "native_hls",
       url: item.hlsUrl,
       mimeType: "application/vnd.apple.mpegurl",
     };
-  } else if (shouldUseManagedHlsPlayback(item)) {
-    selectedSource = {
+  }
+  if (shouldUseManagedHlsPlayback(item)) {
+    return {
       kind: "managed_hls",
       url: item.hlsUrl,
       mimeType: "application/x-mpegURL",
     };
   }
-
-  if (selectedSource) {
-    debugTrace(
-      "source_resolution_decision",
-      `id=${item.id} playbackMode=${item.playbackMode} ` +
-      `compatComplete=${item.compatibilityComplete} streamReady=${item.streamReady} ` +
-      `hasPreparedMp4=${Boolean(item.preparedMp4Url)} hasHlsUrl=${Boolean(item.hlsUrl)} ` +
-      `hlsUsable=${hlsUsable} selectedSource=${selectedSource.kind}`,
-    );
-  }
-  return selectedSource;
+  return null;
 }
 
 function lockPlayerSource(item) {
@@ -701,15 +691,7 @@ function lockPlayerSource(item) {
     existing.kind === "direct" &&
     (candidate.kind === "prepared_mp4" || candidate.kind === "managed_hls" || candidate.kind === "native_hls")
   ) {
-    const upgradeReason = candidate.kind === "prepared_mp4"
-      ? "prepared_mp4_ready"
-      : candidate.kind === "managed_hls"
-      ? "managed_hls_streamable"
-      : "native_hls_streamable";
-    debugTrace(
-      "source_resolution_upgrade",
-      `id=${item.id} previousSource=${existing.kind} newSource=${candidate.kind} reason=${upgradeReason}`,
-    );
+    debugTrace("player_source_upgraded", `id=${item.id} from=${existing.kind} to=${candidate.kind}`);
     state.playerSourceLocks[item.id] = candidate;
     return candidate;
   }
