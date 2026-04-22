@@ -1,7 +1,8 @@
 const app = document.getElementById("app");
 const sessionTitle = app.dataset.title || "DirectServe";
 const sessionSubtitle = app.dataset.subtitle || "Local-only streaming";
-const LIBRARY_BATCH_SIZE = 24;
+const LIBRARY_BATCH_SIZE = 60;
+const LIBRARY_SHOW_ALL_CONFIRM_THRESHOLD = 500;
 const LIBRARY_BULK_FETCH_SIZE = 100;
 const THUMBNAIL_MAX_CONCURRENT = 4;
 const THUMBNAIL_PLACEHOLDER_SRC = "data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=";
@@ -18,6 +19,7 @@ const state = {
   libraryTotalCount: 0,
   libraryHasMore: false,
   libraryLoadingMore: false,
+  libraryShowingAll: false,
   nowPlaying: null,
   plyr: null,
   plyrItemId: null,
@@ -1465,6 +1467,41 @@ async function loadMoreLibraryItems() {
   }
 }
 
+async function loadAllLibraryItems() {
+  if (state.libraryLoadingMore || !state.libraryHasMore) return;
+  const remaining = Math.max(0, (state.libraryTotalCount || 0) - state.libraryItems.length);
+  if (remaining >= LIBRARY_SHOW_ALL_CONFIRM_THRESHOLD) {
+    const message = gsStr(
+      "web_show_all_confirm",
+      "Show all %1$d items? Large libraries may take a moment to render.",
+      remaining,
+    );
+    if (!window.confirm(message)) return;
+  }
+  state.libraryLoadingMore = true;
+  state.libraryShowingAll = true;
+  renderLibraryGrid();
+  try {
+    while (state.libraryHasMore) {
+      const page = await fetchLibraryPage(
+        state.libraryCategory,
+        state.query,
+        state.libraryItems.length,
+        LIBRARY_BATCH_SIZE,
+        state.folderId,
+      );
+      if (!page.items.length) break;
+      state.libraryItems = state.libraryItems.concat(page.items);
+      state.libraryTotalCount = page.totalCount;
+      state.libraryHasMore = page.hasMore;
+    }
+  } finally {
+    state.libraryLoadingMore = false;
+    state.libraryShowingAll = false;
+    renderLibraryGrid();
+  }
+}
+
 function bindLibraryControls() {
   document.getElementById("selectBtn")?.addEventListener("click", () => {
     state.selectMode = !state.selectMode;
@@ -1574,18 +1611,34 @@ function renderLibraryGrid() {
   }
 
   grid.innerHTML = state.libraryItems.map((item) => card(item, true)).join("");
+  const showingCount = gsStr(
+    "web_library_showing_count",
+    "Showing %1$d of %2$d",
+    state.libraryItems.length,
+    state.libraryTotalCount,
+  );
+  const loadMoreLabel = state.libraryLoadingMore && !state.libraryShowingAll
+    ? gsStr("web_player_status_opening", "Preparing")
+    : gsStr("web_btn_load_more", "Load more");
+  const showAllLabel = state.libraryShowingAll
+    ? gsStr("web_btn_showing_all", "Loading all…")
+    : gsStr("web_btn_show_all", "Show all");
   footer.innerHTML = state.libraryHasMore
     ? `
-      <span class="gs-meta">${gsStr("web_library_showing_count", "Showing %1$d of %2$d", state.libraryItems.length, state.libraryTotalCount)}</span>
-      <button class="gs-btn" id="loadMoreBtn" ${state.libraryLoadingMore ? "disabled" : ""}>${state.libraryLoadingMore ? gsStr("web_player_status_opening", "Preparing") : gsStr("web_btn_load_more", "Load more")}</button>
+      <span class="gs-meta">${showingCount}</span>
+      <div class="gs-toolbar-actions">
+        <button class="gs-btn" id="loadMoreBtn" ${state.libraryLoadingMore ? "disabled" : ""}>${loadMoreLabel}</button>
+        <button class="gs-btn" id="showAllBtn" ${state.libraryLoadingMore ? "disabled" : ""}>${showAllLabel}</button>
+      </div>
     `
-    : `<span class="gs-meta">${gsStr("web_library_showing_count", "Showing %1$d of %2$d", state.libraryItems.length, state.libraryTotalCount)}</span>`;
+    : `<span class="gs-meta">${showingCount}</span>`;
 
   attachMusicPlayers();
   initDeferredThumbnails(grid);
   bindSelectableCards();
   updateSelectionUi();
   document.getElementById("loadMoreBtn")?.addEventListener("click", loadMoreLibraryItems);
+  document.getElementById("showAllBtn")?.addEventListener("click", loadAllLibraryItems);
 }
 
 function downloadItems(items) {

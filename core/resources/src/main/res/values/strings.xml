@@ -625,6 +625,9 @@
     <string name="web_library_desc_download">Browse this share or download what you need.</string>
     <string name="web_library_desc_browse">Browse this share.</string>
     <string name="web_btn_load_more">Load more</string>
+    <string name="web_btn_show_all">Show all</string>
+    <string name="web_btn_showing_all">Loading all…</string>
+    <string name="web_show_all_confirm">Show all %1$d items? Large libraries may take a moment to render.</string>
     <string name="web_library_showing_count">Showing %1$d of %2$d</string>
     <string name="web_search_placeholder">Search by file name</string>
     <string name="web_library_empty">No files found in this section.</string>
