@@ -610,6 +610,10 @@ class KtorGhostStreamServer(
                             streamReady = streamReady,
                             hlsUrl = hlsUrl,
                             allowDownloads = !settings.preventDownload,
+                            isAppleClient = isAppleClient(
+                                call.request.header(HttpHeaders.UserAgent),
+                                capabilityCache[call.request.origin.remoteHost],
+                            ),
                         ),
                     )
                 } catch (e: Exception) {
@@ -646,6 +650,10 @@ class KtorGhostStreamServer(
                         job = job,
                         ready = ready,
                         hlsUrl = compatibilityHlsUrl(job, allowInProgressHls = allowInProgressHls),
+                        isAppleClient = isAppleClient(
+                            call.request.header(HttpHeaders.UserAgent),
+                            capabilityCache[call.request.origin.remoteHost],
+                        ),
                     ),
                 )
             }
@@ -689,6 +697,10 @@ class KtorGhostStreamServer(
                                 host = call.request.origin.remoteHost,
                                 userAgent = call.request.header(HttpHeaders.UserAgent),
                             ),
+                        ),
+                        isAppleClient = isAppleClient(
+                            call.request.header(HttpHeaders.UserAgent),
+                            capabilityCache[call.request.origin.remoteHost],
                         ),
                     )
                 )
@@ -735,6 +747,10 @@ class KtorGhostStreamServer(
                         job = job,
                         ready = ready,
                         hlsUrl = compatibilityHlsUrl(job, allowInProgressHls = allowInProgressHls),
+                        isAppleClient = isAppleClient(
+                            call.request.header(HttpHeaders.UserAgent),
+                            capabilityCache[host],
+                        ),
                     ),
                 )
             }
@@ -765,6 +781,10 @@ class KtorGhostStreamServer(
                         job = job,
                         ready = ready,
                         hlsUrl = compatibilityHlsUrl(job, allowInProgressHls = allowInProgressHls),
+                        isAppleClient = isAppleClient(
+                            call.request.header(HttpHeaders.UserAgent),
+                            capabilityCache[call.request.origin.remoteHost],
+                        ),
                     ),
                 )
             }
@@ -782,6 +802,25 @@ class KtorGhostStreamServer(
                 }
                 val preparedAsset = job.preparedAsset ?: run {
                     call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_video_part_preparing)))
+                    return@get
+                }
+
+                // Apple Gate: Safari/iOS/macOS must use HLS for any non-DIRECT playback
+                // because progressive MP4 fed mid-encode triggers MSE-style stalls (Safari's
+                // partial-content handling chokes on torn moof boxes the same way as Chromium).
+                // Reject the endpoint outright for Apple clients on non-DIRECT decisions and
+                // tell the player to switch to HLS.
+                if (job.decision.mode != PlaybackMode.DIRECT &&
+                    isAppleClient(
+                        call.request.header(HttpHeaders.UserAgent),
+                        capabilityCache[call.request.origin.remoteHost],
+                    )
+                ) {
+                    debugLogSink.log("WebCompat/file", "REJECTED id=${item.id} reason=apple_use_hls")
+                    call.respond(
+                        HttpStatusCode.Conflict,
+                        ErrorPayload("Apple clients must use HLS for prepared playback."),
+                    )
                     return@get
                 }
 
@@ -806,6 +845,7 @@ class KtorGhostStreamServer(
                         sizeBytes = preparedAsset.sizeBytes,
                         isComplete = preparedAsset.isComplete,
                         allowGrowing = !preparedAsset.isComplete,
+                        isFragmentedMp4 = preparedAsset.isFragmentedMp4,
                     ),
                     asAttachment = false,
                     activity = ClientActivity.WATCHING_VIDEO,
@@ -1797,6 +1837,7 @@ class KtorGhostStreamServer(
                 asAttachment = asAttachment,
                 activity = activity,
                 expectedTotalSize = expectedTotalSize ?: playbackSource.sizeBytes.takeIf { it > 0 },
+                isFragmentedMp4 = playbackSource.isFragmentedMp4,
             )
             return
         }
@@ -1859,6 +1900,7 @@ class KtorGhostStreamServer(
         asAttachment: Boolean,
         activity: ClientActivity,
         expectedTotalSize: Long? = null,
+        isFragmentedMp4: Boolean = false,
     ) {
         val requestedRange = parseRequestedGrowingRange(request.header(HttpHeaders.Range))
         if (requestedRange != null) {
@@ -1866,6 +1908,7 @@ class KtorGhostStreamServer(
                 itemId = item.id,
                 file = file,
                 requiredOffset = requestedRange.start,
+                isFragmentedMp4 = isFragmentedMp4,
             )
             if (availableLength <= requestedRange.start) {
                 response.headers.append(HttpHeaders.ContentRange, "bytes */$availableLength")
@@ -2064,21 +2107,19 @@ class KtorGhostStreamServer(
                 ua.contains("Edg/", ignoreCase = true)) &&
                 !ua.contains("Android", ignoreCase = true) &&
                 !ua.contains("Mobile", ignoreCase = true)
-        val isAppleFamily =
-            ua.contains("iPhone", ignoreCase = true) ||
-                ua.contains("iPad", ignoreCase = true) ||
-                ua.contains("iPod", ignoreCase = true) ||
-                ua.contains("AppleTV", ignoreCase = true) ||
-                (ua.contains("Safari", ignoreCase = true) &&
-                    !ua.contains("Chrome", ignoreCase = true) &&
-                    !ua.contains("Chromium", ignoreCase = true) &&
-                    !ua.contains("Edg/", ignoreCase = true))
+        val isAppleFamily = isAppleClient(ua, caps)
         val isTvBrowser = TV_BROWSER_UA_REGEX.containsMatchIn(ua) ||
             (TV_TOKEN_REGEX.containsMatchIn(ua) && !APPLE_TV_EXCLUSION_UA_REGEX.containsMatchIn(ua))
+        // Safari/iOS/macOS/AppleTV always support native HLS — it's a platform guarantee
+        // independent of capability telemetry. Don't gate on caps.supportsHlsNatively here;
+        // when caps haven't arrived yet (or report stale data) the gate would force the player
+        // onto a non-existent MSE/MP4 path and stall. Apple = HLS, full stop.
+        if (isAppleFamily) {
+            return InProgressHlsSupport(allowed = true, reason = "apple_native_hls")
+        }
         val nativeHlsCandidate =
             caps?.supportsHlsNatively == true &&
-                (isAppleFamily ||
-                    isTvBrowser ||
+                (isTvBrowser ||
                     caps.browserFamily.equals("Safari", ignoreCase = true) ||
                     caps.os.equals("iOS", ignoreCase = true) ||
                     caps.os.equals("macOS", ignoreCase = true))
@@ -2088,23 +2129,37 @@ class KtorGhostStreamServer(
         val managedHlsCandidate =
             (caps?.supportsMse != false) &&
                 isChromiumDesktop &&
-                !isAppleFamily &&
                 !isTvBrowser
         if (managedHlsCandidate) {
             return InProgressHlsSupport(allowed = true, reason = "desktop_chromium")
         }
         val reason = when {
-            caps?.supportsHlsNatively == true && caps.browserFamily.equals("Safari", ignoreCase = true) ->
-                "native_hls_waiting_for_streamability"
             caps?.supportsHlsNatively == true && isTvBrowser ->
                 "tv_native_hls_waiting_for_streamability"
-            isAppleFamily -> "apple_requires_native_hls"
             isTvBrowser -> "tv_requires_native_hls"
             !isChromiumDesktop -> "browser_not_supported"
             caps?.supportsMse == false -> "mse_not_supported"
             else -> "stream_not_supported"
         }
         return InProgressHlsSupport(allowed = false, reason = reason)
+    }
+
+    private fun isAppleClient(userAgent: String?, caps: ClientCapabilities? = null): Boolean {
+        val ua = userAgent.orEmpty()
+        if (caps?.os.equals("iOS", ignoreCase = true) ||
+            caps?.os.equals("macOS", ignoreCase = true) ||
+            caps?.browserFamily.equals("Safari", ignoreCase = true)
+        ) {
+            return true
+        }
+        return ua.contains("iPhone", ignoreCase = true) ||
+            ua.contains("iPad", ignoreCase = true) ||
+            ua.contains("iPod", ignoreCase = true) ||
+            ua.contains("AppleTV", ignoreCase = true) ||
+            (ua.contains("Safari", ignoreCase = true) &&
+                !ua.contains("Chrome", ignoreCase = true) &&
+                !ua.contains("Chromium", ignoreCase = true) &&
+                !ua.contains("Edg/", ignoreCase = true))
     }
 
     private suspend fun io.ktor.server.application.ApplicationCall.streamFileSlice(
@@ -2400,17 +2455,29 @@ class KtorGhostStreamServer(
         itemId: String,
         file: File,
         requiredOffset: Long,
+        isFragmentedMp4: Boolean = false,
     ): Long {
         var idlePolls = 0
         while (idlePolls < MAX_GROWING_FILE_IDLE_POLLS) {
-            val available = file.length()
-            if (available > requiredOffset) {
-                return available
-            }
-
+            val rawLength = file.length()
             val job = compatibilityPipeline.currentJob(itemId)
             val finalized = job?.preparedAsset?.isComplete == true || job?.status == CompatibilityStatus.READY
             val failed = job?.status == CompatibilityStatus.FAILED || job?.status == CompatibilityStatus.STALLED
+
+            // For an in-progress fragmented MP4 (Media3 InAppMuxer output) the writer head
+            // can be in the middle of a moof/mdat box. Serving past the last fully-committed
+            // segment hands torn boxes to the browser MSE and the player stalls (the regression
+            // the user is seeing as "nothing autoplaying" — playback starts then freezes a few
+            // seconds in). Cap to the end of the last complete moof+mdat fragment.
+            val available = if (isFragmentedMp4 && !finalized) {
+                fragmentedSafeOffset(file) ?: rawLength
+            } else {
+                rawLength
+            }
+
+            if (available > requiredOffset) {
+                return available
+            }
             if (finalized || failed) {
                 return available
             }
@@ -2418,7 +2485,19 @@ class KtorGhostStreamServer(
             idlePolls += 1
             Thread.sleep(GROWING_FILE_POLL_INTERVAL_MS)
         }
-        return file.length()
+        val rawLength = file.length()
+        return if (isFragmentedMp4) fragmentedSafeOffset(file) ?: rawLength else rawLength
+    }
+
+    private fun fragmentedSafeOffset(file: File): Long? {
+        val index = runCatching {
+            FragmentedMp4HlsIndexer.read(file, fragmentDurationSeconds = HLS_SEGMENT_DURATION_SECONDS)
+        }.getOrNull() ?: return null
+        if (index.initSegmentLength <= 0L) return null
+        val segments = index.segments
+        if (segments.isEmpty()) return index.initSegmentLength
+        val last = segments.last()
+        return last.offset + last.length
     }
 
     /**
@@ -2737,6 +2816,7 @@ class KtorGhostStreamServer(
                 streamReady: Boolean,
                 hlsUrl: String?,
                 allowDownloads: Boolean,
+                isAppleClient: Boolean,
             ): BrowserItemDetails {
                 val isComplete = compatibilityJob.isFinalized
                 val hasProgressedAsset = compatibilityJob.preparedAsset != null
@@ -2768,7 +2848,8 @@ class KtorGhostStreamServer(
                     preparedMp4Url = if (
                         streamReady &&
                         hasProgressedAsset &&
-                        decision.mode != PlaybackMode.DIRECT
+                        decision.mode != PlaybackMode.DIRECT &&
+                        !isAppleClient
                     ) {
                         "/api/compat/${item.id}/file"
                     } else {
@@ -2799,8 +2880,17 @@ class KtorGhostStreamServer(
         val totalDurationMs: Long? = null,
     ) {
         companion object {
-            fun from(job: CompatibilityJob, ready: Boolean, hlsUrl: String?): CompatibilityStatusPayload {
+            fun from(
+                job: CompatibilityJob,
+                ready: Boolean,
+                hlsUrl: String?,
+                isAppleClient: Boolean,
+            ): CompatibilityStatusPayload {
                 val isComplete = job.isFinalized
+                val canExposeMp4 = ready &&
+                    job.decision.mode != PlaybackMode.DIRECT &&
+                    job.preparedAsset != null &&
+                    !isAppleClient
                 return CompatibilityStatusPayload(
                     itemId = job.itemId,
                     playbackMode = job.decision.mode,
@@ -2810,7 +2900,7 @@ class KtorGhostStreamServer(
                     progressPercent = job.progressPercent,
                     ready = ready,
                     compatibilityComplete = isComplete,
-                    preparedMp4Url = if (ready && job.decision.mode != PlaybackMode.DIRECT && job.preparedAsset != null) "/api/compat/${job.itemId}/file" else null,
+                    preparedMp4Url = if (canExposeMp4) "/api/compat/${job.itemId}/file" else null,
                     hlsUrl = hlsUrl,
                     width = job.width,
                     height = job.height,

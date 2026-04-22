@@ -309,6 +309,7 @@ class QueuedCompatibilityPipeline(
                     job.preparedAsset.sizeBytes,
                     allowGrowing = !job.preparedAsset.isComplete,
                     isComplete = job.preparedAsset.isComplete,
+                    isFragmentedMp4 = job.preparedAsset.isFragmentedMp4,
                 ),
                 job = job
             )
@@ -319,6 +320,7 @@ class QueuedCompatibilityPipeline(
                     job.preparedAsset.sizeBytes,
                     allowGrowing = true,
                     isComplete = false,
+                    isFragmentedMp4 = job.preparedAsset.isFragmentedMp4,
                 ),
                 job = job
             )
