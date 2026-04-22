@@ -154,6 +154,7 @@ sealed interface PlaybackSource {
         override val sizeBytes: Long,
         val allowGrowing: Boolean = false,
         val isComplete: Boolean = true,
+        val isFragmentedMp4: Boolean = false,
     ) : PlaybackSource
 }
 

@@ -160,7 +160,15 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
     ): Boolean {
         // Allow HEVC remux when the client signals HEVC support (Safari/iOS, Edge, modern Chrome).
         // The Media3-driven worker emits an fMP4 with `hvc1` codec strings.
+        //
+        // UNKNOWN video: treat as remux-eligible (assume safe AVC baseline). Lightweight
+        // metadata-only inspection often can't read the codec from MKV/AVI, but the worker's
+        // source probe (Media3 MediaExtractor) will validate the real codec when preparation
+        // begins and downgrade to TRANSCODE via transcodeFallbackReason if the codec actually
+        // isn't copyable. Picking TRANSCODE here would be needlessly pessimistic and produces
+        // inconsistency with the worker's later upgrade.
         val nonMp4VideoCopyable = videoCodec == VideoCodec.AVC ||
+            videoCodec == VideoCodec.UNKNOWN ||
             (videoCodec == VideoCodec.HEVC && capabilities.supportsHevc)
         return when (inspection.container) {
             MediaContainer.MATROSKA,
