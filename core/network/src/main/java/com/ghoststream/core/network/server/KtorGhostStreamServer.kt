@@ -335,6 +335,7 @@ class KtorGhostStreamServer(
                 if (isAuthorized) {
                     for (item in state.selectedItems.filter { it.isEnabledBySettings(settings) }.take(8)) {
                         recentCards += BrowserItemCard.from(
+                            context = localizedContext,
                             item = item,
                             compatibilityJob = compatibilitySnapshotFor(call.request.origin.remoteHost, item, triggerPreparation = false),
                             showThumbnails = settings.showThumbnails,
@@ -534,8 +535,10 @@ class KtorGhostStreamServer(
                 }
                 val cards = mutableListOf<BrowserItemCard>()
                 val allowDownloads = !settings.preventDownload
+                val localizedContext = localizedContext()
                 for (item in pagedItems) {
                     cards += BrowserItemCard.from(
+                        context = localizedContext,
                         item = item,
                         compatibilityJob = compatibilitySnapshotFor(call.request.origin.remoteHost, item, triggerPreparation = false),
                         showThumbnails = settings.showThumbnails,
@@ -605,6 +608,7 @@ class KtorGhostStreamServer(
 
                     call.respond(
                         BrowserItemDetails.from(
+                            context = localizedContext(),
                             item = item,
                             compatibilityJob = job,
                             streamReady = streamReady,
@@ -618,7 +622,7 @@ class KtorGhostStreamServer(
                     )
                 } catch (e: Exception) {
                     debugLogSink.log("WebBrowser/details", "CRITICAL ERROR id=${call.parameters["id"]}", e)
-                    call.respond(HttpStatusCode.InternalServerError, ErrorPayload("Internal server error."))
+                    call.respond(HttpStatusCode.InternalServerError, ErrorPayload(localizedContext().getString(R.string.web_error_internal_server_error)))
                 }
             }
 
@@ -647,6 +651,7 @@ class KtorGhostStreamServer(
                 }
                 call.respond(
                     CompatibilityStatusPayload.from(
+                        context = localizedContext(),
                         job = job,
                         ready = ready,
                         hlsUrl = compatibilityHlsUrl(job, allowInProgressHls = allowInProgressHls),
@@ -683,6 +688,7 @@ class KtorGhostStreamServer(
 
                 call.respond(
                     CompatibilityStatusPayload.from(
+                        context = localizedContext(),
                         job = job,
                         ready = compatibilityStreamReady(
                             job,
@@ -755,6 +761,7 @@ class KtorGhostStreamServer(
                 )
                 call.respond(
                     CompatibilityStatusPayload.from(
+                        context = localizedContext(),
                         job = job,
                         ready = ready,
                         hlsUrl = compatibilityHlsUrl(job, allowInProgressHls = allowInProgressHls),
@@ -769,7 +776,7 @@ class KtorGhostStreamServer(
             post("/api/compat/{id}/seek") {
                 if (!call.authorizeBrowserCall()) return@post
                 val offsetMs = call.request.queryParameters["offsetMs"]?.toLongOrNull() ?: run {
-                    call.respond(HttpStatusCode.BadRequest, ErrorPayload("Missing offsetMs parameter."))
+                    call.respond(HttpStatusCode.BadRequest, ErrorPayload(localizedContext().getString(R.string.web_error_missing_offset)))
                     return@post
                 }
                 val item = resolveItem(call.parameters["id"]) ?: run {
@@ -789,6 +796,7 @@ class KtorGhostStreamServer(
                 )
                 call.respond(
                     CompatibilityStatusPayload.from(
+                        context = localizedContext(),
                         job = job,
                         ready = ready,
                         hlsUrl = compatibilityHlsUrl(job, allowInProgressHls = allowInProgressHls),
@@ -830,7 +838,7 @@ class KtorGhostStreamServer(
                     debugLogSink.log("WebCompat/file", "REJECTED id=${item.id} reason=apple_use_hls")
                     call.respond(
                         HttpStatusCode.Conflict,
-                        ErrorPayload("Apple clients must use HLS for prepared playback."),
+                        ErrorPayload(localizedContext().getString(R.string.web_error_apple_hls_only)),
                     )
                     return@get
                 }
@@ -844,7 +852,7 @@ class KtorGhostStreamServer(
                     !job.streamable
                 ) {
                     debugLogSink.log("WebCompat/file", "REJECTED id=${item.id} reason=incomplete")
-                    call.respond(HttpStatusCode.Conflict, ErrorPayload("Direct playback is unavailable until conversion is finalized. Please use HLS."))
+                    call.respond(HttpStatusCode.Conflict, ErrorPayload(localizedContext().getString(R.string.web_error_direct_not_ready)))
                     return@get
                 }
 
@@ -960,7 +968,7 @@ class KtorGhostStreamServer(
                 val settings = settingsRepository.settings.first()
                 if (!settings.showThumbnails) {
                     debugLogSink.log("WebThumb", "blocked id=${call.parameters["id"]} reason=disabled")
-                    call.respond(HttpStatusCode.NotFound, ErrorPayload("Preview unavailable"))
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.web_error_preview_unavailable)))
                     return@get
                 }
 
@@ -975,7 +983,7 @@ class KtorGhostStreamServer(
 
                 val item = resolveItem(call.parameters["id"]) ?: run {
                     debugLogSink.log("WebThumb", "missing id=${call.parameters["id"]}")
-                    call.respond(HttpStatusCode.NotFound, ErrorPayload("Preview unavailable"))
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.web_error_preview_unavailable)))
                     return@get
                 }
 
@@ -1125,7 +1133,7 @@ class KtorGhostStreamServer(
                 // during preparation. They must use HLS or wait for the finalized MP4.
                 if (item.category == MediaCategory.VIDEO && effectiveJob.decision.mode != PlaybackMode.DIRECT) {
                     debugLogSink.log("WebStream", "REJECTED id=${item.id} name=${item.displayName} mode=${effectiveJob.decision.mode} reason=incompatible-raw")
-                    call.respond(HttpStatusCode.Forbidden, ErrorPayload("Direct stream of this container is disabled for compatibility. Use the prepared stream instead."))
+                    call.respond(HttpStatusCode.Forbidden, ErrorPayload(localizedContext().getString(R.string.web_error_direct_stream_disabled)))
                     return@get
                 }
 
@@ -1229,7 +1237,7 @@ class KtorGhostStreamServer(
                     )
                 } catch (e: Exception) {
                     debugLogSink.log("WebHls/master", "CRITICAL ERROR id=${call.parameters["id"]}", e)
-                    call.respond(HttpStatusCode.InternalServerError, ErrorPayload("Internal server error."))
+                    call.respond(HttpStatusCode.InternalServerError, ErrorPayload(localizedContext().getString(R.string.web_error_internal_server_error)))
                 }
             }
 
@@ -1290,7 +1298,7 @@ class KtorGhostStreamServer(
                     )
                 } catch (e: Exception) {
                     debugLogSink.log("WebHls/playlist", "CRITICAL ERROR id=${call.parameters["id"]}", e)
-                    call.respond(HttpStatusCode.InternalServerError, ErrorPayload("Internal server error."))
+                    call.respond(HttpStatusCode.InternalServerError, ErrorPayload(localizedContext().getString(R.string.web_error_internal_server_error)))
                 }
             }
 
@@ -1334,7 +1342,7 @@ class KtorGhostStreamServer(
                     )
                 } catch (e: Exception) {
                     debugLogSink.log("WebHls/init", "CRITICAL ERROR id=${call.parameters["id"]}", e)
-                    call.respond(HttpStatusCode.InternalServerError, ErrorPayload("Internal server error."))
+                    call.respond(HttpStatusCode.InternalServerError, ErrorPayload(localizedContext().getString(R.string.web_error_internal_server_error)))
                 }
             }
 
@@ -1343,7 +1351,7 @@ class KtorGhostStreamServer(
                 try {
                     val source = call.resolveHlsSource(call.parameters["id"]) ?: return@get
                     val indexInManifest = call.parameters["index"]?.toIntOrNull() ?: run {
-                        call.respond(HttpStatusCode.BadRequest, ErrorPayload("That video segment is invalid."))
+                        call.respond(HttpStatusCode.BadRequest, ErrorPayload(localizedContext().getString(R.string.web_error_invalid_segment)))
                         return@get
                     }
 
@@ -1363,7 +1371,7 @@ class KtorGhostStreamServer(
                     ) ?: run {
                         debugLogSink.log("WebHls", "segment pending id=${source.item.id} index=$indexInManifest")
                         call.response.headers.append(HttpHeaders.RetryAfter, "1")
-                        call.respond(HttpStatusCode.ServiceUnavailable, ErrorPayload("Preparing the next HLS segment."))
+                        call.respond(HttpStatusCode.ServiceUnavailable, ErrorPayload(localizedContext().getString(R.string.web_error_preparing_segment)))
                         return@get
                     }
                     val segment = index.segments.getOrNull(targetFileSegIndex) ?: run {
@@ -1371,13 +1379,13 @@ class KtorGhostStreamServer(
                         debugLogSink.log("WebHls/Speculative", "segment wait timeout id=${source.item.id} index=$indexInManifest")
                         
                         if (completed) {
-                            call.respond(HttpStatusCode.NotFound, ErrorPayload("Segment not found in finalized file."))
+                            call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.web_error_segment_not_found)))
                         } else {
                             // Long-Tail HLS Manifest: We advertised this segment but it's not ready yet.
                             // Send 503 Service Unavailable with Retry-After to tell the browser
                             // to back off and try again shortly without treating it as a fatal error.
                             call.response.headers.append(HttpHeaders.RetryAfter, "1")
-                            call.respond(HttpStatusCode.ServiceUnavailable, ErrorPayload("Segment is still being prepared."))
+                            call.respond(HttpStatusCode.ServiceUnavailable, ErrorPayload(localizedContext().getString(R.string.web_error_segment_still_preparing)))
                         }
                         return@get
                     }
@@ -1396,7 +1404,7 @@ class KtorGhostStreamServer(
                         }
                     }
                     if (rawSegmentBytes == null) {
-                        call.respond(HttpStatusCode.InternalServerError, ErrorPayload("Could not read segment."))
+                        call.respond(HttpStatusCode.InternalServerError, ErrorPayload(localizedContext().getString(R.string.web_error_read_segment_failed)))
                         return@get
                     }
                     val segmentBytes = try {
@@ -1422,7 +1430,7 @@ class KtorGhostStreamServer(
                     )
                 } catch (e: Exception) {
                     debugLogSink.log("WebHls/segment", "CRITICAL ERROR id=${call.parameters["id"]} index=${call.parameters["index"]}", e)
-                    call.respond(HttpStatusCode.InternalServerError, ErrorPayload("Internal server error."))
+                    call.respond(HttpStatusCode.InternalServerError, ErrorPayload(localizedContext().getString(R.string.web_error_internal_server_error)))
                 }
             }
 
@@ -1430,19 +1438,19 @@ class KtorGhostStreamServer(
             get("/subtitle/{id}") {
                 if (!call.authorizeBrowserCall()) return@get
                 val item = resolveItem(call.parameters["id"]) ?: run {
-                    call.respond(HttpStatusCode.NotFound, ErrorPayload("Subtitle unavailable"))
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.web_error_subtitle_unavailable)))
                     return@get
                 }
                 val subtitleId = item.subtitleMatch?.subtitleItemId ?: run {
-                    call.respond(HttpStatusCode.NotFound, ErrorPayload("Subtitle unavailable"))
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.web_error_subtitle_unavailable)))
                     return@get
                 }
                 val subtitleItem = resolveItem(subtitleId) ?: run {
-                    call.respond(HttpStatusCode.NotFound, ErrorPayload("Subtitle unavailable"))
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.web_error_subtitle_unavailable)))
                     return@get
                 }
                 val text = readText(Uri.parse(subtitleItem.uri)) ?: run {
-                    call.respond(HttpStatusCode.NotFound, ErrorPayload("Subtitle unavailable"))
+                    call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.web_error_subtitle_unavailable)))
                     return@get
                 }
                 call.respondText(text = convertToWebVtt(text), contentType = ContentType.parse("text/vtt"))
@@ -1451,7 +1459,7 @@ class KtorGhostStreamServer(
             post("/api/upload/request") {
                 if (!call.authorizeBrowserCall()) return@post
                 val payload = call.receiveNullable<UploadRequestPayload>() ?: run {
-                    call.respond(HttpStatusCode.BadRequest, ErrorPayload("Invalid upload request."))
+                    call.respond(HttpStatusCode.BadRequest, ErrorPayload(localizedContext().getString(R.string.web_error_invalid_upload_request)))
                     return@post
                 }
                 val requestId = UUID.randomUUID().toString()
@@ -1470,7 +1478,7 @@ class KtorGhostStreamServer(
                     sessionManager.submitUploadRequest(request)
                     val accepted = sessionManager.waitForUploadResolution(requestId)
                     if (!accepted) {
-                        call.respond(HttpStatusCode.Forbidden, ErrorPayload("The host declined your file transfer."))
+                        call.respond(HttpStatusCode.Forbidden, ErrorPayload(localizedContext().getString(R.string.web_error_upload_declined)))
                         return@post
                     }
                 }
@@ -1529,7 +1537,7 @@ class KtorGhostStreamServer(
                         call.respond(AuthResult(success = true))
                     } else {
                         sessionManager.clearIncomingUpload(requestId)
-                        call.respond(HttpStatusCode.InternalServerError, ErrorPayload("No files were successfully saved."))
+                        call.respond(HttpStatusCode.InternalServerError, ErrorPayload(localizedContext().getString(R.string.web_error_upload_save_failed)))
                     }
                 } catch (error: Exception) {
                     sessionManager.clearIncomingUpload(requestId)
@@ -1842,7 +1850,7 @@ class KtorGhostStreamServer(
         // We reject it here so the client triggers a fresh preparation.
         if (playbackSource.isComplete && file.length() < 10 * 1024L) {
             debugLogSink.log("WebCompat/Gate", "REJECTED id=${item.id} reason=suspicious_size size=${file.length()}")
-            respond(HttpStatusCode.Conflict, ErrorPayload("The cached asset is incomplete or corrupt.  Retrying preparation..."))
+            respond(HttpStatusCode.Conflict, ErrorPayload(localizedContext().getString(R.string.web_error_cached_corrupt)))
             return
         }
         if (playbackSource.allowGrowing && !playbackSource.isComplete) {
@@ -2757,6 +2765,7 @@ class KtorGhostStreamServer(
     ) {
         companion object {
             fun from(
+                context: Context,
                 item: SharedItem,
                 compatibilityJob: CompatibilityJob,
                 showThumbnails: Boolean,
@@ -2784,7 +2793,7 @@ class KtorGhostStreamServer(
                 streamUrl = "/stream/${item.id}",
                 downloadUrl = if (allowDownloads) "/download/${item.id}" else null,
                 subtitleUrl = item.subtitleMatch?.let { "/subtitle/${item.id}" },
-                compatibilityLabel = item.playbackDecision.compatibilityLabel,
+                compatibilityLabel = item.playbackDecision.labelResId?.let { context.getString(it) } ?: item.playbackDecision.compatibilityLabel,
                 compatibilityStatus = compatibilityJob.status.takeIf { item.playbackDecision.mode != PlaybackMode.DIRECT },
                 width = compatibilityJob.width,
                 height = compatibilityJob.height,
@@ -2836,6 +2845,7 @@ class KtorGhostStreamServer(
     ) {
         companion object {
             fun from(
+                context: Context,
                 item: SharedItem,
                 compatibilityJob: CompatibilityJob,
                 streamReady: Boolean,
@@ -2861,12 +2871,18 @@ class KtorGhostStreamServer(
                     subtitleUrl = item.subtitleMatch?.let { "/subtitle/${item.id}" },
                     durationMs = item.durationMs,
                     sizeBytes = item.sizeBytes,
-                    compatibility = decision.compatibilityLabel,
-                    reason = decision.reason,
+                    compatibility = decision.labelResId?.let { context.getString(it) } ?: decision.compatibilityLabel,
+                    reason = decision.reasonResId?.let { context.getString(it) } ?: decision.reason,
                     playbackMode = decision.mode,
                     effectivePlaybackMode = compatibilityJob.effectivePlaybackMode,
                     compatibilityStatus = compatibilityJob.status.takeIf { decision.mode != PlaybackMode.DIRECT },
-                    compatibilityMessage = compatibilityJob.message.takeIf { decision.mode != PlaybackMode.DIRECT },
+                    compatibilityMessage = (compatibilityJob.messageResId?.let { resId ->
+                        if (compatibilityJob.messageArgs.isNotEmpty()) {
+                            context.getString(resId, *compatibilityJob.messageArgs.toTypedArray())
+                        } else {
+                            context.getString(resId)
+                        }
+                    } ?: compatibilityJob.message).takeIf { decision.mode != PlaybackMode.DIRECT },
                     compatibilityProgressPercent = compatibilityJob.progressPercent,
                     compatibilityComplete = isComplete,
                     streamReady = streamReady,
@@ -2906,6 +2922,7 @@ class KtorGhostStreamServer(
     ) {
         companion object {
             fun from(
+                context: Context,
                 job: CompatibilityJob,
                 ready: Boolean,
                 hlsUrl: String?,
@@ -2920,7 +2937,13 @@ class KtorGhostStreamServer(
                     itemId = job.itemId,
                     playbackMode = job.decision.mode,
                     status = job.status,
-                    message = job.message,
+                    message = job.messageResId?.let { resId ->
+                        if (job.messageArgs.isNotEmpty()) {
+                            context.getString(resId, *job.messageArgs.toTypedArray())
+                        } else {
+                            context.getString(resId)
+                        }
+                    } ?: job.message,
                     effectivePlaybackMode = job.effectivePlaybackMode,
                     progressPercent = job.progressPercent,
                     ready = ready,

@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import com.ghostgramlabs.directserve.core.resources.R
 
 /**
  * Authoritative pipeline for media compatibility.
@@ -107,6 +108,7 @@ class QueuedCompatibilityPipeline(
                     decision = effectiveDecision,
                     status = CompatibilityStatus.READY,
                     message = "Playback Ready",
+                    messageResId = R.string.compatibility_message_ready,
                     preparedAsset = cachedAsset,
                     progressPercent = 100,
                     hlsReady = false,
@@ -138,6 +140,7 @@ class QueuedCompatibilityPipeline(
                 decision = effectiveDecision,
                 status = CompatibilityStatus.READY,
                 message = "DIRECT: Playback supported natively",
+                messageResId = R.string.playback_reason_direct_safe,
                 streamable = true,
             )
 
@@ -146,6 +149,7 @@ class QueuedCompatibilityPipeline(
                 decision = effectiveDecision,
                 status = if (isCacheHealthy) CompatibilityStatus.READY else CompatibilityStatus.IDLE,
                 message = if (isCacheHealthy) "Playback Ready" else "Playback Ready (Pending Request)",
+                messageResId = if (isCacheHealthy) R.string.compatibility_message_ready else R.string.session_browser_prep_message_manual,
                 preparedAsset = if (isCacheHealthy) cachedAsset else null,
                 streamable = isCacheHealthy,
             )
@@ -180,6 +184,7 @@ class QueuedCompatibilityPipeline(
                     decision = item.playbackDecision,
                     status = CompatibilityStatus.IDLE,
                     message = queuedMessage(item.playbackDecision.mode, priority),
+                    messageResId = queuedMessageResId(priority),
                     progressPercent = null,
                     preparedAsset = null,
                     hlsReady = false,
@@ -219,6 +224,7 @@ class QueuedCompatibilityPipeline(
                         if (forcedCompatibilityOverride) item.playbackDecision.mode else reconciledCurrent.decision.mode,
                         priority,
                     ),
+                    messageResId = queuedMessageResId(priority),
                 ),
             )
         } else {
@@ -259,6 +265,7 @@ class QueuedCompatibilityPipeline(
             stabilizedCurrent.copy(
                 status = CompatibilityStatus.QUEUED,
                 message = queuedMessage(current.decision.mode, priority),
+                messageResId = queuedMessageResId(priority),
                 priority = priority,
                 updatedAtEpochMs = System.currentTimeMillis(),
             )
@@ -283,6 +290,7 @@ class QueuedCompatibilityPipeline(
             current.copy(
                 status = CompatibilityStatus.QUEUED,
                 message = "Seeking to new position...",
+                messageResId = R.string.pipeline_message_seeking,
                 streamable = false,
                 startOffsetMs = offsetMs,
                 priority = JobPriority.CRITICAL,
@@ -424,6 +432,8 @@ class QueuedCompatibilityPipeline(
                         decision = update.decision ?: currentJob(item.id)?.decision ?: item.playbackDecision,
                         status = update.status ?: CompatibilityStatus.PREPARING,
                         message = update.message ?: currentJob(item.id)?.message ?: item.playbackDecision.reason,
+                        messageResId = update.messageResId ?: currentJob(item.id)?.messageResId ?: item.playbackDecision.reasonResId,
+                        messageArgs = update.messageArgs,
                         progressPercent = update.progressPercent,
                         preparedAsset = update.preparedAsset,
                         hlsReady = update.hlsReady ?: false,
@@ -441,6 +451,8 @@ class QueuedCompatibilityPipeline(
             is CompatibilityWorkerResult.Success -> currentJob(item.id)!!.copy(
                 status = CompatibilityStatus.READY,
                 message = result.message,
+                messageResId = result.messageResId,
+                messageArgs = result.messageArgs,
                 progressPercent = 100,
                 preparedAsset = result.preparedAsset,
                 hlsReady = false,
@@ -453,6 +465,8 @@ class QueuedCompatibilityPipeline(
                 currentJob(item.id)!!.copy(
                     status = CompatibilityStatus.FAILED,
                     message = result.message,
+                    messageResId = result.messageResId,
+                    messageArgs = result.messageArgs,
                     progressPercent = null,
                     preparedAsset = null,
                     hlsReady = false,
@@ -480,6 +494,14 @@ class QueuedCompatibilityPipeline(
             priority == JobPriority.CRITICAL -> "Escalating preparation..."
             priority == JobPriority.HIGH -> "Opening browser stream..."
             else -> "Preparing compatible version..."
+        }
+    }
+
+    private fun queuedMessageResId(priority: JobPriority): Int {
+        return when {
+            priority == JobPriority.CRITICAL -> R.string.pipeline_message_escalating
+            priority == JobPriority.HIGH -> R.string.pipeline_message_opening_stream
+            else -> R.string.pipeline_message_preparing_generic
         }
     }
 

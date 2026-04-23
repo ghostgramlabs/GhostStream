@@ -725,4 +725,70 @@
     <string name="web_btn_download_selected_zip">Download selected (ZIP)</string>
     <string name="web_error_no_items_selected">No items selected for download.</string>
     <string name="web_download_started_hint">Batch download started. Large files may take a moment to appear.</string>
+
+    <!-- Playback & Compatibility Labels -->
+    <string name="playback_mode_direct">Direct Play</string>
+    <string name="playback_mode_repackaging">Repackaging</string>
+    <string name="playback_mode_transcoding">Transcoding</string>
+    <string name="playback_mode_analyzing">Analyzing</string>
+
+    <!-- Compatibility Status Messages -->
+    <string name="compatibility_message_cached_ready">Cached browser playback is ready.</string>
+    <string name="compatibility_message_stopped">Compatibility preparation was stopped.</string>
+    <string name="compatibility_message_validation_failed">Compatibility validation failed: %1$s</string>
+    <string name="compatibility_message_adjusted">Adjusted compatibility settings for this device.</string>
+    <string name="compatibility_message_optimizing">Optimizing video container…</string>
+    <string name="compatibility_message_almost_ready">Almost ready…</string>
+    <string name="compatibility_message_ready">Browser playback is ready.</string>
+
+    <!-- Session & Network Status -->
+    <string name="network_setup_connect_both_devices">Connect both devices to the same Wi-Fi or hotspot.</string>
+    <string name="session_status_not_sharing">Not sharing</string>
+    <string name="session_blocked_reason_default">Blocked for this session</string>
+    <!-- Playback Decision Reasons -->
+    <string name="playback_reason_direct_non_video">Non-video item bypasses the compatibility pipeline</string>
+    <string name="playback_reason_direct_safe">Container and codecs are browser-safe for this client</string>
+    <string name="playback_reason_remux_audio_fix">Container is not browser-safe and audio must be converted during repackaging</string>
+    <string name="playback_reason_remux_container_fix">Codecs are acceptable, but the container must be repackaged for the browser</string>
+    <string name="playback_reason_remux_audio_only">Video can be copied, but audio must be converted to a browser-safe format</string>
+    <string name="playback_reason_remux_generic">Packaging fix required before browser playback</string>
+    <string name="playback_reason_transcode_video_incompatible">Video codec is not browser-safe for this client and must be re-encoded</string>
+    <string name="playback_reason_transcode_webm_fix">WEBM source is not directly browser-safe for this client and cannot be repackaged into a reliable MP4 stream</string>
+    <string name="playback_reason_transcode_unsupported">Container/codec combination is not safe to copy into browser-ready MP4 output</string>
+
+    <!-- Pipeline Status Messages -->
+    <string name="pipeline_message_seeking">Seeking to new position…</string>
+    <string name="pipeline_message_escalating">Escalating preparation…</string>
+    <string name="pipeline_message_opening_stream">Opening browser stream…</string>
+    <string name="pipeline_message_preparing_generic">Preparing compatible version…</string>
+    <string name="pipeline_message_seek_stream">Seeking to %s…</string>
+
+    <!-- Web UI & Server Errors -->
+    <string name="web_error_preview_unavailable">Preview unavailable</string>
+    <string name="web_error_direct_stream_disabled">Direct stream of this container is disabled for compatibility. Use the prepared stream instead.</string>
+    <string name="web_error_internal_server_error">Internal server error.</string>
+    <string name="web_error_invalid_segment">That video segment is invalid.</string>
+    <string name="web_error_preparing_segment">Preparing the next HLS segment.</string>
+    <string name="web_error_segment_not_found">Segment not found in finalized file.</string>
+    <string name="web_error_segment_still_preparing">Segment is still being prepared.</string>
+    <string name="web_error_read_segment_failed">Could not read segment.</string>
+    <string name="web_error_subtitle_unavailable">Subtitle unavailable</string>
+    <string name="web_error_invalid_upload_request">Invalid upload request.</string>
+    <string name="web_error_upload_declined">The host declined your file transfer.</string>
+    <string name="web_error_upload_save_failed">No files were successfully saved.</string>
+    <string name="web_error_cached_corrupt">The cached asset is incomplete or corrupt. Retrying preparation…</string>
+    <string name="main_error_open_settings">Unable to open settings</string>
+    <string name="web_error_missing_offset">Missing offsetMs parameter.</string>
+    <string name="web_error_apple_hls_only">Apple clients must use HLS for prepared playback.</string>
+    <string name="web_error_direct_not_ready">Direct playback is unavailable until conversion is finalized. Please use HLS.</string>
+
+    <string name="pipeline_label_transcoding">Transcoding</string>
+    <string name="pipeline_label_repackaging">Repackaging</string>
+    <string name="pipeline_reason_no_tracks">Source has no readable audio or video tracks</string>
+    <string name="pipeline_reason_video_incompatible">Video codec %1$s cannot be copied into browser-ready MP4 output</string>
+    <string name="pipeline_reason_probe_failed">Track probe failed: %1$s</string>
+    <string name="pipeline_reason_audio_convert">Video can be copied, but audio must be converted to a browser-safe format</string>
+    <string name="pipeline_reason_container_repackage">Codecs are acceptable, but the container must be repackaged for the browser</string>
+    <string name="pipeline_error_repackage_failed">Unable to repackage this file for browser playback.</string>
+    <string name="pipeline_error_start_failed">Unable to start compatibility preparation.</string>
 </resources>

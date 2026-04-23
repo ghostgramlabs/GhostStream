@@ -350,7 +350,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                             context.startActivity(intent)
                         }.onFailure {
                             scope.launch {
-                                snackbarHostState.showSnackbar("Unable to open settings")
+                                snackbarHostState.showSnackbar(context.getString(SharedR.string.main_error_open_settings))
                             }
                         }
                     }

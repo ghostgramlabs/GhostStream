@@ -11,7 +11,7 @@ enum class PlaybackMode {
     /** Packaging into HLS segments without re-encoding video. (Container/MSE compatibility). */
     TRANSMUX,
     /** Full re-encode to H.264/AAC inside HLS segments. */
-    TRANSCODE,
+    TRANSCODE;
 }
 
 @Serializable
@@ -19,6 +19,8 @@ data class PlaybackDecision(
     val mode: PlaybackMode = PlaybackMode.DIRECT,
     val browserMimeType: String? = null,
     val compatibilityLabel: String? = null,
+    val labelResId: Int? = null,
     val reason: String = "Ready for direct browser playback",
+    val reasonResId: Int? = null,
 )
 

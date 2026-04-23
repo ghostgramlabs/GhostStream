@@ -19,11 +19,15 @@ sealed interface CompatibilityWorkerResult {
     data class Success(
         val preparedAsset: CachedPlaybackAsset,
         val message: String,
+        val messageResId: Int? = null,
+        val messageArgs: List<String> = emptyList(),
     ) : CompatibilityWorkerResult
 
     data class Failure(
         val message: String,
         val type: CompatibilityFailureType = CompatibilityFailureType.UNKNOWN,
+        val messageResId: Int? = null,
+        val messageArgs: List<String> = emptyList(),
     ) : CompatibilityWorkerResult
 }
 
@@ -31,6 +35,8 @@ data class CompatibilityWorkerUpdate(
     val decision: PlaybackDecision? = null,
     val status: CompatibilityStatus? = null,
     val message: String? = null,
+    val messageResId: Int? = null,
+    val messageArgs: List<String> = emptyList(),
     val progressPercent: Int? = null,
     val preparedAsset: CachedPlaybackAsset? = null,
     val hlsReady: Boolean? = null,

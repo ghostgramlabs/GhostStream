@@ -36,6 +36,7 @@ import com.ghoststream.core.model.NoOpDebugLogSink
 
 import com.ghoststream.core.media.FragmentedMp4HlsIndex
 import com.ghoststream.core.media.FragmentedMp4HlsIndexer
+import com.ghostgramlabs.directserve.core.resources.R
 
 class Media3FragmentedMp4CompatibilityWorker(
     private val context: Context,
@@ -104,6 +105,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                 CompatibilityWorkerUpdate(
                     status = CompatibilityStatus.READY,
                     message = "Cached browser playback is ready.",
+                    messageResId = R.string.compatibility_message_cached_ready,
                     progressPercent = 100,
                     preparedAsset = existingAsset,
                     hlsReady = true,
@@ -114,6 +116,7 @@ class Media3FragmentedMp4CompatibilityWorker(
             return@withContext CompatibilityWorkerResult.Success(
                 preparedAsset = existingAsset,
                 message = "Cached browser playback is ready.",
+                messageResId = R.string.compatibility_message_cached_ready,
             )
         }
 
@@ -183,6 +186,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                                 completion,
                                 CompatibilityWorkerResult.Failure(
                                     message = "Compatibility preparation was stopped.",
+                                    messageResId = R.string.compatibility_message_stopped,
                                     type = CompatibilityFailureType.CANCEL,
                                 ),
                             )
@@ -223,6 +227,8 @@ class Media3FragmentedMp4CompatibilityWorker(
                             completion.complete(
                                 CompatibilityWorkerResult.Failure(
                                     message = "Compatibility validation failed: $reason",
+                                    messageResId = R.string.compatibility_message_validation_failed,
+                                    messageArgs = listOf(reason),
                                     type = CompatibilityFailureType.VALIDATION,
                                 ),
                             )
@@ -272,6 +278,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                                 decision = effectiveItem.playbackDecision,
                                 status = CompatibilityStatus.READY,
                                 message = message,
+                                messageResId = R.string.compatibility_message_ready,
                                 progressPercent = 100,
                                 preparedAsset = asset,
                                 hlsReady = false,
@@ -283,6 +290,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                             CompatibilityWorkerResult.Success(
                                 preparedAsset = asset,
                                 message = message,
+                                messageResId = R.string.compatibility_message_ready,
                             ),
                         )
                     }
@@ -297,6 +305,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                                 completion,
                                 CompatibilityWorkerResult.Failure(
                                     message = "Compatibility preparation was stopped.",
+                                    messageResId = R.string.compatibility_message_stopped,
                                     type = CompatibilityFailureType.CANCEL,
                                 ),
                             )
@@ -324,6 +333,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                         onUpdate(
                             CompatibilityWorkerUpdate(
                                 message = "Adjusted compatibility settings for this device.",
+                                messageResId = R.string.compatibility_message_adjusted,
                             ),
                         )
                     }
@@ -432,6 +442,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                     completion,
                     CompatibilityWorkerResult.Failure(
                         message = error.message ?: "Unable to start compatibility preparation.",
+                        messageResId = R.string.pipeline_error_start_failed,
                     ),
                 )
             }
@@ -506,10 +517,24 @@ class Media3FragmentedMp4CompatibilityWorker(
                         "Video codec ${videoMime ?: "unknown"} cannot be copied into browser-ready MP4 output"
                     else -> null
                 },
+                transcodeFallbackReasonResId = when {
+                    videoMime == null && audioMime == null ->
+                        R.string.pipeline_reason_no_tracks
+                    !videoCopySafeToMp4 ->
+                        R.string.pipeline_reason_video_incompatible
+                    else -> null
+                },
+                transcodeFallbackArgs = when {
+                    videoMime == null && audioMime == null -> emptyList()
+                    !videoCopySafeToMp4 -> listOf(videoMime ?: "unknown")
+                    else -> emptyList()
+                },
             )
         } catch (error: Exception) {
             SourceProbe(
                 transcodeFallbackReason = "Track probe failed: ${error.message ?: "unknown"}",
+                transcodeFallbackReasonResId = R.string.pipeline_reason_probe_failed,
+                transcodeFallbackArgs = listOf(error.message ?: "unknown"),
             )
         } finally {
             extractor.release()
@@ -535,8 +560,10 @@ class Media3FragmentedMp4CompatibilityWorker(
             playbackDecision = item.playbackDecision.copy(
                 mode = PlaybackMode.TRANSCODE,
                 compatibilityLabel = "Transcoding",
+                labelResId = R.string.pipeline_label_transcoding,
                 browserMimeType = "video/mp4",
                 reason = "$FALLBACK_TRANSCODE_REASON_PREFIX: $fallbackReason",
+                reasonResId = sourceProbe.transcodeFallbackReasonResId,
             ),
             metadata = item.metadata + metadataUpdates,
         )
@@ -556,12 +583,19 @@ class Media3FragmentedMp4CompatibilityWorker(
         return PlaybackDecision(
             mode = PlaybackMode.TRANSMUX,
             compatibilityLabel = "Repackaging",
+            labelResId = R.string.pipeline_label_repackaging,
             browserMimeType = "video/mp4",
             reason = when {
                 needsAudioTranscode ->
                     "Video can be copied, but audio must be converted to a browser-safe format"
                 else ->
                     "Codecs are acceptable, but the container must be repackaged for the browser"
+            },
+            reasonResId = when {
+                needsAudioTranscode ->
+                    R.string.pipeline_reason_audio_convert
+                else ->
+                    R.string.pipeline_reason_container_repackage
             },
         )
     }
@@ -597,6 +631,11 @@ class Media3FragmentedMp4CompatibilityWorker(
                     "Repackaging video for browser playback..."
                 } else {
                     "Optimizing video container..."
+                },
+                messageResId = if (item.playbackDecision.mode == PlaybackMode.TRANSMUX) {
+                    R.string.pipeline_label_repackaging
+                } else {
+                    R.string.compatibility_message_optimizing
                 },
             ),
         )
@@ -688,6 +727,11 @@ class Media3FragmentedMp4CompatibilityWorker(
                                     } else {
                                         "Optimizing video container..."
                                     },
+                                    messageResId = if (item.playbackDecision.mode == PlaybackMode.TRANSMUX) {
+                                        R.string.pipeline_label_repackaging
+                                    } else {
+                                        R.string.compatibility_message_optimizing
+                                    },
                                     progressPercent = progress,
                                 ),
                             )
@@ -702,6 +746,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                 CompatibilityWorkerUpdate(
                     status = CompatibilityStatus.FINALIZING,
                     message = "Almost ready...",
+                    messageResId = R.string.compatibility_message_almost_ready,
                 ),
             )
 
@@ -751,6 +796,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                 CompatibilityWorkerUpdate(
                     status = CompatibilityStatus.PLAYABLE_NOW,
                     message = "Browser playback is ready.",
+                    messageResId = R.string.compatibility_message_ready,
                     progressPercent = 100,
                     preparedAsset = asset,
                     directReady = true,
@@ -765,6 +811,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                 CompatibilityWorkerUpdate(
                     status = CompatibilityStatus.READY,
                     message = "Browser playback is ready.",
+                    messageResId = R.string.compatibility_message_ready,
                     progressPercent = 100,
                     preparedAsset = asset,
                     directReady = true,
@@ -774,12 +821,14 @@ class Media3FragmentedMp4CompatibilityWorker(
             CompatibilityWorkerResult.Success(
                 preparedAsset = asset,
                 message = "Browser playback is ready.",
+                messageResId = R.string.compatibility_message_ready,
             )
         } catch (error: Exception) {
             runCatching { tmpOutputFile.delete() }
             CompatibilityWorkerResult.Failure(
                 error.message ?: "Unable to repackage this file for browser playback.",
-                CompatibilityFailureType.EXPORT,
+                messageResId = R.string.pipeline_error_repackage_failed,
+                type = CompatibilityFailureType.EXPORT,
             )
         } finally {
             runCatching { muxer?.stop() }
@@ -865,6 +914,8 @@ class Media3FragmentedMp4CompatibilityWorker(
         val audioMissingCodecConfig: Boolean = false,
         val remuxEligibleToMp4: Boolean = false,
         val transcodeFallbackReason: String? = null,
+        val transcodeFallbackReasonResId: Int? = null,
+        val transcodeFallbackArgs: List<String> = emptyList(),
     )
     private data class ValidationProfile(
         val allowedVideoCodecs: Set<String>,
@@ -1252,6 +1303,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                     completion.complete(
                         CompatibilityWorkerResult.Failure(
                             message = "Compatibility preparation was stopped.",
+                            messageResId = R.string.compatibility_message_stopped,
                             type = CompatibilityFailureType.CANCEL,
                         ),
                     )

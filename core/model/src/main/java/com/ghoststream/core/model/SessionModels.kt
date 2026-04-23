@@ -36,6 +36,7 @@ data class BlockedClient(
     val ipAddress: String,
     val blockedAtEpochMs: Long,
     val note: String = "Blocked for this session",
+    val noteResId: Int? = null,
 )
 
 @Serializable
@@ -62,6 +63,7 @@ data class NetworkAvailability(
     val localAddress: String? = null,
     val isReady: Boolean,
     val helperText: String,
+    val helperTextResId: Int? = null,
 ) {
     val isWifiOrHotspotReady: Boolean
         get() = isReady &&
@@ -91,5 +93,6 @@ data class SessionState(
     val transferStats: TransferStats = TransferStats(),
     val hostname: String? = null,
     val message: String = "Not sharing",
+    val messageResId: Int? = null,
     val errorMessage: String? = null,
 )

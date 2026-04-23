@@ -2,6 +2,7 @@ package com.ghoststream.core.media
 
 import com.ghoststream.core.model.PlaybackDecision
 import com.ghoststream.core.model.PlaybackMode
+import com.ghostgramlabs.directserve.core.resources.R
 
 /**
  * Intelligent decision engine for media playback.
@@ -29,7 +30,9 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
                 mode = PlaybackMode.DIRECT,
                 browserMimeType = inspection.originalMimeType ?: inspection.normalizedMimeType,
                 compatibilityLabel = "Direct Play",
+                labelResId = R.string.playback_mode_direct,
                 reason = "Non-video item bypasses the compatibility pipeline",
+                reasonResId = R.string.playback_reason_direct_non_video,
             ).also { logDecision(inspection, capabilities, it, remuxEligible = false, transcodeReason = null) }
         }
 
@@ -72,6 +75,15 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
                 "Video codec is not browser-safe for this client and must be re-encoded"
             else -> null
         }
+        val transcodeReasonResId = when {
+            inspection.container == MediaContainer.WEBM && !directContainerSafe && !mp4RemuxEligible ->
+                R.string.playback_reason_transcode_webm_fix
+            !mp4RemuxEligible && !directContainerSafe ->
+                R.string.playback_reason_transcode_unsupported
+            needsVideoTranscode ->
+                R.string.playback_reason_transcode_video_incompatible
+            else -> null
+        }
 
         val decision = when {
             // Modern browsers (Safari, Chrome, Firefox, Edge) handle moov-at-end
@@ -82,13 +94,16 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
                 mode = PlaybackMode.DIRECT,
                 browserMimeType = directMimeTypeFor(inspection),
                 compatibilityLabel = "Direct Play",
+                labelResId = R.string.playback_mode_direct,
                 reason = "Container and codecs are browser-safe for this client",
+                reasonResId = R.string.playback_reason_direct_safe,
             )
 
             mp4RemuxEligible && !needsVideoTranscode -> PlaybackDecision(
                 mode = PlaybackMode.TRANSMUX,
                 browserMimeType = "video/mp4",
                 compatibilityLabel = "Repackaging",
+                labelResId = R.string.playback_mode_repackaging,
                 reason = when {
                     !containerSafe && needsAudioTranscode ->
                         "Container is not browser-safe and audio must be converted during repackaging"
@@ -99,13 +114,25 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
                     else ->
                         "Packaging fix required before browser playback"
                 },
+                reasonResId = when {
+                    !containerSafe && needsAudioTranscode ->
+                        R.string.playback_reason_remux_audio_fix
+                    !containerSafe ->
+                        R.string.playback_reason_remux_container_fix
+                    needsAudioTranscode ->
+                        R.string.playback_reason_remux_audio_only
+                    else ->
+                        R.string.playback_reason_remux_generic
+                }
             )
 
             else -> PlaybackDecision(
                 mode = PlaybackMode.TRANSCODE,
                 browserMimeType = "video/mp4",
                 compatibilityLabel = "Transcoding",
+                labelResId = R.string.playback_mode_transcoding,
                 reason = transcodeReason ?: "Video codec is not browser-safe for this client and must be re-encoded",
+                reasonResId = transcodeReasonResId ?: R.string.playback_reason_transcode_video_incompatible,
             )
         }
 

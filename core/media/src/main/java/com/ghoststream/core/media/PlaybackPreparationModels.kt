@@ -58,6 +58,8 @@ data class CompatibilityJob(
     val decision: PlaybackDecision,
     val status: CompatibilityStatus = CompatibilityStatus.IDLE,
     val message: String = decision.reason,
+    val messageResId: Int? = decision.reasonResId,
+    val messageArgs: List<String> = emptyList(),
     val progressPercent: Int? = null,
     val preparedAsset: CachedPlaybackAsset? = null,
     val hlsReady: Boolean = false,
@@ -136,6 +138,8 @@ data class UserVisibleSessionState(
     val isReady: Boolean = false,
     val isFailed: Boolean = false,
     val statusMessage: String? = null,
+    val statusMessageResId: Int? = null,
+    val statusMessageArgs: List<String> = emptyList(),
 )
 
 sealed interface PlaybackSource {

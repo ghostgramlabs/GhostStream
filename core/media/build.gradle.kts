@@ -28,6 +28,7 @@ android {
 
 dependencies {
     implementation(project(":core:model"))
+    implementation(project(":core:resources"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.media3.common)
     implementation(libs.androidx.media3.exoplayer)
