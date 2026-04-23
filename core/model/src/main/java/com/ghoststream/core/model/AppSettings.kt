@@ -49,6 +49,7 @@ data class AppSettings(
     val shareMusic: Boolean = true,
     val sharePhotos: Boolean = true,
     val shareFiles: Boolean = true,
+    val batteryOptimizationPromptShown: Boolean = false,
 )
 
 @Serializable

@@ -7,8 +7,10 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
@@ -40,6 +42,9 @@ class GhostStreamForegroundService : Service() {
     private var startupInProgress = false
     private var autoStopJob: Job? = null
     private var lastConnectedClientIds: Set<String>? = null
+    private var wakeLock: PowerManager.WakeLock? = null
+    private var wifiLock: WifiManager.WifiLock? = null
+    private var multicastLock: WifiManager.MulticastLock? = null
     private val debugLogRepository by lazy { container.debugLogRepository }
 
     // ── Notification debounce state ──────────────────────────────────────────
@@ -55,6 +60,7 @@ class GhostStreamForegroundService : Service() {
         serviceScope.launch {
             container.sessionManager.sessionState.collectLatest { state ->
                 runCatching {
+                    updateSharingLocks(state.isSharing)
                     if (!state.isSharing && !startupInProgress) {
                         debugLogRepository.log("ForegroundService", "session inactive; stopping service")
                         lastConnectedClientIds = null
@@ -248,9 +254,93 @@ class GhostStreamForegroundService : Service() {
         debugLogRepository.log("ForegroundService", "onDestroy")
         autoStopJob?.cancel()
         lastConnectedClientIds = null
+        releaseSharingLocks()
         cancelActiveNotifications()
         serviceScope.cancel()
         super.onDestroy()
+    }
+
+    private fun updateSharingLocks(isSharing: Boolean) {
+        if (isSharing) {
+            acquireSharingLocks()
+        } else {
+            releaseSharingLocks()
+        }
+    }
+
+    private fun acquireSharingLocks() {
+        if (wakeLock?.isHeld != true) {
+            runCatching {
+                val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+                wakeLock = powerManager.newWakeLock(
+                    PowerManager.PARTIAL_WAKE_LOCK,
+                    "DirectServe:SharingWakeLock",
+                ).apply {
+                    setReferenceCounted(false)
+                    acquire()
+                }
+                debugLogRepository.log("ForegroundService", "acquired sharing wake lock")
+            }.onFailure { error ->
+                debugLogRepository.log("ForegroundService", "failed to acquire sharing wake lock", error)
+            }
+        }
+
+        val wifiManager = runCatching {
+            applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        }.getOrNull() ?: return
+
+        if (wifiLock?.isHeld != true) {
+            runCatching {
+                wifiLock = wifiManager.createWifiLock(
+                    WifiManager.WIFI_MODE_FULL_HIGH_PERF,
+                    "DirectServe:SharingWifiLock",
+                ).apply {
+                    setReferenceCounted(false)
+                    acquire()
+                }
+                debugLogRepository.log("ForegroundService", "acquired sharing Wi-Fi lock")
+            }.onFailure { error ->
+                debugLogRepository.log("ForegroundService", "failed to acquire sharing Wi-Fi lock", error)
+            }
+        }
+
+        if (multicastLock?.isHeld != true) {
+            runCatching {
+                multicastLock = wifiManager.createMulticastLock("DirectServe:DlnaMulticastLock").apply {
+                    setReferenceCounted(false)
+                    acquire()
+                }
+                debugLogRepository.log("ForegroundService", "acquired multicast lock")
+            }.onFailure { error ->
+                debugLogRepository.log("ForegroundService", "failed to acquire multicast lock", error)
+            }
+        }
+    }
+
+    private fun releaseSharingLocks() {
+        runCatching {
+            if (multicastLock?.isHeld == true) {
+                multicastLock?.release()
+                debugLogRepository.log("ForegroundService", "released multicast lock")
+            }
+        }
+        multicastLock = null
+
+        runCatching {
+            if (wifiLock?.isHeld == true) {
+                wifiLock?.release()
+                debugLogRepository.log("ForegroundService", "released sharing Wi-Fi lock")
+            }
+        }
+        wifiLock = null
+
+        runCatching {
+            if (wakeLock?.isHeld == true) {
+                wakeLock?.release()
+                debugLogRepository.log("ForegroundService", "released sharing wake lock")
+            }
+        }
+        wakeLock = null
     }
 
     private fun scheduleAutoStop(settings: AppSettings, state: SessionState) {

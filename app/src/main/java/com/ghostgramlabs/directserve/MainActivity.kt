@@ -58,7 +58,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.ghostgramlabs.directserve.service.GhostStreamForegroundService
-import android.net.wifi.WifiManager
 import com.ghostgramlabs.directserve.localization.LanguageSelectionScreen
 import com.ghostgramlabs.directserve.state.AppEvent
 import com.ghostgramlabs.directserve.state.MainViewModel
@@ -111,31 +110,6 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
     val context = androidx.compose.ui.platform.LocalContext.current
     val clipboardManager = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
-    
-    // DLNA Multicast Lock
-    DisposableEffect(uiState.sessionState.isSharing) {
-        var lock: WifiManager.MulticastLock? = null
-        if (uiState.sessionState.isSharing) {
-            val wifiManager = context.applicationContext.getSystemService(android.content.Context.WIFI_SERVICE) as WifiManager
-            lock = wifiManager.createMulticastLock("DirectServeDlnaLock")
-            lock.setReferenceCounted(false)
-            try {
-                lock.acquire()
-            } catch (e: Exception) {
-                android.util.Log.e("MainActivity", "Failed to acquire multicast lock", e)
-            }
-        }
-        onDispose {
-            try {
-                if (lock?.isHeld == true) {
-                    lock.release()
-                }
-            } catch (e: Exception) {
-                // Ignore
-            }
-        }
-    }
-
     var pendingStartService by remember { mutableStateOf(false) }
     var pendingBatchSelectNavigation by remember { mutableStateOf(false) }
     var launchHandled by remember { mutableStateOf(false) }
@@ -345,6 +319,26 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                         runCatching {
                             val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
                                 data = android.net.Uri.parse("package:${context.packageName}")
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            context.startActivity(intent)
+                        }.onFailure {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(context.getString(SharedR.string.main_error_open_settings))
+                            }
+                        }
+                    }
+                }
+                AppEvent.RequestBatteryOptimizationExemption -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        runCatching {
+                            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                                data = android.net.Uri.parse("package:${context.packageName}")
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            context.startActivity(intent)
+                        }.recoverCatching {
+                            val intent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
                                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             }
                             context.startActivity(intent)

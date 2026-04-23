@@ -7,6 +7,7 @@ import android.net.LinkProperties
 import android.net.Network
 import android.net.NetworkRequest
 import android.os.Build
+import android.os.PowerManager
 import android.net.Uri
 import com.ghostgramlabs.directserve.BuildConfig
 import com.ghostgramlabs.directserve.core.resources.R
@@ -347,6 +348,7 @@ class MainViewModel(
                     SharePreflightResult.NoContent -> {
                         container.debugLogRepository.log("MainViewModel", "preflight result: no content (allowing for receiving)")
                         pendingShareAfterNetworkReady.value = false
+                        maybeRequestBatteryOptimizationExemption()
                         startSharingAfterReadyCheck()
                     }
 
@@ -370,6 +372,7 @@ class MainViewModel(
                     SharePreflightResult.Ready -> {
                         container.debugLogRepository.log("MainViewModel", "preflight result: ready")
                         pendingShareAfterNetworkReady.value = false
+                        maybeRequestBatteryOptimizationExemption()
                         startSharingAfterReadyCheck()
                     }
                 }
@@ -387,8 +390,23 @@ class MainViewModel(
             if (!pendingShareAfterNetworkReady.value || startSharingInProgress.value) return@launch
             container.debugLogRepository.log("MainViewModel", "resumePendingShareAfterNetworkReady")
             startSharingInProgress.value = true
+            maybeRequestBatteryOptimizationExemption()
             startSharingAfterReadyCheck()
         }
+    }
+
+    private suspend fun maybeRequestBatteryOptimizationExemption() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
+        val settings = container.settingsRepository.settings.first()
+        if (settings.batteryOptimizationPromptShown) return
+        val powerManager = application.getSystemService(Context.POWER_SERVICE) as PowerManager
+        if (powerManager.isIgnoringBatteryOptimizations(application.packageName)) return
+
+        container.settingsRepository.update { current ->
+            current.copy(batteryOptimizationPromptShown = true)
+        }
+        container.debugLogRepository.log("MainViewModel", "requesting battery optimization exemption")
+        _events.emit(AppEvent.RequestBatteryOptimizationExemption)
     }
 
     fun requestStopSharing() {

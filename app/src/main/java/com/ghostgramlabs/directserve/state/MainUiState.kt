@@ -45,4 +45,5 @@ sealed interface AppEvent {
     data object NavigateHistory : AppEvent
     data class OpenFile(val fileUri: String) : AppEvent
     data object RequestAllFilesAccess : AppEvent
+    data object RequestBatteryOptimizationExemption : AppEvent
 }
