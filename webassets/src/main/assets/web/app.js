@@ -2023,6 +2023,13 @@ function hydrateVideoPlayer(item, options = {}) {
       enableWorker: true,
       lowLatencyMode: false,
 
+      // Force start at segment 0. Our growing playlists are served as
+      // EXT-X-PLAYLIST-TYPE:EVENT while transcoding, and hls.js treats EVENT
+      // playlists as live-edge by default — so it would jump to the latest
+      // segment (e.g. segment 10) and MSE would fail to append it because the
+      // base decode time is way past the current video.currentTime of 0.
+      startPosition: 0,
+
       // Buffer settings — build up a comfortable buffer before playback starts,
       // and keep a back-buffer for seeking backwards without re-requesting segments.
       maxBufferLength: 30,          // target 30 s ahead
@@ -2124,7 +2131,7 @@ function hydrateVideoPlayer(item, options = {}) {
             // We use state.compatItem to ensure we have the LATEST updated URL from polling.
             const currentItem = state.compatItem || item;
             if (currentItem.preparedMp4Url) {
-              debugTrace("prepared_asset_reused", `id=${item.id} asset=${currentItem.preparedMp4Url.substringAfterLast('/')}`);
+              debugTrace("prepared_asset_reused", `id=${item.id} asset=${currentItem.preparedMp4Url.slice(currentItem.preparedMp4Url.lastIndexOf('/') + 1)}`);
               debugTrace("hls_error_direct_mp4_fallback", `id=${item.id} url=${currentItem.preparedMp4Url}`);
               destroyHls();
               const plyrObj = state.plyr;

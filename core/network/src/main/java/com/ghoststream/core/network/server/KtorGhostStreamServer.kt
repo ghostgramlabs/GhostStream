@@ -717,20 +717,31 @@ class KtorGhostStreamServer(
                 // escalate the file to REMUX so it gets a prepared compatible asset.
                 val forceCompat = call.request.queryParameters["force"] == "true"
                 if (forceCompat) {
-                    debugLogSink.log("WebCompat", "direct_play_escalation id=${item.id} name=${item.displayName} â€” browser reported DIRECT failure, escalating to REMUX")
-                    val currentMode = compatibilityPipeline.currentJob(item.id)?.decision?.mode
+                    val currentJob = compatibilityPipeline.currentJob(item.id)
+                    val currentMode = currentJob?.decision?.mode
                         ?: applyPlaybackOverride(host, item).playbackDecision.mode
-                    rememberPlaybackOverride(
-                        host = host,
-                        item = item,
-                        mode = nextBrowserFallbackMode(currentMode),
-                        reason = "browser_decode_failed",
-                    )
-                    // Clear the stale DIRECT job so the re-snapshot picks up the
-                    // override and returns the updated mode.  Without this, the
-                    // response still says IDLE/DIRECT and the browser re-locks the
-                    // failing source in a loop.  (Mirrors the retry endpoint logic.)
-                    compatibilityPipeline.invalidate(item.id)
+                    // Only escalate + invalidate when the current decision is still
+                    // DIRECT. Browsers replay video.error repeatedly from stale
+                    // player state after fallback has already happened, and every
+                    // repeated force=true was bumping the ladder again and
+                    // truncating the in-flight or finalized cache file — causing
+                    // an endless "worker finishes, client restarts, file → 0B"
+                    // loop that showed up in logs as "Missing #EXTM3U".
+                    if (currentMode == PlaybackMode.DIRECT) {
+                        debugLogSink.log("WebCompat", "direct_play_escalation id=${item.id} name=${item.displayName} - browser reported DIRECT failure, escalating")
+                        rememberPlaybackOverride(
+                            host = host,
+                            item = item,
+                            mode = nextBrowserFallbackMode(currentMode),
+                            reason = "browser_decode_failed",
+                        )
+                        compatibilityPipeline.invalidate(item.id)
+                    } else {
+                        debugLogSink.log(
+                            "WebCompat",
+                            "direct_play_escalation_ignored id=${item.id} name=${item.displayName} currentMode=$currentMode status=${currentJob?.status} - job already in compatibility mode, not re-escalating",
+                        )
+                    }
                 }
                 val job = compatibilitySnapshotFor(host, item, triggerPreparation = true, priority = JobPriority.HIGH)
                 val allowInProgressHls = supportsInProgressHls(
