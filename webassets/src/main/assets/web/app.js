@@ -2410,23 +2410,37 @@ function hydrateVideoPlayer(item, options = {}) {
     const failureCount = (state.compatPlaybackFailures[item.id] || 0) + 1;
     state.compatPlaybackFailures[item.id] = failureCount;
     if (item.playbackMode === "DIRECT" && failureCount <= 2) {
-      debugTrace("video_error_direct_compat_fallback", `id=${item.id} failures=${failureCount} triggering compat preparation`);
-      // Clear the source lock so the poll loop picks up the new compat
-      // source (e.g. prepared_mp4 or HLS) instead of re-locking the
-      // failing direct URL that just errored.
-      delete state.playerSourceLocks[item.id];
-      showCompatibilityWaitingStage({
-        ...item,
-        streamReady: false,
-        compatibilityComplete: false,
-      });
-      pollCompat(item.id, {
-        ...item,
-        streamReady: false,
-        compatibilityComplete: false,
-      }, { forceCompat: true, startPreparation: true });
-      debugTrace("compat_failed", `id=${item.id} reason=${item.compatibilityMessage || "unknown"}`);
-      return;
+      // Guard: an auto-TRANSCODE of a huge/high-res file (e.g. 8K HEVC 150Mbps)
+      // can OOM-kill the host's foreground service. If the file is beyond what
+      // the host can safely re-encode, skip auto-fallback and let the user
+      // retry manually or download the original.
+      const tooBigForAutoTranscode =
+        (typeof item.sizeBytes === "number" && item.sizeBytes > 2 * 1024 * 1024 * 1024) ||
+        (typeof item.width === "number" && item.width > 3840);
+      if (tooBigForAutoTranscode) {
+        debugTrace(
+          "video_error_direct_compat_fallback_skipped",
+          `id=${item.id} sizeBytes=${item.sizeBytes || ""} width=${item.width || ""} reason=too_large_for_safe_transcode`,
+        );
+      } else {
+        debugTrace("video_error_direct_compat_fallback", `id=${item.id} failures=${failureCount} triggering compat preparation`);
+        // Clear the source lock so the poll loop picks up the new compat
+        // source (e.g. prepared_mp4 or HLS) instead of re-locking the
+        // failing direct URL that just errored.
+        delete state.playerSourceLocks[item.id];
+        showCompatibilityWaitingStage({
+          ...item,
+          streamReady: false,
+          compatibilityComplete: false,
+        });
+        pollCompat(item.id, {
+          ...item,
+          streamReady: false,
+          compatibilityComplete: false,
+        }, { forceCompat: true, startPreparation: true });
+        debugTrace("compat_failed", `id=${item.id} reason=${item.compatibilityMessage || "unknown"}`);
+        return;
+      }
     }
     if (errorCard) errorCard.classList.add("is-visible");
     debugTrace(

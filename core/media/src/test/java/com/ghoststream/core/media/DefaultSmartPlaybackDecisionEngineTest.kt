@@ -56,7 +56,7 @@ class DefaultSmartPlaybackDecisionEngineTest {
         assertEquals("video/mp4", d.browserMimeType)
     }
 
-    // ── Tier 1: REMUX (unknown or bad faststart, or incompatible audio) ─────
+    // ── Tier 1: TRANSMUX (incompatible audio) / DIRECT (faststart handled by browser) ─────
 
     @Test
     fun `MP4 + H264 + AAC + unknown faststart resolves to DIRECT (null is OK for content URIs)`() {
@@ -71,15 +71,15 @@ class DefaultSmartPlaybackDecisionEngineTest {
     }
 
     @Test
-    fun `MP4 + H264 + AAC + bad faststart resolves to REMUX`() {
+    fun `MP4 + H264 + AAC + bad faststart resolves to DIRECT (browsers handle moov-at-end via Range)`() {
         val d = engine.decide(inspect(MediaContainer.MP4, hasFaststart = false))
-        assertEquals(PlaybackMode.REMUX, d.mode)
+        assertEquals(PlaybackMode.DIRECT, d.mode)
     }
 
     @Test
-    fun `MOV + H264 + AAC + bad faststart resolves to REMUX`() {
+    fun `MOV + H264 + AAC + bad faststart resolves to DIRECT (browsers handle moov-at-end via Range)`() {
         val d = engine.decide(inspect(MediaContainer.QUICKTIME, mime = "video/quicktime", name = "movie.mov", hasFaststart = false))
-        assertEquals(PlaybackMode.REMUX, d.mode)
+        assertEquals(PlaybackMode.DIRECT, d.mode)
     }
 
     @Test

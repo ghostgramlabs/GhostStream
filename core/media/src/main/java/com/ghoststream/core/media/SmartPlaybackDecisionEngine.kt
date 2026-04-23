@@ -34,8 +34,6 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
         }
 
         val containerSafe = inspection.container == MediaContainer.MP4 || inspection.container == MediaContainer.QUICKTIME
-        val needsFaststartFix = containerSafe && inspection.hasFaststart == false
-
         val videoCodec = normalizeVideoCodec(inspection.videoTrackMimeType)
         val audioCodec = normalizeAudioCodec(inspection.audioTrackMimeType)
         val directContainerSafe = isDirectContainerSafe(inspection, videoCodec, audioCodec, capabilities)
@@ -76,18 +74,15 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
         }
 
         val decision = when {
-            directContainerSafe && !needsFaststartFix && !needsVideoTranscode && !needsAudioTranscode -> PlaybackDecision(
+            // Modern browsers (Safari, Chrome, Firefox, Edge) handle moov-at-end
+            // MP4/MOV via HTTP Range requests — they fetch the tail to locate the
+            // moov atom, then stream from the start. Forcing REMUX for faststart
+            // alone is wasted CPU/disk on the host.
+            directContainerSafe && !needsVideoTranscode && !needsAudioTranscode -> PlaybackDecision(
                 mode = PlaybackMode.DIRECT,
                 browserMimeType = directMimeTypeFor(inspection),
                 compatibilityLabel = "Direct Play",
                 reason = "Container and codecs are browser-safe for this client",
-            )
-
-            containerSafe && needsFaststartFix && !needsVideoTranscode && !needsAudioTranscode -> PlaybackDecision(
-                mode = PlaybackMode.REMUX,
-                browserMimeType = "video/mp4",
-                compatibilityLabel = "Fast Start Fix",
-                reason = "MP4/MOV needs moov relocation before reliable browser playback",
             )
 
             mp4RemuxEligible && !needsVideoTranscode -> PlaybackDecision(
