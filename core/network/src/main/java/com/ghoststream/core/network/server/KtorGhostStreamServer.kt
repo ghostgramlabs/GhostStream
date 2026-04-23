@@ -1247,7 +1247,8 @@ class KtorGhostStreamServer(
                         requiredSegmentIndex = MIN_SEGMENTS_BEFORE_PLAY - 1,
                     ) ?: run {
                         debugLogSink.log("WebHls", "playlist pending id=${source.item.id}")
-                        call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
+                        call.response.headers.append(HttpHeaders.RetryAfter, "1")
+                        call.respond(HttpStatusCode.ServiceUnavailable, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
                         return@get
                     }
 
@@ -1256,7 +1257,8 @@ class KtorGhostStreamServer(
 
                     if (index.segments.isEmpty()) {
                         debugLogSink.log("WebHls", "playlist empty id=${source.item.id} init=${index.initSegmentLength} file=${index.fileLength}")
-                        call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
+                        call.response.headers.append(HttpHeaders.RetryAfter, "1")
+                        call.respond(HttpStatusCode.ServiceUnavailable, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
                         return@get
                     }
                     debugLogSink.log(
@@ -1302,7 +1304,8 @@ class KtorGhostStreamServer(
                         requireFirstSegment = false,
                     ) ?: run {
                         debugLogSink.log("WebHls", "init pending id=${source.item.id}")
-                        call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
+                        call.response.headers.append(HttpHeaders.RetryAfter, "1")
+                        call.respond(HttpStatusCode.ServiceUnavailable, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
                         return@get
                     }
 
@@ -1311,7 +1314,8 @@ class KtorGhostStreamServer(
 
                     if (index.initSegmentLength <= 0L) {
                         debugLogSink.log("WebHls", "init empty id=${source.item.id}")
-                        call.respond(HttpStatusCode.Accepted, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
+                        call.response.headers.append(HttpHeaders.RetryAfter, "1")
+                        call.respond(HttpStatusCode.ServiceUnavailable, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
                         return@get
                     }
                     debugLogSink.log(
@@ -1358,7 +1362,8 @@ class KtorGhostStreamServer(
                         requiredSegmentIndex = indexInManifest,
                     ) ?: run {
                         debugLogSink.log("WebHls", "segment pending id=${source.item.id} index=$indexInManifest")
-                        call.respond(HttpStatusCode.Accepted, ErrorPayload("Preparing the next HLS segment."))
+                        call.response.headers.append(HttpHeaders.RetryAfter, "1")
+                        call.respond(HttpStatusCode.ServiceUnavailable, ErrorPayload("Preparing the next HLS segment."))
                         return@get
                     }
                     val segment = index.segments.getOrNull(targetFileSegIndex) ?: run {
@@ -2261,11 +2266,13 @@ class KtorGhostStreamServer(
             return null
         }
         val preparedAsset = job.preparedAsset ?: run {
-            respond(HttpStatusCode.Accepted, ErrorPayload(job.message))
+            response.headers.append(HttpHeaders.RetryAfter, "1")
+            respond(HttpStatusCode.ServiceUnavailable, ErrorPayload(job.message))
             return null
         }
         if (!preparedAsset.isFragmentedMp4) {
-            respond(HttpStatusCode.Conflict, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_hls_not_ready)))
+            response.headers.append(HttpHeaders.RetryAfter, "1")
+            respond(HttpStatusCode.ServiceUnavailable, ErrorPayload(this@KtorGhostStreamServer.context.getString(R.string.browser_hls_not_ready)))
             return null
         }
         val file = File(preparedAsset.filePath)

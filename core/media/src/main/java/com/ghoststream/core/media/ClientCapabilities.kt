@@ -28,6 +28,7 @@ data class ClientCapabilities(
     // Container/Platform Support
     val supportsMse: Boolean = true,
     val supportsHlsNatively: Boolean = false, // e.g., Safari
+    val supportsMatroska: Boolean = false,
     
     // Advanced
     val supportsHdr: Boolean = false,

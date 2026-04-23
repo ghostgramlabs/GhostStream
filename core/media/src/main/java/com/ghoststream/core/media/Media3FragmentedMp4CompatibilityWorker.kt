@@ -544,6 +544,9 @@ class Media3FragmentedMp4CompatibilityWorker(
 
     private fun upgradedDecisionForSourceProbe(item: SharedItem, sourceProbe: SourceProbe): PlaybackDecision? {
         if (item.playbackDecision.mode != PlaybackMode.TRANSCODE) return null
+        if (item.playbackDecision.reason.contains("Browser rejected", ignoreCase = true)) {
+            return null
+        }
         if (!sourceProbe.remuxEligibleToMp4 || sourceProbe.transcodeFallbackReason != null) return null
 
         val needsAudioTranscode = sourceProbe.audioMime != null &&

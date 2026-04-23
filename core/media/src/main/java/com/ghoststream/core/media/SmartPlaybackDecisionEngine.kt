@@ -144,6 +144,10 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
                 VideoCodec.AV1 -> capabilities.supportsAv1 && audioCodec in setOf(AudioCodec.NONE, AudioCodec.OPUS, AudioCodec.UNKNOWN)
                 else -> false
             }
+            MediaContainer.MATROSKA ->
+                capabilities.supportsMatroska &&
+                    videoCodec in setOf(VideoCodec.AVC, VideoCodec.HEVC, VideoCodec.VP9, VideoCodec.AV1, VideoCodec.UNKNOWN) &&
+                    audioCodec in setOf(AudioCodec.NONE, AudioCodec.AAC, AudioCodec.MP3, AudioCodec.OPUS, AudioCodec.UNKNOWN)
             else -> false
         }
     }

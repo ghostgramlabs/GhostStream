@@ -31,6 +31,7 @@ const state = {
   searchTimer: null,
   compatPollToken: 0,
   compatPollTimer: null,
+  compatDirectFallbackTimer: null,
   compatMountToken: 0,
   compatPlaybackFailures: {},
   compatProgressMemory: {},
@@ -502,6 +503,8 @@ function buildClientCapabilities() {
     canPlayMimeType(video, 'audio/ogg; codecs="opus"');
   const supportsAc3 = canPlayMimeType(video, 'audio/mp4; codecs="ac-3"');
   const supportsEac3 = canPlayMimeType(video, 'audio/mp4; codecs="ec-3"');
+  const supportsMatroska = canPlayMimeType(video, "video/x-matroska") ||
+    canPlayMimeType(video, 'video/x-matroska; codecs="avc1.64001F, mp4a.40.2"');
   return {
     browserFamily: detectBrowserFamily(),
     os: detectBrowserOs(),
@@ -516,6 +519,7 @@ function buildClientCapabilities() {
     supportsEac3,
     supportsMse,
     supportsHlsNatively,
+    supportsMatroska,
     supportsHdr: supportsHevc && isAppleDevice(),
     isPowerEfficient: !isMobileBrowser(),
   };
@@ -2072,6 +2076,93 @@ function hydrateVideoPlayer(item, options = {}) {
       destroyHls();
     };
 
+    const switchToPreparedMp4 = (currentItem) => {
+      if (!currentItem?.preparedMp4Url) return false;
+      if (state.compatDirectFallbackTimer) {
+        clearTimeout(state.compatDirectFallbackTimer);
+        state.compatDirectFallbackTimer = null;
+      }
+      destroyHls();
+      state.compatItem = currentItem;
+      state.playerSourceLocks[item.id] = {
+        kind: "prepared_mp4",
+        url: currentItem.preparedMp4Url,
+        mimeType: "video/mp4",
+      };
+      video.dataset.sourceType = "prepared_mp4";
+      video.dataset.sourceUrl = currentItem.preparedMp4Url;
+      const plyrObj = state.plyr;
+      if (plyrObj) {
+        plyrObj.source = {
+          type: "video",
+          sources: [{ src: currentItem.preparedMp4Url, type: "video/mp4" }]
+        };
+      } else {
+        video.src = currentItem.preparedMp4Url;
+        video.load();
+      }
+      if (options.autoplay) {
+        video.play().catch(() => {});
+      }
+      return true;
+    };
+
+    const waitForPreparedMp4Fallback = (seedItem) => {
+      if (state.compatDirectFallbackTimer) {
+        clearTimeout(state.compatDirectFallbackTimer);
+        state.compatDirectFallbackTimer = null;
+      }
+      const startedAt = Date.now();
+      const maxWaitMs = 2 * 60 * 1000;
+      debugTrace("hls_error_direct_mp4_fallback_wait", `id=${item.id}`);
+      showHlsError(gsStr("web_player_finalizing_desc", "Almost ready. Completing the browser-compatible stream."));
+
+      const tick = async () => {
+        if (location.pathname !== `/player/video/${item.id}`) return;
+        try {
+          const job = await api(`/api/compat/${item.id}`);
+          const complete = Boolean(job.complete || job.compatibilityComplete || job.status === "READY");
+          const nextItem = {
+            ...seedItem,
+            streamReady: Boolean(job.ready),
+            effectivePlaybackMode: job.effectivePlaybackMode || seedItem.effectivePlaybackMode,
+            compatibilityStatus: job.status || seedItem.compatibilityStatus,
+            compatibilityMessage: job.message || seedItem.compatibilityMessage,
+            compatibilityProgressPercent: job.progressPercent ?? seedItem.compatibilityProgressPercent,
+            compatibilityComplete: complete,
+            preparedMp4Url: job.preparedMp4Url || seedItem.preparedMp4Url || null,
+            hlsUrl: job.hlsUrl || seedItem.hlsUrl || null,
+            width: job.width || seedItem.width,
+            height: job.height || seedItem.height,
+            totalDurationMs: job.totalDurationMs || seedItem.totalDurationMs || seedItem.durationMs,
+          };
+          state.compatItem = nextItem;
+          if (nextItem.preparedMp4Url && nextItem.compatibilityComplete === true) {
+            debugTrace("hls_error_direct_mp4_fallback_ready", `id=${item.id} url=${nextItem.preparedMp4Url}`);
+            clearVideoError();
+            switchToPreparedMp4(nextItem);
+            return;
+          }
+          if (job.status === "FAILED" || job.status === "STALLED") {
+            showHlsError(
+              state.bootstrap?.preventDownload
+                ? "This browser could not decode the video stream."
+                : gsStr("web_error_video_decode", "This browser could not decode the video stream. Try downloading the original file."),
+            );
+            return;
+          }
+        } catch (_) {}
+
+        if (Date.now() - startedAt < maxWaitMs) {
+          state.compatDirectFallbackTimer = setTimeout(tick, 1000);
+          return;
+        }
+        showHlsError("This video is still opening. Try again in a moment.");
+      };
+
+      state.compatDirectFallbackTimer = setTimeout(tick, 1000);
+    };
+
     hls.attachMedia(video);
     hls.on(window.Hls.Events.MEDIA_ATTACHED, () => {
       debugTrace("hls_media_attached", `id=${item.id}`);
@@ -2126,27 +2217,22 @@ function hydrateVideoPlayer(item, options = {}) {
           bufferAppendErrors += 1;
           if (bufferAppendErrors >= MAX_BUFFER_APPEND_ERRORS) {
             debugTrace("hls_error", `id=${item.id} fatal=true type=bufferAppend_threshold details=exceeded`);
-            // If the server has already finished transcoding, switch to direct MP4
-            // playback immediately — no HLS/MSE involved, so no TFHD or codec issues.
-            // We use state.compatItem to ensure we have the LATEST updated URL from polling.
+            // If the server has already finalized the prepared MP4, switch to direct
+            // playback immediately: no HLS/MSE involved, so no TFHD or codec issues.
+            // We use state.compatItem to ensure we have the latest state from polling.
             const currentItem = state.compatItem || item;
-            if (currentItem.preparedMp4Url) {
+            if (currentItem.preparedMp4Url && currentItem.compatibilityComplete === true) {
               debugTrace("prepared_asset_reused", `id=${item.id} asset=${currentItem.preparedMp4Url.slice(currentItem.preparedMp4Url.lastIndexOf('/') + 1)}`);
               debugTrace("hls_error_direct_mp4_fallback", `id=${item.id} url=${currentItem.preparedMp4Url}`);
-              destroyHls();
-              const plyrObj = state.plyr;
-              if (plyrObj) {
-                plyrObj.source = {
-                  type: "video",
-                  sources: [{ src: currentItem.preparedMp4Url, type: "video/mp4" }]
-                };
-              } else {
-                video.src = currentItem.preparedMp4Url;
-                video.load();
-              }
-              if (options.autoplay) {
-                video.play().catch(() => {});
-              }
+              switchToPreparedMp4(currentItem);
+              return;
+            }
+            if (currentItem.preparedMp4Url) {
+              debugTrace(
+                "hls_error_direct_mp4_fallback_deferred",
+                `id=${item.id} status=${currentItem.compatibilityStatus || ""} complete=${currentItem.compatibilityComplete}`,
+              );
+              waitForPreparedMp4Fallback(currentItem);
               return;
             }
             showHlsError(
@@ -3077,6 +3163,10 @@ function cancelCompatPolling() {
   if (state.compatPollTimer) {
     clearTimeout(state.compatPollTimer);
     state.compatPollTimer = null;
+  }
+  if (state.compatDirectFallbackTimer) {
+    clearTimeout(state.compatDirectFallbackTimer);
+    state.compatDirectFallbackTimer = null;
   }
 }
 
