@@ -304,6 +304,9 @@ class MainViewModel(
 
     fun clearLibrarySelection() {
         viewModelScope.launch {
+            container.settingsRepository.update { current ->
+                current.copy(mediaServerMode = false)
+            }
             container.storageRepository.clearSelection()
         }
     }
@@ -324,10 +327,10 @@ class MainViewModel(
 
     fun clearAllMedia() {
         viewModelScope.launch {
-            container.storageRepository.clearSelection()
             container.settingsRepository.update { current ->
                 current.copy(mediaServerMode = false)
             }
+            container.storageRepository.clearSelection()
         }
     }
 

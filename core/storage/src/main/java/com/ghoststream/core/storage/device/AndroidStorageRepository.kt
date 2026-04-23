@@ -157,10 +157,13 @@ class AndroidStorageRepository(
         val scanner = MediaStoreScanner(context, mediaAnalyzer)
         val (items, folders) = scanner.scanAllDeviceMedia()
         return stateMutex.withLock {
-            val newState = LibraryState(
-                items = items,
-                folders = folders
-            ).withSummary()
+            val current = currentPersistedState()
+            val scannedUris = items.mapTo(hashSetOf()) { it.uri }
+            val scannedFolderIds = folders.mapTo(hashSetOf()) { it.id }
+            val newState = mergeState(
+                items = current.items.filterNot { it.uri in scannedUris } + items,
+                folders = current.folders.filterNot { it.id in scannedFolderIds } + folders,
+            )
             persistAndPublish(newState)
             newState
         }

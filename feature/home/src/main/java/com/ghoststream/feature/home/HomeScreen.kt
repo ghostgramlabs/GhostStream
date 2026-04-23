@@ -374,6 +374,8 @@ private fun SessionHeroCard(
     onRequestAllFilesAccess: () -> Unit,
 ) {
     val canStartSession = sessionState.networkAvailability.isWifiOrHotspotReady
+    val hasLibraryContent = libraryState.items.isNotEmpty() || libraryState.folders.isNotEmpty()
+    val mediaServerModeActive = settings.mediaServerMode && hasLibraryContent
     var showNoNetworkDialog by rememberSaveable { mutableStateOf(false) }
     
     val heroContainerColor by animateColorAsState(
@@ -465,7 +467,7 @@ private fun SessionHeroCard(
                         PulsingLiveDot(dotColor = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = if (settings.mediaServerMode) stringResource(R.string.home_media_server_active) else stringResource(R.string.home_live_banner),
+                            text = if (mediaServerModeActive) stringResource(R.string.home_media_server_active) else stringResource(R.string.home_live_banner),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -545,7 +547,7 @@ private fun SessionHeroCard(
                 }
                 Button(
                     onClick = {
-                        if (settings.mediaServerMode) {
+                        if (mediaServerModeActive) {
                             onClearAllMedia()
                         } else if (hasAllFilesAccess) {
                             onImportAllMedia()
@@ -575,12 +577,12 @@ private fun SessionHeroCard(
                         )
                     } else {
                         Icon(
-                            if (settings.mediaServerMode) Icons.Outlined.History else Icons.Outlined.PlayArrow,
+                            if (mediaServerModeActive) Icons.Outlined.History else Icons.Outlined.PlayArrow,
                             contentDescription = null
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            if (settings.mediaServerMode) stringResource(R.string.home_btn_stop_media_server) else stringResource(R.string.home_button_share_all_media),
+                            if (mediaServerModeActive) stringResource(R.string.home_btn_stop_media_server) else stringResource(R.string.home_button_share_all_media),
                             style = MaterialTheme.typography.titleMedium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
