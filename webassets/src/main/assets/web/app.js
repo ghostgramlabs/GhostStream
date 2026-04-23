@@ -2760,7 +2760,7 @@ async function renderPhotoViewer(id) {
         ${(item.mimeType === "application/pdf" || String(item.title).toLowerCase().endsWith(".pdf"))
           ? `<iframe class="gs-preview gs-preview-pdf" src="${item.streamUrl}" title="${esc(item.title)}"></iframe>`
           : (item.category === "photo" || (item.mimeType && item.mimeType.startsWith("image/")))
-            ? `<img class="gs-preview" src="${item.streamUrl}" alt="${esc(item.title)}">`
+            ? `<img class="gs-preview gs-photo-preview" src="${item.streamUrl}" alt="${esc(item.title)}">`
             : `<div class="gs-preview gs-no-preview">No preview available for this file type</div>`}
       </div>
     </section>
