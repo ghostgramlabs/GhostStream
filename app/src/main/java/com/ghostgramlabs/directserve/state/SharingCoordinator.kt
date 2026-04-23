@@ -173,7 +173,6 @@ class SharingCoordinator(
         if (settings.ghostMode) {
             compatibilityPipeline.clearTemporaryOutputs()
             mediaAnalyzer.clearTemporaryCache()
-            storageRepository.clearSelection()
         }
         
         if (settings.clearAuthOnStop || settings.ghostMode) {

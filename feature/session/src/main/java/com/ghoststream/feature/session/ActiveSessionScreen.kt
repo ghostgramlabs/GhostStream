@@ -468,13 +468,26 @@ private fun SessionHeroCard(
         targetValue = if (sessionState.isSharing) sessionLiveBorder() else MaterialTheme.colorScheme.outline,
         label = "sessionHeroBorder",
     )
+    val liveHeroPulse by rememberInfiniteTransition(label = "sessionHeroLivePulse")
+        .animateFloat(
+            initialValue = 0.48f,
+            targetValue = 0.94f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1400, easing = FastOutSlowInEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+            label = "sessionHeroLivePulseAlpha",
+        )
     Card(
         modifier = Modifier
             .padding(horizontal = GhostSpacing.screenHorizontal)
             .fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
         colors = CardDefaults.cardColors(containerColor = cardContainerColor.value),
-        border = androidx.compose.foundation.BorderStroke(1.dp, cardBorderColor.value),
+        border = androidx.compose.foundation.BorderStroke(
+            if (sessionState.isSharing) 2.dp else 1.dp,
+            if (sessionState.isSharing) MaterialTheme.colorScheme.primary.copy(alpha = liveHeroPulse) else cardBorderColor.value,
+        ),
     ) {
         Column(
             modifier = Modifier.padding(GhostSpacing.card),
@@ -567,9 +580,9 @@ private fun LiveFeedbackBanner(
         )
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = Color.Transparent,
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f + (borderPulse * 0.06f)),
         border = androidx.compose.foundation.BorderStroke(
-            1.dp,
+            2.dp,
             MaterialTheme.colorScheme.primary.copy(alpha = borderPulse),
         ),
     ) {
@@ -605,18 +618,18 @@ private fun PulsingLiveDot(
     val transition = rememberInfiniteTransition(label = "sessionLivePulse")
     val ringScale by transition.animateFloat(
         initialValue = 1f,
-        targetValue = 2.4f,
+        targetValue = 2.25f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1600, easing = LinearOutSlowInEasing),
+            animation = tween(1400, easing = LinearOutSlowInEasing),
             repeatMode = RepeatMode.Restart,
         ),
         label = "sessionLivePulseRingScale",
     )
     val ringAlpha by transition.animateFloat(
-        initialValue = 0.55f,
+        initialValue = 0.82f,
         targetValue = 0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1600, easing = LinearOutSlowInEasing),
+            animation = tween(1400, easing = LinearOutSlowInEasing),
             repeatMode = RepeatMode.Restart,
         ),
         label = "sessionLivePulseRingAlpha",
@@ -631,12 +644,12 @@ private fun PulsingLiveDot(
         label = "sessionLivePulseCoreScale",
     )
     Box(
-        modifier = modifier.size(24.dp),
+        modifier = modifier.size(34.dp),
         contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier = Modifier
-                .size(10.dp)
+                .size(13.dp)
                 .graphicsLayer {
                     scaleX = ringScale
                     scaleY = ringScale
@@ -646,7 +659,7 @@ private fun PulsingLiveDot(
         )
         Box(
             modifier = Modifier
-                .size(10.dp)
+                .size(13.dp)
                 .graphicsLayer {
                     scaleX = coreScale
                     scaleY = coreScale
