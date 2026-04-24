@@ -29,8 +29,8 @@ import com.ghoststream.core.model.QuickTextTargetType
 import com.ghoststream.core.model.SessionState
 import com.ghoststream.core.model.SmartSelectionGroup
 import com.ghoststream.core.model.RecentSession
-import com.ghoststream.core.model.browserDeviceName
 import com.ghoststream.core.model.buildConnectionDiagnostics
+import com.ghoststream.core.model.displayDeviceName
 import com.ghoststream.core.media.CompatibilityJob
 import com.ghoststream.core.media.JobPriority
 import com.ghoststream.core.network.server.DlnaAnnouncer
@@ -831,6 +831,7 @@ class MainViewModel(
 
     fun connectedQuickTextDevices(): List<com.ghoststream.core.model.QuickTextDevice> {
         val state = container.sessionManager.sessionState.value
+        val deviceNicknames = uiState.value.settings.deviceNicknames
         return buildList {
             add(
                 com.ghoststream.core.model.QuickTextDevice(
@@ -844,7 +845,7 @@ class MainViewModel(
                 .map { client ->
                     com.ghoststream.core.model.QuickTextDevice(
                         id = client.ipAddress,
-                        name = browserDeviceName(client.userAgent, client.ipAddress),
+                        name = displayDeviceName(client.ipAddress, deviceNicknames),
                         ipAddress = client.ipAddress,
                     )
                 }

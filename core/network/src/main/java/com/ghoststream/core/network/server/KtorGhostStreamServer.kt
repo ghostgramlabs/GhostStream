@@ -348,7 +348,7 @@ class KtorGhostStreamServer(
                         )
                     }
                 }
-                val deviceName = browserDeviceName(call.request.header(HttpHeaders.UserAgent), clientIp)
+                val deviceName = displayDeviceName(clientIp, settings.deviceNicknames)
                 call.respond(
                     BrowserBootstrap(
                         title = localizedContext.getString(R.string.browser_title),
@@ -467,6 +467,9 @@ class KtorGhostStreamServer(
                             "web_live_audio_unavailable" to localizedContext.getString(R.string.web_live_audio_unavailable),
                             "web_live_audio_blocked_or_silent" to localizedContext.getString(R.string.web_live_audio_blocked_or_silent),
                             "web_live_audio_limit" to localizedContext.getString(R.string.web_live_audio_limit),
+                            "web_live_capture_notice" to localizedContext.getString(R.string.web_live_capture_notice),
+                            "web_live_browser_tip" to localizedContext.getString(R.string.web_live_browser_tip),
+                            "web_live_unmute_hint" to localizedContext.getString(R.string.web_live_unmute_hint),
                             "web_live_stream_ended" to localizedContext.getString(R.string.web_live_stream_ended),
                             "web_live_fullscreen" to localizedContext.getString(R.string.web_live_fullscreen),
                             "web_live_fit" to localizedContext.getString(R.string.web_live_fit),
@@ -1606,7 +1609,8 @@ class KtorGhostStreamServer(
                 val payload = call.receiveNullable<QuickTextSendPayload>()
                     ?: return@post call.respond(HttpStatusCode.BadRequest, ErrorPayload(localizedContext().getString(R.string.web_error_invalid_upload_request)))
                 val clientIp = call.request.origin.remoteHost
-                val senderName = browserDeviceName(call.request.header(HttpHeaders.UserAgent), clientIp)
+                val settings = settingsRepository.settings.first()
+                val senderName = displayDeviceName(clientIp, settings.deviceNicknames)
                 val message = QuickTextMessage(
                     id = UUID.randomUUID().toString(),
                     text = payload.text.trim(),
@@ -1650,10 +1654,12 @@ class KtorGhostStreamServer(
                     call.respond(HttpStatusCode.ServiceUnavailable, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
                     return@get
                 }
+                val settings = settingsRepository.settings.first()
+                val viewerName = displayDeviceName(call.remoteHost(), settings.deviceNicknames)
                 liveScreenStore.updateState {
                     it.copy(
                         viewerCount = 1,
-                        viewerName = browserDeviceName(call.request.header(HttpHeaders.UserAgent), call.remoteHost()),
+                        viewerName = viewerName,
                     )
                 }
                 call.response.headers.append(HttpHeaders.CacheControl, "no-store")
@@ -1760,9 +1766,10 @@ class KtorGhostStreamServer(
                 if (!call.authorizeBrowserCall()) return@post
                 val payload = call.receiveNullable<LiveViewerSessionRequest>() ?: LiveViewerSessionRequest()
                 val clientIp = call.request.origin.remoteHost
+                val settings = settingsRepository.settings.first()
                 val response = liveScreenStore.registerViewer(
                     clientIp = clientIp,
-                    viewerName = browserDeviceName(call.request.header(HttpHeaders.UserAgent), clientIp),
+                    viewerName = displayDeviceName(clientIp, settings.deviceNicknames),
                     pin = payload.pin,
                 )
                 call.respond(response)
@@ -1884,8 +1891,9 @@ class KtorGhostStreamServer(
         return true
     }
 
-    private fun quickTextDevicesFor(requesterIp: String): List<QuickTextDevice> {
+    private suspend fun quickTextDevicesFor(requesterIp: String): List<QuickTextDevice> {
         val session = sessionManager.sessionState.value
+        val settings = settingsRepository.settings.first()
         return buildList {
             add(
                 QuickTextDevice(
@@ -1899,14 +1907,14 @@ class KtorGhostStreamServer(
                 .map { client ->
                     QuickTextDevice(
                         id = client.ipAddress,
-                        name = browserDeviceName(client.userAgent, client.ipAddress),
+                        name = displayDeviceName(client.ipAddress, settings.deviceNicknames),
                         ipAddress = client.ipAddress,
                     )
                 }
                 .plus(
                     QuickTextDevice(
                         id = requesterIp,
-                        name = browserDeviceName(null, requesterIp),
+                        name = displayDeviceName(requesterIp, settings.deviceNicknames),
                         ipAddress = requesterIp,
                     ),
                 )

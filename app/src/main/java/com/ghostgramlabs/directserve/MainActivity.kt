@@ -115,6 +115,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
     val clipboardManager = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
     var pendingStartService by remember { mutableStateOf(false) }
+    var pendingLiveScreenStartAfterNotificationPermission by remember { mutableStateOf(false) }
     var pendingBatchSelectNavigation by remember { mutableStateOf(false) }
     var launchHandled by remember { mutableStateOf(false) }
     var lastSessionMessage by remember { mutableStateOf<String?>(uiState.sessionState.message) }
@@ -129,17 +130,6 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                 )
             }
         }
-    }
-    val notificationPermissionLauncher = rememberLauncherForActivityResult(RequestPermission()) { granted ->
-        if (pendingStartService) {
-            startForegroundSharingService()
-            if (!granted) {
-                scope.launch {
-                    snackbarHostState.showSnackbar(context.getString(SharedR.string.main_notification_permission_warning))
-                }
-            }
-        }
-        pendingStartService = false
     }
     val batchMediaPermissionLauncher = rememberLauncherForActivityResult(RequestMultiplePermissions()) { _ ->
         val hasAccess = hasBatchSelectionMediaAccess(context)
@@ -201,13 +191,44 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
             }
         }
     }
+    val requestLiveScreenProjection = {
+        val projectionManager = context.getSystemService(android.content.Context.MEDIA_PROJECTION_SERVICE) as android.media.projection.MediaProjectionManager
+        liveScreenPermissionLauncher.launch(projectionManager.createScreenCaptureIntent())
+    }
     val liveScreenAudioPermissionLauncher = rememberLauncherForActivityResult(RequestPermission()) { granted ->
         if (granted) {
-            val projectionManager = context.getSystemService(android.content.Context.MEDIA_PROJECTION_SERVICE) as android.media.projection.MediaProjectionManager
-            liveScreenPermissionLauncher.launch(projectionManager.createScreenCaptureIntent())
+            requestLiveScreenProjection()
         } else {
             scope.launch {
                 snackbarHostState.showSnackbar(context.getString(SharedR.string.live_screen_permission_denied))
+            }
+        }
+    }
+    val requestLiveScreenPermissions = {
+        val needsAudioPermission =
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
+        if (needsAudioPermission) {
+            liveScreenAudioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        } else {
+            requestLiveScreenProjection()
+        }
+    }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(RequestPermission()) { granted ->
+        val shouldStartSharing = pendingStartService
+        val shouldStartLiveScreen = pendingLiveScreenStartAfterNotificationPermission
+        pendingStartService = false
+        pendingLiveScreenStartAfterNotificationPermission = false
+
+        if (shouldStartSharing) {
+            startForegroundSharingService()
+        }
+        if (shouldStartLiveScreen) {
+            requestLiveScreenPermissions()
+        }
+        if (!granted && (shouldStartSharing || shouldStartLiveScreen)) {
+            scope.launch {
+                snackbarHostState.showSnackbar(context.getString(SharedR.string.main_notification_permission_warning))
             }
         }
     }
@@ -375,14 +396,14 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     }
                 }
                 AppEvent.RequestLiveScreenPermission -> {
-                    val projectionManager = context.getSystemService(android.content.Context.MEDIA_PROJECTION_SERVICE) as android.media.projection.MediaProjectionManager
-                    val needsAudioPermission =
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
-                            ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
-                    if (needsAudioPermission) {
-                        liveScreenAudioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    val needsNotificationPermission =
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                    if (needsNotificationPermission) {
+                        pendingLiveScreenStartAfterNotificationPermission = true
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                     } else {
-                        liveScreenPermissionLauncher.launch(projectionManager.createScreenCaptureIntent())
+                        requestLiveScreenPermissions()
                     }
                 }
                 is AppEvent.StartLiveScreenService -> {

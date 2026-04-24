@@ -57,6 +57,9 @@ const state = {
   liveStatePollTimer: null,
   liveStatsTimer: null,
   liveStatsToken: 0,
+  liveDisconnectPromise: null,
+  liveScreenState: null,
+  liveModeGuardTimer: null,
   liveFitMode: "contain",
   quickTextTimer: null,
 };
@@ -112,6 +115,27 @@ function isCategoryEnabled(cat) {
   const e = state.bootstrap?.enabledCategories;
   if (!e) return true;
   return e[cat] !== false;
+}
+
+function isLiveScreenActive(liveState = state.liveScreenState) {
+  return liveState?.status === "LIVE" || liveState?.status === "STARTING";
+}
+
+function isLiveMirrorUiMode(path = location.pathname) {
+  return path === "/live" || isLiveScreenActive();
+}
+
+function isBlockedByLiveMirror(path = location.pathname) {
+  return isLiveScreenActive() && path !== "/live" && path !== "/login";
+}
+
+async function refreshLiveScreenState() {
+  try {
+    state.liveScreenState = await api("/api/live/state");
+  } catch (_) {
+    state.liveScreenState = null;
+  }
+  return state.liveScreenState;
 }
 
 function isBrowserPreviewable(mimeType) {
@@ -185,6 +209,7 @@ document.addEventListener("error", (event) => {
 let dragCounter = 0;
 window.addEventListener("dragenter", (e) => {
   e.preventDefault();
+  if (isLiveMirrorUiMode()) return;
   dragCounter++;
   if (dragCounter === 1) {
     document.body.classList.add("gs-dragging");
@@ -195,6 +220,7 @@ window.addEventListener("dragover", (e) => {
 });
 window.addEventListener("dragleave", (e) => {
   e.preventDefault();
+  if (isLiveMirrorUiMode()) return;
   dragCounter--;
   if (dragCounter === 0) {
     document.body.classList.remove("gs-dragging");
@@ -204,6 +230,7 @@ window.addEventListener("drop", (e) => {
   e.preventDefault();
   dragCounter = 0;
   document.body.classList.remove("gs-dragging");
+  if (isLiveMirrorUiMode()) return;
   const files = Array.from(e.dataTransfer.files || []);
   if (files && files.length > 0) {
     queueUploadFiles(files);
@@ -214,6 +241,12 @@ let currentUploadXhr = null;
 
 async function handleFilesUpload(files, hooks = {}) {
   if (!files || files.length === 0) return;
+  await refreshLiveScreenState();
+  if (isLiveScreenActive()) {
+    state.pendingUploadFiles = [];
+    navigate("/live", true);
+    return;
+  }
   const overlay = document.getElementById("uploadOverlay");
   const title = document.getElementById("uploadTitle");
   const progress = document.getElementById("uploadProgress");
@@ -331,21 +364,29 @@ async function handleFilesUpload(files, hooks = {}) {
 }
 
 async function boot() {
+  const path = location.pathname;
   cancelCompatPolling();
+  destroyLiveModeGuard();
   destroyUppy();
   destroyPlyr();
   destroyHls();
   destroyMusicPlayers();
-  destroyLiveScreen();
+  await destroyLiveScreen({ wait: path === "/live" });
   destroyQuickTextPolling();
   resetThumbnailLoader();
-  const path = location.pathname;
 
   try {
     if (!state.bootstrap) {
       state.bootstrap = await api("/api/bootstrap");
       applyBootstrapUi();
       await reportClientCapabilities();
+    }
+    if (path !== "/login") {
+      await refreshLiveScreenState();
+      if (isBlockedByLiveMirror(path)) {
+        navigate("/live", true);
+        return;
+      }
     }
     debugTrace("bootstrap_loaded", `route=${path} auth=${state.bootstrap?.authEnabled} theme=${state.bootstrap?.themeMode}`);
     if (path === "/login") {
@@ -1030,8 +1071,11 @@ function shell(content, options = {}) {
   const bootstrap = state.bootstrap;
   const path = location.pathname;
   const mediaActive = isMediaPath(path);
-  const showFloatingSendBar = shouldShowFloatingSendBar(path);
+  const liveMirrorExclusive = isLiveScreenActive();
+  const liveMirrorUi = isLiveMirrorUiMode(path);
+  const showFloatingSendBar = shouldShowFloatingSendBar(path) && !liveMirrorExclusive;
   const immersive = isImmersiveMediaPath(path);
+  const homeHref = liveMirrorExclusive ? "/live" : "/";
   document.body.classList.toggle("gs-is-immersive", immersive);
 
   // Sync header height for sticky search offsets
@@ -1045,7 +1089,7 @@ function shell(content, options = {}) {
     }, 0);
   }
 
-  const mediaSubnav = mediaActive
+  const mediaSubnav = mediaActive && !liveMirrorExclusive
     ? `
       <div class="gs-media-subnav">
         <a class="gs-media-tab${path === "/" ? " on" : ""}" data-link href="/">${gsStr("web_nav_media", "Media")}</a>
@@ -1072,15 +1116,19 @@ function shell(content, options = {}) {
     : `
       <header class="gs-header">
         <nav class="gs-nav">
-          <a class="gs-logo" data-link href="/">
+          <a class="gs-logo" data-link href="${homeHref}">
             <div class="gs-logo-mark"></div>
             <span>${esc(bootstrap?.title || sessionTitle)}</span>
           </a>
           <div class="gs-nav-links">
-            <a class="gs-tab${mediaActive ? " on" : ""}" data-link href="/">${gsStr("web_nav_media", "Media")}</a>
-            ${isCategoryEnabled("files") ? `<a class="gs-tab${path === "/files" ? " on" : ""}" data-link href="/files">${gsStr("web_nav_files", "Files")}</a>` : ""}
-            <a class="gs-tab${path === "/live" ? " on" : ""}" data-link href="/live">${gsStr("web_live_title", "")}</a>
-            <a class="gs-tab${path === "/quick-text" ? " on" : ""}" data-link href="/quick-text">${gsStr("web_quick_text_title", "")}</a>
+            ${liveMirrorExclusive ? `
+              <a class="gs-tab on" data-link href="/live">${gsStr("web_live_title", "")}</a>
+            ` : `
+              <a class="gs-tab${mediaActive ? " on" : ""}" data-link href="/">${gsStr("web_nav_media", "Media")}</a>
+              ${isCategoryEnabled("files") ? `<a class="gs-tab${path === "/files" ? " on" : ""}" data-link href="/files">${gsStr("web_nav_files", "Files")}</a>` : ""}
+              ${path === "/live" ? `<a class="gs-tab on" data-link href="/live">${gsStr("web_live_title", "")}</a>` : ""}
+              <a class="gs-tab${path === "/quick-text" ? " on" : ""}" data-link href="/quick-text">${gsStr("web_quick_text_title", "")}</a>
+            `}
           </div>
           <div class="gs-nav-meta">
             <span class="gs-status-pill">${securityLabel}</span>
@@ -1148,6 +1196,9 @@ function shell(content, options = {}) {
     await api("/auth/logout", { method: "POST" });
     navigate("/login", true);
   });
+  if (!liveMirrorExclusive) {
+    startLiveModeGuard();
+  }
   renderNowPlayingBar();
 }
 
@@ -3219,6 +3270,7 @@ function destroyUppy() {
 }
 
 function queueUploadFiles(files) {
+  if (isLiveMirrorUiMode()) return;
   const normalized = Array.from(files || []).filter(Boolean);
   if (normalized.length === 0) return;
   if (location.pathname === "/upload" && state.uppy) {
@@ -3376,8 +3428,7 @@ function esc(value) {
     .replace(/'/g, "&#39;");
 }
 
-function destroyLiveScreen() {
-  state.liveStatsToken += 1;
+function clearLiveWebRtcTimers() {
   if (state.liveAnswerPollTimer) {
     clearInterval(state.liveAnswerPollTimer);
     state.liveAnswerPollTimer = null;
@@ -3394,24 +3445,51 @@ function destroyLiveScreen() {
     clearInterval(state.liveStatsTimer);
     state.liveStatsTimer = null;
   }
+}
+
+function disconnectLiveViewer(viewerId, keepalive = true) {
+  if (!viewerId) return Promise.resolve();
+  const promise = fetch(`/api/live/webrtc/disconnect/${encodeURIComponent(viewerId)}`, {
+    method: "POST",
+    credentials: "include",
+    keepalive,
+  }).catch(() => {});
+  const tracked = promise.finally(() => {
+    if (state.liveDisconnectPromise === tracked) {
+      state.liveDisconnectPromise = null;
+    }
+  });
+  state.liveDisconnectPromise = tracked;
+  return state.liveDisconnectPromise;
+}
+
+async function destroyLiveScreen(options = {}) {
+  const wait = Boolean(options.wait);
+  state.liveStatsToken += 1;
+  clearLiveWebRtcTimers();
   if (state.liveHls) {
     try { state.liveHls.destroy(); } catch (_) {}
     state.liveHls = null;
   }
+  let disconnectPromise = state.liveDisconnectPromise;
   if (state.liveViewerId) {
-    fetch(`/api/live/webrtc/disconnect/${encodeURIComponent(state.liveViewerId)}`, {
-      method: "POST",
-      credentials: "include",
-      keepalive: true,
-    }).catch(() => {});
+    disconnectPromise = disconnectLiveViewer(state.liveViewerId);
   }
   if (state.livePeer) {
     try { state.livePeer.close(); } catch (_) {}
     state.livePeer = null;
   }
+  if (state.liveRemoteStream) {
+    state.liveRemoteStream.getTracks().forEach((track) => {
+      try { track.stop?.(); } catch (_) {}
+    });
+  }
   state.liveRemoteStream = null;
   state.livePendingRemoteIce = [];
   state.liveViewerId = null;
+  if (wait && disconnectPromise) {
+    await disconnectPromise;
+  }
 }
 
 function destroyQuickTextPolling() {
@@ -3421,8 +3499,28 @@ function destroyQuickTextPolling() {
   }
 }
 
+function destroyLiveModeGuard() {
+  if (state.liveModeGuardTimer) {
+    clearInterval(state.liveModeGuardTimer);
+    state.liveModeGuardTimer = null;
+  }
+}
+
+function startLiveModeGuard() {
+  destroyLiveModeGuard();
+  if (location.pathname === "/live" || location.pathname === "/login") return;
+  state.liveModeGuardTimer = window.setInterval(async () => {
+    if (location.pathname === "/live" || location.pathname === "/login") return;
+    await refreshLiveScreenState();
+    if (isBlockedByLiveMirror()) {
+      navigate("/live", true);
+    }
+  }, 2500);
+}
+
 async function renderLiveScreen() {
   const liveState = await api("/api/live/state");
+  state.liveScreenState = liveState;
   shell(`
     <section class="gs-section" style="max-width:1200px;margin:0 auto;">
       <div class="gs-section-head">
@@ -3435,10 +3533,15 @@ async function renderLiveScreen() {
           <button class="gs-btn gs-btn-sm" id="liveRefreshBtn">${gsStr("web_live_refresh", "")}</button>
         </div>
       </div>
+      <div class="gs-section-meta" style="margin:0 0 16px;line-height:1.5;">
+        <div>${gsStr("web_live_capture_notice", "")}</div>
+        <div>${gsStr("web_live_browser_tip", "")}</div>
+      </div>
       <div style="background:#050816;border-radius:28px;padding:18px;">
         <video id="liveVideo" autoplay playsinline muted style="width:100%;max-height:72vh;background:#050816;border-radius:20px;object-fit:contain;"></video>
       </div>
       <div class="gs-section-meta" id="liveAudioText" style="margin-top:12px;"></div>
+      <div class="gs-section-meta" id="liveAudioHint" style="margin-top:8px;">${gsStr("web_live_unmute_hint", "")}</div>
       <div class="gs-toolbar-actions" style="margin-top:16px;">
         <button class="gs-btn gs-btn-sm" id="liveFitBtn">${gsStr("web_live_fit", "")}</button>
         <button class="gs-btn gs-btn-sm" id="liveFillBtn">${gsStr("web_live_fill", "")}</button>
@@ -3453,6 +3556,7 @@ function mountLiveScreen(initialState) {
   const video = document.getElementById("liveVideo");
   const statusText = document.getElementById("liveStatusText");
   const audioText = document.getElementById("liveAudioText");
+  const audioHint = document.getElementById("liveAudioHint");
   const audioBtn = document.getElementById("liveAudioBtn");
   if (!video || !statusText || !audioText || !audioBtn) return;
 
@@ -3461,6 +3565,7 @@ function mountLiveScreen(initialState) {
   };
 
   const applyLiveState = (sessionState) => {
+    state.liveScreenState = sessionState || null;
     if (sessionState?.status === "LIVE") applyStatus(gsStr("web_live_status_connecting", ""), sessionState.viewerCount > 0 ? gsStr("web_live_status_live", "") : gsStr("web_live_status_waiting_viewer", ""));
     else if (sessionState?.status === "STARTING") applyStatus(gsStr("web_live_status_starting", ""));
     else if (sessionState?.status === "ERROR") applyStatus(gsStr("web_live_stream_ended", ""), sessionState.lastError || "");
@@ -3487,6 +3592,7 @@ function mountLiveScreen(initialState) {
   document.getElementById("liveFillBtn")?.addEventListener("click", () => { video.style.objectFit = "cover"; });
   const applyLiveMuteButton = () => {
     audioBtn.textContent = video.muted ? gsStr("web_live_unmute", "") : gsStr("web_live_mute", "");
+    if (audioHint) audioHint.hidden = !video.muted;
   };
   const enableLiveAudioFromGesture = async () => {
     video.muted = false;
@@ -3577,6 +3683,9 @@ async function startLiveMuxedHls(video, applyStatus, applyLiveState, audioText, 
 
 async function startLiveWebRtc(video, applyStatus, applyLiveState, audioText, audioBtn) {
   applyStatus(gsStr("web_live_status_connecting", ""));
+  if (state.liveDisconnectPromise) {
+    await state.liveDisconnectPromise;
+  }
   const session = await api("/api/live/webrtc/session", {
     method: "POST",
     body: JSON.stringify({ pin: null }),
@@ -3597,6 +3706,44 @@ async function startLiveWebRtc(video, applyStatus, applyLiveState, audioText, au
   const remoteStream = new MediaStream();
   state.liveRemoteStream = remoteStream;
   state.livePendingRemoteIce = [];
+  let disconnectedCleanupTimer = null;
+  const clearDisconnectedCleanupTimer = () => {
+    if (disconnectedCleanupTimer) {
+      clearTimeout(disconnectedCleanupTimer);
+      disconnectedCleanupTimer = null;
+    }
+  };
+  const closeThisSession = (reason, notifyHost = true) => {
+    if (state.livePeer !== peer && state.liveViewerId !== viewerId) return;
+    clearDisconnectedCleanupTimer();
+    debugTrace("live_session_closed", `reason=${reason} viewerId=${viewerId}`);
+    state.liveStatsToken += 1;
+    clearLiveWebRtcTimers();
+    if (notifyHost && state.liveViewerId === viewerId) {
+      disconnectLiveViewer(viewerId);
+    }
+    remoteStream.getTracks().forEach((track) => {
+      try { track.stop?.(); } catch (_) {}
+    });
+    if (state.livePeer === peer) state.livePeer = null;
+    if (state.liveRemoteStream === remoteStream) state.liveRemoteStream = null;
+    if (state.liveViewerId === viewerId) state.liveViewerId = null;
+    state.livePendingRemoteIce = [];
+    try { peer.close(); } catch (_) {}
+  };
+  const scheduleDisconnectedCleanup = () => {
+    if (disconnectedCleanupTimer) return;
+    disconnectedCleanupTimer = window.setTimeout(() => {
+      disconnectedCleanupTimer = null;
+      if (
+        state.livePeer === peer &&
+        state.liveViewerId === viewerId &&
+        (peer.connectionState === "disconnected" || peer.iceConnectionState === "disconnected")
+      ) {
+        closeThisSession("connection_disconnected_timeout");
+      }
+    }, 12000);
+  };
   const videoTransceiver = peer.addTransceiver("video", { direction: "recvonly" });
   const audioTransceiver = peer.addTransceiver("audio", { direction: "recvonly" });
   preferLiveCodecs(videoTransceiver, "video");
@@ -3628,7 +3775,12 @@ async function startLiveWebRtc(video, applyStatus, applyLiveState, audioText, au
     remoteStream.addTrack(track);
     track.addEventListener?.("unmute", () => traceLiveVideoState(`live_track_unmute_${track.kind}`));
     track.addEventListener?.("mute", () => traceLiveVideoState(`live_track_mute_${track.kind}`));
-    track.addEventListener?.("ended", () => traceLiveVideoState(`live_track_ended_${track.kind}`));
+    track.addEventListener?.("ended", () => {
+      traceLiveVideoState(`live_track_ended_${track.kind}`);
+      if (remoteStream.getTracks().length > 0 && remoteStream.getTracks().every((remoteTrack) => remoteTrack.readyState === "ended")) {
+        closeThisSession("remote_tracks_ended");
+      }
+    });
     return true;
   };
   const attachReceiverTracks = (reason) => {
@@ -3676,23 +3828,39 @@ async function startLiveWebRtc(video, applyStatus, applyLiveState, audioText, au
     const connectionState = peer.connectionState;
     debugTrace("live_peer_connection_state", connectionState);
     if (connectionState === "connected") {
+      clearDisconnectedCleanupTimer();
       applyStatus(gsStr("web_live_status_live", ""));
     } else if (connectionState === "connecting") {
+      clearDisconnectedCleanupTimer();
       applyStatus(gsStr("web_live_status_connecting", ""));
     } else if (connectionState === "disconnected") {
       applyStatus(gsStr("web_live_status_reconnecting", ""));
+      scheduleDisconnectedCleanup();
     } else if (connectionState === "failed") {
       applyStatus(gsStr("web_live_status_reconnecting", ""));
+      closeThisSession("connection_failed");
     } else if (connectionState === "closed") {
       applyStatus(gsStr("web_live_stream_ended", ""));
+      closeThisSession("connection_closed", false);
     }
   };
-  peer.oniceconnectionstatechange = () => debugTrace("live_ice_connection_state", peer.iceConnectionState);
+  peer.oniceconnectionstatechange = () => {
+    debugTrace("live_ice_connection_state", peer.iceConnectionState);
+    if (peer.iceConnectionState === "connected" || peer.iceConnectionState === "completed") {
+      clearDisconnectedCleanupTimer();
+    } else if (peer.iceConnectionState === "disconnected") {
+      scheduleDisconnectedCleanup();
+    } else if (peer.iceConnectionState === "failed") {
+      closeThisSession("ice_failed");
+    } else if (peer.iceConnectionState === "closed") {
+      closeThisSession("ice_closed", false);
+    }
+  };
   peer.onicegatheringstatechange = () => debugTrace("live_ice_gathering_state", peer.iceGatheringState);
 
   peer.onicecandidate = (event) => {
-    if (!event.candidate || !state.liveViewerId) return;
-    api(`/api/live/webrtc/ice/browser/${encodeURIComponent(state.liveViewerId)}`, {
+    if (!event.candidate || state.liveViewerId !== viewerId) return;
+    api(`/api/live/webrtc/ice/browser/${encodeURIComponent(viewerId)}`, {
       method: "POST",
       body: JSON.stringify({
         sdpMid: event.candidate.sdpMid,
@@ -3702,10 +3870,10 @@ async function startLiveWebRtc(video, applyStatus, applyLiveState, audioText, au
     }).catch(() => {});
   };
   const flushLiveRemoteIce = () => {
-    if (!state.livePeer?.remoteDescription || state.livePendingRemoteIce.length === 0) return;
+    if (state.livePeer !== peer || !peer.remoteDescription || state.livePendingRemoteIce.length === 0) return;
     const queued = state.livePendingRemoteIce.splice(0, state.livePendingRemoteIce.length);
     queued.forEach((candidate) => {
-      state.livePeer?.addIceCandidate(candidate).catch(() => {});
+      peer.addIceCandidate(candidate).catch(() => {});
     });
   };
   const createAndSendBrowserOffer = async () => {
@@ -3725,30 +3893,43 @@ async function startLiveWebRtc(video, applyStatus, applyLiveState, audioText, au
   };
   createAndSendBrowserOffer().catch((error) => {
     debugTrace("live_browser_offer_failed", error?.message || String(error || ""));
+    if (error?.status === 404 || error?.status === 409) {
+      closeThisSession("browser_offer_rejected", false);
+      return;
+    }
     applyStatus(gsStr("web_live_status_reconnecting", ""));
   });
 
   state.liveAnswerPollTimer = window.setInterval(async () => {
-    if (!state.liveViewerId || !state.livePeer || state.livePeer.remoteDescription) return;
+    if (state.liveViewerId !== viewerId || state.livePeer !== peer || peer.remoteDescription) return;
     try {
-      const response = await fetch(`/api/live/webrtc/answer/${encodeURIComponent(state.liveViewerId)}`, {
+      const response = await fetch(`/api/live/webrtc/answer/${encodeURIComponent(viewerId)}`, {
         credentials: "include",
       });
       if (response.status === 202) return;
+      if (response.status === 404 || response.status === 409) {
+        closeThisSession("android_answer_rejected", false);
+        return;
+      }
       if (!response.ok) return;
       const androidAnswer = await response.json();
       if (!androidAnswer?.sdp) return;
-      await state.livePeer.setRemoteDescription({ type: "answer", sdp: androidAnswer.sdp });
+      if (state.liveViewerId !== viewerId || state.livePeer !== peer) return;
+      await peer.setRemoteDescription({ type: "answer", sdp: androidAnswer.sdp });
       flushLiveRemoteIce();
       debugTrace(
         "live_android_answer_set",
-        `hasCandidates=${androidAnswer.sdp.includes("a=candidate:")} receivers=${state.livePeer.getReceivers().map((receiver) => receiver.track?.kind || "none").join(",")}`,
+        `hasCandidates=${androidAnswer.sdp.includes("a=candidate:")} receivers=${peer.getReceivers().map((receiver) => receiver.track?.kind || "none").join(",")}`,
       );
       attachReceiverTracks("answer_set");
-      setTimeout(() => attachReceiverTracks("answer_set_delayed"), 500);
+      setTimeout(() => {
+        if (state.liveViewerId === viewerId && state.livePeer === peer) {
+          attachReceiverTracks("answer_set_delayed");
+        }
+      }, 500);
       debugTrace(
         "live_browser_answer_received",
-        `receivers=${state.livePeer.getReceivers().map((receiver) => receiver.track?.kind || "none").join(",")}`,
+        `receivers=${peer.getReceivers().map((receiver) => receiver.track?.kind || "none").join(",")}`,
       );
       ensureLivePlayback();
       if (!androidAnswer.audioEnabled) {
@@ -3758,18 +3939,22 @@ async function startLiveWebRtc(video, applyStatus, applyLiveState, audioText, au
   }, 500);
 
   state.liveIcePollTimer = window.setInterval(async () => {
-    if (!state.liveViewerId || !state.livePeer) return;
+    if (state.liveViewerId !== viewerId || state.livePeer !== peer) return;
     try {
-      const candidates = await api(`/api/live/webrtc/ice/android/${encodeURIComponent(state.liveViewerId)}`);
+      const candidates = await api(`/api/live/webrtc/ice/android/${encodeURIComponent(viewerId)}`);
       (candidates || []).forEach((candidate) => {
-        if (!state.livePeer.remoteDescription) {
+        if (!peer.remoteDescription) {
           state.livePendingRemoteIce.push(candidate);
           return;
         }
-        state.livePeer.addIceCandidate(candidate).catch(() => {});
+        peer.addIceCandidate(candidate).catch(() => {});
       });
       flushLiveRemoteIce();
-    } catch (_) {}
+    } catch (error) {
+      if (error?.status === 404 || error?.status === 409) {
+        closeThisSession("android_ice_rejected", false);
+      }
+    }
   }, 1000);
 
   state.liveStatePollTimer = window.setInterval(async () => {
@@ -3778,7 +3963,7 @@ async function startLiveWebRtc(video, applyStatus, applyLiveState, audioText, au
       applyLiveState(await api("/api/live/state"));
     } catch (_) {}
   }, 2000);
-  startLiveStatsMonitor(peer, video);
+  startLiveStatsMonitor(peer, video, viewerId);
 
   window.addEventListener("pagehide", () => {
     if (state.liveViewerId) {
@@ -3827,12 +4012,24 @@ function preferLiveCodecs(transceiver, kind) {
   }
 }
 
-function startLiveStatsMonitor(peer, video) {
+function startLiveStatsMonitor(peer, video, viewerId) {
   if (state.liveStatsTimer) clearInterval(state.liveStatsTimer);
   const token = ++state.liveStatsToken;
   let last = null;
   const timer = window.setInterval(async () => {
-    if (token !== state.liveStatsToken || location.pathname !== "/live" || !peer || peer.connectionState === "closed") {
+    const closed =
+      !peer ||
+      peer.connectionState === "closed" ||
+      peer.connectionState === "failed" ||
+      peer.iceConnectionState === "closed" ||
+      peer.iceConnectionState === "failed";
+    if (
+      token !== state.liveStatsToken ||
+      location.pathname !== "/live" ||
+      state.liveViewerId !== viewerId ||
+      state.livePeer !== peer ||
+      closed
+    ) {
       clearInterval(timer);
       if (state.liveStatsTimer === timer) state.liveStatsTimer = null;
       return;
@@ -3874,9 +4071,9 @@ function startLiveStatsMonitor(peer, video) {
       const videoKbps = last ? Math.round(((stats.videoBytes - last.videoBytes) * 8) / 1000 / deltaSeconds) : 0;
       debugTrace(
         "live_webrtc_stats",
-        `audioKbps=${audioKbps} audioPackets=${stats.audioPackets} audioLost=${stats.audioLost} audioLevel=${stats.audioLevel} audioJitter=${stats.audioJitter} ` +
+        `viewerId=${viewerId} audioKbps=${audioKbps} audioPackets=${stats.audioPackets} audioLost=${stats.audioLost} audioLevel=${stats.audioLevel} audioJitter=${stats.audioJitter} ` +
           `videoKbps=${videoKbps} fps=${stats.fps} frames=${stats.videoFrames} dropped=${stats.videoDropped} freezes=${stats.freezes} ` +
-          `ready=${video.readyState} elementMuted=${video.muted} volume=${video.volume}`,
+          `ready=${video.readyState} connection=${peer.connectionState} ice=${peer.iceConnectionState} elementMuted=${video.muted} volume=${video.volume}`,
       );
       last = {
         now,

@@ -18,6 +18,7 @@ import android.os.IBinder
 import android.util.DisplayMetrics
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.ghostgramlabs.directserve.GhostStreamApplication
@@ -99,6 +100,7 @@ class LiveScreenCaptureService : Service() {
     @Volatile
     private var isStopping: Boolean = false
     private var silenceWatchJob: Job? = null
+    private var displayChangeJob: Job? = null
     private val audioPacingLock = Any()
     private var nextAudioInjectionNs: Long = 0L
 
@@ -114,22 +116,35 @@ class LiveScreenCaptureService : Service() {
 
         override fun onDisplayChanged(displayId: Int) {
             if (displayId != 0) return
-            val metrics = currentMetrics()
-            val target = chooseCaptureSize(metrics.widthPixels, metrics.heightPixels)
-            if (target.first == captureWidth && target.second == captureHeight) return
-            captureWidth = target.first
-            captureHeight = target.second
-            runCatching { screenCapturer?.changeCaptureFormat(captureWidth, captureHeight, captureFps) }
-            container.debugLogRepository.log(
-                "LiveScreen",
-                "display changed width=$captureWidth height=$captureHeight fps=$captureFps",
-            )
-            container.liveScreenManager.updateState {
-                it.copy(
-                    width = captureWidth,
-                    height = captureHeight,
-                )
+            displayChangeJob?.cancel()
+            displayChangeJob = serviceScope.launch {
+                delay(DISPLAY_CHANGE_DEBOUNCE_MS)
+                applyDisplayChange()
             }
+        }
+    }
+
+    private fun applyDisplayChange() {
+        if (isStopping) return
+        val capturer = screenCapturer ?: return
+        val metrics = currentMetrics()
+        val target = chooseCaptureSize(metrics.widthPixels, metrics.heightPixels)
+        if (target.first == captureWidth && target.second == captureHeight) return
+        captureWidth = target.first
+        captureHeight = target.second
+        captureBitrateKbps = estimateCaptureBitrateKbps(captureWidth, captureHeight, captureFps)
+        runCatching { capturer.changeCaptureFormat(captureWidth, captureHeight, captureFps) }
+        retuneActiveVideoSenders()
+        container.debugLogRepository.log(
+            "LiveScreen",
+            "display changed width=$captureWidth height=$captureHeight fps=$captureFps bitrate=$captureBitrateKbps",
+        )
+        container.liveScreenManager.updateState {
+            it.copy(
+                width = captureWidth,
+                height = captureHeight,
+                bitrateKbps = captureBitrateKbps,
+            )
         }
     }
 
@@ -189,11 +204,29 @@ class LiveScreenCaptureService : Service() {
             .setContentText(getString(SharedR.string.live_screen_notification_body))
             .setContentIntent(openAppIntent)
             .setOngoing(true)
+            .setAutoCancel(false)
+            .setOnlyAlertOnce(true)
+            .setLocalOnly(true)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+            .setSilent(true)
             .addAction(0, getString(R.string.notification_stop), stopIntent)
             .build()
 
         val foregroundType = liveScreenForegroundType()
-        container.debugLogRepository.log("LiveScreen", "starting foreground notification type=$foregroundType")
+        val notificationsEnabled = NotificationManagerCompat.from(this).areNotificationsEnabled()
+        val channelImportance = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            (getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
+                .getNotificationChannel(CHANNEL_ID)
+                ?.importance
+        } else {
+            null
+        }
+        container.debugLogRepository.log(
+            "LiveScreen",
+            "starting foreground notification type=$foregroundType notificationsEnabled=$notificationsEnabled channelImportance=$channelImportance",
+        )
         ServiceCompat.startForeground(
             this,
             NOTIFICATION_ID,
@@ -815,6 +848,7 @@ class LiveScreenCaptureService : Service() {
             runCatching {
                 val transceiver = connection.addTransceiver(localVideoTrack, sendOnlyTransceiverInit())
                 configureTransceiverForSend(transceiver, "video")
+                tuneVideoSender(transceiver)
                 container.debugLogRepository.log("LiveScreen", "video sender attached via fallback transceiver")
             }.onFailure { error ->
                 container.debugLogRepository.log("LiveScreen", "failed to attach fallback video sender", error)
@@ -917,7 +951,7 @@ class LiveScreenCaptureService : Service() {
     private fun tuneVideoSender(transceiver: RtpTransceiver) {
         val parameters = transceiver.sender.parameters ?: return
         val maxBitrate = captureBitrateKbps * 1_000
-        val minBitrate = (maxBitrate / 3).coerceAtLeast(MIN_VIDEO_BITRATE_KBPS * 1_000)
+        val minBitrate = (maxBitrate / 3).coerceAtLeast(MIN_VIDEO_SENDER_BITRATE_BPS)
         parameters.degradationPreference = RtpParameters.DegradationPreference.BALANCED
         parameters.encodings.forEach { encoding ->
             encoding.active = true
@@ -932,6 +966,13 @@ class LiveScreenCaptureService : Service() {
             "LiveScreen",
             "video sender tuned applied=$applied fps=$captureFps minBitrate=$minBitrate maxBitrate=$maxBitrate encodings=${parameters.encodings.size}",
         )
+    }
+
+    private fun retuneActiveVideoSenders() {
+        peerConnection
+            ?.transceivers
+            ?.filter { it.mediaType == MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO }
+            ?.forEach(::tuneVideoSender)
     }
 
     private fun createPeerObserver(viewerId: String): PeerConnection.Observer =
@@ -1000,11 +1041,15 @@ class LiveScreenCaptureService : Service() {
                 onCreate = { description ->
                     val localDescription = SessionDescription(
                         description.type,
-                        preferH264(description.description),
+                        tuneLiveAnswerSdp(
+                            sdp = description.description,
+                            videoBitrateKbps = captureBitrateKbps,
+                            videoFps = captureFps,
+                        ),
                     )
                     container.debugLogRepository.log(
                         "LiveScreen",
-                        "answer created ${summarizeSdpDirections(localDescription.description)}",
+                        "answer created ${summarizeSdpDirections(localDescription.description)} bitrate=$captureBitrateKbps fps=$captureFps",
                     )
                     serviceScope.launch {
                         delay(LOCAL_DESCRIPTION_FALLBACK_MS)
@@ -1195,6 +1240,8 @@ class LiveScreenCaptureService : Service() {
         signalingJob = null
         silenceWatchJob?.cancel()
         silenceWatchJob = null
+        displayChangeJob?.cancel()
+        displayChangeJob = null
         activeViewerId?.let { viewerId ->
             serviceScope.launch {
                 container.liveScreenManager.disconnectViewer(viewerId)
@@ -1273,7 +1320,7 @@ class LiveScreenCaptureService : Service() {
     }
 
     private fun chooseCaptureSize(width: Int, height: Int): Pair<Int, Int> {
-        val maxDimension = 1_280f
+        val maxDimension = LIVE_CAPTURE_LONG_EDGE.toFloat()
         val scale = if (maxOf(width, height) <= maxDimension) 1f else maxDimension / maxOf(width, height).toFloat()
         val scaledWidth = ((width * scale).toInt() / 2) * 2
         val scaledHeight = ((height * scale).toInt() / 2) * 2
@@ -1352,7 +1399,7 @@ class LiveScreenCaptureService : Service() {
 
     private fun estimateCaptureBitrateKbps(width: Int, height: Int, fps: Int): Int {
         val pixelsPerSecond = width.toLong() * height.toLong() * fps.toLong()
-        return (pixelsPerSecond / 4_000L)
+        return (pixelsPerSecond / 4_500L)
             .toInt()
             .coerceIn(MIN_VIDEO_BITRATE_KBPS, MAX_VIDEO_BITRATE_KBPS)
     }
@@ -1468,15 +1515,19 @@ class LiveScreenCaptureService : Service() {
         val channel = NotificationChannel(
             CHANNEL_ID,
             getString(SharedR.string.live_screen_notification_channel_name),
-            NotificationManager.IMPORTANCE_LOW,
+            NotificationManager.IMPORTANCE_DEFAULT,
         ).apply {
             description = getString(SharedR.string.live_screen_notification_channel_desc)
+            enableVibration(false)
+            setSound(null, null)
+            setShowBadge(false)
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
         }
         manager.createNotificationChannel(channel)
     }
 
     companion object {
-        private const val CHANNEL_ID = "directserve_live_screen"
+        private const val CHANNEL_ID = "directserve_live_screen_active"
         private const val NOTIFICATION_ID = 409
         private const val ACTION_START = "com.ghostgramlabs.directserve.action.START_LIVE_SCREEN"
         private const val ACTION_STOP = "com.ghostgramlabs.directserve.action.STOP_LIVE_SCREEN"
@@ -1495,8 +1546,11 @@ class LiveScreenCaptureService : Service() {
         private const val MIN_AUDIO_CALLBACK_INTERVAL_NS = 1_000_000L
         private const val MAX_AUDIO_CALLBACK_INTERVAL_NS = 20_000_000L
         private const val LIVE_CAPTURE_FPS = 30
-        private const val MIN_VIDEO_BITRATE_KBPS = 4_000
-        private const val MAX_VIDEO_BITRATE_KBPS = 20_000
+        private const val LIVE_CAPTURE_LONG_EDGE = 1_600
+        private const val MIN_VIDEO_BITRATE_KBPS = 4_500
+        private const val MAX_VIDEO_BITRATE_KBPS = 12_000
+        private const val MIN_VIDEO_SENDER_BITRATE_BPS = 1_500_000
+        private const val DISPLAY_CHANGE_DEBOUNCE_MS = 1_500L
         private const val PROJECTION_READY_RETRY_COUNT = 10
         private const val PROJECTION_READY_RETRY_DELAY_MS = 50L
         private const val ICE_GATHERING_SIGNAL_TIMEOUT_MS = 2_500L
@@ -1565,6 +1619,133 @@ private fun IceCandidate.toPayload(): LiveIceCandidatePayload = LiveIceCandidate
     sdpMLineIndex = sdpMLineIndex,
     candidate = sdp,
 )
+
+private fun tuneLiveAnswerSdp(
+    sdp: String,
+    videoBitrateKbps: Int,
+    videoFps: Int,
+): String {
+    val preferred = preferH264(sdp)
+    val lines = preferred.split("\r\n").toMutableList()
+    val videoIndex = lines.indexOfFirst { it.startsWith("m=video ") }
+    if (videoIndex >= 0) {
+        setMediaBandwidth(lines, videoIndex, videoBitrateKbps)
+        ensureCodecFmtpParameters(
+            lines = lines,
+            mediaIndex = videoIndex,
+            codecNames = setOf("H264", "VP8", "VP9"),
+            parameters = listOf(
+                "x-google-start-bitrate" to videoBitrateKbps.toString(),
+                "x-google-min-bitrate" to (videoBitrateKbps / 3).coerceAtLeast(1_500).toString(),
+                "x-google-max-bitrate" to videoBitrateKbps.toString(),
+            ),
+        )
+        ensureMediaLine(lines, videoIndex, "a=framerate:$videoFps")
+    }
+    val audioIndex = lines.indexOfFirst { it.startsWith("m=audio ") }
+    if (audioIndex >= 0) {
+        ensureCodecFmtpParameters(
+            lines = lines,
+            mediaIndex = audioIndex,
+            codecNames = setOf("OPUS"),
+            parameters = listOf(
+                "useinbandfec" to "1",
+                "usedtx" to "0",
+                "stereo" to "1",
+                "sprop-stereo" to "1",
+                "maxaveragebitrate" to "64000",
+            ),
+        )
+    }
+    return lines.joinToString("\r\n")
+}
+
+private fun setMediaBandwidth(lines: MutableList<String>, mediaIndex: Int, bitrateKbps: Int) {
+    val sectionEnd = nextMediaIndex(lines, mediaIndex)
+    var index = mediaIndex + 1
+    while (index < sectionEnd && index < lines.size) {
+        if (lines[index].startsWith("b=AS:") || lines[index].startsWith("b=TIAS:")) {
+            lines.removeAt(index)
+            continue
+        }
+        index += 1
+    }
+    val refreshedEnd = nextMediaIndex(lines, mediaIndex)
+    val insertAfter = (mediaIndex + 1 until refreshedEnd)
+        .lastOrNull { lines[it].startsWith("c=") }
+        ?: mediaIndex
+    lines.add(insertAfter + 1, "b=TIAS:${bitrateKbps * 1_000}")
+    lines.add(insertAfter + 1, "b=AS:$bitrateKbps")
+}
+
+private fun ensureMediaLine(lines: MutableList<String>, mediaIndex: Int, line: String) {
+    val sectionEnd = nextMediaIndex(lines, mediaIndex)
+    if ((mediaIndex + 1 until sectionEnd).any { lines[it] == line }) return
+    lines.add(sectionEnd, line)
+}
+
+private fun ensureCodecFmtpParameters(
+    lines: MutableList<String>,
+    mediaIndex: Int,
+    codecNames: Set<String>,
+    parameters: List<Pair<String, String>>,
+) {
+    val sectionEnd = nextMediaIndex(lines, mediaIndex)
+    val payloads = (mediaIndex + 1 until sectionEnd)
+        .mapNotNull { index ->
+            val line = lines[index]
+            if (!line.startsWith("a=rtpmap:")) return@mapNotNull null
+            val payload = line.substringAfter("a=rtpmap:").substringBefore(' ')
+            val codecName = line.substringAfter(' ', "").substringBefore('/').uppercase()
+            if (codecNames.any { codecName.contains(it) }) payload else null
+        }
+        .toSet()
+    if (payloads.isEmpty()) return
+
+    payloads.forEach { payload ->
+        val refreshedEnd = nextMediaIndex(lines, mediaIndex)
+        val fmtpIndex = (mediaIndex + 1 until refreshedEnd)
+            .firstOrNull { lines[it].startsWith("a=fmtp:$payload ") }
+        if (fmtpIndex != null) {
+            lines[fmtpIndex] = appendFmtpParameters(lines[fmtpIndex], parameters)
+        } else {
+            val rtpIndex = (mediaIndex + 1 until refreshedEnd)
+                .firstOrNull { lines[it].startsWith("a=rtpmap:$payload ") }
+                ?: return@forEach
+            lines.add(
+                rtpIndex + 1,
+                "a=fmtp:$payload ${parameters.joinToString(";") { "${it.first}=${it.second}" }}",
+            )
+        }
+    }
+}
+
+private fun appendFmtpParameters(
+    line: String,
+    parameters: List<Pair<String, String>>,
+): String {
+    val prefix = line.substringBefore(' ')
+    val existing = line.substringAfter(' ', "")
+    val parts = existing.split(';')
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .toMutableList()
+    parameters.forEach { (name, value) ->
+        val index = parts.indexOfFirst { it.substringBefore('=').equals(name, ignoreCase = true) }
+        val parameter = "$name=$value"
+        if (index >= 0) {
+            parts[index] = parameter
+        } else {
+            parts += parameter
+        }
+    }
+    return "$prefix ${parts.joinToString(";")}"
+}
+
+private fun nextMediaIndex(lines: List<String>, mediaIndex: Int): Int {
+    val next = (mediaIndex + 1 until lines.size).firstOrNull { lines[it].startsWith("m=") }
+    return next ?: lines.size
+}
 
 private fun preferH264(sdp: String): String {
     val lines = sdp.split("\r\n").toMutableList()

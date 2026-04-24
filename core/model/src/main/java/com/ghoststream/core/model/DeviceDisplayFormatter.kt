@@ -19,6 +19,14 @@ fun deviceIdentity(ipAddress: String): DeviceIdentity {
 
 fun formatGeneratedNameWithIp(ipAddress: String): String = deviceIdentity(ipAddress).nameWithIp
 
+fun displayDeviceName(
+    ipAddress: String,
+    deviceNicknames: Map<String, String>,
+): String {
+    return deviceNicknames[ipAddress]?.takeIf { it.isNotBlank() }
+        ?: deviceIdentity(ipAddress).generatedName
+}
+
 fun formatHistoryPeer(peer: String): String {
     return if (peer.looksLikeIpAddress()) formatGeneratedNameWithIp(peer) else peer
 }

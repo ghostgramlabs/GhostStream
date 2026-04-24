@@ -199,11 +199,9 @@ fun HomeScreen(
 
         item {
             FeatureSectionsCard(
-                sessionState = sessionState,
                 settings = settings,
                 onOpenLibrary = onOpenLibrary,
                 onOpenSettings = onOpenSettings,
-                onStartSharing = onStartSharing,
                 onOpenHistory = onOpenHistory,
                 onOpenLiveScreen = onOpenLiveScreen,
                 onOpenQuickText = onOpenQuickText,
@@ -299,11 +297,9 @@ fun HomeScreen(
 
 @Composable
 private fun FeatureSectionsCard(
-    sessionState: SessionState,
     settings: com.ghoststream.core.model.AppSettings,
     onOpenLibrary: () -> Unit,
     onOpenSettings: () -> Unit,
-    onStartSharing: () -> Unit,
     onOpenHistory: () -> Unit,
     onOpenLiveScreen: () -> Unit,
     onOpenQuickText: () -> Unit,
@@ -321,45 +317,25 @@ private fun FeatureSectionsCard(
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             Text(
-                text = stringResource(R.string.home_section_sharing),
+                text = stringResource(R.string.home_section_library),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
             )
             FeatureRow(
                 icon = Icons.Outlined.Collections,
-                title = stringResource(R.string.home_feature_share_files),
-                detail = stringResource(R.string.home_feature_share_files_desc),
+                title = stringResource(R.string.home_feature_library),
+                detail = stringResource(R.string.home_feature_library_desc),
                 onClick = onOpenLibrary,
             )
             FeatureRow(
                 icon = Icons.Outlined.History,
-                title = stringResource(R.string.home_feature_receive_files),
-                detail = stringResource(R.string.home_feature_receive_files_desc),
+                title = stringResource(R.string.home_feature_transfers),
+                detail = stringResource(R.string.home_feature_transfers_desc),
                 onClick = onOpenHistory,
-            )
-            FeatureRow(
-                icon = Icons.Outlined.PlayArrow,
-                title = stringResource(R.string.home_feature_play_media),
-                detail = if (sessionState.isSharing) {
-                    stringResource(R.string.home_feature_play_media_live)
-                } else {
-                    stringResource(R.string.home_feature_play_media_desc)
-                },
-                onClick = onStartSharing,
-            )
-            FeatureRow(
-                icon = Icons.Outlined.NetworkCheck,
-                title = stringResource(R.string.home_feature_dlna),
-                detail = if (settings.dlnaEnabled) {
-                    stringResource(R.string.home_feature_dlna_enabled)
-                } else {
-                    stringResource(R.string.home_feature_dlna_desc)
-                },
-                onClick = onOpenSettings,
             )
 
             Text(
-                text = stringResource(R.string.home_section_live_features),
+                text = stringResource(R.string.home_section_live_tools),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -374,6 +350,22 @@ private fun FeatureSectionsCard(
                 title = stringResource(R.string.home_feature_quick_text),
                 detail = stringResource(R.string.home_feature_quick_text_desc),
                 onClick = onOpenQuickText,
+            )
+
+            Text(
+                text = stringResource(R.string.home_section_network_tv),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+            FeatureRow(
+                icon = Icons.Outlined.NetworkCheck,
+                title = stringResource(R.string.home_feature_dlna),
+                detail = if (settings.dlnaEnabled) {
+                    stringResource(R.string.home_feature_dlna_enabled)
+                } else {
+                    stringResource(R.string.home_feature_dlna_desc)
+                },
+                onClick = onOpenSettings,
             )
         }
     }

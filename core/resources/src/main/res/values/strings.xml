@@ -584,8 +584,15 @@
     <string name="home_date_range_apply">Apply filter</string>
     <string name="home_date_range_cancel">Cancel</string>
     <string name="home_recent_shares">Recent shares</string>
+    <string name="home_section_library">Library &amp; transfers</string>
+    <string name="home_section_live_tools">Live tools</string>
+    <string name="home_section_network_tv">Network &amp; TV</string>
     <string name="home_section_sharing">Sharing</string>
     <string name="home_section_live_features">Live Features</string>
+    <string name="home_feature_library">Shared Library</string>
+    <string name="home_feature_library_desc">Choose the files and folders nearby devices can browse.</string>
+    <string name="home_feature_transfers">Transfers</string>
+    <string name="home_feature_transfers_desc">Review activity and files received from browsers.</string>
     <string name="home_feature_share_files">Share Files</string>
     <string name="home_feature_share_files_desc">Choose the files and folders available to nearby devices.</string>
     <string name="home_feature_receive_files">Receive Files</string>
@@ -597,9 +604,9 @@
     <string name="home_feature_dlna_desc">Open settings to enable TV and DLNA discovery.</string>
     <string name="home_feature_dlna_enabled">DLNA is enabled in settings.</string>
     <string name="home_feature_live_screen">Live Screen</string>
-    <string name="home_feature_live_screen_desc">View your phone on another device.</string>
+    <string name="home_feature_live_screen_desc">Mirror your phone screen to a browser on the local network.</string>
     <string name="home_feature_quick_text">Quick Text</string>
-    <string name="home_feature_quick_text_desc">Send text and links with full saved history.</string>
+    <string name="home_feature_quick_text_desc">Send text or links to nearby browser devices.</string>
     <string name="home_saved_shares">Saved shares</string>
     <string name="home_saved_shares_save_now">Save now</string>
     <string name="home_saved_shares_open">Open</string>
@@ -808,6 +815,9 @@
     <string name="web_live_audio_unavailable">Audio unavailable</string>
     <string name="web_live_audio_blocked_or_silent">Audio blocked or silent</string>
     <string name="web_live_audio_limit">Audio may not be available for some apps due to system restrictions.</string>
+    <string name="web_live_capture_notice">Some apps block screen capture, so protected video or secure screens may appear blank or incomplete.</string>
+    <string name="web_live_browser_tip">For best results, view Live Screen in Chrome.</string>
+    <string name="web_live_unmute_hint">Tap Unmute to hear audio. Browsers start live streams muted until you allow sound.</string>
     <string name="web_live_stream_ended">Stream ended</string>
     <string name="web_live_fullscreen">Fullscreen</string>
     <string name="web_live_refresh">Refresh</string>
