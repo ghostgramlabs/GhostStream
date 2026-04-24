@@ -3,6 +3,7 @@ package com.ghostgramlabs.directserve.state
 import android.app.Application
 import com.ghostgramlabs.directserve.BuildConfig
 import com.ghostgramlabs.directserve.debug.DebugLogRepository
+import com.ghostgramlabs.directserve.live.LiveScreenManager
 import com.ghoststream.core.media.AndroidMediaAnalyzer
 import com.ghoststream.core.media.CompatibilityPipeline
 import com.ghoststream.core.media.MediaAnalyzer
@@ -35,6 +36,7 @@ class AppContainer(
     val debugLogRepository: DebugLogRepository by lazy { DebugLogRepository(appContext, enabled = BuildConfig.DEBUG) }
     val historyRepository: HistoryRepository by lazy { RoomHistoryRepository(appContext) }
     val settingsRepository: SettingsRepository by lazy { DataStoreSettingsRepository(appContext) }
+    val liveScreenManager: LiveScreenManager by lazy { LiveScreenManager() }
     val decisionEngine by lazy { DefaultSmartPlaybackDecisionEngine() }
     val mediaAnalyzer: MediaAnalyzer by lazy { AndroidMediaAnalyzer(appContext, decisionEngine, mediaSourceStabilizer) }
     private val tempPlaybackCache: TempPlaybackCache by lazy { TempPlaybackCache(appContext) }
@@ -84,6 +86,7 @@ class AppContainer(
             compatibilityPipeline = compatibilityPipeline,
             networkInspector = networkInspector,
             historyRepository = historyRepository,
+            liveScreenStore = liveScreenManager,
             debugLogSink = debugLogRepository,
             debugBrowserTracingEnabled = BuildConfig.DEBUG,
         )
@@ -99,6 +102,7 @@ class AppContainer(
             mediaAnalyzer = mediaAnalyzer,
             compatibilityPipeline = compatibilityPipeline,
             nsdAdvertiser = nsdAdvertiser,
+            liveScreenStore = liveScreenManager,
             debugLogSink = debugLogRepository,
         )
     }

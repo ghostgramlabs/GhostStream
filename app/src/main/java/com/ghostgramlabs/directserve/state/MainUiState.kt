@@ -5,7 +5,9 @@ import com.ghoststream.core.media.CompatibilityJob
 import com.ghoststream.core.model.AppSettings
 import com.ghoststream.core.model.ConnectionDiagnostics
 import com.ghoststream.core.model.LibraryState
+import com.ghoststream.core.model.LiveScreenSessionState
 import com.ghoststream.core.model.NearbyDiscoveryState
+import com.ghoststream.core.model.QuickTextMessage
 import com.ghoststream.core.model.RecentSession
 import com.ghoststream.core.model.SessionState
 import com.ghoststream.core.model.SmartSelectionGroup
@@ -28,6 +30,8 @@ data class MainUiState(
     val connectingNearbyDeviceId: String? = null,
     val pendingUploadRequest: com.ghoststream.core.model.UploadRequest? = null,
     val transferHistory: List<TransferRecord> = emptyList(),
+    val quickTextHistory: List<QuickTextMessage> = emptyList(),
+    val liveScreenState: LiveScreenSessionState = LiveScreenSessionState(),
     val browserPrepManuallyTriggered: Boolean = false,
     val hasAllFilesAccess: Boolean = false,
 )
@@ -43,7 +47,12 @@ sealed interface AppEvent {
     data class ShareDebugLog(val uri: Uri) : AppEvent
     data class OpenExternalUrl(val url: String) : AppEvent
     data object NavigateHistory : AppEvent
+    data object NavigateQuickText : AppEvent
+    data object NavigateLiveScreen : AppEvent
     data class OpenFile(val fileUri: String) : AppEvent
     data object RequestAllFilesAccess : AppEvent
     data object RequestBatteryOptimizationExemption : AppEvent
+    data object RequestLiveScreenPermission : AppEvent
+    data class StartLiveScreenService(val resultCode: Int, val permissionData: android.content.Intent) : AppEvent
+    data object StopLiveScreenService : AppEvent
 }

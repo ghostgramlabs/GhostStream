@@ -19,4 +19,7 @@ internal interface TransferDao {
 
     @Query("SELECT * FROM transfers WHERE direction = 'RECEIVED' AND fileUri IS NOT NULL ORDER BY timestampMs DESC")
     fun getReceivedItems(): Flow<List<TransferEntity>>
+
+    @Query("DELETE FROM transfers")
+    suspend fun clearAll()
 }

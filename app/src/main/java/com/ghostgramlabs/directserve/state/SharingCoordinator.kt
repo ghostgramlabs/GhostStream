@@ -16,6 +16,7 @@ import com.ghoststream.core.network.server.GhostStreamServer
 import com.ghoststream.core.session.SessionManager
 import com.ghoststream.core.settings.SettingsRepository
 import com.ghoststream.core.storage.StorageRepository
+import com.ghoststream.core.model.LiveScreenSessionStore
 import kotlinx.coroutines.flow.first
 import kotlin.random.Random
 import kotlinx.coroutines.Dispatchers
@@ -43,6 +44,7 @@ class SharingCoordinator(
     private val mediaAnalyzer: MediaAnalyzer,
     private val compatibilityPipeline: CompatibilityPipeline,
     private val nsdAdvertiser: NsdAdvertiser,
+    private val liveScreenStore: LiveScreenSessionStore,
     private val debugLogSink: DebugLogSink = NoOpDebugLogSink,
 ) {
 
@@ -168,7 +170,9 @@ class SharingCoordinator(
         val settings = settingsRepository.settings.first()
         compatibilityPipeline.cancelPendingPreparations()
         runCatching { nsdAdvertiser.stop() }
-        runCatching { server.stop() }
+        if (!liveScreenStore.state.value.isActive) {
+            runCatching { server.stop() }
+        }
         
         if (settings.ghostMode) {
             compatibilityPipeline.clearTemporaryOutputs()

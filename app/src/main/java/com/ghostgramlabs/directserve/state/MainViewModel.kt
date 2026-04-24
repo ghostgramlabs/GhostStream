@@ -2,6 +2,7 @@ package com.ghostgramlabs.directserve.state
 
 import android.app.Application
 import android.content.Context
+import android.content.Intent
 import android.net.ConnectivityManager
 import android.net.LinkProperties
 import android.net.Network
@@ -19,11 +20,16 @@ import androidx.lifecycle.viewModelScope
 import com.ghoststream.core.model.AppSettings
 import com.ghoststream.core.model.AutoStopOption
 import com.ghoststream.core.model.LibraryState
+import com.ghoststream.core.model.LiveAudioStatus
+import com.ghoststream.core.model.LiveScreenStatus
 import com.ghoststream.core.model.NearbyDevice
 import com.ghoststream.core.model.NearbyDiscoveryState
+import com.ghoststream.core.model.QuickTextMessage
+import com.ghoststream.core.model.QuickTextTargetType
 import com.ghoststream.core.model.SessionState
 import com.ghoststream.core.model.SmartSelectionGroup
 import com.ghoststream.core.model.RecentSession
+import com.ghoststream.core.model.browserDeviceName
 import com.ghoststream.core.model.buildConnectionDiagnostics
 import com.ghoststream.core.media.CompatibilityJob
 import com.ghoststream.core.media.JobPriority
@@ -93,6 +99,8 @@ class MainViewModel(
         connectingNearbyDeviceId,
         container.sessionManager.pendingUploadRequest,
         container.historyRepository.allHistory,
+        container.historyRepository.quickTextMessages,
+        container.liveScreenManager.state,
         _browserPrepManuallyTriggered,
         _hasAllFilesAccess,
     ) { values ->
@@ -110,8 +118,10 @@ class MainViewModel(
         val connectingNearbyId = values[11] as String?
         val pendingUpload = values[12] as com.ghoststream.core.model.UploadRequest?
         val history = values[13] as List<com.ghoststream.core.model.TransferRecord>
-        val manuallyTriggered = values[14] as Boolean
-        val allFilesAccess = values[15] as Boolean
+        val quickTextHistory = values[14] as List<QuickTextMessage>
+        val liveScreenState = values[15] as com.ghoststream.core.model.LiveScreenSessionState
+        val manuallyTriggered = values[16] as Boolean
+        val allFilesAccess = values[17] as Boolean
         val filteredNearbyDiscoveryState = nearbyDiscoveryState.filterCurrentSession(session, application)
         MainUiState(
             isReady = true,
@@ -134,6 +144,8 @@ class MainViewModel(
             connectingNearbyDeviceId = connectingNearbyId,
             pendingUploadRequest = pendingUpload,
             transferHistory = history,
+            quickTextHistory = quickTextHistory,
+            liveScreenState = liveScreenState,
             browserPrepManuallyTriggered = manuallyTriggered,
             hasAllFilesAccess = allFilesAccess,
         )
@@ -490,6 +502,168 @@ class MainViewModel(
         }
     }
 
+    fun navigateToQuickText() {
+        viewModelScope.launch {
+            _events.emit(AppEvent.NavigateQuickText)
+        }
+    }
+
+    fun navigateToLiveScreen() {
+        viewModelScope.launch {
+            _events.emit(AppEvent.NavigateLiveScreen)
+        }
+    }
+
+    fun sendQuickText(
+        text: String,
+        targetType: QuickTextTargetType,
+        targetId: String?,
+        targetName: String?,
+    ) {
+        val trimmed = text.trim()
+        if (trimmed.isEmpty()) return
+        viewModelScope.launch {
+            container.historyRepository.addQuickTextMessage(
+                QuickTextMessage(
+                    id = java.util.UUID.randomUUID().toString(),
+                    text = trimmed,
+                    senderId = QUICK_TEXT_PHONE_ID,
+                    senderName = application.getString(R.string.quick_text_this_phone),
+                    targetType = targetType,
+                    targetId = targetId,
+                    targetName = targetName,
+                    timestampMs = System.currentTimeMillis(),
+                ),
+            )
+            _events.emit(AppEvent.ShowMessage(application.getString(R.string.quick_text_sent)))
+        }
+    }
+
+    fun deleteQuickTextMessage(id: String) {
+        viewModelScope.launch {
+            container.historyRepository.deleteQuickTextMessage(id)
+        }
+    }
+
+    fun clearQuickTextHistory() {
+        viewModelScope.launch {
+            container.historyRepository.clearQuickTextMessages()
+        }
+    }
+
+    fun requestLiveScreenStart() {
+        viewModelScope.launch {
+            val current = container.liveScreenManager.state.value
+            if (current.isActive) {
+                container.debugLogRepository.log(
+                    "MainViewModel",
+                    "requestLiveScreenStart ignored because live screen is already active status=${current.status}",
+                )
+                _events.emit(AppEvent.NavigateLiveScreen)
+                return@launch
+            }
+            val sessionState = container.sessionManager.sessionState.value
+            val hasConflictingHeavyActivity = sessionState.connectedClients.any { client ->
+                client.activity == com.ghoststream.core.model.ClientActivity.WATCHING_VIDEO ||
+                    client.activity == com.ghoststream.core.model.ClientActivity.PLAYING_MUSIC ||
+                    client.activity == com.ghoststream.core.model.ClientActivity.DOWNLOADING
+            }
+            if (hasConflictingHeavyActivity) {
+                container.debugLogRepository.log(
+                    "MainViewModel",
+                    "requestLiveScreenStart blocked by conflicting client activity=${sessionState.connectedClients.joinToString { it.activity.name }}",
+                )
+                _events.emit(AppEvent.ShowMessage(application.getString(R.string.live_screen_busy_streams)))
+                return@launch
+            }
+            container.debugLogRepository.log("MainViewModel", "requestLiveScreenStart requesting MediaProjection permission")
+            _events.emit(AppEvent.RequestLiveScreenPermission)
+        }
+    }
+
+    fun startLiveScreenCapture(resultCode: Int, permissionData: Intent) {
+        viewModelScope.launch {
+            val network = withContext(Dispatchers.IO) { container.networkInspector.inspect() }
+            if (!network.isWifiOrHotspotReady) {
+                _events.emit(AppEvent.ShowMessage(application.getString(R.string.sharing_connect_before_start)))
+                return@launch
+            }
+            val settings = container.settingsRepository.settings.first()
+            val binding = container.server.start(settings.preferredPort.coerceIn(1024, 65535))
+            val displayUrl = com.ghoststream.core.model.buildSessionAccessUrl(
+                sessionUrl = binding.url,
+                localAddress = network.localAddress,
+                port = binding.port,
+            ) ?: binding.url
+            container.liveScreenManager.updateState {
+                it.copy(
+                    status = LiveScreenStatus.STARTING,
+                    sessionUrl = "${binding.url}/live",
+                    displayUrl = "$displayUrl/live",
+                    pin = null,
+                    audioStatus = LiveAudioStatus.AUDIO_UNAVAILABLE,
+                    startedAtEpochMs = System.currentTimeMillis(),
+                    lastError = null,
+                )
+            }
+            _events.emit(AppEvent.StartLiveScreenService(resultCode, permissionData))
+            _events.emit(AppEvent.NavigateLiveScreen)
+        }
+    }
+
+    fun onLiveScreenServiceStarted(
+        width: Int,
+        height: Int,
+        fps: Int,
+        bitrateKbps: Int,
+        audioStatus: LiveAudioStatus,
+    ) {
+        container.liveScreenManager.updateState {
+            it.copy(
+                status = LiveScreenStatus.LIVE,
+                width = width,
+                height = height,
+                fps = fps,
+                bitrateKbps = bitrateKbps,
+                audioStatus = audioStatus,
+                lastError = null,
+            )
+        }
+    }
+
+    fun onLiveScreenServiceStopped(errorMessage: String? = null) {
+        viewModelScope.launch {
+            if (!container.sessionManager.sessionState.value.isSharing) {
+                runCatching { container.server.stop() }
+            }
+            container.liveScreenManager.updateState {
+                it.copy(
+                    status = if (errorMessage == null) LiveScreenStatus.STOPPED else LiveScreenStatus.ERROR,
+                    width = null,
+                    height = null,
+                    viewerCount = 0,
+                    lastError = errorMessage,
+                )
+            }
+            _events.emit(AppEvent.StopLiveScreenService)
+            if (!errorMessage.isNullOrBlank()) {
+                _events.emit(AppEvent.ShowMessage(errorMessage))
+            }
+        }
+    }
+
+    fun stopLiveScreenCapture() {
+        viewModelScope.launch {
+            container.liveScreenManager.updateState {
+                it.copy(status = LiveScreenStatus.STOPPED, width = null, height = null, viewerCount = 0)
+            }
+            if (!container.sessionManager.sessionState.value.isSharing) {
+                runCatching { container.server.stop() }
+            }
+            _events.emit(AppEvent.StopLiveScreenService)
+        }
+    }
+
     fun openReceivedFile(fileUri: String) {
         viewModelScope.launch {
             _events.emit(AppEvent.OpenFile(fileUri))
@@ -655,6 +829,30 @@ class MainViewModel(
         }
     }
 
+    fun connectedQuickTextDevices(): List<com.ghoststream.core.model.QuickTextDevice> {
+        val state = container.sessionManager.sessionState.value
+        return buildList {
+            add(
+                com.ghoststream.core.model.QuickTextDevice(
+                    id = QUICK_TEXT_PHONE_ID,
+                    name = application.getString(R.string.quick_text_this_phone),
+                    ipAddress = state.networkAvailability.localAddress ?: "127.0.0.1",
+                    isHostPhone = true,
+                ),
+            )
+            state.connectedClients
+                .map { client ->
+                    com.ghoststream.core.model.QuickTextDevice(
+                        id = client.ipAddress,
+                        name = browserDeviceName(client.userAgent, client.ipAddress),
+                        ipAddress = client.ipAddress,
+                    )
+                }
+                .distinctBy { it.id }
+                .forEach(::add)
+        }
+    }
+
     /**
      * Explicit user-initiated preparation for all compatible items in the active session.
      * 
@@ -686,6 +884,8 @@ class MainViewModel(
     }
 
     companion object {
+        private const val QUICK_TEXT_PHONE_ID = "phone-host"
+
         fun factory(container: AppContainer): ViewModelProvider.Factory {
             return object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")

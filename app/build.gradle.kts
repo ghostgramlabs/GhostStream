@@ -129,6 +129,9 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.google.webrtc)
+    implementation(libs.androidx.media3.common)
+    implementation(libs.androidx.media3.muxer)
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)

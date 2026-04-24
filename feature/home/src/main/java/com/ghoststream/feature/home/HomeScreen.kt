@@ -47,6 +47,8 @@ import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.LiveTv
+import androidx.compose.material.icons.outlined.Textsms
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -111,6 +113,8 @@ fun HomeScreen(
     onRefreshNearby: () -> Unit,
     onOpenNearbyDevice: (NearbyDevice) -> Unit,
     onOpenLibrary: () -> Unit,
+    onOpenLiveScreen: () -> Unit,
+    onOpenQuickText: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenHistory: () -> Unit,
     libraryImportingCount: Int,
@@ -191,6 +195,19 @@ fun HomeScreen(
                     libraryImportingCount = libraryImportingCount,
                     onRequestAllFilesAccess = { showAllFilesDialog = true },
                 )
+        }
+
+        item {
+            FeatureSectionsCard(
+                sessionState = sessionState,
+                settings = settings,
+                onOpenLibrary = onOpenLibrary,
+                onOpenSettings = onOpenSettings,
+                onStartSharing = onStartSharing,
+                onOpenHistory = onOpenHistory,
+                onOpenLiveScreen = onOpenLiveScreen,
+                onOpenQuickText = onOpenQuickText,
+            )
         }
 
         item {
@@ -278,6 +295,125 @@ fun HomeScreen(
         )
     }
 
+}
+
+@Composable
+private fun FeatureSectionsCard(
+    sessionState: SessionState,
+    settings: com.ghoststream.core.model.AppSettings,
+    onOpenLibrary: () -> Unit,
+    onOpenSettings: () -> Unit,
+    onStartSharing: () -> Unit,
+    onOpenHistory: () -> Unit,
+    onOpenLiveScreen: () -> Unit,
+    onOpenQuickText: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .padding(horizontal = GhostSpacing.screenHorizontal)
+            .fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Column(
+            modifier = Modifier.padding(GhostSpacing.card),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.home_section_sharing),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+            FeatureRow(
+                icon = Icons.Outlined.Collections,
+                title = stringResource(R.string.home_feature_share_files),
+                detail = stringResource(R.string.home_feature_share_files_desc),
+                onClick = onOpenLibrary,
+            )
+            FeatureRow(
+                icon = Icons.Outlined.History,
+                title = stringResource(R.string.home_feature_receive_files),
+                detail = stringResource(R.string.home_feature_receive_files_desc),
+                onClick = onOpenHistory,
+            )
+            FeatureRow(
+                icon = Icons.Outlined.PlayArrow,
+                title = stringResource(R.string.home_feature_play_media),
+                detail = if (sessionState.isSharing) {
+                    stringResource(R.string.home_feature_play_media_live)
+                } else {
+                    stringResource(R.string.home_feature_play_media_desc)
+                },
+                onClick = onStartSharing,
+            )
+            FeatureRow(
+                icon = Icons.Outlined.NetworkCheck,
+                title = stringResource(R.string.home_feature_dlna),
+                detail = if (settings.dlnaEnabled) {
+                    stringResource(R.string.home_feature_dlna_enabled)
+                } else {
+                    stringResource(R.string.home_feature_dlna_desc)
+                },
+                onClick = onOpenSettings,
+            )
+
+            Text(
+                text = stringResource(R.string.home_section_live_features),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+            FeatureRow(
+                icon = Icons.Outlined.LiveTv,
+                title = stringResource(R.string.home_feature_live_screen),
+                detail = stringResource(R.string.home_feature_live_screen_desc),
+                onClick = onOpenLiveScreen,
+            )
+            FeatureRow(
+                icon = Icons.Outlined.Textsms,
+                title = stringResource(R.string.home_feature_quick_text),
+                detail = stringResource(R.string.home_feature_quick_text_desc),
+                onClick = onOpenQuickText,
+            )
+        }
+    }
+}
+
+@Composable
+private fun FeatureRow(
+    icon: ImageVector,
+    title: String,
+    detail: String,
+    onClick: () -> Unit,
+) {
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        modifier = Modifier.clickable(onClick = onClick),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(ghostAccentSurface(), RoundedCornerShape(12.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
 }
 
 @Composable

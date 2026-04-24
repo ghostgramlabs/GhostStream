@@ -46,6 +46,19 @@ const state = {
   thumbQueue: [],
   thumbActiveCount: 0,
   libraryCache: new Map(),
+  liveSocket: null,
+  liveHls: null,
+  livePeer: null,
+  liveRemoteStream: null,
+  livePendingRemoteIce: [],
+  liveViewerId: null,
+  liveAnswerPollTimer: null,
+  liveIcePollTimer: null,
+  liveStatePollTimer: null,
+  liveStatsTimer: null,
+  liveStatsToken: 0,
+  liveFitMode: "contain",
+  quickTextTimer: null,
 };
 
 function libraryCacheKey(category, query, folderId) {
@@ -89,6 +102,8 @@ const routes = {
     if (!isCategoryEnabled("files")) { navigate("/", true); return; }
     renderLibrary("files", titleForPath("/files"));
   },
+  "/live": renderLiveScreen,
+  "/quick-text": renderQuickText,
   "/folders": () => renderFolders(titleForPath("/folders")),
   "/upload": renderUpload,
 };
@@ -321,6 +336,8 @@ async function boot() {
   destroyPlyr();
   destroyHls();
   destroyMusicPlayers();
+  destroyLiveScreen();
+  destroyQuickTextPolling();
   resetThumbnailLoader();
   const path = location.pathname;
 
@@ -1062,6 +1079,8 @@ function shell(content, options = {}) {
           <div class="gs-nav-links">
             <a class="gs-tab${mediaActive ? " on" : ""}" data-link href="/">${gsStr("web_nav_media", "Media")}</a>
             ${isCategoryEnabled("files") ? `<a class="gs-tab${path === "/files" ? " on" : ""}" data-link href="/files">${gsStr("web_nav_files", "Files")}</a>` : ""}
+            <a class="gs-tab${path === "/live" ? " on" : ""}" data-link href="/live">${gsStr("web_live_title", "")}</a>
+            <a class="gs-tab${path === "/quick-text" ? " on" : ""}" data-link href="/quick-text">${gsStr("web_quick_text_title", "")}</a>
           </div>
           <div class="gs-nav-meta">
             <span class="gs-status-pill">${securityLabel}</span>
@@ -3355,6 +3374,648 @@ function esc(value) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function destroyLiveScreen() {
+  state.liveStatsToken += 1;
+  if (state.liveAnswerPollTimer) {
+    clearInterval(state.liveAnswerPollTimer);
+    state.liveAnswerPollTimer = null;
+  }
+  if (state.liveIcePollTimer) {
+    clearInterval(state.liveIcePollTimer);
+    state.liveIcePollTimer = null;
+  }
+  if (state.liveStatePollTimer) {
+    clearInterval(state.liveStatePollTimer);
+    state.liveStatePollTimer = null;
+  }
+  if (state.liveStatsTimer) {
+    clearInterval(state.liveStatsTimer);
+    state.liveStatsTimer = null;
+  }
+  if (state.liveHls) {
+    try { state.liveHls.destroy(); } catch (_) {}
+    state.liveHls = null;
+  }
+  if (state.liveViewerId) {
+    fetch(`/api/live/webrtc/disconnect/${encodeURIComponent(state.liveViewerId)}`, {
+      method: "POST",
+      credentials: "include",
+      keepalive: true,
+    }).catch(() => {});
+  }
+  if (state.livePeer) {
+    try { state.livePeer.close(); } catch (_) {}
+    state.livePeer = null;
+  }
+  state.liveRemoteStream = null;
+  state.livePendingRemoteIce = [];
+  state.liveViewerId = null;
+}
+
+function destroyQuickTextPolling() {
+  if (state.quickTextTimer) {
+    clearInterval(state.quickTextTimer);
+    state.quickTextTimer = null;
+  }
+}
+
+async function renderLiveScreen() {
+  const liveState = await api("/api/live/state");
+  shell(`
+    <section class="gs-section" style="max-width:1200px;margin:0 auto;">
+      <div class="gs-section-head">
+        <div>
+          <h2>${gsStr("web_live_title", "")}</h2>
+          <div class="gs-section-meta" id="liveStatusText"></div>
+        </div>
+        <div class="gs-toolbar-actions">
+          <button class="gs-btn gs-btn-sm" id="liveFullscreenBtn">${gsStr("web_live_fullscreen", "")}</button>
+          <button class="gs-btn gs-btn-sm" id="liveRefreshBtn">${gsStr("web_live_refresh", "")}</button>
+        </div>
+      </div>
+      <div style="background:#050816;border-radius:28px;padding:18px;">
+        <video id="liveVideo" autoplay playsinline muted style="width:100%;max-height:72vh;background:#050816;border-radius:20px;object-fit:contain;"></video>
+      </div>
+      <div class="gs-section-meta" id="liveAudioText" style="margin-top:12px;"></div>
+      <div class="gs-toolbar-actions" style="margin-top:16px;">
+        <button class="gs-btn gs-btn-sm" id="liveFitBtn">${gsStr("web_live_fit", "")}</button>
+        <button class="gs-btn gs-btn-sm" id="liveFillBtn">${gsStr("web_live_fill", "")}</button>
+        <button class="gs-btn gs-btn-sm" id="liveAudioBtn">${gsStr("web_live_mute", "")}</button>
+      </div>
+    </section>
+  `);
+  mountLiveScreen(liveState);
+}
+
+function mountLiveScreen(initialState) {
+  const video = document.getElementById("liveVideo");
+  const statusText = document.getElementById("liveStatusText");
+  const audioText = document.getElementById("liveAudioText");
+  const audioBtn = document.getElementById("liveAudioBtn");
+  if (!video || !statusText || !audioText || !audioBtn) return;
+
+  const applyStatus = (label, detail) => {
+    statusText.textContent = detail ? `${label} | ${detail}` : label;
+  };
+
+  const applyLiveState = (sessionState) => {
+    if (sessionState?.status === "LIVE") applyStatus(gsStr("web_live_status_connecting", ""), sessionState.viewerCount > 0 ? gsStr("web_live_status_live", "") : gsStr("web_live_status_waiting_viewer", ""));
+    else if (sessionState?.status === "STARTING") applyStatus(gsStr("web_live_status_starting", ""));
+    else if (sessionState?.status === "ERROR") applyStatus(gsStr("web_live_stream_ended", ""), sessionState.lastError || "");
+    else applyStatus(gsStr("web_live_waiting", ""));
+
+    const audioState = sessionState?.audioStatus || "";
+    if (audioState === "AUDIO_LIVE") {
+      audioText.textContent = gsStr("web_live_audio_live", "");
+    } else if (audioState === "AUDIO_SILENT") {
+      audioText.textContent = gsStr("web_live_audio_blocked_or_silent", "");
+    } else if (audioState === "AUDIO_INITIALIZING" || audioState === "AUDIO_SUPPORTED") {
+      audioText.textContent = gsStr("web_live_audio_limit", "");
+    } else if (audioState === "AUDIO_FAILED") {
+      audioText.textContent = gsStr("web_live_audio_blocked_or_silent", "");
+    } else {
+      audioText.textContent = gsStr("web_live_audio_unavailable", "");
+    }
+  };
+
+  applyLiveState(initialState);
+  document.getElementById("liveRefreshBtn")?.addEventListener("click", () => navigate("/live", true));
+  document.getElementById("liveFullscreenBtn")?.addEventListener("click", () => video.requestFullscreen?.().catch?.(() => {}));
+  document.getElementById("liveFitBtn")?.addEventListener("click", () => { video.style.objectFit = "contain"; });
+  document.getElementById("liveFillBtn")?.addEventListener("click", () => { video.style.objectFit = "cover"; });
+  const applyLiveMuteButton = () => {
+    audioBtn.textContent = video.muted ? gsStr("web_live_unmute", "") : gsStr("web_live_mute", "");
+  };
+  const enableLiveAudioFromGesture = async () => {
+    video.muted = false;
+    video.defaultMuted = false;
+    video.removeAttribute("muted");
+    video.volume = 1;
+    applyLiveMuteButton();
+    try {
+      await video.play();
+      debugTrace("live_audio_unmuted", `user_gesture=true elementMuted=${video.muted} volume=${video.volume}`);
+      video.dispatchEvent(new Event("directserve-live-audio-unmuted"));
+    } catch (error) {
+      video.muted = true;
+      video.defaultMuted = true;
+      video.setAttribute("muted", "");
+      applyLiveMuteButton();
+      debugTrace("live_audio_unmute_failed", error?.message || String(error || ""));
+      try { await video.play(); } catch (_) {}
+    }
+  };
+  audioBtn.addEventListener("click", () => {
+    if (video.muted) {
+      enableLiveAudioFromGesture();
+    } else {
+      video.muted = true;
+      video.defaultMuted = true;
+      video.setAttribute("muted", "");
+      applyLiveMuteButton();
+      debugTrace("live_audio_muted", "user_gesture=true");
+    }
+  });
+  applyLiveMuteButton();
+
+  if (!("RTCPeerConnection" in window)) {
+    applyStatus(gsStr("web_live_unsupported", ""));
+    return;
+  }
+
+  startLiveWebRtc(video, applyStatus, applyLiveState, audioText, audioBtn);
+}
+
+async function startLiveMuxedHls(video, applyStatus, applyLiveState, audioText, audioBtn) {
+  applyStatus(gsStr("web_live_status_connecting", ""));
+  const sourceUrl = "/api/live/hls/master.m3u8";
+
+  state.liveStatePollTimer = window.setInterval(async () => {
+    if (location.pathname !== "/live") return;
+    try {
+      applyLiveState(await api("/api/live/state"));
+    } catch (_) {}
+  }, 2000);
+
+  video.muted = false;
+  audioBtn.textContent = gsStr("web_live_mute", "");
+  video.addEventListener("playing", () => applyStatus(gsStr("web_live_status_live", "")));
+  video.addEventListener("waiting", () => applyStatus(gsStr("web_live_status_reconnecting", "")));
+  video.addEventListener("error", () => applyStatus(gsStr("web_live_status_reconnecting", "")));
+
+  if (window.Hls?.isSupported?.()) {
+    const hls = new Hls({
+      lowLatencyMode: true,
+      liveSyncDurationCount: 2,
+      liveMaxLatencyDurationCount: 5,
+      maxLiveSyncPlaybackRate: 1.15,
+      backBufferLength: 15,
+    });
+    state.liveHls = hls;
+    hls.on(Hls.Events.ERROR, (_, data) => {
+      if (data?.fatal) {
+        applyStatus(gsStr("web_live_status_reconnecting", ""));
+        try { hls.startLoad(); } catch (_) {}
+      }
+    });
+    hls.loadSource(sourceUrl);
+    hls.attachMedia(video);
+  } else {
+    video.src = sourceUrl;
+  }
+
+  try {
+    await video.play();
+  } catch (_) {
+    video.muted = true;
+    audioBtn.textContent = gsStr("web_live_unmute", "");
+    try { await video.play(); } catch (_) {}
+  }
+}
+
+async function startLiveWebRtc(video, applyStatus, applyLiveState, audioText, audioBtn) {
+  applyStatus(gsStr("web_live_status_connecting", ""));
+  const session = await api("/api/live/webrtc/session", {
+    method: "POST",
+    body: JSON.stringify({ pin: null }),
+  });
+
+  if (!session.accepted || !session.viewerId) {
+    if (session.status === "BUSY") applyStatus(gsStr("web_live_busy", ""));
+    else if (session.status === "PIN_REQUIRED") applyStatus(gsStr("web_live_pin_required", ""));
+    else applyStatus(gsStr("web_live_stream_ended", ""));
+    return;
+  }
+
+  const viewerId = session.viewerId;
+  state.liveViewerId = viewerId;
+
+  const peer = new RTCPeerConnection({ iceServers: [] });
+  state.livePeer = peer;
+  const remoteStream = new MediaStream();
+  state.liveRemoteStream = remoteStream;
+  state.livePendingRemoteIce = [];
+  const videoTransceiver = peer.addTransceiver("video", { direction: "recvonly" });
+  const audioTransceiver = peer.addTransceiver("audio", { direction: "recvonly" });
+  preferLiveCodecs(videoTransceiver, "video");
+  preferLiveCodecs(audioTransceiver, "audio");
+  video.autoplay = true;
+  video.playsInline = true;
+  video.muted = true;
+  audioBtn.textContent = gsStr("web_live_unmute", "");
+  video.srcObject = remoteStream;
+  const ensureLivePlayback = () => {
+    video.play().catch((error) => {
+      debugTrace("live_video_play_failed", `muted=${video.muted} message=${error?.message || String(error || "")}`);
+      if (!video.muted) {
+        video.muted = true;
+        audioBtn.textContent = gsStr("web_live_unmute", "");
+      }
+      video.play().catch(() => {});
+    });
+  };
+  const traceLiveVideoState = (event) => {
+    debugTrace(
+      event,
+      `tracks=${remoteStream.getTracks().map((track) => `${track.kind}:${track.readyState}:${track.muted ? "muted" : "unmuted"}`).join(",")} ready=${video.readyState} size=${video.videoWidth}x${video.videoHeight} paused=${video.paused} elementMuted=${video.muted}`,
+    );
+  };
+  video.addEventListener("directserve-live-audio-unmuted", () => traceLiveVideoState("live_audio_unmuted_state"));
+  const addRemoteTrack = (track) => {
+    if (!track || remoteStream.getTracks().some((existing) => existing.id === track.id)) return false;
+    remoteStream.addTrack(track);
+    track.addEventListener?.("unmute", () => traceLiveVideoState(`live_track_unmute_${track.kind}`));
+    track.addEventListener?.("mute", () => traceLiveVideoState(`live_track_mute_${track.kind}`));
+    track.addEventListener?.("ended", () => traceLiveVideoState(`live_track_ended_${track.kind}`));
+    return true;
+  };
+  const attachReceiverTracks = (reason) => {
+    let added = 0;
+    peer.getReceivers().forEach((receiver) => {
+      if (addRemoteTrack(receiver.track)) added += 1;
+    });
+    debugTrace(
+      "live_receiver_tracks_attached",
+      `reason=${reason} added=${added} total=${remoteStream.getTracks().length} receivers=${peer.getReceivers().map((receiver) => receiver.track?.kind || "none").join(",")}`,
+    );
+    if (added > 0) {
+      video.srcObject = remoteStream;
+      ensureLivePlayback();
+    }
+  };
+  ["loadedmetadata", "resize", "playing", "waiting", "stalled", "error"].forEach((eventName) => {
+    video.addEventListener(eventName, () => traceLiveVideoState(`live_video_${eventName}`));
+  });
+
+  peer.ontrack = (event) => {
+    console.info("[DirectServe] live remote track", event.track?.kind || "unknown");
+    let added = 0;
+    if (event.streams?.length) {
+      event.streams.forEach((stream) => {
+        stream.getTracks().forEach((track) => {
+          if (addRemoteTrack(track)) added += 1;
+        });
+      });
+    } else if (event.track) {
+      if (addRemoteTrack(event.track)) added += 1;
+    }
+    debugTrace(
+      "live_track_received",
+      `kind=${event.track?.kind || "unknown"} id=${event.track?.id || ""} streams=${event.streams?.length || 0} added=${added} total=${remoteStream.getTracks().length}`,
+    );
+    if (event.track?.kind === "audio") {
+      debugTrace("live_audio_track_received", "remote audio track received");
+      audioText.textContent = gsStr("web_live_audio_live", "");
+    }
+    ensureLivePlayback();
+  };
+
+  peer.onconnectionstatechange = () => {
+    const connectionState = peer.connectionState;
+    debugTrace("live_peer_connection_state", connectionState);
+    if (connectionState === "connected") {
+      applyStatus(gsStr("web_live_status_live", ""));
+    } else if (connectionState === "connecting") {
+      applyStatus(gsStr("web_live_status_connecting", ""));
+    } else if (connectionState === "disconnected") {
+      applyStatus(gsStr("web_live_status_reconnecting", ""));
+    } else if (connectionState === "failed") {
+      applyStatus(gsStr("web_live_status_reconnecting", ""));
+    } else if (connectionState === "closed") {
+      applyStatus(gsStr("web_live_stream_ended", ""));
+    }
+  };
+  peer.oniceconnectionstatechange = () => debugTrace("live_ice_connection_state", peer.iceConnectionState);
+  peer.onicegatheringstatechange = () => debugTrace("live_ice_gathering_state", peer.iceGatheringState);
+
+  peer.onicecandidate = (event) => {
+    if (!event.candidate || !state.liveViewerId) return;
+    api(`/api/live/webrtc/ice/browser/${encodeURIComponent(state.liveViewerId)}`, {
+      method: "POST",
+      body: JSON.stringify({
+        sdpMid: event.candidate.sdpMid,
+        sdpMLineIndex: event.candidate.sdpMLineIndex,
+        candidate: event.candidate.candidate,
+      }),
+    }).catch(() => {});
+  };
+  const flushLiveRemoteIce = () => {
+    if (!state.livePeer?.remoteDescription || state.livePendingRemoteIce.length === 0) return;
+    const queued = state.livePendingRemoteIce.splice(0, state.livePendingRemoteIce.length);
+    queued.forEach((candidate) => {
+      state.livePeer?.addIceCandidate(candidate).catch(() => {});
+    });
+  };
+  const createAndSendBrowserOffer = async () => {
+    const browserOffer = await peer.createOffer();
+    await peer.setLocalDescription(browserOffer);
+    await waitForLiveIceGathering(peer, 2500);
+    const localOffer = peer.localDescription || browserOffer;
+    debugTrace(
+      "live_browser_offer_ready",
+      `ice=${peer.iceGatheringState} hasCandidates=${(localOffer.sdp || "").includes("a=candidate:")}`,
+    );
+    await api(`/api/live/webrtc/offer/${encodeURIComponent(viewerId)}`, {
+      method: "POST",
+      body: JSON.stringify({ sdp: localOffer.sdp || "" }),
+    });
+    debugTrace("live_browser_offer_sent", `transceivers=${peer.getTransceivers?.().map((transceiver) => `${transceiver.receiver?.track?.kind || "none"}:${transceiver.direction}`).join(",") || ""}`);
+  };
+  createAndSendBrowserOffer().catch((error) => {
+    debugTrace("live_browser_offer_failed", error?.message || String(error || ""));
+    applyStatus(gsStr("web_live_status_reconnecting", ""));
+  });
+
+  state.liveAnswerPollTimer = window.setInterval(async () => {
+    if (!state.liveViewerId || !state.livePeer || state.livePeer.remoteDescription) return;
+    try {
+      const response = await fetch(`/api/live/webrtc/answer/${encodeURIComponent(state.liveViewerId)}`, {
+        credentials: "include",
+      });
+      if (response.status === 202) return;
+      if (!response.ok) return;
+      const androidAnswer = await response.json();
+      if (!androidAnswer?.sdp) return;
+      await state.livePeer.setRemoteDescription({ type: "answer", sdp: androidAnswer.sdp });
+      flushLiveRemoteIce();
+      debugTrace(
+        "live_android_answer_set",
+        `hasCandidates=${androidAnswer.sdp.includes("a=candidate:")} receivers=${state.livePeer.getReceivers().map((receiver) => receiver.track?.kind || "none").join(",")}`,
+      );
+      attachReceiverTracks("answer_set");
+      setTimeout(() => attachReceiverTracks("answer_set_delayed"), 500);
+      debugTrace(
+        "live_browser_answer_received",
+        `receivers=${state.livePeer.getReceivers().map((receiver) => receiver.track?.kind || "none").join(",")}`,
+      );
+      ensureLivePlayback();
+      if (!androidAnswer.audioEnabled) {
+        audioText.textContent = gsStr("web_live_audio_unavailable", "");
+      }
+    } catch (_) {}
+  }, 500);
+
+  state.liveIcePollTimer = window.setInterval(async () => {
+    if (!state.liveViewerId || !state.livePeer) return;
+    try {
+      const candidates = await api(`/api/live/webrtc/ice/android/${encodeURIComponent(state.liveViewerId)}`);
+      (candidates || []).forEach((candidate) => {
+        if (!state.livePeer.remoteDescription) {
+          state.livePendingRemoteIce.push(candidate);
+          return;
+        }
+        state.livePeer.addIceCandidate(candidate).catch(() => {});
+      });
+      flushLiveRemoteIce();
+    } catch (_) {}
+  }, 1000);
+
+  state.liveStatePollTimer = window.setInterval(async () => {
+    if (location.pathname !== "/live") return;
+    try {
+      applyLiveState(await api("/api/live/state"));
+    } catch (_) {}
+  }, 2000);
+  startLiveStatsMonitor(peer, video);
+
+  window.addEventListener("pagehide", () => {
+    if (state.liveViewerId) {
+      fetch(`/api/live/webrtc/disconnect/${encodeURIComponent(state.liveViewerId)}`, {
+        method: "POST",
+        credentials: "include",
+        keepalive: true,
+      }).catch(() => {});
+    }
+  }, { once: true });
+
+  audioBtn.textContent = gsStr("web_live_unmute", "");
+  ensureLivePlayback();
+}
+
+function preferLiveCodecs(transceiver, kind) {
+  if (!transceiver?.setCodecPreferences || !window.RTCRtpReceiver?.getCapabilities) return;
+  const capabilities = window.RTCRtpReceiver.getCapabilities(kind);
+  const codecs = capabilities?.codecs || [];
+  if (!codecs.length) return;
+  const rank = (codec) => {
+    const name = `${codec.mimeType || ""} ${codec.sdpFmtpLine || ""}`.toUpperCase();
+    if (kind === "video") {
+      if (name.includes("H264")) return 0;
+      if (name.includes("VP8")) return 1;
+      if (name.includes("VP9")) return 2;
+      if (name.includes("AV1")) return 3;
+      if (name.includes("RTX")) return 20;
+      if (name.includes("RED")) return 21;
+      if (name.includes("ULPFEC")) return 22;
+      return 10;
+    }
+    if (name.includes("OPUS")) return 0;
+    return 10;
+  };
+  const preferred = kind === "audio"
+    ? codecs.filter((codec) => `${codec.mimeType || ""}`.toLowerCase() === "audio/opus")
+    : codecs;
+  const ordered = preferred.slice().sort((a, b) => rank(a) - rank(b));
+  if (!ordered.length) return;
+  try {
+    transceiver.setCodecPreferences(ordered);
+    debugTrace("live_codec_preferences", `${kind}=${ordered.slice(0, 4).map((codec) => codec.mimeType || "").join(",")}`);
+  } catch (error) {
+    debugTrace("live_codec_preferences_failed", `${kind}=${error?.message || String(error || "")}`);
+  }
+}
+
+function startLiveStatsMonitor(peer, video) {
+  if (state.liveStatsTimer) clearInterval(state.liveStatsTimer);
+  const token = ++state.liveStatsToken;
+  let last = null;
+  const timer = window.setInterval(async () => {
+    if (token !== state.liveStatsToken || location.pathname !== "/live" || !peer || peer.connectionState === "closed") {
+      clearInterval(timer);
+      if (state.liveStatsTimer === timer) state.liveStatsTimer = null;
+      return;
+    }
+    try {
+      const report = await peer.getStats();
+      const now = Date.now();
+      const stats = {
+        audioBytes: 0,
+        audioPackets: 0,
+        audioLost: 0,
+        audioJitter: "",
+        audioLevel: "",
+        videoBytes: 0,
+        videoFrames: 0,
+        videoDropped: 0,
+        fps: "",
+        freezes: "",
+      };
+      report.forEach((entry) => {
+        if (entry.type !== "inbound-rtp" || entry.isRemote) return;
+        const kind = entry.kind || entry.mediaType || "";
+        if (kind === "audio") {
+          stats.audioBytes += entry.bytesReceived || 0;
+          stats.audioPackets += entry.packetsReceived || 0;
+          stats.audioLost += entry.packetsLost || 0;
+          if (entry.jitter != null) stats.audioJitter = Number(entry.jitter).toFixed(4);
+          if (entry.audioLevel != null) stats.audioLevel = Number(entry.audioLevel).toFixed(4);
+        } else if (kind === "video") {
+          stats.videoBytes += entry.bytesReceived || 0;
+          stats.videoFrames += entry.framesDecoded || 0;
+          stats.videoDropped += entry.framesDropped || 0;
+          if (entry.framesPerSecond != null) stats.fps = Number(entry.framesPerSecond).toFixed(1);
+          if (entry.freezeCount != null) stats.freezes = entry.freezeCount;
+        }
+      });
+      const deltaSeconds = last ? Math.max(0.001, (now - last.now) / 1000) : 0;
+      const audioKbps = last ? Math.round(((stats.audioBytes - last.audioBytes) * 8) / 1000 / deltaSeconds) : 0;
+      const videoKbps = last ? Math.round(((stats.videoBytes - last.videoBytes) * 8) / 1000 / deltaSeconds) : 0;
+      debugTrace(
+        "live_webrtc_stats",
+        `audioKbps=${audioKbps} audioPackets=${stats.audioPackets} audioLost=${stats.audioLost} audioLevel=${stats.audioLevel} audioJitter=${stats.audioJitter} ` +
+          `videoKbps=${videoKbps} fps=${stats.fps} frames=${stats.videoFrames} dropped=${stats.videoDropped} freezes=${stats.freezes} ` +
+          `ready=${video.readyState} elementMuted=${video.muted} volume=${video.volume}`,
+      );
+      last = {
+        now,
+        audioBytes: stats.audioBytes,
+        videoBytes: stats.videoBytes,
+      };
+    } catch (error) {
+      debugTrace("live_webrtc_stats_failed", error?.message || String(error || ""));
+    }
+  }, 3000);
+  state.liveStatsTimer = timer;
+}
+
+function waitForLiveIceGathering(peer, timeoutMs) {
+  if (!peer || peer.iceGatheringState === "complete") return Promise.resolve();
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      peer.removeEventListener?.("icegatheringstatechange", onStateChange);
+      resolve();
+    };
+    const onStateChange = () => {
+      if (peer.iceGatheringState === "complete") finish();
+    };
+    const timer = setTimeout(finish, timeoutMs);
+    peer.addEventListener?.("icegatheringstatechange", onStateChange);
+  });
+}
+
+async function renderQuickText() {
+  const payload = await api("/api/quick-text/messages");
+  shell(`
+    <section class="gs-section" style="max-width:900px;margin:0 auto;">
+      <div class="gs-section-head">
+        <div>
+          <h2>${gsStr("web_quick_text_title", "")}</h2>
+          <div class="gs-section-meta">${gsStr("web_quick_text_history", "")}</div>
+        </div>
+        <button class="gs-btn gs-btn-sm" id="quickTextClearBtn">${gsStr("web_quick_text_clear_all", "")}</button>
+      </div>
+      <div class="gs-category-card" style="margin-bottom:20px;">
+        <textarea id="quickTextInput" class="gs-search" rows="4" placeholder="${esc(gsStr("web_quick_text_placeholder", ""))}"></textarea>
+        <div class="gs-toolbar-actions" style="margin-top:12px;">
+          <label for="quickTextTarget">${gsStr("web_quick_text_target", "")}</label>
+          <select id="quickTextTarget" class="gs-search" style="max-width:260px;"></select>
+          <button class="gs-btn gs-btn-accent" id="quickTextSendBtn">${gsStr("web_quick_text_send", "")}</button>
+        </div>
+      </div>
+      <div id="quickTextHistory"></div>
+    </section>
+  `);
+  mountQuickText(payload);
+}
+
+function mountQuickText(initialPayload) {
+  const input = document.getElementById("quickTextInput");
+  const target = document.getElementById("quickTextTarget");
+  const historyEl = document.getElementById("quickTextHistory");
+  const sendBtn = document.getElementById("quickTextSendBtn");
+  const clearBtn = document.getElementById("quickTextClearBtn");
+  if (!input || !target || !historyEl || !sendBtn || !clearBtn) return;
+
+  const renderPayload = (payload) => {
+    const devices = payload.devices || [];
+    target.innerHTML = devices
+      .filter((device) => !device.isHostPhone)
+      .map((device) => `<option value="${esc(device.id)}">${esc(device.name)}</option>`)
+      .join("") + `<option value="__broadcast__">${esc(gsStr("web_quick_text_broadcast", ""))}</option>`;
+
+    const messages = payload.messages || [];
+    historyEl.innerHTML = messages.length === 0
+      ? `<div class="gs-category-card">${esc(gsStr("web_quick_text_empty", ""))}</div>`
+      : messages.map((message) => `
+          <article class="gs-category-card" style="margin-bottom:12px;">
+            <div style="white-space:pre-wrap;">${esc(message.text)}</div>
+            <div class="gs-category-meta" style="margin-top:8px;">
+              ${esc(message.senderName)} | ${esc(message.targetName || gsStr("web_quick_text_broadcast", ""))} | ${esc(new Date(message.timestampMs).toLocaleString())}
+            </div>
+            <div class="gs-toolbar-actions" style="margin-top:10px;">
+              <button class="gs-btn gs-btn-sm" data-copy="${esc(message.text)}">${gsStr("web_quick_text_copy", "")}</button>
+              ${/^https?:\/\//i.test(message.text || "") ? `<button class="gs-btn gs-btn-sm" data-open="${esc(message.text)}">${gsStr("web_quick_text_open_link", "")}</button>` : ""}
+              <button class="gs-btn gs-btn-sm" data-delete="${esc(message.id)}">${gsStr("common_delete", "Delete")}</button>
+            </div>
+          </article>
+        `).join("");
+
+    historyEl.querySelectorAll("[data-copy]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        try { await navigator.clipboard.writeText(button.getAttribute("data-copy") || ""); } catch (_) {}
+      });
+    });
+    historyEl.querySelectorAll("[data-open]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const url = button.getAttribute("data-open");
+        if (url) window.open(url, "_blank", "noopener");
+      });
+    });
+    historyEl.querySelectorAll("[data-delete]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        await api(`/api/quick-text/delete/${button.getAttribute("data-delete")}`, { method: "POST" });
+        renderPayload(await api("/api/quick-text/messages"));
+      });
+    });
+  };
+
+  sendBtn.addEventListener("click", async () => {
+    const text = input.value.trim();
+    if (!text) return;
+    const selected = target.value;
+    const selectedOption = target.options[target.selectedIndex];
+    await api("/api/quick-text/messages", {
+      method: "POST",
+      body: JSON.stringify({
+        text,
+        targetType: selected === "__broadcast__" ? "BROADCAST" : "DEVICE",
+        targetId: selected === "__broadcast__" ? null : selected,
+        targetName: selected === "__broadcast__" ? gsStr("web_quick_text_broadcast", "") : selectedOption?.text || "",
+      }),
+    });
+    input.value = "";
+    renderPayload(await api("/api/quick-text/messages"));
+  });
+
+  clearBtn.addEventListener("click", async () => {
+    await api("/api/quick-text/clear", { method: "POST" });
+    renderPayload(await api("/api/quick-text/messages"));
+  });
+
+  renderPayload(initialPayload);
+  destroyQuickTextPolling();
+  state.quickTextTimer = window.setInterval(async () => {
+    if (location.pathname !== "/quick-text") return;
+    try {
+      renderPayload(await api("/api/quick-text/messages"));
+    } catch (_) {}
+  }, 2500);
 }
 
 boot();

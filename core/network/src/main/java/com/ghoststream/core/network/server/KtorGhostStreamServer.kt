@@ -52,6 +52,7 @@ import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondOutputStream
 import io.ktor.server.response.respondRedirect
 import io.ktor.server.response.respondText
+import io.ktor.server.response.respondTextWriter
 import io.ktor.server.response.header
 import io.ktor.http.content.PartData
 import io.ktor.http.content.forEachPart
@@ -77,6 +78,7 @@ import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -91,6 +93,7 @@ class KtorGhostStreamServer(
     private val compatibilityPipeline: CompatibilityPipeline,
     private val networkInspector: AndroidNetworkInspector,
     private val historyRepository: HistoryRepository,
+    private val liveScreenStore: LiveScreenSessionStore,
     private val assetLoader: WebAssetLoader = WebAssetLoader(context),
     private val json: Json = Json { 
         ignoreUnknownKeys = true 
@@ -185,6 +188,8 @@ class KtorGhostStreamServer(
             get("/photos") { call.serveShellPage() }
             get("/music") { call.serveShellPage() }
             get("/files") { call.serveShellPage() }
+            get("/live") { call.serveShellPage() }
+            get("/quick-text") { call.serveShellPage() }
             get("/dlna/description.xml") {
                 call.respondText(dlnaService.getDeviceDescription(), ContentType.parse("text/xml"))
             }
@@ -343,7 +348,7 @@ class KtorGhostStreamServer(
                         )
                     }
                 }
-                val deviceName = DeviceNameGenerator.generateName(clientIp)
+                val deviceName = browserDeviceName(call.request.header(HttpHeaders.UserAgent), clientIp)
                 call.respond(
                     BrowserBootstrap(
                         title = localizedContext.getString(R.string.browser_title),
@@ -450,6 +455,39 @@ class KtorGhostStreamServer(
                             "web_btn_clear_selection" to localizedContext.getString(R.string.web_btn_clear_selection),
                             "web_player_slow_start_hint" to localizedContext.getString(R.string.web_player_slow_start_hint),
                             "web_selection_count" to localizedContext.getString(R.string.web_selection_count),
+                            "web_live_title" to localizedContext.getString(R.string.web_live_title),
+                            "web_live_waiting" to localizedContext.getString(R.string.web_live_waiting),
+                            "web_live_status_live" to localizedContext.getString(R.string.web_live_status_live),
+                            "web_live_status_starting" to localizedContext.getString(R.string.web_live_status_starting),
+                            "web_live_status_stopped" to localizedContext.getString(R.string.web_live_status_stopped),
+                            "web_live_status_connecting" to localizedContext.getString(R.string.web_live_status_connecting),
+                            "web_live_status_waiting_viewer" to localizedContext.getString(R.string.web_live_status_waiting_viewer),
+                            "web_live_status_reconnecting" to localizedContext.getString(R.string.web_live_status_reconnecting),
+                            "web_live_audio_live" to localizedContext.getString(R.string.web_live_audio_live),
+                            "web_live_audio_unavailable" to localizedContext.getString(R.string.web_live_audio_unavailable),
+                            "web_live_audio_blocked_or_silent" to localizedContext.getString(R.string.web_live_audio_blocked_or_silent),
+                            "web_live_audio_limit" to localizedContext.getString(R.string.web_live_audio_limit),
+                            "web_live_stream_ended" to localizedContext.getString(R.string.web_live_stream_ended),
+                            "web_live_fullscreen" to localizedContext.getString(R.string.web_live_fullscreen),
+                            "web_live_fit" to localizedContext.getString(R.string.web_live_fit),
+                            "web_live_fill" to localizedContext.getString(R.string.web_live_fill),
+                            "web_live_refresh" to localizedContext.getString(R.string.common_refresh),
+                            "web_live_mute" to localizedContext.getString(R.string.web_live_mute),
+                            "web_live_unmute" to localizedContext.getString(R.string.web_live_unmute),
+                            "web_live_unsupported" to localizedContext.getString(R.string.web_live_unsupported),
+                            "web_live_busy" to localizedContext.getString(R.string.web_live_busy),
+                            "web_live_pin_required" to localizedContext.getString(R.string.web_live_pin_required),
+                            "web_quick_text_title" to localizedContext.getString(R.string.quick_text_title),
+                            "web_quick_text_placeholder" to localizedContext.getString(R.string.quick_text_placeholder),
+                            "web_quick_text_send" to localizedContext.getString(R.string.quick_text_send),
+                            "web_quick_text_broadcast" to localizedContext.getString(R.string.quick_text_broadcast),
+                            "web_quick_text_history" to localizedContext.getString(R.string.quick_text_history_title),
+                            "web_quick_text_empty" to localizedContext.getString(R.string.quick_text_empty),
+                            "web_quick_text_copy" to localizedContext.getString(R.string.quick_text_copy),
+                            "web_quick_text_open_link" to localizedContext.getString(R.string.quick_text_open_link),
+                            "web_quick_text_clear_all" to localizedContext.getString(R.string.quick_text_clear_all),
+                            "web_quick_text_target" to localizedContext.getString(R.string.quick_text_target_label),
+                            "common_delete" to localizedContext.getString(R.string.common_delete),
                             "web_library_desc_download" to localizedContext.getString(R.string.web_library_desc_download),
                             "web_library_desc_browse" to localizedContext.getString(R.string.web_library_desc_browse),
                             "web_search_placeholder" to localizedContext.getString(R.string.web_search_placeholder),
@@ -1552,6 +1590,264 @@ class KtorGhostStreamServer(
                 sessionManager.clearIncomingUpload(requestId)
                 call.respond(AuthResult(success = true))
             }
+
+            get("/api/quick-text/messages") {
+                if (!call.authorizeBrowserCall()) return@get
+                call.respond(
+                    QuickTextHistoryPayload(
+                        messages = historyRepository.quickTextMessages.first(),
+                        devices = quickTextDevicesFor(call.request.origin.remoteHost),
+                    ),
+                )
+            }
+
+            post("/api/quick-text/messages") {
+                if (!call.authorizeBrowserCall()) return@post
+                val payload = call.receiveNullable<QuickTextSendPayload>()
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, ErrorPayload(localizedContext().getString(R.string.web_error_invalid_upload_request)))
+                val clientIp = call.request.origin.remoteHost
+                val senderName = browserDeviceName(call.request.header(HttpHeaders.UserAgent), clientIp)
+                val message = QuickTextMessage(
+                    id = UUID.randomUUID().toString(),
+                    text = payload.text.trim(),
+                    senderId = clientIp,
+                    senderName = senderName,
+                    targetType = payload.targetType,
+                    targetId = payload.targetId,
+                    targetName = payload.targetName,
+                    timestampMs = System.currentTimeMillis(),
+                )
+                historyRepository.addQuickTextMessage(message)
+                call.respond(message)
+            }
+
+            post("/api/quick-text/delete/{id}") {
+                if (!call.authorizeBrowserCall()) return@post
+                call.parameters["id"]?.let { historyRepository.deleteQuickTextMessage(it) }
+                call.respond(AuthResult(success = true))
+            }
+
+            post("/api/quick-text/clear") {
+                if (!call.authorizeBrowserCall()) return@post
+                historyRepository.clearQuickTextMessages()
+                call.respond(AuthResult(success = true))
+            }
+
+            get("/api/live/state") {
+                if (!call.authorizeBrowserCall()) return@get
+                call.respond(liveScreenStore.state.value)
+            }
+
+            get("/api/live/hls/master.m3u8") {
+                if (!call.authorizeBrowserCall()) return@get
+                val live = call.resolveLiveMuxedStream() ?: return@get
+                val index = awaitLiveHlsIndex(
+                    file = live.file,
+                    fragmentDurationSeconds = live.info.fragmentDurationSeconds,
+                    requireFirstSegment = false,
+                ) ?: run {
+                    call.response.headers.append(HttpHeaders.RetryAfter, "1")
+                    call.respond(HttpStatusCode.ServiceUnavailable, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
+                    return@get
+                }
+                liveScreenStore.updateState {
+                    it.copy(
+                        viewerCount = 1,
+                        viewerName = browserDeviceName(call.request.header(HttpHeaders.UserAgent), call.remoteHost()),
+                    )
+                }
+                call.response.headers.append(HttpHeaders.CacheControl, "no-store")
+                call.respondText(
+                    text = buildLiveHlsMasterPlaylist(index, live.info),
+                    contentType = ContentType.parse(call.hlsContentType()),
+                )
+            }
+
+            get("/api/live/hls/playlist.m3u8") {
+                if (!call.authorizeBrowserCall()) return@get
+                val live = call.resolveLiveMuxedStream() ?: return@get
+                val index = awaitLiveHlsIndex(
+                    file = live.file,
+                    fragmentDurationSeconds = live.info.fragmentDurationSeconds,
+                    requireFirstSegment = true,
+                    requiredSegmentIndex = 0,
+                ) ?: run {
+                    call.response.headers.append(HttpHeaders.RetryAfter, "1")
+                    call.respond(HttpStatusCode.ServiceUnavailable, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
+                    return@get
+                }
+                call.response.headers.append(HttpHeaders.CacheControl, "no-store")
+                call.respondText(
+                    text = buildLiveHlsPlaylist(index),
+                    contentType = ContentType.parse(call.hlsContentType()),
+                )
+            }
+
+            get("/api/live/hls/init.mp4") {
+                if (!call.authorizeBrowserCall()) return@get
+                val live = call.resolveLiveMuxedStream() ?: return@get
+                val index = awaitLiveHlsIndex(
+                    file = live.file,
+                    fragmentDurationSeconds = live.info.fragmentDurationSeconds,
+                    requireFirstSegment = false,
+                ) ?: run {
+                    call.response.headers.append(HttpHeaders.RetryAfter, "1")
+                    call.respond(HttpStatusCode.ServiceUnavailable, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
+                    return@get
+                }
+                if (index.initSegmentLength <= 0L) {
+                    call.response.headers.append(HttpHeaders.RetryAfter, "1")
+                    call.respond(HttpStatusCode.ServiceUnavailable, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
+                    return@get
+                }
+                call.streamFileSlice(
+                    file = live.file,
+                    mimeType = "video/mp4",
+                    byteRange = 0L until index.initSegmentLength,
+                    activity = ClientActivity.WATCHING_VIDEO,
+                )
+            }
+
+            get("/api/live/hls/segment/{index}.m4s") {
+                if (!call.authorizeBrowserCall()) return@get
+                val segmentIndex = call.parameters["index"]?.toIntOrNull() ?: run {
+                    call.respond(HttpStatusCode.BadRequest, ErrorPayload(localizedContext().getString(R.string.web_error_invalid_segment)))
+                    return@get
+                }
+                val live = call.resolveLiveMuxedStream() ?: return@get
+                val index = awaitLiveHlsIndex(
+                    file = live.file,
+                    fragmentDurationSeconds = live.info.fragmentDurationSeconds,
+                    requireFirstSegment = true,
+                    requiredSegmentIndex = segmentIndex,
+                ) ?: run {
+                    call.response.headers.append(HttpHeaders.RetryAfter, "1")
+                    call.respond(HttpStatusCode.ServiceUnavailable, ErrorPayload(localizedContext().getString(R.string.web_error_segment_still_preparing)))
+                    return@get
+                }
+                val segment = index.segments.getOrNull(segmentIndex) ?: run {
+                    call.response.headers.append(HttpHeaders.RetryAfter, "1")
+                    call.respond(HttpStatusCode.ServiceUnavailable, ErrorPayload(localizedContext().getString(R.string.web_error_segment_still_preparing)))
+                    return@get
+                }
+                val rawSegmentBytes = withContext(Dispatchers.IO) {
+                    runCatching {
+                        RandomAccessFile(live.file, "r").use { raf ->
+                            raf.seek(segment.offset)
+                            ByteArray(segment.length.toInt()).also { raf.readFully(it) }
+                        }
+                    }.getOrNull()
+                } ?: run {
+                    call.respond(HttpStatusCode.InternalServerError, ErrorPayload(localizedContext().getString(R.string.web_error_read_segment_failed)))
+                    return@get
+                }
+                val segmentBytes = runCatching {
+                    MseTfhdPatcher.patch(rawSegmentBytes, segment.offset)
+                }.getOrElse {
+                    debugLogSink.log("WebLiveHls", "live segment patch failed index=$segmentIndex", it)
+                    rawSegmentBytes
+                }
+                call.response.headers.append(HttpHeaders.AcceptRanges, "bytes")
+                call.response.headers.append(HttpHeaders.CacheControl, "no-store")
+                call.respondBytes(
+                    bytes = segmentBytes,
+                    contentType = ContentType.parse("video/mp4"),
+                    status = HttpStatusCode.OK,
+                )
+            }
+
+            post("/api/live/webrtc/session") {
+                if (!call.authorizeBrowserCall()) return@post
+                val payload = call.receiveNullable<LiveViewerSessionRequest>() ?: LiveViewerSessionRequest()
+                val clientIp = call.request.origin.remoteHost
+                val response = liveScreenStore.registerViewer(
+                    clientIp = clientIp,
+                    viewerName = browserDeviceName(call.request.header(HttpHeaders.UserAgent), clientIp),
+                    pin = payload.pin,
+                )
+                call.respond(response)
+            }
+
+            post("/api/live/webrtc/offer/{id}") {
+                if (!call.authorizeBrowserCall()) return@post
+                val viewerId = call.parameters["id"]
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, ErrorPayload(localizedContext().getString(R.string.web_live_stream_ended)))
+                val payload = call.receiveNullable<LiveSdpPayload>()
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, ErrorPayload(localizedContext().getString(R.string.web_live_stream_ended)))
+                val accepted = liveScreenStore.submitViewerOffer(viewerId, payload.sdp)
+                if (!accepted) {
+                    call.respond(HttpStatusCode.Conflict, ErrorPayload(localizedContext().getString(R.string.web_live_stream_ended)))
+                    return@post
+                }
+                call.respond(AuthResult(success = true))
+            }
+
+            get("/api/live/webrtc/offer/{id}") {
+                if (!call.authorizeBrowserCall()) return@get
+                val viewerId = call.parameters["id"]
+                    ?: return@get call.respond(HttpStatusCode.BadRequest, ErrorPayload(localizedContext().getString(R.string.web_live_stream_ended)))
+                val offer = liveScreenStore.consumeAndroidOffer(viewerId)
+                if (offer == null) {
+                    call.respond(HttpStatusCode.Accepted)
+                } else {
+                    call.respond(offer)
+                }
+            }
+
+            get("/api/live/webrtc/answer/{id}") {
+                if (!call.authorizeBrowserCall()) return@get
+                val viewerId = call.parameters["id"]
+                    ?: return@get call.respond(HttpStatusCode.BadRequest, ErrorPayload(localizedContext().getString(R.string.web_live_stream_ended)))
+                val answer = liveScreenStore.consumeViewerAnswer(viewerId)
+                if (answer == null) {
+                    call.respond(HttpStatusCode.Accepted)
+                } else {
+                    call.respond(answer)
+                }
+            }
+
+            post("/api/live/webrtc/answer/{id}") {
+                if (!call.authorizeBrowserCall()) return@post
+                val viewerId = call.parameters["id"]
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, ErrorPayload(localizedContext().getString(R.string.web_live_stream_ended)))
+                val payload = call.receiveNullable<LiveSdpPayload>()
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, ErrorPayload(localizedContext().getString(R.string.web_live_stream_ended)))
+                val accepted = liveScreenStore.submitBrowserAnswer(viewerId, payload.sdp)
+                if (!accepted) {
+                    call.respond(HttpStatusCode.Conflict, ErrorPayload(localizedContext().getString(R.string.web_live_stream_ended)))
+                    return@post
+                }
+                call.respond(AuthResult(success = true))
+            }
+
+            post("/api/live/webrtc/ice/browser/{id}") {
+                if (!call.authorizeBrowserCall()) return@post
+                val viewerId = call.parameters["id"]
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, ErrorPayload(localizedContext().getString(R.string.web_live_stream_ended)))
+                val payload = call.receiveNullable<LiveIceCandidatePayload>()
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, ErrorPayload(localizedContext().getString(R.string.web_live_stream_ended)))
+                val accepted = liveScreenStore.addViewerIceCandidate(viewerId, payload)
+                if (!accepted) {
+                    call.respond(HttpStatusCode.Conflict, ErrorPayload(localizedContext().getString(R.string.web_live_stream_ended)))
+                    return@post
+                }
+                call.respond(AuthResult(success = true))
+            }
+
+            get("/api/live/webrtc/ice/android/{id}") {
+                if (!call.authorizeBrowserCall()) return@get
+                val viewerId = call.parameters["id"]
+                    ?: return@get call.respond(HttpStatusCode.BadRequest, ErrorPayload(localizedContext().getString(R.string.web_live_stream_ended)))
+                call.respond(liveScreenStore.drainAndroidIceCandidates(viewerId))
+            }
+
+            post("/api/live/webrtc/disconnect/{id}") {
+                if (!call.authorizeBrowserCall()) return@post
+                val viewerId = call.parameters["id"]
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, ErrorPayload(localizedContext().getString(R.string.web_live_stream_ended)))
+                liveScreenStore.disconnectViewer(viewerId)
+                call.respond(AuthResult(success = true))
+            }
         }
     }
 
@@ -1586,6 +1882,37 @@ class KtorGhostStreamServer(
         }
         sessionManager.observeClient(ipAddress, request.header(HttpHeaders.UserAgent), ClientActivity.BROWSING)
         return true
+    }
+
+    private fun quickTextDevicesFor(requesterIp: String): List<QuickTextDevice> {
+        val session = sessionManager.sessionState.value
+        return buildList {
+            add(
+                QuickTextDevice(
+                    id = "phone-host",
+                    name = context.getString(R.string.quick_text_this_phone),
+                    ipAddress = session.networkAvailability.localAddress ?: "127.0.0.1",
+                    isHostPhone = true,
+                ),
+            )
+            session.connectedClients
+                .map { client ->
+                    QuickTextDevice(
+                        id = client.ipAddress,
+                        name = browserDeviceName(client.userAgent, client.ipAddress),
+                        ipAddress = client.ipAddress,
+                    )
+                }
+                .plus(
+                    QuickTextDevice(
+                        id = requesterIp,
+                        name = browserDeviceName(null, requesterIp),
+                        ipAddress = requesterIp,
+                    ),
+                )
+                .distinctBy { it.id }
+                .forEach(::add)
+        }
     }
 
     private suspend fun localizedContext(): Context = localizedContext(settingsRepository.settings.first().languageTag)
@@ -2371,6 +2698,95 @@ class KtorGhostStreamServer(
      * output Main or High Profile H.264, not Baseline, and may produce HEVC via fallback.
      * A hardcoded "avc1.42E028" would mismatch and cause bufferAppendError in hls.js.
      */
+    private suspend fun awaitLiveHlsIndex(
+        file: File,
+        fragmentDurationSeconds: Double,
+        requireFirstSegment: Boolean,
+        requiredSegmentIndex: Int? = null,
+    ): FragmentedMp4HlsIndex? {
+        fun readIndex() = runCatching {
+            FragmentedMp4HlsIndexer.read(file, fragmentDurationSeconds = fragmentDurationSeconds)
+        }.getOrNull()
+
+        fun FragmentedMp4HlsIndex?.meetsRequirements(): Boolean {
+            val hasInitSegment = this?.initSegmentLength?.let { it > 0L } == true
+            val hasFirstSegment = !requireFirstSegment || (this?.segments?.isNotEmpty() == true)
+            val hasRequiredSegment = requiredSegmentIndex == null ||
+                this?.segments?.getOrNull(requiredSegmentIndex) != null
+            return hasInitSegment && hasFirstSegment && hasRequiredSegment
+        }
+
+        var idlePolls = 0
+        while (idlePolls < MAX_HLS_INDEX_IDLE_POLLS) {
+            val index = withContext(Dispatchers.IO) { readIndex() }
+            if (index.meetsRequirements()) return index
+            if (liveScreenStore.state.value.status != LiveScreenStatus.LIVE) return index
+            idlePolls += 1
+            delay(HLS_INDEX_POLL_INTERVAL_MS)
+        }
+        return withContext(Dispatchers.IO) { readIndex() }
+    }
+
+    private suspend fun io.ktor.server.application.ApplicationCall.resolveLiveMuxedStream(): LiveMuxedPlaybackSource? {
+        val info = liveScreenStore.currentMuxedStream()
+        if (info == null || liveScreenStore.state.value.status != LiveScreenStatus.LIVE) {
+            respond(HttpStatusCode.ServiceUnavailable, ErrorPayload(localizedContext().getString(R.string.web_live_stream_ended)))
+            return null
+        }
+        val file = File(info.filePath)
+        if (!file.exists()) {
+            respond(HttpStatusCode.ServiceUnavailable, ErrorPayload(localizedContext().getString(R.string.browser_hls_not_ready)))
+            return null
+        }
+        sessionManager.observeClient(
+            remoteHost(),
+            request.header(HttpHeaders.UserAgent),
+            ClientActivity.WATCHING_VIDEO,
+        )
+        return LiveMuxedPlaybackSource(info, file)
+    }
+
+    private fun io.ktor.server.application.ApplicationCall.hlsContentType(): String {
+        val ua = request.header(HttpHeaders.UserAgent).orEmpty()
+        return if (ua.contains("Safari", ignoreCase = true) && !ua.contains("Chrome", ignoreCase = true)) {
+            "application/vnd.apple.mpegurl"
+        } else {
+            "application/x-mpegURL"
+        }
+    }
+
+    private fun buildLiveHlsMasterPlaylist(
+        index: FragmentedMp4HlsIndex,
+        info: LiveMuxedStreamInfo,
+    ): String {
+        val codecList = buildList {
+            add(index.videoCodecString ?: "avc1.640028")
+            index.audioCodecString?.let(::add)
+        }.joinToString(",")
+        return buildString {
+            appendLine("#EXTM3U")
+            appendLine("#EXT-X-VERSION:7")
+            appendLine(
+                "#EXT-X-STREAM-INF:BANDWIDTH=${info.bitrateKbps * 1000},CODECS=\"$codecList\",RESOLUTION=${info.width}x${info.height}",
+            )
+            appendLine("/api/live/hls/playlist.m3u8")
+        }
+    }
+
+    private fun buildLiveHlsPlaylist(index: FragmentedMp4HlsIndex): String = buildString {
+        appendLine("#EXTM3U")
+        appendLine("#EXT-X-VERSION:7")
+        appendLine("#EXT-X-TARGETDURATION:$HLS_TARGET_DURATION_SECONDS")
+        appendLine("#EXT-X-MEDIA-SEQUENCE:0")
+        appendLine("#EXT-X-PLAYLIST-TYPE:EVENT")
+        appendLine("#EXT-X-INDEPENDENT-SEGMENTS")
+        appendLine("#EXT-X-MAP:URI=\"/api/live/hls/init.mp4\"")
+        index.segments.forEachIndexed { segmentIndex, segment ->
+            appendLine("#EXTINF:${"%.3f".format(Locale.US, segment.durationSeconds)},")
+            appendLine("/api/live/hls/segment/$segmentIndex.m4s")
+        }
+    }
+
     private fun buildHlsMasterPlaylist(
         itemId: String,
         detectedVideoCodec: String?,
@@ -2677,6 +3093,30 @@ class KtorGhostStreamServer(
     )
 
     @Serializable
+    private data class QuickTextSendPayload(
+        val text: String,
+        val targetType: QuickTextTargetType,
+        val targetId: String? = null,
+        val targetName: String? = null,
+    )
+
+    @Serializable
+    private data class QuickTextHistoryPayload(
+        val messages: List<QuickTextMessage>,
+        val devices: List<QuickTextDevice>,
+    )
+
+    @Serializable
+    private data class LiveViewerSessionRequest(
+        val pin: String? = null,
+    )
+
+    @Serializable
+    private data class LiveSdpPayload(
+        val sdp: String,
+    )
+
+    @Serializable
     private data class AuthResult(
         val success: Boolean,
     )
@@ -2961,6 +3401,11 @@ class KtorGhostStreamServer(
     private data class HlsPlaybackSource(
         val item: SharedItem,
         val job: CompatibilityJob,
+        val file: File,
+    )
+
+    private data class LiveMuxedPlaybackSource(
+        val info: LiveMuxedStreamInfo,
         val file: File,
     )
 

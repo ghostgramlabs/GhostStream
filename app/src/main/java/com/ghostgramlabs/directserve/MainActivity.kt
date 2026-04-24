@@ -13,6 +13,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions
 import androidx.activity.result.contract.ActivityResultContracts.RequestPermission
+import androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -58,6 +59,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.ghostgramlabs.directserve.service.GhostStreamForegroundService
+import com.ghostgramlabs.directserve.service.LiveScreenCaptureService
 import com.ghostgramlabs.directserve.localization.LanguageSelectionScreen
 import com.ghostgramlabs.directserve.state.AppEvent
 import com.ghostgramlabs.directserve.state.MainViewModel
@@ -72,10 +74,12 @@ import com.ghoststream.feature.library.SharedLibraryScreen
 import com.ghoststream.feature.networksetup.NetworkSetupScreen
 import com.ghoststream.feature.onboarding.OnboardingScreen
 import com.ghoststream.feature.session.ActiveSessionScreen
+import com.ghoststream.feature.session.LiveScreenControlScreen
 import com.ghoststream.feature.settings.HelpScreen
 import com.ghoststream.feature.settings.PrivacyPolicyScreen
 import com.ghoststream.feature.settings.SettingsScreen
 import com.ghoststream.feature.history.HistoryScreen
+import com.ghoststream.feature.history.QuickTextScreen
 import com.ghostgramlabs.directserve.core.resources.R as SharedR
 import kotlinx.coroutines.launch
 
@@ -186,6 +190,25 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
             viewModel.importAllMedia()
         } else {
             mediaServerPermissionLauncher.launch(requiredBatchSelectionPermissions())
+        }
+    }
+    val liveScreenPermissionLauncher = rememberLauncherForActivityResult(StartActivityForResult()) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK && result.data != null) {
+            viewModel.startLiveScreenCapture(result.resultCode, result.data!!)
+        } else {
+            scope.launch {
+                snackbarHostState.showSnackbar(context.getString(SharedR.string.live_screen_permission_denied))
+            }
+        }
+    }
+    val liveScreenAudioPermissionLauncher = rememberLauncherForActivityResult(RequestPermission()) { granted ->
+        if (granted) {
+            val projectionManager = context.getSystemService(android.content.Context.MEDIA_PROJECTION_SERVICE) as android.media.projection.MediaProjectionManager
+            liveScreenPermissionLauncher.launch(projectionManager.createScreenCaptureIntent())
+        } else {
+            scope.launch {
+                snackbarHostState.showSnackbar(context.getString(SharedR.string.live_screen_permission_denied))
+            }
         }
     }
 
@@ -299,6 +322,8 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     }
                 }
                 is AppEvent.NavigateHistory -> navController.navigate(Routes.History)
+                AppEvent.NavigateQuickText -> navController.navigate(Routes.QuickText)
+                AppEvent.NavigateLiveScreen -> navController.navigate(Routes.LiveScreen)
                 is AppEvent.OpenFile -> {
                     runCatching {
                         val uri = android.net.Uri.parse(event.fileUri)
@@ -349,6 +374,27 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                         }
                     }
                 }
+                AppEvent.RequestLiveScreenPermission -> {
+                    val projectionManager = context.getSystemService(android.content.Context.MEDIA_PROJECTION_SERVICE) as android.media.projection.MediaProjectionManager
+                    val needsAudioPermission =
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                            ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
+                    if (needsAudioPermission) {
+                        liveScreenAudioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    } else {
+                        liveScreenPermissionLauncher.launch(projectionManager.createScreenCaptureIntent())
+                    }
+                }
+                is AppEvent.StartLiveScreenService -> {
+                    runCatching {
+                        LiveScreenCaptureService.start(context, event.resultCode, event.permissionData)
+                    }.onFailure {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(context.getString(SharedR.string.live_screen_failed))
+                        }
+                    }
+                }
+                AppEvent.StopLiveScreenService -> runCatching { LiveScreenCaptureService.stop(context) }
             }
         }
     }
@@ -445,6 +491,8 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onRefreshNearby = viewModel::refreshNearbyDiscovery,
                     onOpenNearbyDevice = viewModel::openNearbyDevice,
                     onOpenLibrary = { navController.navigate(Routes.Library) },
+                    onOpenLiveScreen = viewModel::navigateToLiveScreen,
+                    onOpenQuickText = viewModel::navigateToQuickText,
                     onOpenSettings = { navController.navigate(Routes.Settings) },
                     onOpenHistory = viewModel::navigateToHistory,
                     onImportAllMedia = startMediaServerWithPermission,
@@ -715,6 +763,45 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     modifier = Modifier.padding(innerPadding),
                 )
             }
+            composable(Routes.QuickText) {
+                QuickTextScreen(
+                    messages = uiState.quickTextHistory,
+                    devices = viewModel.connectedQuickTextDevices(),
+                    onBack = { navController.popBackStack() },
+                    onSend = viewModel::sendQuickText,
+                    onCopyMessage = {
+                        clipboardManager.setText(AnnotatedString(it))
+                        scope.launch { snackbarHostState.showSnackbar(context.getString(SharedR.string.main_link_copied)) }
+                    },
+                    onOpenLink = { link ->
+                        runCatching {
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, android.net.Uri.parse(link)).apply {
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                },
+                            )
+                        }
+                    },
+                    onDeleteMessage = viewModel::deleteQuickTextMessage,
+                    onClearAll = viewModel::clearQuickTextHistory,
+                    modifier = Modifier.padding(innerPadding),
+                )
+            }
+            composable(Routes.LiveScreen) {
+                LiveScreenControlScreen(
+                    state = uiState.liveScreenState,
+                    onBack = { navController.popBackStack() },
+                    onStart = viewModel::requestLiveScreenStart,
+                    onStop = viewModel::stopLiveScreenCapture,
+                    onCopyLink = {
+                        uiState.liveScreenState.displayUrl?.let {
+                            clipboardManager.setText(AnnotatedString(it))
+                            scope.launch { snackbarHostState.showSnackbar(context.getString(SharedR.string.main_link_copied)) }
+                        }
+                    },
+                    modifier = Modifier.padding(innerPadding),
+                )
+            }
             composable(Routes.Help) {
                 HelpScreen(
                     onBack = { navController.popBackStack() },
@@ -775,6 +862,8 @@ private object Routes {
     const val Session = "session"
     const val Settings = "settings"
     const val History = "history"
+    const val QuickText = "quick_text"
+    const val LiveScreen = "live_screen"
     const val Help = "help"
     const val PrivacyPolicy = "privacy_policy"
 }
