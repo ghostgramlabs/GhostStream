@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">Avisa cuando alguien descarga un archivo.</string>
     <string name="settings_upload_requests">Solicitudes de subida</string>
     <string name="settings_upload_requests_desc">Avisa cuando alguien solicita subir un archivo.</string>
+    <string name="settings_quick_text_alerts">Alertas de texto rápido</string>
+    <string name="settings_quick_text_alerts_desc">Notificar cuando un navegador envíe un mensaje de texto rápido.</string>
     <string name="settings_use_pin">Usar PIN</string>
     <string name="settings_use_pin_desc">Pide un código a los navegadores antes de abrir la sesión.</string>
     <string name="settings_new_pin_each_time">Nuevo PIN cada vez</string>
@@ -325,6 +327,9 @@
     <string name="service_channel_requests_desc">Notificaciones para transferencias de archivos entrantes desde PC</string>
     <string name="service_channel_connections_name">Conexiones de dispositivos</string>
     <string name="service_channel_connections_desc">Notificaciones cuando un nuevo dispositivo se une a su sesión de DirectServe</string>
+    <string name="service_channel_quick_text_name">Mensajes de texto rápido</string>
+    <string name="service_channel_quick_text_desc">Notificaciones de mensajes de texto rápido recibidos de navegadores</string>
+    <string name="service_quick_text_title">Nuevo mensaje de %1$s</string>
     <string name="library_title">Gestionar intercambio</string>
     <string name="library_header_title">Intercambio actual</string>
     <string name="library_header_body">Estos son los elementos que la gente puede abrir desde este intercambio.</string>
@@ -826,9 +831,9 @@
     <string name="quick_text_placeholder">Pega texto o un enlace</string>
     <string name="quick_text_target_label">Destino</string>
     <string name="quick_text_send">Enviar</string>
-    <string name="quick_text_broadcast">Transmitir a todos</string>
+    <string name="quick_text_broadcast">Difundir a todos</string>
     <string name="quick_text_history_title">Historial completo</string>
-    <string name="quick_text_history_subtitle">Más reciente primero. El historial permanece hasta que lo borres.</string>
+    <string name="quick_text_history_subtitle">Los más recientes primero. El historial permanece hasta que lo borres.</string>
     <string name="quick_text_empty">Aún no se ha compartido texto.</string>
     <string name="quick_text_copy">Copiar</string>
     <string name="quick_text_open_link">Abrir enlace</string>
@@ -836,6 +841,7 @@
     <string name="quick_text_this_phone">Este teléfono</string>
     <string name="quick_text_sent">Texto compartido.</string>
     <string name="quick_text_blocked_by_live_screen">Detén la pantalla en vivo antes de usar Texto rápido.</string>
+    <string name="web_quick_text_delete_forbidden">Solo puedes eliminar los mensajes que enviaste.</string>
     <string name="web_live_title">Pantalla en vivo</string>
     <string name="web_live_waiting">Esperando transmisión</string>
     <string name="web_live_status_live">En vivo</string>

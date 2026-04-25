@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">Notifica você quando alguém baixa um arquivo.</string>
     <string name="settings_upload_requests">Solicitações de upload</string>
     <string name="settings_upload_requests_desc">Alerta você quando alguém solicita o envio de um arquivo.</string>
+    <string name="settings_quick_text_alerts">Alertas de texto rápido</string>
+    <string name="settings_quick_text_alerts_desc">Notificar quando um navegador enviar uma mensagem de texto rápido.</string>
     <string name="settings_use_pin">Usar código PIN</string>
     <string name="settings_use_pin_desc">Solicita um código nos navegadores antes de abrir a sessão.</string>
     <string name="settings_new_pin_each_time">Novo PIN a cada vez</string>
@@ -325,6 +327,9 @@
     <string name="service_channel_requests_desc">Notificações para transferências de arquivos recebidas de computadores</string>
     <string name="service_channel_connections_name">Conexões de Dispositivos</string>
     <string name="service_channel_connections_desc">Notificações para quando um novo dispositivo entra na sua sessão DirectServe</string>
+    <string name="service_channel_quick_text_name">Mensagens de texto rápido</string>
+    <string name="service_channel_quick_text_desc">Notificações de mensagens de texto rápido recebidas de navegadores</string>
+    <string name="service_quick_text_title">Nova mensagem de %1$s</string>
     <string name="library_title">Gerenciar Compartilhamento</string>
     <string name="library_header_title">Seleção Atual</string>
     <string name="library_header_body">Estes são os itens que as pessoas podem abrir desta sessão.</string>
@@ -830,14 +835,15 @@ Dados móveis sozinhos não podem criar uma sessão local. Certifique-se de que 
     <string name="quick_text_send">Enviar</string>
     <string name="quick_text_broadcast">Transmitir para todos</string>
     <string name="quick_text_history_title">Histórico completo</string>
-    <string name="quick_text_history_subtitle">Mais recente primeiro. O histórico permanece até que o limpe.</string>
-    <string name="quick_text_empty">Ainda não foi compartilhado nenhum texto.</string>
+    <string name="quick_text_history_subtitle">Mais recentes primeiro. O histórico permanece até que você o limpe.</string>
+    <string name="quick_text_empty">Nenhum texto compartilhado ainda.</string>
     <string name="quick_text_copy">Copiar</string>
     <string name="quick_text_open_link">Abrir link</string>
     <string name="quick_text_clear_all">Limpar tudo</string>
-    <string name="quick_text_this_phone">Este celular</string>
+    <string name="quick_text_this_phone">Este telefone</string>
     <string name="quick_text_sent">Texto compartilhado.</string>
     <string name="quick_text_blocked_by_live_screen">Interrompa a tela ao vivo antes de usar o Texto Rápido.</string>
+    <string name="web_quick_text_delete_forbidden">Você só pode excluir as mensagens que enviou.</string>
     <string name="web_live_title">Tela ao vivo</string>
     <string name="web_live_waiting">Aguardando transmissão</string>
     <string name="web_live_status_live">Ao vivo</string>

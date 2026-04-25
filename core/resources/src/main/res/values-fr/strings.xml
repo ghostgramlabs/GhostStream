@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">Notifier quand quelqu\'un télécharge un fichier.</string>
     <string name="settings_upload_requests">Demandes d\'envoi</string>
     <string name="settings_upload_requests_desc">Notifier quand quelqu\'un demande à envoyer un fichier.</string>
+    <string name="settings_quick_text_alerts">Alertes de texte rapide</string>
+    <string name="settings_quick_text_alerts_desc">Notifier lorsqu\'un navigateur envoie un message texte rapide.</string>
     <string name="settings_use_pin">Utiliser un code PIN</string>
     <string name="settings_use_pin_desc">Demander un code aux navigateurs avant d\'ouvrir la session.</string>
     <string name="settings_new_pin_each_time">Nouveau code PIN à chaque fois</string>
@@ -325,6 +327,9 @@
     <string name="service_channel_requests_desc">Notifications pour les transferts de fichiers entrants provenant de PC</string>
     <string name="service_channel_connections_name">Connexions de périphériques</string>
     <string name="service_channel_connections_desc">Notifications lorsqu\'un nouveau périphérique rejoint votre session DirectServe</string>
+    <string name="service_channel_quick_text_name">Messages texte rapide</string>
+    <string name="service_channel_quick_text_desc">Notifications pour les messages texte rapide reçus des navigateurs</string>
+    <string name="service_quick_text_title">Nouveau message de %1$s</string>
     <string name="library_title">Gérer le partage</string>
     <string name="library_header_title">Partage actuel</string>
     <string name="library_header_body">Ce sont les éléments que les gens peuvent ouvrir depuis ce partage.</string>
@@ -823,12 +828,12 @@
     <string name="live_screen_pin_hint">Les spectateurs devront saisir ce code PIN avant de pouvoir regarder.</string>
     <string name="quick_text_title">Texte rapide</string>
     <string name="quick_text_send_title">Envoyer du texte</string>
-    <string name="quick_text_placeholder">Collez du texte ou un lien</string>
+    <string name="quick_text_placeholder">Coller du texte ou un lien</string>
     <string name="quick_text_target_label">Cible</string>
     <string name="quick_text_send">Envoyer</string>
     <string name="quick_text_broadcast">Diffuser à tous</string>
     <string name="quick_text_history_title">Historique complet</string>
-    <string name="quick_text_history_subtitle">Le plus récent en premier. L\'historique reste jusqu\'à ce que vous l\'effaciez.</string>
+    <string name="quick_text_history_subtitle">Plus récents en premier. L\'historique reste jusqu\'à ce que vous l\'effaciez.</string>
     <string name="quick_text_empty">Aucun texte partagé pour le moment.</string>
     <string name="quick_text_copy">Copier</string>
     <string name="quick_text_open_link">Ouvrir le lien</string>
@@ -836,6 +841,7 @@
     <string name="quick_text_this_phone">Ce téléphone</string>
     <string name="quick_text_sent">Texte partagé.</string>
     <string name="quick_text_blocked_by_live_screen">Arrêtez l\'écran en direct avant d\'utiliser le texte rapide.</string>
+    <string name="web_quick_text_delete_forbidden">Vous ne pouvez supprimer que les messages que vous avez envoyés.</string>
     <string name="web_live_title">Écran en direct</string>
     <string name="web_live_waiting">En attente du flux</string>
     <string name="web_live_status_live">En direct</string>

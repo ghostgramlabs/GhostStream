@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">Benachrichtigen, wenn jemand eine Datei herunterlädt.</string>
     <string name="settings_upload_requests">Upload-Anfragen</string>
     <string name="settings_upload_requests_desc">Benachrichtigen, wenn jemand einen Upload anfragt.</string>
+    <string name="settings_quick_text_alerts">Schnelltext-Benachrichtigungen</string>
+    <string name="settings_quick_text_alerts_desc">Benachrichtigen, wenn ein Browser eine Schnelltextnachricht sendet.</string>
     <string name="settings_use_pin">PIN verwenden</string>
     <string name="settings_use_pin_desc">Browser vor dem Öffnen der Sitzung nach einem Code fragen.</string>
     <string name="settings_new_pin_each_time">Jedes Mal neue PIN</string>
@@ -325,6 +327,9 @@
     <string name="service_channel_requests_desc">Benachrichtigungen für eingehende Dateiübertragungen von PCs</string>
     <string name="service_channel_connections_name">Geräteverbindungen</string>
     <string name="service_channel_connections_desc">Benachrichtigungen, wenn ein neues Gerät Ihrer DirectServe-Sitzung beitritt</string>
+    <string name="service_channel_quick_text_name">Schnelltextnachrichten</string>
+    <string name="service_channel_quick_text_desc">Benachrichtigungen für Schnelltextnachrichten, die von Browsern empfangen wurden</string>
+    <string name="service_quick_text_title">Neue Nachricht von %1$s</string>
     <string name="library_title">Freigabe verwalten</string>
     <string name="library_header_title">Aktuelle Freigabe</string>
     <string name="library_header_body">Dies sind die Elemente, die Personen in dieser Freigabe öffnen können.</string>
@@ -832,10 +837,11 @@
     <string name="quick_text_empty">Noch kein Text geteilt.</string>
     <string name="quick_text_copy">Kopieren</string>
     <string name="quick_text_open_link">Link öffnen</string>
-    <string name="quick_text_clear_all">Alle löschen</string>
+    <string name="quick_text_clear_all">Alles löschen</string>
     <string name="quick_text_this_phone">Dieses Telefon</string>
     <string name="quick_text_sent">Text geteilt.</string>
     <string name="quick_text_blocked_by_live_screen">Stoppen Sie den Live-Bildschirm, bevor Sie Schnelltext verwenden.</string>
+    <string name="web_quick_text_delete_forbidden">Sie können nur Nachrichten löschen, die Sie gesendet haben.</string>
     <string name="web_live_title">Live-Bildschirm</string>
     <string name="web_live_waiting">Warten auf Stream</string>
     <string name="web_live_status_live">Live</string>

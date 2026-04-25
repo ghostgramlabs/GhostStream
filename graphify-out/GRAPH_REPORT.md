@@ -1,11 +1,11 @@
 # Graph Report - C:\Users\sudhi\.gemini\antigravity\scratch\GhostStream  (2026-04-25)
 
 ## Corpus Check
-- 149 files · ~340,317 words
+- 149 files · ~342,964 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2483 nodes · 4721 edges · 121 communities detected
+- 2492 nodes · 4730 edges · 122 communities detected
 - Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 416 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
@@ -131,12 +131,13 @@
 - [[_COMMUNITY_Community 118|Community 118]]
 - [[_COMMUNITY_Community 119|Community 119]]
 - [[_COMMUNITY_Community 120|Community 120]]
+- [[_COMMUNITY_Community 121|Community 121]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `l()` - 105 edges
 2. `O()` - 80 edges
 3. `e()` - 69 edges
-4. `MainViewModel` - 61 edges
+4. `MainViewModel` - 64 edges
 5. `LiveScreenCaptureService` - 51 edges
 6. `filter()` - 51 edges
 7. `KtorGhostStreamServer` - 48 edges
@@ -160,15 +161,15 @@
 
 ### Community 0 - "Community 0"
 Cohesion: 0.01
-Nodes (520): waitForLiveIceGathering(), create(), Ir(), Jr(), vi(), D(), j(), l() (+512 more)
+Nodes (505): waitForLiveIceGathering(), create(), Ir(), Jr(), vi(), j(), l(), O() (+497 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.02
-Nodes (174): formatTime(), a(), Ae(), ai(), ar(), assetPlayers(), be(), bi() (+166 more)
+Nodes (178): formatTime(), a(), Ae(), ai(), ar(), assetPlayers(), be(), bi() (+170 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.02
-Nodes (132): DebugLogRepository, batch_translate(), Batch-fill missing translations. Groups strings into chunks and translates them, Translate a list of texts in batches using a separator., escape_xml(), extract_strings(), Fill missing translations for language files that only have partial strings. Fo, Extract all string name->value pairs from XML content. (+124 more)
+Nodes (128): DebugLogRepository, batch_translate(), Batch-fill missing translations. Groups strings into chunks and translates them, Translate a list of texts in batches using a separator., br(), gr(), Gs(), zs() (+120 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.04
@@ -176,7 +177,7 @@ Nodes (140): addFilesToUppy(), api(), applyAspectRatioLayout(), applyBootstrapUi
 
 ### Community 4 - "Community 4"
 Cohesion: 0.02
-Nodes (53): _(), A(), ae(), at, B(), C(), ce(), ct (+45 more)
+Nodes (55): _(), A(), ae(), at, B(), C(), ce(), ct (+47 more)
 
 ### Community 5 - "Community 5"
 Cohesion: 0.03
@@ -191,16 +192,16 @@ Cohesion: 0.03
 Nodes (1): MainViewModel
 
 ### Community 8 - "Community 8"
-Cohesion: 0.06
-Nodes (48): za(), AdvertisedServiceRegistration, AdvertisedSessionInfo, DiscoveryMetadata, DiscoveryMetadataCodec, A0(), authQuery(), authUrl() (+40 more)
-
-### Community 9 - "Community 9"
 Cohesion: 0.07
 Nodes (20): browserDeviceName(), Format, LiveAudioStatus, LiveIceCandidatePayload, LiveMuxedStreamInfo, LiveScreenSessionState, LiveScreenSessionStore, LiveScreenStatus (+12 more)
 
-### Community 10 - "Community 10"
+### Community 9 - "Community 9"
 Cohesion: 0.05
 Nodes (4): AndroidStorageRepository, OpenableMeta, PersistedLibrary, Uv()
+
+### Community 10 - "Community 10"
+Cohesion: 0.07
+Nodes (38): add(), Ae(), applyInheritables(), batchEnableWithBool(), batchEnableWithUserValue(), constructor(), dt(), Dv() (+30 more)
 
 ### Community 11 - "Community 11"
 Cohesion: 0.06
@@ -248,11 +249,11 @@ Nodes (3): EncodedSample, LiveScreenMuxedStreamer, TrackKind
 
 ### Community 22 - "Community 22"
 Cohesion: 0.09
-Nodes (2): AndroidMediaAnalyzer, TrackInspection
+Nodes (1): GhostStreamForegroundService
 
 ### Community 23 - "Community 23"
 Cohesion: 0.09
-Nodes (1): GhostStreamForegroundService
+Nodes (2): AndroidMediaAnalyzer, TrackInspection
 
 ### Community 24 - "Community 24"
 Cohesion: 0.1
@@ -271,272 +272,272 @@ Cohesion: 0.11
 Nodes (3): MoofPatchResult, MseTfhdPatcher, TrafEdit
 
 ### Community 28 - "Community 28"
-Cohesion: 0.13
-Nodes (2): HistoryRepository, RoomHistoryRepository
+Cohesion: 0.15
+Nodes (18): bw(), Dm(), eo(), fm(), hm(), i2(), jt(), jw() (+10 more)
 
 ### Community 29 - "Community 29"
-Cohesion: 0.14
-Nodes (13): CachedFile, CachedPlaybackAsset, CompatibilityJob, CompatibilityStatus, EffectivePlaybackMode, Failed, JobPriority, OriginalUri (+5 more)
+Cohesion: 0.12
+Nodes (2): HistoryRepository, RoomHistoryRepository
 
 ### Community 30 - "Community 30"
 Cohesion: 0.14
-Nodes (1): StorageRepository
+Nodes (2): MainActivity, Routes
 
 ### Community 31 - "Community 31"
 Cohesion: 0.14
-Nodes (0): 
+Nodes (13): CachedFile, CachedPlaybackAsset, CompatibilityJob, CompatibilityStatus, EffectivePlaybackMode, Failed, JobPriority, OriginalUri (+5 more)
 
 ### Community 32 - "Community 32"
+Cohesion: 0.14
+Nodes (1): StorageRepository
+
+### Community 33 - "Community 33"
+Cohesion: 0.14
+Nodes (0): 
+
+### Community 34 - "Community 34"
 Cohesion: 0.15
 Nodes (8): Failure, NeedsNetwork, NoContent, Ready, SharePreflightResult, ShareStartResult, SharingCoordinator, Started
 
-### Community 33 - "Community 33"
+### Community 35 - "Community 35"
 Cohesion: 0.15
 Nodes (4): AudioCodec, DefaultSmartPlaybackDecisionEngine, SmartPlaybackDecisionEngine, VideoCodec
 
-### Community 34 - "Community 34"
-Cohesion: 0.17
-Nodes (2): MainActivity, Routes
-
-### Community 35 - "Community 35"
+### Community 36 - "Community 36"
 Cohesion: 0.17
 Nodes (2): HistoryConverters, HistoryDatabase
 
-### Community 36 - "Community 36"
+### Community 37 - "Community 37"
 Cohesion: 0.17
 Nodes (7): CompatibilityFailureType, CompatibilityWorker, CompatibilityWorkerResult, CompatibilityWorkerUpdate, Failure, StubCompatibilityWorker, Success
 
-### Community 37 - "Community 37"
+### Community 38 - "Community 38"
 Cohesion: 0.17
 Nodes (2): AndroidNetworkInspector, LocalIpv4Interface
 
-### Community 38 - "Community 38"
+### Community 39 - "Community 39"
 Cohesion: 0.36
 Nodes (8): BlockedClient, ClientActivity, ConnectedClient, DeviceNickname, NetworkAvailability, NetworkType, SessionState, TransferStats
 
-### Community 39 - "Community 39"
+### Community 40 - "Community 40"
 Cohesion: 0.2
 Nodes (0): 
 
-### Community 40 - "Community 40"
+### Community 41 - "Community 41"
 Cohesion: 0.39
 Nodes (7): buildFriendlyDisplayUrl(), buildSessionAccessUrl(), displayAccessUrl(), isUsableFriendlyHostname(), isUsableLocalAddress(), isUsableSessionUrl(), resolvedAccessUrl()
 
-### Community 41 - "Community 41"
+### Community 42 - "Community 42"
 Cohesion: 0.22
 Nodes (1): NsdDiscoveryManager
 
-### Community 42 - "Community 42"
+### Community 43 - "Community 43"
 Cohesion: 0.22
 Nodes (1): DlnaAnnouncer
 
-### Community 43 - "Community 43"
+### Community 44 - "Community 44"
 Cohesion: 0.22
 Nodes (2): MediaStoreScanner, SharedFolderBuilder
 
-### Community 44 - "Community 44"
+### Community 45 - "Community 45"
 Cohesion: 0.22
 Nodes (0): 
 
-### Community 45 - "Community 45"
+### Community 46 - "Community 46"
 Cohesion: 0.25
 Nodes (1): TransferDao
 
-### Community 46 - "Community 46"
+### Community 47 - "Community 47"
 Cohesion: 0.25
 Nodes (1): MediaAnalyzer
 
-### Community 47 - "Community 47"
+### Community 48 - "Community 48"
 Cohesion: 0.25
 Nodes (1): MediaSourceStabilizer
 
-### Community 48 - "Community 48"
+### Community 49 - "Community 49"
 Cohesion: 0.43
 Nodes (6): LibraryState, LibrarySummary, SharedFolder, SharedItem, SmartSelectionGroup, SubtitleMatch
 
-### Community 49 - "Community 49"
+### Community 50 - "Community 50"
 Cohesion: 0.25
 Nodes (1): DlnaService
 
-### Community 50 - "Community 50"
+### Community 51 - "Community 51"
+Cohesion: 0.25
+Nodes (7): escape_xml(), extract_strings(), Fill missing translations for language files that only have partial strings. Fo, Extract all string name->value pairs from XML content., Translate text, preserving XML entities and format specifiers., Escape single quotes for Android XML., translate_text()
+
+### Community 52 - "Community 52"
 Cohesion: 0.29
 Nodes (1): PlaybackAudioPump
 
-### Community 51 - "Community 51"
+### Community 53 - "Community 53"
+Cohesion: 0.29
+Nodes (1): QuickTextDao
+
+### Community 54 - "Community 54"
 Cohesion: 0.29
 Nodes (6): AppPrivateFile, MediaStoreUri, PersistedUri, SourceType, StabilizedSourceInfo, StableWorkerSource
 
-### Community 52 - "Community 52"
+### Community 55 - "Community 55"
 Cohesion: 0.48
 Nodes (5): DeviceIdentity, displayDeviceName(), formatGeneratedNameWithIp(), formatHistoryPeer(), looksLikeIpAddress()
 
-### Community 53 - "Community 53"
+### Community 56 - "Community 56"
 Cohesion: 0.29
 Nodes (1): OnboardingCard
 
-### Community 54 - "Community 54"
+### Community 57 - "Community 57"
 Cohesion: 0.33
 Nodes (2): AppLanguage, AppLanguages
 
-### Community 55 - "Community 55"
-Cohesion: 0.33
-Nodes (1): QuickTextDao
-
-### Community 56 - "Community 56"
+### Community 58 - "Community 58"
 Cohesion: 0.33
 Nodes (2): HlsReadinessValidator, ReadinessResult
 
-### Community 57 - "Community 57"
+### Community 59 - "Community 59"
 Cohesion: 0.53
 Nodes (4): AppSettings, AutoStopOption, RecentSession, ThemeMode
 
-### Community 58 - "Community 58"
+### Community 60 - "Community 60"
 Cohesion: 0.4
 Nodes (2): DebugLogSink, NoOpDebugLogSink
 
-### Community 59 - "Community 59"
+### Community 61 - "Community 61"
 Cohesion: 0.53
 Nodes (4): buildConnectionDiagnostics(), ConnectionDiagnostics, DiagnosticCheck, DiagnosticLevel
 
-### Community 60 - "Community 60"
+### Community 62 - "Community 62"
 Cohesion: 0.33
 Nodes (1): SessionAccessUrlTest
 
-### Community 61 - "Community 61"
+### Community 63 - "Community 63"
 Cohesion: 0.33
 Nodes (2): GhostStreamServer, ServerBinding
 
-### Community 62 - "Community 62"
+### Community 64 - "Community 64"
 Cohesion: 0.4
 Nodes (1): CompatLogger
 
-### Community 63 - "Community 63"
+### Community 65 - "Community 65"
 Cohesion: 0.4
 Nodes (1): HlsReadinessValidatorTest
 
-### Community 64 - "Community 64"
+### Community 66 - "Community 66"
 Cohesion: 0.6
 Nodes (3): TransferDirection, TransferRecord, TransferStatus
 
-### Community 65 - "Community 65"
+### Community 67 - "Community 67"
 Cohesion: 0.4
 Nodes (1): NsdAdvertiser
 
-### Community 66 - "Community 66"
+### Community 68 - "Community 68"
 Cohesion: 0.4
 Nodes (1): LocalizationUtils
 
-### Community 67 - "Community 67"
+### Community 69 - "Community 69"
 Cohesion: 0.4
 Nodes (1): DataStoreSettingsRepository
 
-### Community 68 - "Community 68"
+### Community 70 - "Community 70"
 Cohesion: 0.4
 Nodes (1): SettingsRepository
 
-### Community 69 - "Community 69"
+### Community 71 - "Community 71"
 Cohesion: 0.5
 Nodes (1): LocaleManager
 
-### Community 70 - "Community 70"
+### Community 72 - "Community 72"
 Cohesion: 0.5
 Nodes (1): QuickTextMessageEntity
 
-### Community 71 - "Community 71"
+### Community 73 - "Community 73"
 Cohesion: 0.5
 Nodes (1): TransferEntity
 
-### Community 72 - "Community 72"
+### Community 74 - "Community 74"
 Cohesion: 0.5
 Nodes (1): DeviceNameGenerator
 
-### Community 73 - "Community 73"
-Cohesion: 0.67
-Nodes (2): NearbyDevice, NearbyDiscoveryState
-
-### Community 74 - "Community 74"
+### Community 75 - "Community 75"
 Cohesion: 0.67
 Nodes (2): PlaybackDecision, PlaybackMode
 
-### Community 75 - "Community 75"
+### Community 76 - "Community 76"
 Cohesion: 0.5
 Nodes (1): PlaybackDecisionTest
 
-### Community 76 - "Community 76"
-Cohesion: 0.5
-Nodes (1): FriendlyUrlManager
-
 ### Community 77 - "Community 77"
-Cohesion: 0.5
-Nodes (1): InMemorySessionManagerTest
+Cohesion: 0.67
+Nodes (2): NearbyDevice, NearbyDiscoveryState
 
 ### Community 78 - "Community 78"
 Cohesion: 0.5
-Nodes (0): 
+Nodes (1): FriendlyUrlManager
 
 ### Community 79 - "Community 79"
 Cohesion: 0.5
-Nodes (0): 
+Nodes (1): InMemorySessionManagerTest
 
 ### Community 80 - "Community 80"
-Cohesion: 0.67
-Nodes (1): GhostStreamApplication
+Cohesion: 0.5
+Nodes (0): 
 
 ### Community 81 - "Community 81"
-Cohesion: 0.67
-Nodes (2): MediaContainer, MediaInspection
+Cohesion: 0.5
+Nodes (0): 
 
 ### Community 82 - "Community 82"
 Cohesion: 0.67
-Nodes (1): IncomingUploadCompletion
+Nodes (1): GhostStreamApplication
 
 ### Community 83 - "Community 83"
 Cohesion: 0.67
-Nodes (1): IncomingUploadProgress
+Nodes (2): MediaContainer, MediaInspection
 
 ### Community 84 - "Community 84"
 Cohesion: 0.67
-Nodes (1): MediaCategory
+Nodes (1): IncomingUploadCompletion
 
 ### Community 85 - "Community 85"
 Cohesion: 0.67
-Nodes (1): UploadRequest
+Nodes (1): IncomingUploadProgress
 
 ### Community 86 - "Community 86"
 Cohesion: 0.67
-Nodes (2): ResolvedSessionEndpoint, SessionEndpointResolver
+Nodes (1): MediaCategory
 
 ### Community 87 - "Community 87"
 Cohesion: 0.67
-Nodes (0): 
+Nodes (1): UploadRequest
 
 ### Community 88 - "Community 88"
 Cohesion: 0.67
 Nodes (0): 
 
 ### Community 89 - "Community 89"
-Cohesion: 1.0
+Cohesion: 0.67
 Nodes (0): 
 
 ### Community 90 - "Community 90"
 Cohesion: 1.0
-Nodes (1): AppContainer
+Nodes (0): 
 
 ### Community 91 - "Community 91"
 Cohesion: 1.0
-Nodes (0): 
+Nodes (1): AppContainer
 
 ### Community 92 - "Community 92"
 Cohesion: 1.0
-Nodes (1): ClientCapabilities
+Nodes (0): 
 
 ### Community 93 - "Community 93"
 Cohesion: 1.0
-Nodes (1): GhostSpacing
+Nodes (1): ClientCapabilities
 
 ### Community 94 - "Community 94"
 Cohesion: 1.0
-Nodes (0): 
+Nodes (1): GhostSpacing
 
 ### Community 95 - "Community 95"
 Cohesion: 1.0
@@ -642,30 +643,32 @@ Nodes (0):
 Cohesion: 1.0
 Nodes (0): 
 
+### Community 121 - "Community 121"
+Cohesion: 1.0
+Nodes (0): 
+
 ## Knowledge Gaps
 - **114 isolated node(s):** `Routes`, `ViewerSession`, `TrackKind`, `EncodedSample`, `AppLanguage` (+109 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **Thin community `Community 89`** (2 nodes): `LanguageSelectionScreen.kt`, `LanguageSelectionScreen()`
+- **Thin community `Community 90`** (2 nodes): `LanguageSelectionScreen.kt`, `LanguageSelectionScreen()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 90`** (2 nodes): `AppContainer`, `AppContainer.kt`
+- **Thin community `Community 91`** (2 nodes): `AppContainer`, `AppContainer.kt`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 91`** (2 nodes): `Theme.kt`, `GhostStreamTheme()`
+- **Thin community `Community 92`** (2 nodes): `Theme.kt`, `GhostStreamTheme()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 92`** (2 nodes): `ClientCapabilities.kt`, `ClientCapabilities`
+- **Thin community `Community 93`** (2 nodes): `ClientCapabilities.kt`, `ClientCapabilities`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 93`** (2 nodes): `GhostSpacing.kt`, `GhostSpacing`
+- **Thin community `Community 94`** (2 nodes): `GhostSpacing.kt`, `GhostSpacing`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 94`** (2 nodes): `NetworkSetupScreen.kt`, `NetworkSetupScreen()`
+- **Thin community `Community 95`** (2 nodes): `NetworkSetupScreen.kt`, `NetworkSetupScreen()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 95`** (1 nodes): `build.gradle.kts`
+- **Thin community `Community 96`** (1 nodes): `build.gradle.kts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 96`** (1 nodes): `settings.gradle.kts`
+- **Thin community `Community 97`** (1 nodes): `settings.gradle.kts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 97`** (1 nodes): `build.gradle.kts`
+- **Thin community `Community 98`** (1 nodes): `build.gradle.kts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 98`** (1 nodes): `Color.kt`
-  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 99`** (1 nodes): `build.gradle.kts`
+- **Thin community `Community 99`** (1 nodes): `Color.kt`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 100`** (1 nodes): `build.gradle.kts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -695,28 +698,30 @@ Nodes (0):
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 113`** (1 nodes): `build.gradle.kts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 114`** (1 nodes): `clean_quotes.py`
+- **Thin community `Community 114`** (1 nodes): `build.gradle.kts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 115`** (1 nodes): `escape_quotes.py`
+- **Thin community `Community 115`** (1 nodes): `clean_quotes.py`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 116`** (1 nodes): `translate_chunk1.py`
+- **Thin community `Community 116`** (1 nodes): `escape_quotes.py`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 117`** (1 nodes): `translate_chunk2.py`
+- **Thin community `Community 117`** (1 nodes): `translate_chunk1.py`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 118`** (1 nodes): `translate_chunk3.py`
+- **Thin community `Community 118`** (1 nodes): `translate_chunk2.py`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 119`** (1 nodes): `translate_chunk4.py`
+- **Thin community `Community 119`** (1 nodes): `translate_chunk3.py`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 120`** (1 nodes): `build.gradle.kts`
+- **Thin community `Community 120`** (1 nodes): `translate_chunk4.py`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 121`** (1 nodes): `build.gradle.kts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `filter()` connect `Community 0` to `Community 1`, `Community 2`, `Community 3`, `Community 4`?**
-  _High betweenness centrality (0.025) - this node is a cross-community bridge._
-- **Why does `get()` connect `Community 2` to `Community 0`, `Community 1`, `Community 3`, `Community 4`, `Community 8`?**
-  _High betweenness centrality (0.020) - this node is a cross-community bridge._
+- **Why does `filter()` connect `Community 0` to `Community 1`, `Community 2`, `Community 3`, `Community 4`, `Community 10`?**
+  _High betweenness centrality (0.023) - this node is a cross-community bridge._
+- **Why does `toString()` connect `Community 1` to `Community 0`, `Community 2`, `Community 3`, `Community 4`, `Community 10`, `Community 28`?**
+  _High betweenness centrality (0.016) - this node is a cross-community bridge._
 - **Are the 102 inferred relationships involving `l()` (e.g. with `qi()` and `ov()`) actually correct?**
   _`l()` has 102 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 74 inferred relationships involving `O()` (e.g. with `cv()` and `vt()`) actually correct?**
