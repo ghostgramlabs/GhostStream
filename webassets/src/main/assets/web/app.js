@@ -182,10 +182,11 @@ const CATEGORY_ICONS = {
 };
 
 function gsStr(key, defaultVal, ...args) {
-  let s = state.bootstrap?.strings?.[key] || defaultVal;
+  let s = state.bootstrap?.strings?.[key] || defaultVal || key;
   if (!s) return "";
   args.forEach((arg, i) => {
-    s = s.replace(`%${i + 1}$d`, arg).replace(`%${i + 1}$s`, arg);
+    // Handle both %1$s and %s styles
+    s = s.replace(`%${i + 1}$d`, arg).replace(`%${i + 1}$s`, arg).replace("%s", arg).replace("%d", arg);
   });
   return s;
 }
@@ -515,7 +516,7 @@ function detectBrowserFamily() {
   if (/Chrome|Chromium|CriOS/i.test(ua)) return "Chrome";
   if (/Safari/i.test(ua) && !/Chrome|Chromium|CriOS|Edg\//i.test(ua)) return "Safari";
   if (/Firefox|FxiOS/i.test(ua)) return "Firefox";
-  return "Unknown";
+  return gsStr("web_status_unknown", "Unknown");
 }
 
 function detectBrowserOs() {
@@ -525,7 +526,7 @@ function detectBrowserOs() {
   if (/Android/i.test(ua)) return "Android";
   if (/Windows/i.test(ua)) return "Windows";
   if (/Linux/i.test(ua)) return "Linux";
-  return "Unknown";
+  return gsStr("web_status_unknown", "Unknown");
 }
 
 function isDesktopChromiumBrowser() {
@@ -994,7 +995,7 @@ function compatibilityBadgeLabel(item, streamLive = item.streamReady) {
     return gsStr("web_player_status_finalizing", "Finalizing");
   }
   if ((item.compatibilityStatus === "IDLE" || !item.compatibilityStatus) && item.playbackMode !== "DIRECT" && !streamLive) {
-    return "Prepare";
+    return gsStr("web_prepare_video", "Prepare video");
   }
   if (!streamLive) {
     return gsStr("web_player_status_opening", "Preparing");
@@ -2718,7 +2719,7 @@ function updateCompatElements(job, streamLive) {
     if (actions && !actions.querySelector(".gs-btn-accent")) {
        const btn = document.createElement("button");
        btn.className = "gs-btn gs-btn-accent gs-btn-sm";
-       btn.textContent = "Retry";
+       btn.textContent = gsStr("web_player_try_again", "Retry");
        btn.onclick = () => retryPreparation(job.itemId);
        actions.prepend(btn);
        
@@ -2726,7 +2727,7 @@ function updateCompatElements(job, streamLive) {
        if (spinner) spinner.classList.remove("gs-spinner");
        
        const progress = stage.querySelector("[data-compat-status]");
-       if (progress) progress.textContent = "Stopped";
+       if (progress) progress.textContent = gsStr("web_player_status_stopped", "Stopped");
     }
   }
 

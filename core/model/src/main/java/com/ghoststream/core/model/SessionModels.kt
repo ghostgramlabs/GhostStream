@@ -35,7 +35,7 @@ data class ConnectedClient(
 data class BlockedClient(
     val ipAddress: String,
     val blockedAtEpochMs: Long,
-    val note: String = "Blocked for this session",
+    val note: String = "",
     val noteResId: Int? = null,
 )
 
@@ -82,7 +82,8 @@ data class SessionState(
     val networkAvailability: NetworkAvailability = NetworkAvailability(
         type = NetworkType.NONE,
         isReady = false,
-        helperText = "Connect both devices to the same Wi-Fi or hotspot.",
+        helperText = "",
+        helperTextResId = null, // Will be populated by inspector
     ),
     val selectedItems: List<SharedItem> = emptyList(),
     val selectedFolders: List<SharedFolder> = emptyList(),
@@ -92,7 +93,7 @@ data class SessionState(
     val blockedClients: List<BlockedClient> = emptyList(),
     val transferStats: TransferStats = TransferStats(),
     val hostname: String? = null,
-    val message: String = "Not sharing",
+    val message: String = "",
     val messageResId: Int? = null,
     val errorMessage: String? = null,
 )

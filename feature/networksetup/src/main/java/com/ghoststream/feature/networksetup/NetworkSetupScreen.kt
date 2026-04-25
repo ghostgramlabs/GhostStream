@@ -111,7 +111,7 @@ fun NetworkSetupScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
-                            text = networkAvailability.helperText,
+                            text = networkAvailability.helperTextResId?.let { stringResource(it) } ?: networkAvailability.helperText,
                             style = MaterialTheme.typography.bodyMedium,
                         )
                         Card(

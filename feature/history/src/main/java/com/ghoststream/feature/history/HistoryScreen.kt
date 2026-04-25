@@ -18,7 +18,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ghostgramlabs.directserve.core.resources.R
+import com.ghostgramlabs.directserve.core.resources.R as SharedR
 import com.ghostgramlabs.directserve.core.resources.ui.GhostSpacing
+import com.ghostgramlabs.directserve.core.resources.util.LocalizationUtils
 import com.ghoststream.core.model.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -198,7 +200,10 @@ private fun HistoryItem(
             )
             
             Text(
-                text = "${formatSize(record.sizeBytes)} • ${formatHistoryPeer(record.peer)}",
+                text = listOf(
+                    LocalizationUtils.formatBytes(androidx.compose.ui.platform.LocalContext.current, record.sizeBytes),
+                    formatHistoryPeer(record.peer)
+                ).joinToString(stringResource(SharedR.string.common_separator_dot)),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -280,14 +285,4 @@ private fun EmptyHistoryState(message: String) {
     }
 }
 
-private fun formatSize(bytes: Long): String {
-    val kb = bytes / 1024.0
-    val mb = kb / 1024.0
-    val gb = mb / 1024.0
-    return when {
-        gb >= 1.0 -> "%.2f GB".format(gb)
-        mb >= 1.0 -> "%.1f MB".format(mb)
-        kb >= 1.0 -> "%.0f KB".format(kb)
-        else -> "$bytes B"
-    }
-}
+

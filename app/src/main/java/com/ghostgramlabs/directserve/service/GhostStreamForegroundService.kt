@@ -18,6 +18,7 @@ import androidx.core.content.ContextCompat
 import com.ghostgramlabs.directserve.GhostStreamApplication
 import com.ghostgramlabs.directserve.MainActivity
 import com.ghostgramlabs.directserve.R
+import com.ghostgramlabs.directserve.core.resources.util.LocalizationUtils
 import com.ghostgramlabs.directserve.core.resources.R as SharedR
 import com.ghostgramlabs.directserve.state.ShareStartResult
 import com.ghoststream.core.model.AppSettings
@@ -414,7 +415,7 @@ class GhostStreamForegroundService : Service() {
         val notification = NotificationCompat.Builder(this, REQUEST_CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(getString(SharedR.string.service_upload_request_title))
-            .setContentText(getString(SharedR.string.service_upload_request_text, fileText, formatBytes(request.sizeBytes), formatGeneratedNameWithIp(request.requesterIp)))
+            .setContentText(getString(SharedR.string.service_upload_request_text, fileText, LocalizationUtils.formatBytes(this, request.sizeBytes), formatGeneratedNameWithIp(request.requesterIp)))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_EVENT)
             .setDefaults(NotificationCompat.DEFAULT_ALL)
@@ -457,7 +458,7 @@ class GhostStreamForegroundService : Service() {
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(getString(SharedR.string.service_upload_progress_title, fileLabel))
             .setContentText(detail)
-            .setSubText(getString(SharedR.string.service_upload_progress_subtext_pattern, formatBytes(progress.transferredBytes), formatBytes(progress.totalSizeBytes)))
+            .setSubText(getString(SharedR.string.service_upload_progress_subtext_pattern, LocalizationUtils.formatBytes(this, progress.transferredBytes), LocalizationUtils.formatBytes(this, progress.totalSizeBytes)))
             .setContentIntent(openAppIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -517,17 +518,9 @@ class GhostStreamForegroundService : Service() {
             },
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        val title = if (clients.size == 1) {
-            getString(SharedR.string.service_new_device_connected)
-        } else {
-            getString(SharedR.string.service_new_devices_connected, clients.size)
-        }
+        val title = resources.getQuantityString(SharedR.plurals.service_new_devices_connected, clients.size, clients.size)
         val clientNames = clients.joinToString(", ") { formatGeneratedNameWithIp(it.ipAddress) }
-        val detail = if (clients.size == 1) {
-            getString(SharedR.string.service_device_joined, clientNames)
-        } else {
-            getString(SharedR.string.service_devices_joined, clientNames, totalConnectedCount)
-        }
+        val detail = resources.getQuantityString(SharedR.plurals.service_devices_joined, clients.size, clientNames, totalConnectedCount)
         val notification = NotificationCompat.Builder(this, CONNECTION_CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
@@ -542,27 +535,7 @@ class GhostStreamForegroundService : Service() {
         NotificationManagerCompat.from(this).notify(CONNECTION_NOTIFICATION_ID, notification)
     }
 
-    private fun formatBytes(bytes: Long): String {
-        if (bytes <= 0L) return "0 ${getString(SharedR.string.common_unit_b)}"
-        val units = listOf(
-            getString(SharedR.string.common_unit_b),
-            getString(SharedR.string.common_unit_kb),
-            getString(SharedR.string.common_unit_mb),
-            getString(SharedR.string.common_unit_gb),
-            getString(SharedR.string.common_unit_tb)
-        )
-        var value = bytes.toDouble()
-        var unitIndex = 0
-        while (value >= 1024 && unitIndex < units.lastIndex) {
-            value /= 1024
-            unitIndex++
-        }
-        return if (value >= 100 || unitIndex == 0) {
-            "${value.toInt()} ${units[unitIndex]}"
-        } else {
-            String.format("%.1f %s", value, units[unitIndex])
-        }
-    }
+
 
     private fun buildNotification(state: SessionState): android.app.Notification {
         val openAppIntent = PendingIntent.getActivity(
@@ -581,11 +554,7 @@ class GhostStreamForegroundService : Service() {
         )
 
         val contentText = if (state.isSharing) {
-            when (state.connectedClients.size) {
-                0 -> getString(SharedR.string.service_waiting_for_devices)
-                1 -> getString(SharedR.string.service_device_connected, formatGeneratedNameWithIp(state.connectedClients.first().ipAddress))
-                else -> getString(SharedR.string.service_devices_connected, state.connectedClients.size)
-            }
+            resources.getQuantityString(SharedR.plurals.service_devices_connected, state.connectedClients.size, state.connectedClients.size)
         } else {
             getString(SharedR.string.service_preparing_browser_access)
         }

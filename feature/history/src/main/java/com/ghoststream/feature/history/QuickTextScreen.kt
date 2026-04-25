@@ -42,6 +42,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ghostgramlabs.directserve.core.resources.R
+import com.ghostgramlabs.directserve.core.resources.R as SharedR
 import com.ghostgramlabs.directserve.core.resources.ui.GhostSpacing
 import com.ghoststream.core.model.QuickTextDevice
 import com.ghoststream.core.model.QuickTextMessage
@@ -230,7 +231,8 @@ private fun QuickTextMessageCard(
         ) {
             Text(message.text, style = MaterialTheme.typography.bodyLarge)
             Text(
-                text = "${message.senderName} | $targetLabel | ${DateFormat.format("MMM d, h:mm a", message.timestampMs)}",
+                text = listOf(message.senderName, targetLabel, DateFormat.format("MMM d, h:mm a", message.timestampMs).toString())
+                    .joinToString(stringResource(SharedR.string.common_separator_pipe)),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

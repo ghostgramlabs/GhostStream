@@ -165,6 +165,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                     decision = effectiveItem.playbackDecision,
                     status = CompatibilityStatus.ANALYZING,
                     message = effectiveItem.playbackDecision.reason,
+                    messageResId = R.string.compatibility_message_analyzing,
                 ),
             )
         }
@@ -263,6 +264,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                                 decision = effectiveItem.playbackDecision,
                                 status = CompatibilityStatus.PLAYABLE_NOW,
                                 message = message,
+                                messageResId = completedMessageResId(effectiveItem, exportResult),
                                 progressPercent = 100,
                                 preparedAsset = asset,
                                 hlsReady = false,
@@ -290,7 +292,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                             CompatibilityWorkerResult.Success(
                                 preparedAsset = asset,
                                 message = message,
-                                messageResId = R.string.compatibility_message_ready,
+                                messageResId = completedMessageResId(effectiveItem, exportResult),
                             ),
                         )
                     }
@@ -320,6 +322,7 @@ class Media3FragmentedMp4CompatibilityWorker(
                             CompatibilityWorkerResult.Failure(
                                 message = exportException.message
                                     ?: "Unable to prepare a compatible browser stream for this file.",
+                                messageResId = R.string.pipeline_error_start_failed,
                                 type = CompatibilityFailureType.EXPORT,
                             ),
                         )
@@ -633,9 +636,9 @@ class Media3FragmentedMp4CompatibilityWorker(
                     "Optimizing video container..."
                 },
                 messageResId = if (item.playbackDecision.mode == PlaybackMode.TRANSMUX) {
-                    R.string.pipeline_label_repackaging
+                    R.string.compatibility_message_repackaging_web
                 } else {
-                    R.string.compatibility_message_optimizing
+                    R.string.compatibility_message_optimizing_web
                 },
             ),
         )
@@ -728,9 +731,9 @@ class Media3FragmentedMp4CompatibilityWorker(
                                         "Optimizing video container..."
                                     },
                                     messageResId = if (item.playbackDecision.mode == PlaybackMode.TRANSMUX) {
-                                        R.string.pipeline_label_repackaging
+                                        R.string.compatibility_message_repackaging_web
                                     } else {
-                                        R.string.compatibility_message_optimizing
+                                        R.string.compatibility_message_optimizing_web
                                     },
                                     progressPercent = progress,
                                 ),
@@ -1244,6 +1247,20 @@ class Media3FragmentedMp4CompatibilityWorker(
                             else ->
                                 "Preparing for web playback..."
                         },
+                        messageResId = when {
+                            streamable && item.playbackDecision.mode == PlaybackMode.REMUX ->
+                                R.string.compatibility_message_finalizing_optimized
+                            streamable ->
+                                R.string.compatibility_message_finalizing_compatible
+                            item.playbackDecision.mode == PlaybackMode.REMUX ->
+                                R.string.compatibility_message_optimizing_web
+                            item.playbackDecision.mode == PlaybackMode.TRANSMUX ->
+                                R.string.compatibility_message_repackaging_web
+                            isFallbackTranscode(item) ->
+                                R.string.compatibility_message_converting_web
+                            else ->
+                                R.string.compatibility_message_preparing_web
+                        },
                         progressPercent = progress,
                         preparedAsset = incompleteAsset,
                         hlsReady = hlsReadiness.isReady && canStreamDuringPrepare,
@@ -1271,6 +1288,19 @@ class Media3FragmentedMp4CompatibilityWorker(
                 "Optimized playback is ready."
             } else {
                 "Browser playback is ready."
+            }
+        }
+    }
+
+    private fun completedMessageResId(item: SharedItem, exportResult: ExportResult): Int {
+        return when (exportResult.videoConversionProcess) {
+            ExportResult.CONVERSION_PROCESS_TRANSMUXED -> R.string.compatibility_message_ready
+            ExportResult.CONVERSION_PROCESS_TRANSCODED -> R.string.compatibility_message_ready_compatible
+            ExportResult.CONVERSION_PROCESS_TRANSMUXED_AND_TRANSCODED -> R.string.compatibility_message_ready_compatible
+            else -> if (item.playbackDecision.mode == PlaybackMode.REMUX) {
+                R.string.compatibility_message_ready_optimized
+            } else {
+                R.string.compatibility_message_ready
             }
         }
     }

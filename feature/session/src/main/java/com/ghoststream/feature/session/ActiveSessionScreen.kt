@@ -64,6 +64,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import com.ghostgramlabs.directserve.core.resources.util.LocalizationUtils
+import com.ghostgramlabs.directserve.core.resources.R as SharedR
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -242,7 +244,7 @@ fun ActiveSessionScreen(
                         )
                     }
                     Text(
-                        stringResource(R.string.home_upload_request_total_size, formatBytes(request.sizeBytes)),
+                        stringResource(R.string.home_upload_request_total_size, LocalizationUtils.formatBytes(androidx.compose.ui.platform.LocalContext.current, request.sizeBytes)),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
@@ -519,7 +521,7 @@ private fun SessionHeroCard(
                         text = if (sessionState.isSharing) {
                             stringResource(R.string.session_share_live_body)
                         } else {
-                            sessionState.message
+                            sessionState.messageResId?.let { stringResource(it) } ?: sessionState.message
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -879,8 +881,8 @@ private fun SessionStatsRow(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         SessionMetric(stringResource(R.string.session_metric_devices), sessionState.connectedClients.size.toString())
-        SessionMetric(stringResource(R.string.session_metric_sent), formatBytes(sessionState.transferStats.totalBytesSent))
-        SessionMetric(stringResource(R.string.session_metric_elapsed), formatElapsed(sessionState.transferStats.startedAtEpochMs))
+        SessionMetric(stringResource(R.string.session_metric_sent), LocalizationUtils.formatBytes(androidx.compose.ui.platform.LocalContext.current, sessionState.transferStats.totalBytesSent))
+        SessionMetric(stringResource(R.string.session_metric_elapsed), LocalizationUtils.formatDuration(androidx.compose.ui.platform.LocalContext.current, System.currentTimeMillis() - (sessionState.transferStats.startedAtEpochMs ?: 0L)))
     }
 }
 
@@ -1063,7 +1065,7 @@ private fun ConnectedClientSummary(
                 client.displayName?.takeIf { it.isNotBlank() },
             )
                 .distinct()
-                .joinToString(" | "),
+                .joinToString(stringResource(SharedR.string.common_separator_pipe)),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -1123,7 +1125,7 @@ private fun BlockedClientRow(
                         Text(identity.generatedName, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            listOf(identity.ipAddress, blocked.note).joinToString(" | "),
+                            listOf(identity.ipAddress, blocked.note).joinToString(stringResource(SharedR.string.common_separator_pipe)),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -1147,7 +1149,7 @@ private fun BlockedClientRow(
                         Text(identity.generatedName, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            listOf(identity.ipAddress, blocked.note).joinToString(" | "),
+                            listOf(identity.ipAddress, blocked.note).joinToString(stringResource(SharedR.string.common_separator_pipe)),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -1304,18 +1306,6 @@ private fun generateQrBitmap(content: String): Bitmap? {
             }
         }
     }.getOrNull()
-}
-
-private fun formatBytes(bytes: Long): String {
-    if (bytes <= 0) return "0 B"
-    val units = listOf("B", "KB", "MB", "GB")
-    var value = bytes.toDouble()
-    var index = 0
-    while (value >= 1024 && index < units.lastIndex) {
-        value /= 1024
-        index++
-    }
-    return "${(value * 10).roundToInt() / 10.0} ${units[index]}"
 }
 
 @Composable

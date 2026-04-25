@@ -12,6 +12,8 @@
     <string name="common_dismiss">Dismiss</string>
     <string name="common_remove">Remove</string>
     <string name="common_search">Search</string>
+    <string name="common_separator_pipe"> | </string>
+    <string name="common_separator_dot"> • </string>
     <string name="onboarding_skip">Skip</string>
     <string name="onboarding_title">Direct streaming and file sharing</string>
     <string name="onboarding_subtitle">Turn your phone into a private local hub for TV, laptop, phone, tablet, and browser access.</string>
@@ -305,13 +307,19 @@
     <string name="service_upload_success_text">Received from %1$s</string>
     <string name="service_upload_success_subtext">Saved to Downloads</string>
     <string name="service_file_count">%1$d files</string>
-    <string name="service_new_device_connected">New device connected</string>
-    <string name="service_new_devices_connected">%1$d new devices connected</string>
-    <string name="service_device_joined">%1$s joined your DirectServe session.</string>
-    <string name="service_devices_joined">%1$s joined. %2$d devices are connected now.</string>
+    <plurals name="service_new_devices_connected">
+        <item quantity="one">New device connected</item>
+        <item quantity="other">%1$d new devices connected</item>
+    </plurals>
+    <plurals name="service_devices_joined">
+        <item quantity="one">%1$s joined your DirectServe session.</item>
+        <item quantity="other">%1$s joined. %2$d devices are connected now.</item>
+    </plurals>
     <string name="service_waiting_for_devices">Waiting for devices...</string>
-    <string name="service_device_connected">%1$s connected</string>
-    <string name="service_devices_connected">%1$d devices connected</string>
+    <plurals name="service_devices_connected">
+        <item quantity="one">%1$d device connected</item>
+        <item quantity="other">%1$d devices connected</item>
+    </plurals>
     <string name="service_preparing_browser_access">Preparing browser access...</string>
     <string name="service_channel_requests_name">Transfer Requests</string>
     <string name="service_channel_requests_desc">Notifications for incoming file transfers from PCs</string>
@@ -331,7 +339,6 @@
     <string name="library_empty_filter_title">Nothing matches this view</string>
     <string name="library_empty_filter_body">Try another filter or search term.</string>
     <string name="library_section_files">Files</string>
-    <string name="library_items_in_view">%1$d item%2$s in this view</string>
     <string name="library_single_file_name">Single file</string>
     <string name="library_selected_files_name">Selected files</string>
     <string name="library_save_selected_title">Save selected files</string>
@@ -359,6 +366,10 @@
     <string name="library_organize_body">Sort or save part of this share</string>
     <string name="library_sort_prefix">Sort files: %1$s</string>
     <string name="library_clear_all_action">Clear all</string>
+    <plurals name="library_items_in_view">
+        <item quantity="one">%1$d item in view</item>
+        <item quantity="other">%1$d items in view</item>
+    </plurals>
     <string name="library_clear_all_title">Clear this share?</string>
     <string name="library_clear_all_body">This removes every shared file and folder from the current share.</string>
     <string name="library_sort_newest">Newest</string>
@@ -611,7 +622,10 @@
     <string name="home_saved_shares_save_now">Save now</string>
     <string name="home_saved_shares_open">Open</string>
     <string name="home_saved_shares_delete">Delete</string>
-    <string name="home_saved_shares_items_count">%1$d items</string>
+    <plurals name="home_saved_shares_items_count">
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
+    </plurals>
     <string name="library_date_group_label">%1$s </string>
     <string name="web_upload_title">Send</string>
     <string name="web_upload_subtitle">Send files to this device over the local network.</string>
@@ -698,6 +712,7 @@
     <string name="web_player_progress_preparing">Preparing video</string>
     <string name="web_player_progress_converting">Converting for this device</string>
     <string name="web_player_status_failed">Playback unavailable</string>
+    <string name="web_player_status_stopped">Stopped</string>
     <string name="web_prepare_video">Prepare video</string>
     <string name="web_progress_percent">%1$d%% complete</string>
     <string name="web_media_quick_title">Browse media</string>
@@ -723,6 +738,16 @@
     <string name="common_unit_mb">MB</string>
     <string name="common_unit_gb">GB</string>
     <string name="common_unit_tb">TB</string>
+    <string name="common_unit_s">s</string>
+    <string name="common_unit_m">m</string>
+    <string name="common_unit_h">h</string>
+    <string name="common_byte_format_decimal">%1$.1f %2$s</string>
+    <string name="common_byte_format_integer">%1$d %2$s</string>
+    <string name="common_duration_format_m_s">%1$dm %2$ds</string>
+    <string name="common_duration_format_h_m">%1$dh %2$dm</string>
+    <string name="common_duration_format_s">%1$ds</string>
+    <string name="common_duration_timestamp_m_s">%1$d:%2$02d</string>
+    <string name="common_duration_timestamp_h_m_s">%1$d:%2$02d:%3$02d</string>
     <string name="service_file_index_pattern">%1$s (%2$d/%3$d)</string>
     <string name="service_upload_progress_subtext_pattern">%1$s / %2$s</string>
     <string name="help_section_media_server">Media Server Mode</string>
@@ -763,6 +788,15 @@
     <string name="compatibility_message_optimizing">Optimizing video container…</string>
     <string name="compatibility_message_almost_ready">Almost ready…</string>
     <string name="compatibility_message_ready">Browser playback is ready.</string>
+    <string name="compatibility_message_analyzing">Analyzing file…</string>
+    <string name="compatibility_message_finalizing_optimized">Finalizing the optimized browser stream.</string>
+    <string name="compatibility_message_finalizing_compatible">Finalizing the compatible browser stream.</string>
+    <string name="compatibility_message_optimizing_web">Optimizing for browser playback…</string>
+    <string name="compatibility_message_repackaging_web">Repackaging for browser playback…</string>
+    <string name="compatibility_message_converting_web">Converting for browser playback…</string>
+    <string name="compatibility_message_preparing_web">Preparing for web playback…</string>
+    <string name="compatibility_message_ready_optimized">Optimized playback is ready.</string>
+    <string name="compatibility_message_ready_compatible">Compatible playback is ready.</string>
 
     <!-- Session & Network Status -->
     <string name="network_setup_connect_both_devices">Connect both devices to the same Wi-Fi or hotspot.</string>

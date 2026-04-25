@@ -26,6 +26,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.pluralStringResource
+import com.ghostgramlabs.directserve.core.resources.util.LocalizationUtils
+import com.ghostgramlabs.directserve.core.resources.R as SharedR
 import com.ghostgramlabs.directserve.core.resources.R
 import com.ghoststream.core.model.SmartSelectionGroup
 
@@ -74,7 +77,12 @@ fun BatchSelectScreen(
                     ) {
                         Text(group.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                         Text(group.description, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(stringResource(R.string.library_items_in_view, group.itemCount, if (group.itemCount == 1) "" else "s") + " | " + formatBytes(group.totalSizeBytes))
+                        val context = androidx.compose.ui.platform.LocalContext.current
+                        Text(
+                            pluralStringResource(SharedR.plurals.library_items_in_view, group.itemCount, group.itemCount) +
+                                stringResource(SharedR.string.common_separator_pipe) +
+                                LocalizationUtils.formatBytes(context, group.totalSizeBytes)
+                        )
                         Button(
                             onClick = {
                                 onAddGroup(group.uris.map(Uri::parse))

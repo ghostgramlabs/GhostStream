@@ -82,6 +82,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ghostgramlabs.directserve.core.resources.R
 import com.ghostgramlabs.directserve.core.resources.ui.GhostSpacing
+import com.ghostgramlabs.directserve.core.resources.util.LocalizationUtils
 import com.ghoststream.core.model.ConnectionDiagnostics
 import com.ghoststream.core.model.DeviceNameGenerator
 import com.ghoststream.core.model.LibraryState
@@ -267,7 +268,7 @@ fun HomeScreen(
                         )
                     }
                     Text(
-                        stringResource(R.string.home_upload_request_total_size, formatBytes(request.sizeBytes)),
+                        stringResource(R.string.home_upload_request_total_size, LocalizationUtils.formatBytes(androidx.compose.ui.platform.LocalContext.current, request.sizeBytes)),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
@@ -794,7 +795,7 @@ private fun SummaryStrip(libraryState: LibraryState) {
         )
         HeroStat(
             label = stringResource(R.string.library_info_size),
-            value = formatBytes(libraryState.summary.totalBytes)
+            value = LocalizationUtils.formatBytes(androidx.compose.ui.platform.LocalContext.current, libraryState.summary.totalBytes)
         )
     }
 }
@@ -1289,7 +1290,7 @@ private fun NearbyDeviceSummary(
         Text(
             text = listOfNotNull(device.friendlyUrl, identity.ipAddress)
                 .distinct()
-                .joinToString(" | "),
+                .joinToString(stringResource(R.string.common_separator_pipe)),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -1341,7 +1342,14 @@ private fun RecentSessionsCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(stringResource(R.string.home_saved_shares_items_count, session.totalItems), style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            androidx.compose.ui.res.pluralStringResource(
+                                R.plurals.home_saved_shares_items_count,
+                                session.totalItems,
+                                session.totalItems
+                            ),
+                            style = MaterialTheme.typography.titleMedium
+                        )
                         Text(
                             DateUtils.getRelativeTimeSpanString(session.endedAtEpochMs).toString(),
                             style = MaterialTheme.typography.bodySmall,
@@ -1665,18 +1673,4 @@ private fun heroMessage(
     }
 }
 
-private fun formatBytes(bytes: Long): String {
-    if (bytes <= 0L) return "0 B"
-    val units = listOf("B", "KB", "MB", "GB", "TB")
-    var value = bytes.toDouble()
-    var unitIndex = 0
-    while (value >= 1024 && unitIndex < units.lastIndex) {
-        value /= 1024
-        unitIndex++
-    }
-    return if (value >= 100 || unitIndex == 0) {
-        "${value.toInt()} ${units[unitIndex]}"
-    } else {
-        String.format("%.1f %s", value, units[unitIndex])
-    }
-}
+

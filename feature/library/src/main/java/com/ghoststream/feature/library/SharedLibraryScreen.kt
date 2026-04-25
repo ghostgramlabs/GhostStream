@@ -67,7 +67,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.ghostgramlabs.directserve.core.resources.R
+import androidx.compose.ui.res.pluralStringResource
+import com.ghostgramlabs.directserve.core.resources.util.LocalizationUtils
 import com.ghostgramlabs.directserve.core.resources.ui.GhostSpacing
+import com.ghostgramlabs.directserve.core.resources.R as SharedR
 import com.ghoststream.core.media.CompatibilityJob
 import com.ghoststream.core.media.CompatibilityStatus
 import com.ghoststream.core.model.LibraryState
@@ -227,7 +230,7 @@ fun SharedLibraryScreen(
                 item {
                     SectionHeader(
                         title = stringResource(R.string.library_section_files),
-                        subtitle = stringResource(R.string.library_items_in_view, filteredItems.size, if (filteredItems.size == 1) "" else "s"),
+                        subtitle = pluralStringResource(SharedR.plurals.library_items_in_view, filteredItems.size, filteredItems.size),
                         modifier = Modifier.padding(horizontal = GhostSpacing.screenHorizontal),
                     )
                 }
@@ -361,7 +364,7 @@ private fun LibraryHeader(
             ) {
                 LibraryInfoChip(label = stringResource(R.string.library_info_items), value = libraryState.summary.totalItems.toString(), showDot = true)
                 LibraryInfoChip(label = stringResource(R.string.library_info_folders), value = libraryState.folders.size.toString())
-                LibraryInfoChip(label = stringResource(R.string.library_info_size), value = formatBytes(libraryState.summary.totalBytes))
+                LibraryInfoChip(label = stringResource(R.string.library_info_size), value = LocalizationUtils.formatBytes(androidx.compose.ui.platform.LocalContext.current, libraryState.summary.totalBytes))
             }
         }
     }
@@ -678,7 +681,7 @@ private fun FolderRow(
                     Text(folder.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        stringResource(R.string.library_folder_summary, folder.fileCount, formatBytes(folder.totalSizeBytes)),
+                        stringResource(R.string.library_folder_summary, folder.fileCount, LocalizationUtils.formatBytes(androidx.compose.ui.platform.LocalContext.current, folder.totalSizeBytes)),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -743,10 +746,10 @@ private fun LibraryItemRow(
                         Text(
                             text = listOfNotNull(
                                 itemTypeLabel(item.category),
-                                item.durationMs?.let(::formatDuration),
-                                formatBytes(item.sizeBytes),
+                                item.durationMs?.let { LocalizationUtils.formatDurationTimestamp(androidx.compose.ui.platform.LocalContext.current, it) },
+                                LocalizationUtils.formatBytes(androidx.compose.ui.platform.LocalContext.current, item.sizeBytes),
                                 if (!item.isAvailable) stringResource(R.string.library_unavailable) else null,
-                            ).joinToString(" | "),
+                            ).joinToString(stringResource(SharedR.string.common_separator_pipe)),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -991,26 +994,3 @@ private fun libraryAccentSurface() = MaterialTheme.colorScheme.primary.copy(alph
 @Composable
 private fun libraryAccentBorder() = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
 
-internal fun formatBytes(bytes: Long): String {
-    if (bytes <= 0L) return "0 B"
-    val units = listOf("B", "KB", "MB", "GB")
-    var value = bytes.toDouble()
-    var index = 0
-    while (value >= 1024 && index < units.lastIndex) {
-        value /= 1024
-        index++
-    }
-    return "${(value * 10).roundToInt() / 10.0} ${units[index]}"
-}
-
-internal fun formatDuration(durationMs: Long): String {
-    val totalSeconds = durationMs / 1_000L
-    val hours = totalSeconds / 3_600L
-    val minutes = (totalSeconds % 3_600L) / 60L
-    val seconds = totalSeconds % 60L
-    return if (hours > 0) {
-        "%d:%02d:%02d".format(hours, minutes, seconds)
-    } else {
-        "%d:%02d".format(minutes, seconds)
-    }
-}
