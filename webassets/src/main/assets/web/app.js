@@ -4233,10 +4233,13 @@ function mountQuickText(initialPayload) {
       target.value = previousTarget;
     }
 
+    const myDeviceId = payload.myDeviceId || "";
     const messages = payload.messages || [];
     historyEl.innerHTML = messages.length === 0
       ? `<div class="gs-category-card">${esc(gsStr("web_quick_text_empty", ""))}</div>`
-      : messages.map((message) => `
+      : messages.map((message) => {
+          const canDelete = message.senderId === myDeviceId;
+          return `
           <article class="gs-category-card" style="margin-bottom:12px;">
             <div style="white-space:pre-wrap;">${esc(message.text)}</div>
             <div class="gs-category-meta" style="margin-top:8px;">
@@ -4245,10 +4248,11 @@ function mountQuickText(initialPayload) {
             <div class="gs-toolbar-actions" style="margin-top:10px;">
               <button class="gs-btn gs-btn-sm" data-copy="${esc(message.text)}">${gsStr("web_quick_text_copy", "")}</button>
               ${/^https?:\/\//i.test(message.text || "") ? `<button class="gs-btn gs-btn-sm" data-open="${esc(message.text)}">${gsStr("web_quick_text_open_link", "")}</button>` : ""}
-              <button class="gs-btn gs-btn-sm" data-delete="${esc(message.id)}">${gsStr("common_delete", "Delete")}</button>
+              ${canDelete ? `<button class="gs-btn gs-btn-sm" data-delete="${esc(message.id)}">${gsStr("common_delete", "Delete")}</button>` : ""}
             </div>
           </article>
-        `).join("");
+        `;
+        }).join("");
 
     historyEl.querySelectorAll("[data-copy]").forEach((button) => {
       button.addEventListener("click", async () => {

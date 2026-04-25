@@ -11,6 +11,9 @@ internal interface QuickTextDao {
     @Query("SELECT * FROM quick_text_messages ORDER BY timestampMs DESC")
     fun getAllMessages(): Flow<List<QuickTextMessageEntity>>
 
+    @Query("SELECT * FROM quick_text_messages WHERE id = :id LIMIT 1")
+    suspend fun getById(id: String): QuickTextMessageEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(message: QuickTextMessageEntity)
 

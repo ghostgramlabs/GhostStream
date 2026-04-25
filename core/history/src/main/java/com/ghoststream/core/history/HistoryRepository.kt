@@ -15,6 +15,7 @@ interface HistoryRepository {
     suspend fun deleteRecord(id: String)
     suspend fun clearAll()
     suspend fun addQuickTextMessage(message: QuickTextMessage)
+    suspend fun getQuickTextMessage(id: String): QuickTextMessage?
     suspend fun deleteQuickTextMessage(id: String)
     suspend fun clearQuickTextMessages()
 }
@@ -50,6 +51,10 @@ class RoomHistoryRepository(context: Context) : HistoryRepository {
 
     override suspend fun addQuickTextMessage(message: QuickTextMessage) {
         quickTextDao.insert(QuickTextMessageEntity.from(message))
+    }
+
+    override suspend fun getQuickTextMessage(id: String): QuickTextMessage? {
+        return quickTextDao.getById(id)?.toDomain()
     }
 
     override suspend fun deleteQuickTextMessage(id: String) {

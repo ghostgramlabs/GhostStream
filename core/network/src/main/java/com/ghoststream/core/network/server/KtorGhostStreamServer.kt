@@ -1652,6 +1652,7 @@ class KtorGhostStreamServer(
                     QuickTextHistoryPayload(
                         messages = historyRepository.quickTextMessages.first(),
                         devices = quickTextDevicesFor(call.request.origin.remoteHost),
+                        myDeviceId = call.request.origin.remoteHost,
                     ),
                 )
             }
@@ -1679,7 +1680,14 @@ class KtorGhostStreamServer(
 
             post("/api/quick-text/delete/{id}") {
                 if (!call.authorizeBrowserCall()) return@post
-                call.parameters["id"]?.let { historyRepository.deleteQuickTextMessage(it) }
+                val id = call.parameters["id"]
+                    ?: return@post call.respond(HttpStatusCode.BadRequest, ErrorPayload(localizedContext().getString(R.string.web_error_invalid_upload_request)))
+                val message = historyRepository.getQuickTextMessage(id)
+                    ?: return@post call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.web_error_invalid_upload_request)))
+                if (message.senderId != call.request.origin.remoteHost) {
+                    return@post call.respond(HttpStatusCode.Forbidden, ErrorPayload(localizedContext().getString(R.string.web_quick_text_delete_forbidden)))
+                }
+                historyRepository.deleteQuickTextMessage(id)
                 call.respond(AuthResult(success = true))
             }
 
@@ -3177,6 +3185,7 @@ class KtorGhostStreamServer(
     private data class QuickTextHistoryPayload(
         val messages: List<QuickTextMessage>,
         val devices: List<QuickTextDevice>,
+        val myDeviceId: String,
     )
 
     @Serializable

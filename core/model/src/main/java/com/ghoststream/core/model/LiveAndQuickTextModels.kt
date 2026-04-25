@@ -158,6 +158,8 @@ interface LiveScreenSessionStore {
     suspend fun disconnectViewer(viewerId: String)
 }
 
+const val QUICK_TEXT_PHONE_ID = "phone-host"
+
 @Serializable
 enum class QuickTextTargetType {
     DEVICE,

@@ -25,6 +25,8 @@ import com.ghoststream.core.model.AppSettings
 import com.ghoststream.core.model.ConnectedClient
 import com.ghoststream.core.model.IncomingUploadCompletion
 import com.ghoststream.core.model.IncomingUploadProgress
+import com.ghoststream.core.model.QUICK_TEXT_PHONE_ID
+import com.ghoststream.core.model.QuickTextMessage
 import com.ghoststream.core.model.SessionState
 import com.ghoststream.core.model.formatGeneratedNameWithIp
 import kotlinx.coroutines.CoroutineScope
@@ -53,6 +55,7 @@ class GhostStreamForegroundService : Service() {
     private var lastNotificationUrl: String? = null
     private var lastNotificationClientCount: Int? = null
     private var lastNotificationUpdateMs: Long = 0L
+    private var seenQuickTextIds: Set<String>? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -153,6 +156,27 @@ class GhostStreamForegroundService : Service() {
                         showIncomingUploadSuccessNotification(completion)
                         container.sessionManager.clearIncomingUploadCompletion(completion.requestId)
                     }
+                }
+        }
+        serviceScope.launch {
+            combine(
+                container.settingsRepository.settings,
+                container.historyRepository.quickTextMessages,
+            ) { settings, messages -> settings to messages }
+                .collectLatest { (settings, messages) ->
+                    val previouslySeen = seenQuickTextIds
+                    val currentIds = messages.mapTo(linkedSetOf()) { it.id }
+                    if (previouslySeen == null) {
+                        // First emission since service start — establish baseline without notifying.
+                        seenQuickTextIds = currentIds
+                        return@collectLatest
+                    }
+                    if (settings.notifyOnQuickText) {
+                        messages
+                            .filter { it.id !in previouslySeen && it.senderId != QUICK_TEXT_PHONE_ID }
+                            .forEach { showQuickTextNotification(it) }
+                    }
+                    seenQuickTextIds = currentIds
                 }
         }
     }
@@ -392,6 +416,32 @@ class GhostStreamForegroundService : Service() {
         NotificationManagerCompat.from(this).cancel(UPLOAD_SUCCESS_NOTIFICATION_ID)
     }
 
+    private fun showQuickTextNotification(message: QuickTextMessage) {
+        val openAppIntent = PendingIntent.getActivity(
+            this,
+            205,
+            Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                action = MainActivity.ACTION_OPEN_QUICK_TEXT
+            },
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val title = getString(SharedR.string.service_quick_text_title, message.senderName)
+        val notification = NotificationCompat.Builder(this, QUICK_TEXT_CHANNEL_ID)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle(title)
+            .setContentText(message.text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message.text))
+            .setContentIntent(openAppIntent)
+            .setAutoCancel(true)
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+
+        NotificationManagerCompat.from(this)
+            .notify(QUICK_TEXT_NOTIFICATION_ID_BASE + (message.id.hashCode() and 0xFFFF), notification)
+    }
+
     private fun showUploadRequestNotification(request: com.ghoststream.core.model.UploadRequest) {
         val acceptIntent = PendingIntent.getService(
             this,
@@ -606,6 +656,16 @@ class GhostStreamForegroundService : Service() {
             enableVibration(true)
         }
         manager.createNotificationChannel(connectionChannel)
+
+        val quickTextChannel = NotificationChannel(
+            QUICK_TEXT_CHANNEL_ID,
+            getString(SharedR.string.service_channel_quick_text_name),
+            NotificationManager.IMPORTANCE_HIGH,
+        ).apply {
+            description = getString(SharedR.string.service_channel_quick_text_desc)
+            enableVibration(true)
+        }
+        manager.createNotificationChannel(quickTextChannel)
     }
 
     companion object {
@@ -614,11 +674,13 @@ class GhostStreamForegroundService : Service() {
         private const val CHANNEL_ID = "ghoststream_sharing"
         private const val REQUEST_CHANNEL_ID = "ghoststream_requests"
         private const val CONNECTION_CHANNEL_ID = "ghoststream_connections"
+        private const val QUICK_TEXT_CHANNEL_ID = "ghoststream_quick_text"
         private const val NOTIFICATION_ID = 404
         private const val REQUEST_NOTIFICATION_ID = 405
         private const val CONNECTION_NOTIFICATION_ID = 406
         private const val UPLOAD_PROGRESS_NOTIFICATION_ID = 407
         private const val UPLOAD_SUCCESS_NOTIFICATION_ID = 408
+        private const val QUICK_TEXT_NOTIFICATION_ID_BASE = 500_000
         private const val ACTION_START = "com.ghostgramlabs.directserve.action.START_SHARING"
         private const val ACTION_STOP = "com.ghostgramlabs.directserve.action.STOP_SHARING"
         private const val ACTION_ACCEPT_UPLOAD = "com.ghostgramlabs.directserve.action.ACCEPT_UPLOAD"

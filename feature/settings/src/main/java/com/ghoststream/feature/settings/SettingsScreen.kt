@@ -71,6 +71,7 @@ fun SettingsScreen(
     onToggleNotifyOnDeviceConnect: (Boolean) -> Unit,
     onToggleNotifyOnFileDownload: (Boolean) -> Unit,
     onToggleNotifyOnUploadRequest: (Boolean) -> Unit,
+    onToggleNotifyOnQuickText: (Boolean) -> Unit,
     onToggleRequireDeviceApproval: (Boolean) -> Unit,
     onAutoStopSelected: (AutoStopOption) -> Unit,
     onPreferredPortChanged: (String) -> Unit,
@@ -185,6 +186,7 @@ fun SettingsScreen(
                 SettingsToggleRow(stringResource(R.string.settings_connection_alerts), stringResource(R.string.settings_connection_alerts_desc), settings.notifyOnDeviceConnect, onToggleNotifyOnDeviceConnect)
                 SettingsToggleRow(stringResource(R.string.settings_download_alerts), stringResource(R.string.settings_download_alerts_desc), settings.notifyOnFileDownload, onToggleNotifyOnFileDownload)
                 SettingsToggleRow(stringResource(R.string.settings_upload_requests), stringResource(R.string.settings_upload_requests_desc), settings.notifyOnUploadRequest, onToggleNotifyOnUploadRequest)
+                SettingsToggleRow(stringResource(R.string.settings_quick_text_alerts), stringResource(R.string.settings_quick_text_alerts_desc), settings.notifyOnQuickText, onToggleNotifyOnQuickText)
             }
         }
 

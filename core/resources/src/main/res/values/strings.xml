@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">Alert when someone downloads a file.</string>
     <string name="settings_upload_requests">Upload requests</string>
     <string name="settings_upload_requests_desc">Alert when someone requests to upload.</string>
+    <string name="settings_quick_text_alerts">Quick text alerts</string>
+    <string name="settings_quick_text_alerts_desc">Notify when a browser sends a quick text message.</string>
     <string name="settings_use_pin">Use PIN</string>
     <string name="settings_use_pin_desc">Ask browsers for a code before opening the session.</string>
     <string name="settings_new_pin_each_time">New PIN each time</string>
@@ -325,6 +327,9 @@
     <string name="service_channel_requests_desc">Notifications for incoming file transfers from PCs</string>
     <string name="service_channel_connections_name">Device Connections</string>
     <string name="service_channel_connections_desc">Notifications when a new device joins your DirectServe session</string>
+    <string name="service_channel_quick_text_name">Quick Text Messages</string>
+    <string name="service_channel_quick_text_desc">Notifications for quick text messages received from browsers</string>
+    <string name="service_quick_text_title">New message from %1$s</string>
     <string name="library_title">Manage Share</string>
     <string name="library_header_title">Current Share</string>
     <string name="library_header_body">These are the items people can open from this share.</string>
@@ -842,6 +847,7 @@
     <string name="quick_text_this_phone">This Phone</string>
     <string name="quick_text_sent">Text shared.</string>
     <string name="quick_text_blocked_by_live_screen">Stop Live Screen before using Quick Text.</string>
+    <string name="web_quick_text_delete_forbidden">You can only delete messages you sent.</string>
     <string name="web_live_title">Live Screen</string>
     <string name="web_live_waiting">Waiting for stream</string>
     <string name="web_live_status_live">Live</string>

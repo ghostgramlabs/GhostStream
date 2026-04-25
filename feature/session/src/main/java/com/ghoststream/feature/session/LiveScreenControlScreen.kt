@@ -45,10 +45,13 @@ import com.google.zxing.qrcode.QRCodeWriter
 @Composable
 fun LiveScreenControlScreen(
     state: LiveScreenSessionState,
+    pinProtectionEnabled: Boolean,
     onBack: () -> Unit,
     onStart: () -> Unit,
     onStop: () -> Unit,
     onCopyLink: () -> Unit,
+    onTogglePinProtection: (Boolean) -> Unit,
+    onRegeneratePin: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val qrBitmap = remember(state.displayUrl) {
@@ -143,6 +146,28 @@ fun LiveScreenControlScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedButton(
+                            onClick = {
+                                if (pinProtectionEnabled) onRegeneratePin() else onTogglePinProtection(true)
+                            },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text(
+                                text = stringResource(
+                                    if (pinProtectionEnabled) R.string.session_new_pin else R.string.session_turn_pin_on
+                                ),
+                            )
+                        }
+                        if (pinProtectionEnabled) {
+                            OutlinedButton(
+                                onClick = { onTogglePinProtection(false) },
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text(stringResource(R.string.session_turn_pin_off))
+                            }
+                        }
                     }
                     state.displayUrl?.let {
                         Text(it, style = MaterialTheme.typography.bodyMedium)

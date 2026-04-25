@@ -96,6 +96,23 @@ class MainActivity : AppCompatActivity() {
         setContent {
             GhostStreamRoot(viewModel = viewModel)
         }
+        handleLaunchIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleLaunchIntent(intent)
+    }
+
+    private fun handleLaunchIntent(intent: Intent?) {
+        if (intent?.action == ACTION_OPEN_QUICK_TEXT) {
+            viewModel.navigateToQuickText()
+        }
+    }
+
+    companion object {
+        const val ACTION_OPEN_QUICK_TEXT = "com.ghostgramlabs.directserve.action.OPEN_QUICK_TEXT"
     }
 }
 
@@ -714,6 +731,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onToggleNotifyOnDeviceConnect = { viewModel.updateSettings { current -> current.copy(notifyOnDeviceConnect = it) } },
                     onToggleNotifyOnFileDownload = { viewModel.updateSettings { current -> current.copy(notifyOnFileDownload = it) } },
                     onToggleNotifyOnUploadRequest = { viewModel.updateSettings { current -> current.copy(notifyOnUploadRequest = it) } },
+                    onToggleNotifyOnQuickText = { viewModel.updateSettings { current -> current.copy(notifyOnQuickText = it) } },
                     onToggleRequireDeviceApproval = { viewModel.updateSettings { current -> current.copy(requireDeviceApproval = it) } },
                     onAutoStopSelected = viewModel::updateAutoStop,
                     onPreferredPortChanged = { port ->
@@ -812,6 +830,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
             composable(Routes.LiveScreen) {
                 LiveScreenControlScreen(
                     state = uiState.liveScreenState,
+                    pinProtectionEnabled = uiState.settings.requireSessionPin,
                     onBack = { navController.popBackStack() },
                     onStart = viewModel::requestLiveScreenStart,
                     onStop = viewModel::stopLiveScreenCapture,
@@ -821,6 +840,8 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                             scope.launch { snackbarHostState.showSnackbar(context.getString(SharedR.string.main_link_copied)) }
                         }
                     },
+                    onTogglePinProtection = viewModel::updateLiveScreenPinProtection,
+                    onRegeneratePin = viewModel::regenerateLiveScreenPin,
                     modifier = Modifier.padding(innerPadding),
                 )
             }

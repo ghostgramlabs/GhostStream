@@ -24,6 +24,7 @@ import com.ghoststream.core.model.LiveAudioStatus
 import com.ghoststream.core.model.LiveScreenStatus
 import com.ghoststream.core.model.NearbyDevice
 import com.ghoststream.core.model.NearbyDiscoveryState
+import com.ghoststream.core.model.QUICK_TEXT_PHONE_ID
 import com.ghoststream.core.model.QuickTextMessage
 import com.ghoststream.core.model.QuickTextTargetType
 import com.ghoststream.core.model.SessionState
@@ -501,6 +502,34 @@ class MainViewModel(
         }
     }
 
+    fun updateLiveScreenPinProtection(enabled: Boolean) {
+        viewModelScope.launch {
+            val current = container.settingsRepository.settings.first()
+            container.settingsRepository.update { current.copy(requireSessionPin = enabled) }
+            val newPin = if (enabled) generateLivePin(current) else null
+            container.liveScreenManager.updateState { it.copy(pin = newPin) }
+            _events.emit(
+                AppEvent.ShowMessage(
+                    if (enabled) application.getString(R.string.message_pin_on) else application.getString(R.string.message_pin_off)
+                )
+            )
+        }
+    }
+
+    fun regenerateLiveScreenPin() {
+        viewModelScope.launch {
+            val current = container.settingsRepository.settings.first()
+            if (!current.requireSessionPin) return@launch
+            val newPin = generateLivePin(current)
+            container.liveScreenManager.updateState { it.copy(pin = newPin) }
+        }
+    }
+
+    private fun generateLivePin(settings: com.ghoststream.core.model.AppSettings): String = when {
+        settings.autoGeneratePin -> kotlin.random.Random.nextInt(1000, 9999).toString()
+        else -> settings.manualPin.filter(Char::isDigit).padEnd(4, '0').take(6)
+    }
+
     fun disconnectAll() {
         container.sessionManager.disconnectAllClients()
     }
@@ -940,8 +969,6 @@ class MainViewModel(
     }
 
     companion object {
-        private const val QUICK_TEXT_PHONE_ID = "phone-host"
-
         fun factory(container: AppContainer): ViewModelProvider.Factory {
             return object : ViewModelProvider.Factory {
                 @Suppress("UNCHECKED_CAST")
