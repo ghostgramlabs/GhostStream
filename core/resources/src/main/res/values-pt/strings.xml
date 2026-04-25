@@ -472,6 +472,7 @@
     <string name="sharing_same_wifi_needed">Ligue ambos os dispositivos ao mesmo Wi-Fi ou hotspot.</string>
     <string name="sharing_connect_before_start">Ligue este dispositivo ao Wi-Fi ou ative o hotspot antes de iniciar uma sessão.</string>
     <string name="sharing_server_start_failed">Não foi possível iniciar o servidor: %1$s</string>
+    <string name="sharing_blocked_by_live_screen">Interrompa o Ecrã em Tempo Real antes de iniciar uma sessão de partilha normal.</string>
     <string name="sharing_stopped">Partilha interrompida</string>
     <string name="sharing_device_android">Android</string>
     <string name="network_helper_wifi_ready">Dispositivos próximos podem juntar-se ao mesmo Wi-Fi e abrir este link. Se um Wi-Fi público bloquear o acesso local, mude para o seu hotspot.</string>
@@ -813,10 +814,13 @@
     <string name="live_screen_failed">Não foi possível iniciar o ecrã em tempo real.</string>
     <string name="live_screen_ended">Ecrã em tempo real terminado.</string>
     <string name="live_screen_busy_streams">Pare as transmissões ativas pesadas antes de iniciar o Ecrã em tempo real.</string>
+    <string name="live_screen_blocked_by_sharing">Interrompa a sessão de partilha atual antes de iniciar o Ecrã em Tempo Real.</string>
     <string name="live_screen_notification_channel_name">Partilha de ecrã em tempo real</string>
     <string name="live_screen_notification_channel_desc">Mantém o espelhamento de ecrã em tempo real ativo em segundo plano.</string>
     <string name="live_screen_notification_title">Partilha de ecrã em curso</string>
     <string name="live_screen_notification_body">DirectServe está a espelhar o seu ecrã no navegador.</string>
+    <string name="live_screen_pin_label">PIN para aderir: %1$s</string>
+    <string name="live_screen_pin_hint">Será pedido este PIN aos espectadores antes de poderem assistir.</string>
     <string name="quick_text_title">Texto rápido</string>
     <string name="quick_text_send_title">Enviar texto</string>
     <string name="quick_text_placeholder">Cole texto ou uma hiperligação</string>
@@ -831,6 +835,7 @@
     <string name="quick_text_clear_all">Apagar tudo</string>
     <string name="quick_text_this_phone">Este telemóvel</string>
     <string name="quick_text_sent">Texto partilhado.</string>
+    <string name="quick_text_blocked_by_live_screen">Interrompa o Ecrã em Tempo Real antes de utilizar o Texto Rápido.</string>
     <string name="web_live_title">Ecrã em tempo real</string>
     <string name="web_live_waiting">A aguardar transmissão</string>
     <string name="web_live_status_live">Em direto</string>
@@ -856,6 +861,10 @@
     <string name="web_live_unsupported">WebRTC não é suportado por este navegador.</string>
     <string name="web_live_busy">Outro navegador já está a ver este ecrã em tempo real.</string>
     <string name="web_live_pin_required">É necessário um PIN de sessão para ver.</string>
+    <string name="web_live_pin_entry_title">Introduza o PIN em direto</string>
+    <string name="web_live_pin_entry_desc">Introduza o PIN apresentado no telemóvel anfitrião para começar a assistir.</string>
+    <string name="web_live_pin_entry_submit">Começar a assistir</string>
+    <string name="web_live_pin_entry_invalid">O PIN não coincide. Tente novamente.</string>
     <string name="playback_reason_direct_non_video">Item não-vídeo ignora o pipeline de compatibilidade</string>
     <string name="playback_reason_direct_safe">Contentor e codecs são seguros para este cliente</string>
     <string name="playback_reason_remux_audio_fix">Contentor seguro, mas o áudio deve ser convertido</string>

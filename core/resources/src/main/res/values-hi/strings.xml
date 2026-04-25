@@ -472,6 +472,7 @@
     <string name="sharing_same_wifi_needed">दोनों उपकरणों को एक ही वाई-फाई या हॉटस्पॉट से कनेक्ट करें।</string>
     <string name="sharing_connect_before_start">सत्र शुरू करने से पहले इस डिवाइस को वाई-फाई से कनेक्ट करें या अपना हॉटस्पॉट चालू करें।</string>
     <string name="sharing_server_start_failed">सर्वर शुरू नहीं हो सका: %1$s</string>
+    <string name="sharing_blocked_by_live_screen">सामान्य शेयरिंग सत्र शुरू करने से पहले लाइव स्क्रीन को रोकें।</string>
     <string name="sharing_stopped">शेयरिंग रुकी</string>
     <string name="sharing_device_android">एंड्रॉइड</string>
     <string name="network_helper_wifi_ready">पास के उपकरण उसी वाई-फाई से जुड़ सकते हैं और यह लिंक खोल सकते हैं। यदि सार्वजनिक वाई-फाई स्थानीय पहुंच को रोकता है, तो अपने हॉटस्पॉट पर स्विच करें।</string>
@@ -813,10 +814,13 @@
     <string name="live_screen_failed">Live screen could not start.</string>
     <string name="live_screen_ended">Live screen ended.</string>
     <string name="live_screen_busy_streams">Stop heavy active streams before starting Live Screen.</string>
+    <string name="live_screen_blocked_by_sharing">लाइव स्क्रीन शुरू करने से पहले वर्तमान शेयरिंग सत्र को रोकें।</string>
     <string name="live_screen_notification_channel_name">Live screen sharing</string>
     <string name="live_screen_notification_channel_desc">Keeps live screen mirroring active in the background.</string>
     <string name="live_screen_notification_title">Screen sharing in progress</string>
     <string name="live_screen_notification_body">DirectServe is mirroring your screen to the browser.</string>
+    <string name="live_screen_pin_label">शामिल होने के लिए पिन: %1$s</string>
+    <string name="live_screen_pin_hint">दर्शकों को देखने से पहले यह पिन दर्ज करने के लिए कहा जाएगा।</string>
     <string name="quick_text_title">Quick Text</string>
     <string name="quick_text_send_title">Send Text</string>
     <string name="quick_text_placeholder">Paste text or a link</string>
@@ -831,6 +835,7 @@
     <string name="quick_text_clear_all">Clear All</string>
     <string name="quick_text_this_phone">This Phone</string>
     <string name="quick_text_sent">Text shared.</string>
+    <string name="quick_text_blocked_by_live_screen">त्वरित टेक्स्ट का उपयोग करने से पहले लाइव स्क्रीन को रोकें।</string>
     <string name="web_live_title">लाइव स्क्रीन</string>
     <string name="web_live_waiting">स्ट्रीम का इंतज़ार है</string>
     <string name="web_live_status_live">लाइव</string>
@@ -856,6 +861,10 @@
     <string name="web_live_unsupported">इस ब्राउज़र में WebRTC समर्थित नहीं है।</string>
     <string name="web_live_busy">कोई अन्य ब्राउज़र पहले से ही इस लाइव स्क्रीन को देख रहा है।</string>
     <string name="web_live_pin_required">देखने के लिए सत्र पिन आवश्यक है।</string>
+    <string name="web_live_pin_entry_title">लाइव पिन दर्ज करें</string>
+    <string name="web_live_pin_entry_desc">देखना शुरू करने के लिए होस्ट फोन पर दिखाया गया पिन दर्ज करें।</string>
+    <string name="web_live_pin_entry_submit">देखना शुरू करें</string>
+    <string name="web_live_pin_entry_invalid">वह पिन मेल नहीं खाता। फिर से प्रयास करें।</string>
     <string name="playback_reason_direct_non_video">गैर-वीडियो आइटम संगतता पाइपलाइन को बायपास करते हैं</string>
     <string name="playback_reason_direct_safe">कंटेनर और कोडेक्स इस क्लाइंट के लिए ब्राउज़र-सुरक्षित हैं</string>
     <string name="playback_reason_remux_audio_fix">कंटेनर ब्राउज़र-सुरक्षित नहीं है और रीपैकेजिंग के दौरान ऑडियो को बदला जाना चाहिए</string>

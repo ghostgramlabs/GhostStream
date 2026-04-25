@@ -474,6 +474,7 @@ Dados móveis sozinhos não podem criar uma sessão local. Certifique-se de que 
     <string name="sharing_same_wifi_needed">Conecte ambos os dispositivos ao mesmo Wi-Fi ou Ponto de Acesso.</string>
     <string name="sharing_connect_before_start">Conecte este dispositivo ao Wi-Fi ou ligue o Ponto de Acesso antes de iniciar a sessão.</string>
     <string name="sharing_server_start_failed">Falha ao iniciar servidor: %1$s</string>
+    <string name="sharing_blocked_by_live_screen">Interrompa a tela ao vivo antes de iniciar uma sessão de compartilhamento normal.</string>
     <string name="sharing_stopped">Compartilhamento Interrompido</string>
     <string name="sharing_device_android">Android</string>
     <string name="network_helper_wifi_ready">Dispositivos próximos podem se juntar ao mesmo Wi-Fi e abrir este link. Se o Wi-Fi for público bloqueando acesso local, mude para seu ponto de acesso.</string>
@@ -815,10 +816,13 @@ Dados móveis sozinhos não podem criar uma sessão local. Certifique-se de que 
     <string name="live_screen_failed">Não foi possível iniciar a tela ao vivo.</string>
     <string name="live_screen_ended">Tela ao vivo terminada.</string>
     <string name="live_screen_busy_streams">Pare as transmissões ativas pesadas antes de iniciar a Tela ao vivo.</string>
+    <string name="live_screen_blocked_by_sharing">Interrompa a sessão de compartilhamento atual antes de iniciar a tela ao vivo.</string>
     <string name="live_screen_notification_channel_name">Compartilhamento de tela ao vivo</string>
     <string name="live_screen_notification_channel_desc">Mantém o espelhamento de tela ao vivo ativo em segundo plano.</string>
     <string name="live_screen_notification_title">Compartilhamento de tela em curso</string>
     <string name="live_screen_notification_body">DirectServe está espelhando sua tela no navegador.</string>
+    <string name="live_screen_pin_label">PIN para participar: %1$s</string>
+    <string name="live_screen_pin_hint">Os espectadores deverão inserir este PIN antes de poderem assistir.</string>
     <string name="quick_text_title">Texto rápido</string>
     <string name="quick_text_send_title">Enviar texto</string>
     <string name="quick_text_placeholder">Cole texto ou um link</string>
@@ -833,6 +837,7 @@ Dados móveis sozinhos não podem criar uma sessão local. Certifique-se de que 
     <string name="quick_text_clear_all">Limpar tudo</string>
     <string name="quick_text_this_phone">Este celular</string>
     <string name="quick_text_sent">Texto compartilhado.</string>
+    <string name="quick_text_blocked_by_live_screen">Interrompa a tela ao vivo antes de usar o Texto Rápido.</string>
     <string name="web_live_title">Tela ao vivo</string>
     <string name="web_live_waiting">Aguardando transmissão</string>
     <string name="web_live_status_live">Ao vivo</string>
@@ -858,6 +863,10 @@ Dados móveis sozinhos não podem criar uma sessão local. Certifique-se de que 
     <string name="web_live_unsupported">WebRTC não é suportado por este navegador.</string>
     <string name="web_live_busy">Outro navegador já está vendo esta tela ao vivo.</string>
     <string name="web_live_pin_required">Um PIN de sessão é necessário para ver.</string>
+    <string name="web_live_pin_entry_title">Digite o PIN ao vivo</string>
+    <string name="web_live_pin_entry_desc">Digite o PIN exibido no telefone host para começar a assistir.</string>
+    <string name="web_live_pin_entry_submit">Começar a assistir</string>
+    <string name="web_live_pin_entry_invalid">Esse PIN não coincide. Tente novamente.</string>
     <string name="playback_reason_direct_non_video">Itens que não são vídeo ignoram o pipeline de compatibilidade</string>
     <string name="playback_reason_direct_safe">O contêiner e os codecs são seguros para o navegador deste cliente</string>
     <string name="playback_reason_remux_audio_fix">O contêiner não é seguro para o navegador e o áudio deve ser convertido durante a repaquetização</string>

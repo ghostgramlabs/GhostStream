@@ -472,6 +472,7 @@
     <string name="sharing_same_wifi_needed">Kết nối cả hai thiết bị vào cùng một Wi-Fi hoặc điểm phát sóng.</string>
     <string name="sharing_connect_before_start">Kết nối vào Wi-Fi hoặc bật điểm phát sóng trước khi bắt đầu phiên.</string>
     <string name="sharing_server_start_failed">Không thể khởi động máy chủ: %1$s</string>
+    <string name="sharing_blocked_by_live_screen">Dừng Màn hình trực tiếp trước khi bắt đầu phiên chia sẻ bình thường.</string>
     <string name="sharing_stopped">Đã dừng chia sẻ</string>
     <string name="sharing_device_android">Android</string>
     <string name="network_helper_wifi_ready">Các thiết bị gần đó có thể tham gia cùng mạng Wi-Fi và mở liên kết này. Nếu Wi-Fi công cộng chặn kết nối, hãy chuyển sang điểm phát sóng.</string>
@@ -813,10 +814,13 @@
     <string name="live_screen_failed">Live screen could not start.</string>
     <string name="live_screen_ended">Live screen ended.</string>
     <string name="live_screen_busy_streams">Stop heavy active streams before starting Live Screen.</string>
+    <string name="live_screen_blocked_by_sharing">Dừng phiên chia sẻ hiện tại trước khi bắt đầu Màn hình trực tiếp.</string>
     <string name="live_screen_notification_channel_name">Live screen sharing</string>
     <string name="live_screen_notification_channel_desc">Keeps live screen mirroring active in the background.</string>
     <string name="live_screen_notification_title">Screen sharing in progress</string>
     <string name="live_screen_notification_body">DirectServe is mirroring your screen to the browser.</string>
+    <string name="live_screen_pin_label">Mã PIN để tham gia: %1$s</string>
+    <string name="live_screen_pin_hint">Người xem sẽ được yêu cầu nhập mã PIN này trước khi họ có thể xem.</string>
     <string name="quick_text_title">Quick Text</string>
     <string name="quick_text_send_title">Send Text</string>
     <string name="quick_text_placeholder">Paste text or a link</string>
@@ -831,6 +835,7 @@
     <string name="quick_text_clear_all">Clear All</string>
     <string name="quick_text_this_phone">This Phone</string>
     <string name="quick_text_sent">Text shared.</string>
+    <string name="quick_text_blocked_by_live_screen">Dừng Màn hình trực tiếp trước khi sử dụng Văn bản nhanh.</string>
     <string name="web_live_title">Màn hình trực tiếp</string>
     <string name="web_live_waiting">Đang chờ luồng</string>
     <string name="web_live_status_live">Trực tiếp</string>
@@ -856,6 +861,10 @@
     <string name="web_live_unsupported">WebRTC không được hỗ trợ trong trình duyệt này.</string>
     <string name="web_live_busy">Một trình duyệt khác đã đang xem màn hình trực tiếp này.</string>
     <string name="web_live_pin_required">Cần có mã PIN phiên để xem.</string>
+    <string name="web_live_pin_entry_title">Nhập mã PIN trực tiếp</string>
+    <string name="web_live_pin_entry_desc">Nhập mã PIN hiển thị trên điện thoại chủ để bắt đầu xem.</string>
+    <string name="web_live_pin_entry_submit">Bắt đầu xem</string>
+    <string name="web_live_pin_entry_invalid">Mã PIN đó không khớp. Thử lại.</string>
     <string name="playback_reason_direct_non_video">Mục không phải video bỏ qua quy trình tương thích</string>
     <string name="playback_reason_direct_safe">Định dạng và mã hóa an toàn cho trình duyệt của khách này</string>
     <string name="playback_reason_remux_audio_fix">Định dạng không an toàn và âm thanh cần được chuyển đổi khi đóng gói lại</string>

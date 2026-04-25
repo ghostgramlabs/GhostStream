@@ -472,6 +472,7 @@
     <string name="sharing_same_wifi_needed">சாதனங்களை ஒரே நெட்வொர்க்கில் இணைக்கவும்.</string>
     <string name="sharing_connect_before_start">தொடங்கும் முன் இணைப்பைச் சோதிக்கவும்.</string>
     <string name="sharing_server_start_failed">பிழை: %1$s</string>
+    <string name="sharing_blocked_by_live_screen">சாதாரண பகிர்வு அமர்வைத் தொடங்கும் முன் நேரடித் திரையை நிறுத்தவும்.</string>
     <string name="sharing_stopped">பகிர்தல் நிறுத்தப்பட்டது</string>
     <string name="sharing_device_android">ஆண்ட்ராய்டு</string>
     <string name="network_helper_wifi_ready">வைஃபை தயாராக உள்ளது.</string>
@@ -813,10 +814,13 @@
     <string name="live_screen_failed">Live screen could not start.</string>
     <string name="live_screen_ended">Live screen ended.</string>
     <string name="live_screen_busy_streams">Stop heavy active streams before starting Live Screen.</string>
+    <string name="live_screen_blocked_by_sharing">நேரடித் திரையைத் தொடங்கும் முன் தற்போதைய பகிர்வு அமர்வை நிறுத்தவும்.</string>
     <string name="live_screen_notification_channel_name">Live screen sharing</string>
     <string name="live_screen_notification_channel_desc">Keeps live screen mirroring active in the background.</string>
     <string name="live_screen_notification_title">Screen sharing in progress</string>
     <string name="live_screen_notification_body">DirectServe is mirroring your screen to the browser.</string>
+    <string name="live_screen_pin_label">சேருவதற்கான PIN: %1$s</string>
+    <string name="live_screen_pin_hint">பார்வையாளர்கள் பார்ப்பதற்கு முன் இந்த PIN கேட்கப்படும்.</string>
     <string name="quick_text_title">Quick Text</string>
     <string name="quick_text_send_title">Send Text</string>
     <string name="quick_text_placeholder">Paste text or a link</string>
@@ -831,6 +835,7 @@
     <string name="quick_text_clear_all">Clear All</string>
     <string name="quick_text_this_phone">This Phone</string>
     <string name="quick_text_sent">Text shared.</string>
+    <string name="quick_text_blocked_by_live_screen">விரைவான உரையைப் பயன்படுத்துவதற்கு முன் நேரடித் திரையை நிறுத்தவும்.</string>
     <string name="web_live_title">நேரடி திரை</string>
     <string name="web_live_waiting">ஸ்ட்ரீமிற்காக காத்திருக்கிறது</string>
     <string name="web_live_status_live">நேரலை</string>
@@ -856,6 +861,10 @@
     <string name="web_live_unsupported">இந்த உலாவியில் WebRTC ஆதரிக்கப்படவில்லை.</string>
     <string name="web_live_busy">மற்றொரு உலாவி ஏற்கனவே இந்த நேரடித் திரையைப் பார்க்கிறது.</string>
     <string name="web_live_pin_required">பார்க்க செஷன் பின் தேவை.</string>
+    <string name="web_live_pin_entry_title">நேரடி PIN ஐ உள்ளிடவும்</string>
+    <string name="web_live_pin_entry_desc">பார்க்கத் தொடங்க ஹோஸ்ட் போனில் காட்டப்படும் PIN ஐ உள்ளிடவும்.</string>
+    <string name="web_live_pin_entry_submit">பார்க்கத் தொடங்கு</string>
+    <string name="web_live_pin_entry_invalid">அந்த PIN பொருந்தவில்லை. மீண்டும் முயற்சிக்கவும்.</string>
     <string name="playback_reason_direct_non_video">வீடியோ அல்லாத உருப்படி இணக்கத்தன்மை பைப்லைனைத் தவிர்க்கிறது</string>
     <string name="playback_reason_direct_safe">இந்த கிளையண்டிற்கு கண்டெய்னர் மற்றும் கோடெக்குகள் பாதுகாப்பானவை</string>
     <string name="playback_reason_remux_audio_fix">கண்டெய்னர் பாதுகாப்பானது அல்ல, ஆடியோ மாற்றப்பட வேண்டும்</string>

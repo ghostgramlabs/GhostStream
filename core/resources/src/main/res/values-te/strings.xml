@@ -472,6 +472,7 @@
     <string name="sharing_same_wifi_needed">రెండూ ఒకే వైఫై లో ఉండాలి.</string>
     <string name="sharing_connect_before_start">నెట్‌వర్క్ కనెక్షన్ చూడండి.</string>
     <string name="sharing_server_start_failed">సర్వర్ సమస్య: %1$s</string>
+    <string name="sharing_blocked_by_live_screen">సాధారణ భాగస్వామ్య సెషన్‌ను ప్రారంభించే ముందు లైవ్ స్క్రీన్‌ను ఆపివేయండి.</string>
     <string name="sharing_stopped">షేరింగ్ ఆగింది</string>
     <string name="sharing_device_android">ఆండ్రాయిడ్</string>
     <string name="network_helper_wifi_ready">వైఫై సిద్ధంగా ఉంది.</string>
@@ -813,10 +814,13 @@
     <string name="live_screen_failed">Live screen could not start.</string>
     <string name="live_screen_ended">Live screen ended.</string>
     <string name="live_screen_busy_streams">Stop heavy active streams before starting Live Screen.</string>
+    <string name="live_screen_blocked_by_sharing">లైవ్ స్క్రీన్‌ను ప్రారంభించే ముందు ప్రస్తుత భాగస్వామ్య సెషన్‌ను ఆపివేయండి.</string>
     <string name="live_screen_notification_channel_name">Live screen sharing</string>
     <string name="live_screen_notification_channel_desc">Keeps live screen mirroring active in the background.</string>
     <string name="live_screen_notification_title">Screen sharing in progress</string>
     <string name="live_screen_notification_body">DirectServe is mirroring your screen to the browser.</string>
+    <string name="live_screen_pin_label">చేరడానికి PIN: %1$s</string>
+    <string name="live_screen_pin_hint">వీక్షకులు చూడటానికి ముందు ఈ PIN అడగబడుతుంది.</string>
     <string name="quick_text_title">Quick Text</string>
     <string name="quick_text_send_title">Send Text</string>
     <string name="quick_text_placeholder">Paste text or a link</string>
@@ -831,6 +835,7 @@
     <string name="quick_text_clear_all">Clear All</string>
     <string name="quick_text_this_phone">This Phone</string>
     <string name="quick_text_sent">Text shared.</string>
+    <string name="quick_text_blocked_by_live_screen">త్వరిత వచనాన్ని ఉపయోగించే ముందు లైవ్ స్క్రీన్‌ను ఆపివేయండి.</string>
     <string name="web_live_title">లైవ్ స్క్రీన్</string>
     <string name="web_live_waiting">స్ట్రీమ్ కోసం వేచి ఉంది</string>
     <string name="web_live_status_live">లైవ్</string>
@@ -856,6 +861,10 @@
     <string name="web_live_unsupported">ఈ బ్రౌజర్‌లో WebRTC సపోర్ట్ చేయబడదు.</string>
     <string name="web_live_busy">మరో బ్రౌజర్ ఇప్పటికే ఈ లైవ్ స్క్రీన్‌ని చూస్తోంది.</string>
     <string name="web_live_pin_required">చూడటానికి సెషన్ పిన్ అవసరం.</string>
+    <string name="web_live_pin_entry_title">లైవ్ PIN నమోదు చేయండి</string>
+    <string name="web_live_pin_entry_desc">చూడటం ప్రారంభించడానికి హోస్ట్ ఫోన్‌లో చూపిన PINని నమోదు చేయండి.</string>
+    <string name="web_live_pin_entry_submit">చూడటం ప్రారంభించండి</string>
+    <string name="web_live_pin_entry_invalid">ఆ PIN సరిపోలలేదు. మళ్ళీ ప్రయత్నించండి.</string>
     <string name="playback_reason_direct_non_video">వీడియో కానిది</string>
     <string name="playback_reason_direct_safe">ఈ పరికరానికి అనుకూలంగా ఉంది</string>
     <string name="playback_reason_remux_audio_fix">ఆడియో మార్చాలి</string>

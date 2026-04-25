@@ -472,6 +472,7 @@
     <string name="sharing_same_wifi_needed">両方のデバイスを同じWi-Fiまたはテザリングに接続してください。</string>
     <string name="sharing_connect_before_start">開始前にWi-Fiに接続するかテザリングをオンにしてください。</string>
     <string name="sharing_server_start_failed">サーバーの起動に失敗しました: %1$s</string>
+    <string name="sharing_blocked_by_live_screen">通常の共有セッションを開始する前にライブスクリーンを停止してください。</string>
     <string name="sharing_stopped">共有を停止しました</string>
     <string name="sharing_device_android">Android</string>
     <string name="network_helper_wifi_ready">近くのデバイスが同じWi-Fiに参加してこのリンクを開けます。公共Wi-Fiで制限がある場合はテザリングに切り替えてください。</string>
@@ -813,10 +814,13 @@
     <string name="live_screen_failed">Live screen could not start.</string>
     <string name="live_screen_ended">Live screen ended.</string>
     <string name="live_screen_busy_streams">Stop heavy active streams before starting Live Screen.</string>
+    <string name="live_screen_blocked_by_sharing">ライブスクリーンを開始する前に現在の共有セッションを停止してください。</string>
     <string name="live_screen_notification_channel_name">Live screen sharing</string>
     <string name="live_screen_notification_channel_desc">Keeps live screen mirroring active in the background.</string>
     <string name="live_screen_notification_title">Screen sharing in progress</string>
     <string name="live_screen_notification_body">DirectServe is mirroring your screen to the browser.</string>
+    <string name="live_screen_pin_label">参加用PIN: %1$s</string>
+    <string name="live_screen_pin_hint">視聴者は、視聴を開始する前にこのPINの入力を求められます。</string>
     <string name="quick_text_title">Quick Text</string>
     <string name="quick_text_send_title">Send Text</string>
     <string name="quick_text_placeholder">Paste text or a link</string>
@@ -831,6 +835,7 @@
     <string name="quick_text_clear_all">Clear All</string>
     <string name="quick_text_this_phone">This Phone</string>
     <string name="quick_text_sent">Text shared.</string>
+    <string name="quick_text_blocked_by_live_screen">クイックテキストを使用する前にライブスクリーンを停止してください。</string>
     <string name="web_live_title">ライブスクリーン</string>
     <string name="web_live_waiting">配信を待機中</string>
     <string name="web_live_status_live">ライブ</string>
@@ -856,6 +861,10 @@
     <string name="web_live_unsupported">このブラウザは WebRTC をサポートしていません。</string>
     <string name="web_live_busy">別のブラウザがすでにこのライブスクリーンを視聴しています。</string>
     <string name="web_live_pin_required">視聴にはセッションPINが必要です。</string>
+    <string name="web_live_pin_entry_title">ライブPINを入力</string>
+    <string name="web_live_pin_entry_desc">視聴を開始するには、ホストの電話に表示されているPINを入力してください。</string>
+    <string name="web_live_pin_entry_submit">視聴を開始</string>
+    <string name="web_live_pin_entry_invalid">PINが一致しません。もう一度お試しください。</string>
     <string name="playback_reason_direct_non_video">動画以外のアイテムは互換性パイプラインをバイパスします</string>
     <string name="playback_reason_direct_safe">コンテナとコーデックはこのクライアントのブラウザで安全に再生可能です</string>
     <string name="playback_reason_remux_audio_fix">コンテナがブラウザで安全ではなく、再パッケージ化中にオーディオを変換する必要があります</string>

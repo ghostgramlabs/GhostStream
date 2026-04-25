@@ -89,6 +89,9 @@ def sync_locale(locale_name, base_res_path):
     print(f"[{locale_name}] Synchronized with English")
 
 if __name__ == "__main__":
-    res_path = "core/resources/src/main/res"
-    # Sync Spanish
-    sync_locale('es', res_path)
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    res_path = os.path.join(base_dir, 'core', 'resources', 'src', 'main', 'res')
+    
+    locales = ['af', 'ar', 'de', 'el', 'es', 'fr', 'hi', 'id', 'in', 'it', 'ja', 'ko', 'ml', 'nl', 'pt', 'pt-rBR', 'ru', 'sv', 'ta', 'te', 'th', 'tr', 'vi', 'zh-rCN', 'zh-rTW']
+    for loc in locales:
+        sync_locale(loc, res_path)

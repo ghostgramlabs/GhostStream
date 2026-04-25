@@ -472,6 +472,7 @@
     <string name="sharing_same_wifi_needed">İki cihazı aynı ağa bağlayın.</string>
     <string name="sharing_connect_before_start">Başlamadan önce ağı kontrol edin.</string>
     <string name="sharing_server_start_failed">Sunucu hatası: %1$s</string>
+    <string name="sharing_blocked_by_live_screen">Normal bir paylaşım oturumu başlatmadan önce Canlı Ekranı durdurun.</string>
     <string name="sharing_stopped">Paylaşım Durduruldu</string>
     <string name="sharing_device_android">Android</string>
     <string name="network_helper_wifi_ready">Bağlı cihazlar bu ağ üzerinden erişebilir. Kısıtlama varsa erişim noktanızı kullanın.</string>
@@ -813,10 +814,13 @@
     <string name="live_screen_failed">Live screen could not start.</string>
     <string name="live_screen_ended">Live screen ended.</string>
     <string name="live_screen_busy_streams">Stop heavy active streams before starting Live Screen.</string>
+    <string name="live_screen_blocked_by_sharing">Canlı Ekranı başlatmadan önce mevcut paylaşım oturumunu durdurun.</string>
     <string name="live_screen_notification_channel_name">Live screen sharing</string>
     <string name="live_screen_notification_channel_desc">Keeps live screen mirroring active in the background.</string>
     <string name="live_screen_notification_title">Screen sharing in progress</string>
     <string name="live_screen_notification_body">DirectServe is mirroring your screen to the browser.</string>
+    <string name="live_screen_pin_label">Katılmak için PIN: %1$s</string>
+    <string name="live_screen_pin_hint">İzleyicilerin izleyebilmesi için bu PIN\'i girmeleri istenecektir.</string>
     <string name="quick_text_title">Quick Text</string>
     <string name="quick_text_send_title">Send Text</string>
     <string name="quick_text_placeholder">Paste text or a link</string>
@@ -831,6 +835,7 @@
     <string name="quick_text_clear_all">Clear All</string>
     <string name="quick_text_this_phone">This Phone</string>
     <string name="quick_text_sent">Text shared.</string>
+    <string name="quick_text_blocked_by_live_screen">Hızlı Metni kullanmadan önce Canlı Ekranı durdurun.</string>
     <string name="web_live_title">Canlı Ekran</string>
     <string name="web_live_waiting">Yayın bekleniyor</string>
     <string name="web_live_status_live">Canlı</string>
@@ -856,6 +861,10 @@
     <string name="web_live_unsupported">WebRTC bu tarayıcıda desteklenmiyor.</string>
     <string name="web_live_busy">Başka bir tarayıcı zaten bu canlı ekranı izliyor.</string>
     <string name="web_live_pin_required">İzlemek için oturum PIN\'i gereklidir.</string>
+    <string name="web_live_pin_entry_title">Canlı PIN girin</string>
+    <string name="web_live_pin_entry_desc">İzlemeye başlamak için ana telefonda gösterilen PIN\'i girin.</string>
+    <string name="web_live_pin_entry_submit">İzlemeye başla</string>
+    <string name="web_live_pin_entry_invalid">Bu PIN eşleşmedi. Tekrar deneyin.</string>
     <string name="playback_reason_direct_non_video">Video olmayan öğe uyumluluk işlem hattını atlar</string>
     <string name="playback_reason_direct_safe">Kapsayıcı ve codec bileşenleri bu istemci için tarayıcı güvenlidir</string>
     <string name="playback_reason_remux_audio_fix">Kapsayıcı tarayıcı güvenli değil ve yeniden paketleme sırasında sesin dönüştürülmesi gerekiyor</string>

@@ -472,6 +472,7 @@
     <string name="sharing_same_wifi_needed">Подключите оба устройства к одной сети Wi-Fi или точке доступа.</string>
     <string name="sharing_connect_before_start">Подключитесь к Wi-Fi или включите точку доступа перед началом сеанса.</string>
     <string name="sharing_server_start_failed">Сервер не запущен: %1$s</string>
+    <string name="sharing_blocked_by_live_screen">Остановите прямой эфир экрана перед запуском обычной сессии обмена.</string>
     <string name="sharing_stopped">Обмен остановлен</string>
     <string name="sharing_device_android">Android</string>
     <string name="network_helper_wifi_ready">Устройства поблизости могут подключиться к той же сети и открыть эту ссылку. Если публичный Wi-Fi блокирует доступ, используйте точку доступа.</string>
@@ -813,10 +814,13 @@
     <string name="live_screen_failed">Live screen could not start.</string>
     <string name="live_screen_ended">Live screen ended.</string>
     <string name="live_screen_busy_streams">Stop heavy active streams before starting Live Screen.</string>
+    <string name="live_screen_blocked_by_sharing">Остановите текущую сессию обмена перед запуском прямого эфира экрана.</string>
     <string name="live_screen_notification_channel_name">Live screen sharing</string>
     <string name="live_screen_notification_channel_desc">Keeps live screen mirroring active in the background.</string>
     <string name="live_screen_notification_title">Screen sharing in progress</string>
     <string name="live_screen_notification_body">DirectServe is mirroring your screen to the browser.</string>
+    <string name="live_screen_pin_label">PIN для подключения: %1$s</string>
+    <string name="live_screen_pin_hint">Зрителям потребуется ввести этот PIN-код перед просмотром.</string>
     <string name="quick_text_title">Quick Text</string>
     <string name="quick_text_send_title">Send Text</string>
     <string name="quick_text_placeholder">Paste text or a link</string>
@@ -831,6 +835,7 @@
     <string name="quick_text_clear_all">Clear All</string>
     <string name="quick_text_this_phone">This Phone</string>
     <string name="quick_text_sent">Text shared.</string>
+    <string name="quick_text_blocked_by_live_screen">Остановите прямой эфир экрана перед использованием быстрого текста.</string>
     <string name="web_live_title">Прямой эфир экрана</string>
     <string name="web_live_waiting">Ожидание потока</string>
     <string name="web_live_status_live">В эфире</string>
@@ -856,6 +861,10 @@
     <string name="web_live_unsupported">WebRTC не поддерживается в этом браузере.</string>
     <string name="web_live_busy">Другой браузер уже просматривает этот экран в прямом эфире.</string>
     <string name="web_live_pin_required">Для просмотра требуется PIN-код сессии.</string>
+    <string name="web_live_pin_entry_title">Введите PIN-код эфира</string>
+    <string name="web_live_pin_entry_desc">Введите PIN-код, отображаемый на телефоне-хосте, чтобы начать просмотр.</string>
+    <string name="web_live_pin_entry_submit">Начать просмотр</string>
+    <string name="web_live_pin_entry_invalid">Этот PIN-код не совпадает. Попробуйте еще раз.</string>
     <string name="playback_reason_direct_non_video">Немедийный файл пропускает конвейер совместимости</string>
     <string name="playback_reason_direct_safe">Контейнер и кодеки безопасны для браузера этого клиента</string>
     <string name="playback_reason_remux_audio_fix">Контейнер небезопасен для браузера, аудио будет конвертировано при перепаковке</string>

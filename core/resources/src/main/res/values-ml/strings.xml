@@ -472,6 +472,7 @@
     <string name="sharing_same_wifi_needed">ഒരേ വൈഫൈ കണക്ഷൻ വേണം.</string>
     <string name="sharing_connect_before_start">നെറ്റ് ഉണ്ടോ എന്ന് നോക്കൂ.</string>
     <string name="sharing_server_start_failed">സർവർ കിട്ടിയില്ല: %1$s</string>
+    <string name="sharing_blocked_by_live_screen">സാധാരണ പങ്കിടൽ സെഷൻ ആരംഭിക്കുന്നതിന് മുമ്പ് ലൈവ് സ്ക്രീൻ നിർത്തുക.</string>
     <string name="sharing_stopped">ഷെയറിംഗ് നിർത്തുന്നു</string>
     <string name="sharing_device_android">ആൻഡ്രോയിഡ്</string>
     <string name="network_helper_wifi_ready">വൈഫൈ റെഡി റെഡി റെഡി.</string>
@@ -813,10 +814,13 @@
     <string name="live_screen_failed">Live screen could not start.</string>
     <string name="live_screen_ended">Live screen ended.</string>
     <string name="live_screen_busy_streams">Stop heavy active streams before starting Live Screen.</string>
+    <string name="live_screen_blocked_by_sharing">ലൈവ് സ്ക്രീൻ ആരംഭിക്കുന്നതിന് മുമ്പ് നിലവിലെ പങ്കിടൽ സെഷൻ നിർത്തുക.</string>
     <string name="live_screen_notification_channel_name">Live screen sharing</string>
     <string name="live_screen_notification_channel_desc">Keeps live screen mirroring active in the background.</string>
     <string name="live_screen_notification_title">Screen sharing in progress</string>
     <string name="live_screen_notification_body">DirectServe is mirroring your screen to the browser.</string>
+    <string name="live_screen_pin_label">ചേരാനുള്ള PIN: %1$s</string>
+    <string name="live_screen_pin_hint">കാണുന്നതിന് മുമ്പ് കാഴ്ചക്കാരോട് ഈ PIN ആവശ്യപ്പെടും.</string>
     <string name="quick_text_title">Quick Text</string>
     <string name="quick_text_send_title">Send Text</string>
     <string name="quick_text_placeholder">Paste text or a link</string>
@@ -831,6 +835,7 @@
     <string name="quick_text_clear_all">Clear All</string>
     <string name="quick_text_this_phone">This Phone</string>
     <string name="quick_text_sent">Text shared.</string>
+    <string name="quick_text_blocked_by_live_screen">ക്വിക്ക് ടെക്സ്റ്റ് ഉപയോഗിക്കുന്നതിന് മുമ്പ് ലൈവ് സ്ക്രീൻ നിർത്തുക.</string>
     <string name="web_live_title">ലൈവ് സ്ക്രീൻ</string>
     <string name="web_live_waiting">സ്ട്രീമിനായി കാത്തിരിക്കുന്നു</string>
     <string name="web_live_status_live">ലൈവ്</string>
@@ -856,6 +861,10 @@
     <string name="web_live_unsupported">ഈ ബ്രൗസറിൽ WebRTC പിന്തുണയ്ക്കുന്നില്ല.</string>
     <string name="web_live_busy">മറ്റൊരു ബ്രൗസർ ഇതിനകം ഈ ലൈവ് സ്ക്ρίൻ കാണുന്നുണ്ട്.</string>
     <string name="web_live_pin_required">കാണുന്നതിന് സെഷൻ പിൻ ആവശ്യമാണ്.</string>
+    <string name="web_live_pin_entry_title">ലൈവ് PIN നൽകുക</string>
+    <string name="web_live_pin_entry_desc">കാണാൻ തുടങ്ങുന്നതിന് ഹോസ്റ്റ് ഫോണിൽ കാണിച്ചിരിക്കുന്ന PIN നൽകുക.</string>
+    <string name="web_live_pin_entry_submit">കാണാൻ തുടങ്ങുക</string>
+    <string name="web_live_pin_entry_invalid">ആ PIN പൊരുത്തപ്പെടുന്നില്ല. വീണ്ടും ശ്രമിക്കുക.</string>
     <string name="playback_reason_direct_non_video">വീഡിയോ അല്ലാത്തതിനാൽ പൈപ്പ് ലൈൻ ആവശ്യമില്ല</string>
     <string name="playback_reason_direct_safe">ഈ വീഡിയോ ബ്രൗസറിൽ നേരിട്ട് ഓടിക്കാം</string>
     <string name="playback_reason_remux_audio_fix">വീഡിയോ ഫയൽ രൂപം മാറ്റണം, ശബ്ദവും ഒപ്പം മാറ്റുന്നുണ്ട്</string>

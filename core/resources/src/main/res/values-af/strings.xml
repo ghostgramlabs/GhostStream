@@ -472,6 +472,7 @@
     <string name="sharing_same_wifi_needed">Verbind beide toestelle met dieselfde netwerk.</string>
     <string name="sharing_connect_before_start">Gaan netwerk na voor begin.</string>
     <string name="sharing_server_start_failed">Bedienerfout: %1$s</string>
+    <string name="sharing_blocked_by_live_screen">Stop Regstreekse skerm voordat u \'n normale deelsessie begin.</string>
     <string name="sharing_stopped">Deling gestop</string>
     <string name="sharing_device_android">Android</string>
     <string name="network_helper_wifi_ready">Gekoppelde toestelle het toegang. Gebruik hotspot indien Wi-Fi beperk is.</string>
@@ -813,10 +814,13 @@
     <string name="live_screen_failed">Live screen could not start.</string>
     <string name="live_screen_ended">Live screen ended.</string>
     <string name="live_screen_busy_streams">Stop heavy active streams before starting Live Screen.</string>
+    <string name="live_screen_blocked_by_sharing">Stop die huidige deelsessie voordat u Regstreekse skerm begin.</string>
     <string name="live_screen_notification_channel_name">Live screen sharing</string>
     <string name="live_screen_notification_channel_desc">Keeps live screen mirroring active in the background.</string>
     <string name="live_screen_notification_title">Screen sharing in progress</string>
     <string name="live_screen_notification_body">DirectServe is mirroring your screen to the browser.</string>
+    <string name="live_screen_pin_label">PIN om aan te sluit: %1$s</string>
+    <string name="live_screen_pin_hint">Kykers sal vir hierdie PIN gevra word voordat hulle kan kyk.</string>
     <string name="quick_text_title">Quick Text</string>
     <string name="quick_text_send_title">Send Text</string>
     <string name="quick_text_placeholder">Paste text or a link</string>
@@ -831,6 +835,7 @@
     <string name="quick_text_clear_all">Clear All</string>
     <string name="quick_text_this_phone">This Phone</string>
     <string name="quick_text_sent">Text shared.</string>
+    <string name="quick_text_blocked_by_live_screen">Stop Regstreekse skerm voordat u Vinnige teks gebruik.</string>
     <string name="web_live_title">Regstreekse skerm</string>
     <string name="web_live_waiting">Wag vir stroom</string>
     <string name="web_live_status_live">Regstreeks</string>
@@ -856,6 +861,10 @@
     <string name="web_live_unsupported">WebRTC word nie in hierdie blaaier ondersteun nie.</string>
     <string name="web_live_busy">\'n Ander blaaier kyk reeds na hierdie regstreekse skerm.</string>
     <string name="web_live_pin_required">\'n Sessie-PIN word vereis om te kyk.</string>
+    <string name="web_live_pin_entry_title">Voer regstreekse PIN in</string>
+    <string name="web_live_pin_entry_desc">Voer die PIN in wat op die gasheerfoon gewys word om te begin kyk.</string>
+    <string name="web_live_pin_entry_submit">Begin kyk</string>
+    <string name="web_live_pin_entry_invalid">Daardie PIN het nie ooreengestem nie. Probeer weer.</string>
     <string name="playback_reason_direct_non_video">Nie-video item vermy die kompatibiliteitspyplyn</string>
     <string name="playback_reason_direct_safe">Houer en kodeks is blaaier-veilig vir hierdie kliënt</string>
     <string name="playback_reason_remux_audio_fix">Houer is nie blaaier-veilig nie en klank moet omgeskakel word tydens herverpakking</string>

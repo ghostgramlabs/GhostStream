@@ -472,6 +472,7 @@
     <string name="sharing_same_wifi_needed">Connetti entrambi i dispositivi allo stesso Wi-Fi o hotspot.</string>
     <string name="sharing_connect_before_start">Connetti questo dispositivo al Wi-Fi o attiva l\'hotspot prima di iniziare una sessione.</string>
     <string name="sharing_server_start_failed">Avvio del server fallito: %1$s</string>
+    <string name="sharing_blocked_by_live_screen">Interrompi lo schermo dal vivo prima di avviare una normale sessione di condivisione.</string>
     <string name="sharing_stopped">Condivisione interrotta</string>
     <string name="sharing_device_android">Android</string>
     <string name="network_helper_wifi_ready">I dispositivi vicini possono unirsi allo stesso Wi-Fi e aprire questo link. Se un Wi-Fi pubblico blocca l\'accesso locale, passa al tuo hotspot.</string>
@@ -813,10 +814,13 @@
     <string name="live_screen_failed">Impossibile avviare lo schermo dal vivo.</string>
     <string name="live_screen_ended">Schermo dal vivo terminato.</string>
     <string name="live_screen_busy_streams">Interrompi gli stream attivi pesanti prima di avviare lo schermo dal vivo.</string>
+    <string name="live_screen_blocked_by_sharing">Interrompi la sessione di condivisione corrente prima di avviare lo schermo dal vivo.</string>
     <string name="live_screen_notification_channel_name">Condivisione dello schermo dal vivo</string>
     <string name="live_screen_notification_channel_desc">Mantiene attiva la duplicazione dello schermo dal vivo in background.</string>
     <string name="live_screen_notification_title">Condivisione dello schermo in corso</string>
     <string name="live_screen_notification_body">DirectServe sta trasmettendo il tuo schermo sul browser.</string>
+    <string name="live_screen_pin_label">PIN per partecipare: %1$s</string>
+    <string name="live_screen_pin_hint">Agli spettatori verrà chiesto questo PIN prima di poter guardare.</string>
     <string name="quick_text_title">Testo rapido</string>
     <string name="quick_text_send_title">Invia testo</string>
     <string name="quick_text_placeholder">Incolla testo o un link</string>
@@ -831,6 +835,7 @@
     <string name="quick_text_clear_all">Cancella tutto</string>
     <string name="quick_text_this_phone">Questo telefono</string>
     <string name="quick_text_sent">Testo condiviso.</string>
+    <string name="quick_text_blocked_by_live_screen">Interrompi lo schermo dal vivo prima di utilizzare Testo rapido.</string>
     <string name="web_live_title">Schermo dal vivo</string>
     <string name="web_live_waiting">In attesa del flusso</string>
     <string name="web_live_status_live">Dal vivo</string>
@@ -856,6 +861,10 @@
     <string name="web_live_unsupported">WebRTC non è supportato da questo browser.</string>
     <string name="web_live_busy">Un altro browser sta già visualizzando questo schermo dal vivo.</string>
     <string name="web_live_pin_required">È richiesto un PIN di sessione per la visualizzazione.</string>
+    <string name="web_live_pin_entry_title">Inserisci il PIN</string>
+    <string name="web_live_pin_entry_desc">Inserisci il PIN mostrato sul telefono host per iniziare a guardare.</string>
+    <string name="web_live_pin_entry_submit">Inizia a guardare</string>
+    <string name="web_live_pin_entry_invalid">Il PIN non corrisponde. Riprova.</string>
     <string name="playback_reason_direct_non_video">L\'elemento non video bypassa la pipeline di compatibilità</string>
     <string name="playback_reason_direct_safe">Il contenitore e i codec sono sicuri per il browser per questo client</string>
     <string name="playback_reason_remux_audio_fix">Il contenitore non è sicuro per il browser e l\'audio deve essere convertito durante il riconfezionamento</string>

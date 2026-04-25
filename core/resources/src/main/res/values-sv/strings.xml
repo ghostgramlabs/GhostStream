@@ -472,6 +472,7 @@
     <string name="sharing_same_wifi_needed">Anslut båda enheterna till samma nätverk.</string>
     <string name="sharing_connect_before_start">Kontrollera nätverket före start.</string>
     <string name="sharing_server_start_failed">Serverfel: %1$s</string>
+    <string name="sharing_blocked_by_live_screen">Stoppa Liveskärm innan du startar en vanlig delningssession.</string>
     <string name="sharing_stopped">Delning stoppad</string>
     <string name="sharing_device_android">Android</string>
     <string name="network_helper_wifi_ready">Anslutna enheter kan få åtkomst. Använd hotspot om Wi-Fi är begränsat.</string>
@@ -813,10 +814,13 @@
     <string name="live_screen_failed">Live screen could not start.</string>
     <string name="live_screen_ended">Live screen ended.</string>
     <string name="live_screen_busy_streams">Stop heavy active streams before starting Live Screen.</string>
+    <string name="live_screen_blocked_by_sharing">Stoppa den aktuella delningssessionen innan du startar Liveskärm.</string>
     <string name="live_screen_notification_channel_name">Live screen sharing</string>
     <string name="live_screen_notification_channel_desc">Keeps live screen mirroring active in the background.</string>
     <string name="live_screen_notification_title">Screen sharing in progress</string>
     <string name="live_screen_notification_body">DirectServe is mirroring your screen to the browser.</string>
+    <string name="live_screen_pin_label">PIN för att gå med: %1$s</string>
+    <string name="live_screen_pin_hint">Tittare kommer att tillfrågas om denna PIN innan de kan titta.</string>
     <string name="quick_text_title">Quick Text</string>
     <string name="quick_text_send_title">Send Text</string>
     <string name="quick_text_placeholder">Paste text or a link</string>
@@ -831,6 +835,7 @@
     <string name="quick_text_clear_all">Clear All</string>
     <string name="quick_text_this_phone">This Phone</string>
     <string name="quick_text_sent">Text shared.</string>
+    <string name="quick_text_blocked_by_live_screen">Stoppa Liveskärm innan du använder Snabbtext.</string>
     <string name="web_live_title">Liveskärm</string>
     <string name="web_live_waiting">Väntar på ström</string>
     <string name="web_live_status_live">Live</string>
@@ -856,6 +861,10 @@
     <string name="web_live_unsupported">WebRTC stöds inte i den här webbläsaren.</string>
     <string name="web_live_busy">En annan webbläsare tittar redan på den här liveskärmen.</string>
     <string name="web_live_pin_required">En sessions-PIN krävs för att titta.</string>
+    <string name="web_live_pin_entry_title">Ange live-PIN</string>
+    <string name="web_live_pin_entry_desc">Ange PIN-koden som visas på värdtelefonen för att börja titta.</string>
+    <string name="web_live_pin_entry_submit">Börja titta</string>
+    <string name="web_live_pin_entry_invalid">Den PIN-koden stämde inte. Försök igen.</string>
     <string name="playback_reason_direct_non_video">Icke-videoobjekt går förbi kompatibilitetspipelinen</string>
     <string name="playback_reason_direct_safe">Container och codecs är webbläsarsäkra för den här klienten</string>
     <string name="playback_reason_remux_audio_fix">Container är inte webbläsarsäker och ljudet måste konverteras under omförpackning</string>

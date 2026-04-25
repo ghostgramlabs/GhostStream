@@ -34,7 +34,16 @@ TRANSLATIONS = {
         'web_live_unmute': 'Activar sonido',
         'web_live_unsupported': 'WebRTC no es compatible con este navegador.',
         'web_live_busy': 'Otro navegador ya está viendo esta pantalla en vivo.',
-        'web_live_pin_required': 'Se requiere un PIN de sesión para ver.'
+        'web_live_pin_required': 'Se requiere un PIN de sesión para ver.',
+        'sharing_blocked_by_live_screen': 'Detén la pantalla en vivo antes de iniciar una sesión de uso compartido normal.',
+        'live_screen_blocked_by_sharing': 'Detén la sesión de uso compartido actual antes de iniciar la pantalla en vivo.',
+        'live_screen_pin_label': 'PIN para unirse: %1$s',
+        'live_screen_pin_hint': 'Se les pedirá este PIN a los espectadores antes de que puedan ver.',
+        'quick_text_blocked_by_live_screen': 'Detén la pantalla en vivo antes de usar Texto rápido.',
+        'web_live_pin_entry_title': 'Introduce el PIN de directo',
+        'web_live_pin_entry_desc': 'Introduce el PIN que aparece en el teléfono anfitrión para empezar a ver.',
+        'web_live_pin_entry_submit': 'Empezar a ver',
+        'web_live_pin_entry_invalid': 'Ese PIN no coincide. Inténtalo de nuevo.'
     },
     'ar': {
         'library_selection_step_2': 'الخطوة 2: إنشاء المشاركة المحفوظة من %1$d ملفات مختارة%2$s.',
@@ -66,7 +75,16 @@ TRANSLATIONS = {
         'web_live_unmute': 'إلغاء كتم الصوت',
         'web_live_unsupported': 'WebRTC غير مدعوم في هذا المتصفح.',
         'web_live_busy': 'هناك متصفح آخر يشاهد هذا البث المباشر للشاشة بالفعل.',
-        'web_live_pin_required': 'مطلوب رمز PIN للجلسة للمشاهدة.'
+        'web_live_pin_required': 'مطلوب رمز PIN للجلسة للمشاهدة.',
+        'sharing_blocked_by_live_screen': 'أوقف البث المباشر للشاشة قبل بدء جلسة مشاركة عادية.',
+        'live_screen_blocked_by_sharing': 'أوقف جلسة المشاركة الحالية قبل بدء البث المباشر للشاشة.',
+        'live_screen_pin_label': 'رمز PIN للانضمام: %1$s',
+        'live_screen_pin_hint': 'سيُطلب من المشاهدين إدخال رمز PIN هذا قبل أن يتمكنوا من المشاهدة.',
+        'quick_text_blocked_by_live_screen': 'أوقف البث المباشر للشاشة قبل استخدام النص السريع.',
+        'web_live_pin_entry_title': 'أدخل رمز PIN للبث المباشر',
+        'web_live_pin_entry_desc': 'أدخل رمز PIN المعروض على الهاتف المضيف لبدء المشاهدة.',
+        'web_live_pin_entry_submit': 'بدء المشاهدة',
+        'web_live_pin_entry_invalid': 'رمز PIN هذا غير مطابق. حاول مرة أخرى.'
     },
     'hi': {
         'library_selection_step_2': 'चरण 2: %1$d चयनित फ़ाइलों%2$s से सहेजी गई शेयरिंग बनाएं।',
@@ -98,7 +116,16 @@ TRANSLATIONS = {
         'web_live_unmute': 'अनम्यूट',
         'web_live_unsupported': 'इस ब्राउज़र में WebRTC समर्थित नहीं है।',
         'web_live_busy': 'कोई अन्य ब्राउज़र पहले से ही इस लाइव स्क्रीन को देख रहा है।',
-        'web_live_pin_required': 'देखने के लिए सत्र पिन आवश्यक है।'
+        'web_live_pin_required': 'देखने के लिए सत्र पिन आवश्यक है।',
+        'sharing_blocked_by_live_screen': 'सामान्य शेयरिंग सत्र शुरू करने से पहले लाइव स्क्रीन को रोकें।',
+        'live_screen_blocked_by_sharing': 'लाइव स्क्रीन शुरू करने से पहले वर्तमान शेयरिंग सत्र को रोकें।',
+        'live_screen_pin_label': 'शामिल होने के लिए पिन: %1$s',
+        'live_screen_pin_hint': 'दर्शकों को देखने से पहले यह पिन दर्ज करने के लिए कहा जाएगा।',
+        'quick_text_blocked_by_live_screen': 'त्वरित टेक्स्ट का उपयोग करने से पहले लाइव स्क्रीन को रोकें।',
+        'web_live_pin_entry_title': 'लाइव पिन दर्ज करें',
+        'web_live_pin_entry_desc': 'देखना शुरू करने के लिए होस्ट फोन पर दिखाया गया पिन दर्ज करें।',
+        'web_live_pin_entry_submit': 'देखना शुरू करें',
+        'web_live_pin_entry_invalid': 'वह पिन मेल नहीं खाता। फिर से प्रयास करें।'
     },
     'ru': {
         'library_selection_step_2': 'Шаг 2: Создайте сохраненный общий ресурс из %1$d выбранных файлов%2$s.',
@@ -130,7 +157,16 @@ TRANSLATIONS = {
         'web_live_unmute': 'Включить звук',
         'web_live_unsupported': 'WebRTC не поддерживается в этом браузере.',
         'web_live_busy': 'Другой браузер уже просматривает этот экран в прямом эфире.',
-        'web_live_pin_required': 'Для просмотра требуется PIN-код сессии.'
+        'web_live_pin_required': 'Для просмотра требуется PIN-код сессии.',
+        'sharing_blocked_by_live_screen': 'Остановите прямой эфир экрана перед запуском обычной сессии обмена.',
+        'live_screen_blocked_by_sharing': 'Остановите текущую сессию обмена перед запуском прямого эфира экрана.',
+        'live_screen_pin_label': 'PIN для подключения: %1$s',
+        'live_screen_pin_hint': 'Зрителям потребуется ввести этот PIN-код перед просмотром.',
+        'quick_text_blocked_by_live_screen': 'Остановите прямой эфир экрана перед использованием быстрого текста.',
+        'web_live_pin_entry_title': 'Введите PIN-код эфира',
+        'web_live_pin_entry_desc': 'Введите PIN-код, отображаемый на телефоне-хосте, чтобы начать просмотр.',
+        'web_live_pin_entry_submit': 'Начать просмотр',
+        'web_live_pin_entry_invalid': 'Этот PIN-код не совпадает. Попробуйте еще раз.'
     },
     'ja': {
         'library_selection_step_2': 'ステップ 2: 選択された %1$d 個のファイル%2$sから保存済み共有を作成します。',
@@ -162,7 +198,16 @@ TRANSLATIONS = {
         'web_live_unmute': 'ミュート解除',
         'web_live_unsupported': 'このブラウザは WebRTC をサポートしていません。',
         'web_live_busy': '別のブラウザがすでにこのライブスクリーンを視聴しています。',
-        'web_live_pin_required': '視聴にはセッションPINが必要です。'
+        'web_live_pin_required': '視聴にはセッションPINが必要です。',
+        'sharing_blocked_by_live_screen': '通常の共有セッションを開始する前にライブスクリーンを停止してください。',
+        'live_screen_blocked_by_sharing': 'ライブスクリーンを開始する前に現在の共有セッションを停止してください。',
+        'live_screen_pin_label': '参加用PIN: %1$s',
+        'live_screen_pin_hint': '視聴者は、視聴を開始する前にこのPINの入力を求められます。',
+        'quick_text_blocked_by_live_screen': 'クイックテキストを使用する前にライブスクリーンを停止してください。',
+        'web_live_pin_entry_title': 'ライブPINを入力',
+        'web_live_pin_entry_desc': '視聴を開始するには、ホストの電話に表示されているPINを入力してください。',
+        'web_live_pin_entry_submit': '視聴を開始',
+        'web_live_pin_entry_invalid': 'PINが一致しません。もう一度お試しください。'
     },
     'zh-rCN': {
         'library_selection_step_2': '第 2 步：从选定的 %1$d 个文件%2$s创建已保存共享。',
@@ -194,7 +239,16 @@ TRANSLATIONS = {
         'web_live_unmute': '取消静音',
         'web_live_unsupported': '此浏览器不支持 WebRTC。',
         'web_live_busy': '另一个浏览器已在查看此实时屏幕。',
-        'web_live_pin_required': '需要会话 PIN 才能查看。'
+        'web_live_pin_required': '需要会话 PIN 才能查看。',
+        'sharing_blocked_by_live_screen': '在开始普通共享会话之前，请先停止实时屏幕。',
+        'live_screen_blocked_by_sharing': '在开始实时屏幕之前，请先停止当前的共享会话。',
+        'live_screen_pin_label': '加入 PIN： %1$s',
+        'live_screen_pin_hint': '观众在观看前将被要求输入此 PIN。',
+        'quick_text_blocked_by_live_screen': '在使用快捷文本之前，请先停止实时屏幕。',
+        'web_live_pin_entry_title': '输入直播 PIN',
+        'web_live_pin_entry_desc': '输入主机手机上显示的 PIN 以开始观看。',
+        'web_live_pin_entry_submit': '开始观看',
+        'web_live_pin_entry_invalid': '该 PIN 不匹配。请重试。'
     },
     'zh-rTW': {
         'library_selection_step_2': '第 2 步：從選定的 %1$d 個檔案%2$s建立已儲存共享。',
@@ -226,7 +280,16 @@ TRANSLATIONS = {
         'web_live_unmute': '取消靜音',
         'web_live_unsupported': '此瀏覽器不支援 WebRTC。',
         'web_live_busy': '另一個瀏覽器已在查看此即時螢幕。',
-        'web_live_pin_required': '需要會話 PIN 才能查看。'
+        'web_live_pin_required': '需要會話 PIN 才能查看。',
+        'sharing_blocked_by_live_screen': '在開始普通共享會話之前，請先停止即時螢幕。',
+        'live_screen_blocked_by_sharing': '在開始即時螢幕之前，請先停止當前的共享會話。',
+        'live_screen_pin_label': '加入 PIN： %1$s',
+        'live_screen_pin_hint': '觀眾在觀看前將被要求輸入此 PIN。',
+        'quick_text_blocked_by_live_screen': '在使用快捷文字之前，請先停止即時螢幕。',
+        'web_live_pin_entry_title': '輸入直播 PIN',
+        'web_live_pin_entry_desc': '輸入主機手機上顯示的 PIN 以開始觀看。',
+        'web_live_pin_entry_submit': '開始觀看',
+        'web_live_pin_entry_invalid': '該 PIN 不匹配。請重試。'
     },
     'ko': {
         'library_selection_step_2': '2단계: 선택한 %1$d개의 파일%2$s로 저장된 공유를 생성합니다.',
@@ -258,7 +321,16 @@ TRANSLATIONS = {
         'web_live_unmute': '음소거 해제',
         'web_live_unsupported': '이 브라우저는 WebRTC를 지원하지 않습니다.',
         'web_live_busy': '다른 브라우저에서 이미 이 라이브 스크린을 시청하고 있습니다.',
-        'web_live_pin_required': '시청하려면 세션 PIN이 필요합니다.'
+        'web_live_pin_required': '시청하려면 세션 PIN이 필요합니다.',
+        'sharing_blocked_by_live_screen': '일반 공유 세션을 시작하기 전에 라이브 스크린을 중지하세요.',
+        'live_screen_blocked_by_sharing': '라이브 스크린을 시작하기 전에 현재 공유 세션을 중지하세요.',
+        'live_screen_pin_label': '참여 PIN: %1$s',
+        'live_screen_pin_hint': '시청자는 시청을 시작하기 전에 이 PIN을 입력해야 합니다.',
+        'quick_text_blocked_by_live_screen': '퀵 텍스트를 사용하기 전에 라이브 스크린을 중지하세요.',
+        'web_live_pin_entry_title': '라이브 PIN 입력',
+        'web_live_pin_entry_desc': '시청을 시작하려면 호스트 전화에 표시된 PIN을 입력하세요.',
+        'web_live_pin_entry_submit': '시청 시작',
+        'web_live_pin_entry_invalid': 'PIN이 일치하지 않습니다. 다시 시도하세요.'
     },
     'nl': {
         'library_selection_step_2': 'Stap 2: Maak de opgeslagen share van de %1$d geselecteerde bestanden%2$s.',
@@ -290,7 +362,16 @@ TRANSLATIONS = {
         'web_live_unmute': 'Dempen opheffen',
         'web_live_unsupported': 'WebRTC wordt niet ondersteund in deze browser.',
         'web_live_busy': 'Een andere browser bekijkt dit live-scherm al.',
-        'web_live_pin_required': 'Een sessie-PIN is vereist om te bekijken.'
+        'web_live_pin_required': 'Een sessie-PIN is vereist om te bekijken.',
+        'sharing_blocked_by_live_screen': 'Stop Live-scherm voordat u een normale deelsessie start.',
+        'live_screen_blocked_by_sharing': 'Stop de huidige deelsessie voordat u Live-scherm start.',
+        'live_screen_pin_label': 'PIN om deel te nemen: %1$s',
+        'live_screen_pin_hint': 'Kijkers wordt om deze PIN gevraagd voordat ze kunnen kijken.',
+        'quick_text_blocked_by_live_screen': 'Stop Live-scherm voordat u Snelle tekst gebruikt.',
+        'web_live_pin_entry_title': 'Voer live PIN in',
+        'web_live_pin_entry_desc': 'Voer de PIN in die op de host-telefoon wordt weergegeven om te beginnen met kijken.',
+        'web_live_pin_entry_submit': 'Begin met kijken',
+        'web_live_pin_entry_invalid': 'Die PIN kwam niet overeen. Probeer het opnieuw.'
     },
     'sv': {
         'library_selection_step_2': 'Steg 2: Skapa den sparade delningen från de %1$d valda filerna%2$s.',
@@ -322,7 +403,16 @@ TRANSLATIONS = {
         'web_live_unmute': 'Ljud på',
         'web_live_unsupported': 'WebRTC stöds inte i den här webbläsaren.',
         'web_live_busy': 'En annan webbläsare tittar redan på den här liveskärmen.',
-        'web_live_pin_required': 'En sessions-PIN krävs för att titta.'
+        'web_live_pin_required': 'En sessions-PIN krävs för att titta.',
+        'sharing_blocked_by_live_screen': 'Stoppa Liveskärm innan du startar en vanlig delningssession.',
+        'live_screen_blocked_by_sharing': 'Stoppa den aktuella delningssessionen innan du startar Liveskärm.',
+        'live_screen_pin_label': 'PIN för att gå med: %1$s',
+        'live_screen_pin_hint': 'Tittare kommer att tillfrågas om denna PIN innan de kan titta.',
+        'quick_text_blocked_by_live_screen': 'Stoppa Liveskärm innan du använder Snabbtext.',
+        'web_live_pin_entry_title': 'Ange live-PIN',
+        'web_live_pin_entry_desc': 'Ange PIN-koden som visas på värdtelefonen för att börja titta.',
+        'web_live_pin_entry_submit': 'Börja titta',
+        'web_live_pin_entry_invalid': 'Den PIN-koden stämde inte. Försök igen.'
     },
     'el': {
         'library_selection_step_2': 'Βήμα 2: Δημιουργήστε την αποθηκευμένη κοινή χρήση από τα %1$d επιλεγμένα αρχεία%2$s.',
@@ -354,7 +444,16 @@ TRANSLATIONS = {
         'web_live_unmute': 'Κατάργηση σίγασης',
         'web_live_unsupported': 'Το WebRTC δεν υποστηρίζεται σε αυτό το πρόγραμμα περιήγησης.',
         'web_live_busy': 'Ένα άλλο πρόγραμμα περιήγησης παρακολουθεί ήδη αυτήν τη ζωντανή οθόνη.',
-        'web_live_pin_required': 'Απαιτείται PIN συνεδρίας για την παρακολούθηση.'
+        'web_live_pin_required': 'Απαιτείται PIN συνεδρίας για την παρακολούθηση.',
+        'sharing_blocked_by_live_screen': 'Διακόψτε τη Ζωντανή οθόνη πριν ξεκινήσετε μια κανονική συνεδρία κοινής χρήσης.',
+        'live_screen_blocked_by_sharing': 'Διακόψτε την τρέχουσα συνεδρία κοινής χρήσης πριν ξεκινήσετε τη Ζωντανή οθόνη.',
+        'live_screen_pin_label': 'PIN για συμμετοχή: %1$s',
+        'live_screen_pin_hint': 'Θα ζητηθεί από τους θεατές αυτό το PIN πριν μπορέσουν να παρακολουθήσουν.',
+        'quick_text_blocked_by_live_screen': 'Διακόψτε τη Ζωντανή οθόνη πριν χρησιμοποιήσετε το Γρήγορο κείμενο.',
+        'web_live_pin_entry_title': 'Εισαγάγετε το PIN',
+        'web_live_pin_entry_desc': 'Εισαγάγετε το PIN που εμφανίζεται στο τηλέφωνο του κεντρικού υπολογιστή για να ξεκινήσετε την παρακολούθηση.',
+        'web_live_pin_entry_submit': 'Έναρξη παρακολούθησης',
+        'web_live_pin_entry_invalid': 'Αυτό το PIN δεν ταιριάζει. Δοκιμάστε ξανά.'
     },
     'tr': {
         'library_selection_step_2': 'Adım 2: Seçilen %1$d dosyadan%2$s kaydedilmiş paylaşımı oluşturun.',
@@ -386,7 +485,16 @@ TRANSLATIONS = {
         'web_live_unmute': 'Sesi Aç',
         'web_live_unsupported': 'WebRTC bu tarayıcıda desteklenmiyor.',
         'web_live_busy': 'Başka bir tarayıcı zaten bu canlı ekranı izliyor.',
-        'web_live_pin_required': 'İzlemek için oturum PIN\'i gereklidir.'
+        'web_live_pin_required': 'İzlemek için oturum PIN\'i gereklidir.',
+        'sharing_blocked_by_live_screen': 'Normal bir paylaşım oturumu başlatmadan önce Canlı Ekranı durdurun.',
+        'live_screen_blocked_by_sharing': 'Canlı Ekranı başlatmadan önce mevcut paylaşım oturumunu durdurun.',
+        'live_screen_pin_label': 'Katılmak için PIN: %1$s',
+        'live_screen_pin_hint': 'İzleyicilerin izleyebilmesi için bu PIN\'i girmeleri istenecektir.',
+        'quick_text_blocked_by_live_screen': 'Hızlı Metni kullanmadan önce Canlı Ekranı durdurun.',
+        'web_live_pin_entry_title': 'Canlı PIN girin',
+        'web_live_pin_entry_desc': 'İzlemeye başlamak için ana telefonda gösterilen PIN\'i girin.',
+        'web_live_pin_entry_submit': 'İzlemeye başla',
+        'web_live_pin_entry_invalid': 'Bu PIN eşleşmedi. Tekrar deneyin.'
     },
     'id': {
         'library_selection_step_2': 'Langkah 2: Buat berbagi tersimpan dari %1$d berkas terpilih%2$s.',
@@ -418,7 +526,16 @@ TRANSLATIONS = {
         'web_live_unmute': 'Bunyikan',
         'web_live_unsupported': 'WebRTC tidak didukung di browser ini.',
         'web_live_busy': 'Browser lain sudah menonton layar langsung ini.',
-        'web_live_pin_required': 'PIN sesi diperlukan untuk menonton.'
+        'web_live_pin_required': 'PIN sesi diperlukan untuk menonton.',
+        'sharing_blocked_by_live_screen': 'Hentikan Layar Langsung sebelum memulai sesi berbagi normal.',
+        'live_screen_blocked_by_sharing': 'Hentikan sesi berbagi saat ini sebelum memulai Layar Langsung.',
+        'live_screen_pin_label': 'PIN untuk bergabung: %1$s',
+        'live_screen_pin_hint': 'Penonton akan dimintai PIN ini sebelum mereka dapat menonton.',
+        'quick_text_blocked_by_live_screen': 'Hentikan Layar Langsung sebelum menggunakan Teks Cepat.',
+        'web_live_pin_entry_title': 'Masukkan PIN langsung',
+        'web_live_pin_entry_desc': 'Masukkan PIN yang ditampilkan di ponsel host untuk mulai menonton.',
+        'web_live_pin_entry_submit': 'Mulai menonton',
+        'web_live_pin_entry_invalid': 'PIN itu tidak cocok. Coba lagi.'
     },
     'in': {
         'library_selection_step_2': 'Langkah 2: Buat berbagi tersimpan dari %1$d berkas terpilih%2$s.',
@@ -450,7 +567,16 @@ TRANSLATIONS = {
         'web_live_unmute': 'Bunyikan',
         'web_live_unsupported': 'WebRTC tidak didukung di browser ini.',
         'web_live_busy': 'Browser lain sudah menonton layar langsung ini.',
-        'web_live_pin_required': 'PIN sesi diperlukan untuk menonton.'
+        'web_live_pin_required': 'PIN sesi diperlukan untuk menonton.',
+        'sharing_blocked_by_live_screen': 'Hentikan Layar Langsung sebelum memulai sesi berbagi normal.',
+        'live_screen_blocked_by_sharing': 'Hentikan sesi berbagi saat ini sebelum memulai Layar Langsung.',
+        'live_screen_pin_label': 'PIN untuk bergabung: %1$s',
+        'live_screen_pin_hint': 'Penonton akan dimintai PIN ini sebelum mereka dapat menonton.',
+        'quick_text_blocked_by_live_screen': 'Hentikan Layar Langsung sebelum menggunakan Teks Cepat.',
+        'web_live_pin_entry_title': 'Masukkan PIN langsung',
+        'web_live_pin_entry_desc': 'Masukkan PIN yang ditampilkan di ponsel host untuk mulai menonton.',
+        'web_live_pin_entry_submit': 'Mulai menonton',
+        'web_live_pin_entry_invalid': 'PIN itu tidak cocok. Coba lagi.'
     },
     'vi': {
         'library_selection_step_2': 'Bước 2: Tạo chia sẻ đã lưu từ %1$d tệp đã chọn%2$s.',
@@ -482,7 +608,16 @@ TRANSLATIONS = {
         'web_live_unmute': 'Bật tiếng',
         'web_live_unsupported': 'WebRTC không được hỗ trợ trong trình duyệt này.',
         'web_live_busy': 'Một trình duyệt khác đã đang xem màn hình trực tiếp này.',
-        'web_live_pin_required': 'Cần có mã PIN phiên để xem.'
+        'web_live_pin_required': 'Cần có mã PIN phiên để xem.',
+        'sharing_blocked_by_live_screen': 'Dừng Màn hình trực tiếp trước khi bắt đầu phiên chia sẻ bình thường.',
+        'live_screen_blocked_by_sharing': 'Dừng phiên chia sẻ hiện tại trước khi bắt đầu Màn hình trực tiếp.',
+        'live_screen_pin_label': 'Mã PIN để tham gia: %1$s',
+        'live_screen_pin_hint': 'Người xem sẽ được yêu cầu nhập mã PIN này trước khi họ có thể xem.',
+        'quick_text_blocked_by_live_screen': 'Dừng Màn hình trực tiếp trước khi sử dụng Văn bản nhanh.',
+        'web_live_pin_entry_title': 'Nhập mã PIN trực tiếp',
+        'web_live_pin_entry_desc': 'Nhập mã PIN hiển thị trên điện thoại chủ để bắt đầu xem.',
+        'web_live_pin_entry_submit': 'Bắt đầu xem',
+        'web_live_pin_entry_invalid': 'Mã PIN đó không khớp. Thử lại.'
     },
     'th': {
         'library_selection_step_2': 'ขั้นตอนที่ 2: สร้างการแชร์ที่บันทึกไว้จากไฟล์ที่เลือก %1$d ไฟล์%2$s',
@@ -515,6 +650,15 @@ TRANSLATIONS = {
         'web_live_unsupported': 'เบราว์เซอร์นี้ไม่รองรับ WebRTC',
         'web_live_busy': 'มีเบราว์เซอร์อื่นกำลังดูหน้าจอสดนี้อยู่แล้ว',
         'web_live_pin_required': 'ต้องใช้ PIN เซสชันเพื่อเข้าชม',
+        'sharing_blocked_by_live_screen': 'หยุดหน้าจอสดก่อนเริ่มเซสชันการแชร์ปกติ',
+        'live_screen_blocked_by_sharing': 'หยุดเซสชันการแชร์ปัจจุบันก่อนเริ่มหน้าจอสด',
+        'live_screen_pin_label': 'PIN เพื่อเข้าร่วม: %1$s',
+        'live_screen_pin_hint': 'ผู้ชมจะถูกถามถึง PIN นี้ก่อนที่จะสามารถรับชมได้',
+        'quick_text_blocked_by_live_screen': 'หยุดหน้าจอสดก่อนใช้ข้อความด่วน',
+        'web_live_pin_entry_title': 'ใส่ PIN สด',
+        'web_live_pin_entry_desc': 'ป้อน PIN ที่แสดงบนโทรศัพท์โฮสต์เพื่อเริ่มรับชม',
+        'web_live_pin_entry_submit': 'เริ่มรับชม',
+        'web_live_pin_entry_invalid': 'PIN นั้นไม่ตรงกัน ลองอีกครั้ง',
         'message_saved_share_ready': 'การแชร์ที่บันทึกไว้พร้อมแล้วพร้อม %1$d รายการ',
         'message_preparing_browser_playback': 'กำลังเตรียม %1$s เพื่อการเล่นเบราว์เซอร์ที่ราบรื่นยิ่งขึ้น'
     },
@@ -548,7 +692,16 @@ TRANSLATIONS = {
         'web_live_unmute': 'Ontdem',
         'web_live_unsupported': 'WebRTC word nie in hierdie blaaier ondersteun nie.',
         'web_live_busy': '\'n Ander blaaier kyk reeds na hierdie regstreekse skerm.',
-        'web_live_pin_required': '\'n Sessie-PIN word vereis om te kyk.'
+        'web_live_pin_required': '\'n Sessie-PIN word vereis om te kyk.',
+        'sharing_blocked_by_live_screen': 'Stop Regstreekse skerm voordat u \'n normale deelsessie begin.',
+        'live_screen_blocked_by_sharing': 'Stop die huidige deelsessie voordat u Regstreekse skerm begin.',
+        'live_screen_pin_label': 'PIN om aan te sluit: %1$s',
+        'live_screen_pin_hint': 'Kykers sal vir hierdie PIN gevra word voordat hulle kan kyk.',
+        'quick_text_blocked_by_live_screen': 'Stop Regstreekse skerm voordat u Vinnige teks gebruik.',
+        'web_live_pin_entry_title': 'Voer regstreekse PIN in',
+        'web_live_pin_entry_desc': 'Voer die PIN in wat op die gasheerfoon gewys word om te begin kyk.',
+        'web_live_pin_entry_submit': 'Begin kyk',
+        'web_live_pin_entry_invalid': 'Daardie PIN het nie ooreengestem nie. Probeer weer.'
     },
     'ta': {
         'library_selection_step_2': 'படி 2: தேர்ந்தெடுக்கப்பட்ட %1$d கோப்புகளிலிருந்து%2$s சேமிக்கப்பட்ட பகிர்வை உருவாக்கவும்.',
@@ -580,7 +733,16 @@ TRANSLATIONS = {
         'web_live_unmute': 'ஒலிநீக்கு',
         'web_live_unsupported': 'இந்த உலாவியில் WebRTC ஆதரிக்கப்படவில்லை.',
         'web_live_busy': 'மற்றொரு உலாவி ஏற்கனவே இந்த நேரடித் திரையைப் பார்க்கிறது.',
-        'web_live_pin_required': 'பார்க்க செஷன் பின் தேவை.'
+        'web_live_pin_required': 'பார்க்க செஷன் பின் தேவை.',
+        'sharing_blocked_by_live_screen': 'சாதாரண பகிர்வு அமர்வைத் தொடங்கும் முன் நேரடித் திரையை நிறுத்தவும்.',
+        'live_screen_blocked_by_sharing': 'நேரடித் திரையைத் தொடங்கும் முன் தற்போதைய பகிர்வு அமர்வை நிறுத்தவும்.',
+        'live_screen_pin_label': 'சேருவதற்கான PIN: %1$s',
+        'live_screen_pin_hint': 'பார்வையாளர்கள் பார்ப்பதற்கு முன் இந்த PIN கேட்கப்படும்.',
+        'quick_text_blocked_by_live_screen': 'விரைவான உரையைப் பயன்படுத்துவதற்கு முன் நேரடித் திரையை நிறுத்தவும்.',
+        'web_live_pin_entry_title': 'நேரடி PIN ஐ உள்ளிடவும்',
+        'web_live_pin_entry_desc': 'பார்க்கத் தொடங்க ஹோஸ்ட் போனில் காட்டப்படும் PIN ஐ உள்ளிடவும்.',
+        'web_live_pin_entry_submit': 'பார்க்கத் தொடங்கு',
+        'web_live_pin_entry_invalid': 'அந்த PIN பொருந்தவில்லை. மீண்டும் முயற்சிக்கவும்.'
     },
     'te': {
         'library_selection_step_2': 'దశ 2: ఎంచుకున్న %1$d ఫైల్‌ల%2$s నుండి సేవ్ చేసిన షేర్‌ను సృష్టించండి.',
@@ -612,7 +774,16 @@ TRANSLATIONS = {
         'web_live_unmute': 'అన్‌మ్యూట్',
         'web_live_unsupported': 'ఈ బ్రౌజర్‌లో WebRTC సపోర్ట్ చేయబడదు.',
         'web_live_busy': 'మరో బ్రౌజర్ ఇప్పటికే ఈ లైవ్ స్క్రీన్‌ని చూస్తోంది.',
-        'web_live_pin_required': 'చూడటానికి సెషన్ పిన్ అవసరం.'
+        'web_live_pin_required': 'చూడటానికి సెషన్ పిన్ అవసరం.',
+        'sharing_blocked_by_live_screen': 'సాధారణ భాగస్వామ్య సెషన్‌ను ప్రారంభించే ముందు లైవ్ స్క్రీన్‌ను ఆపివేయండి.',
+        'live_screen_blocked_by_sharing': 'లైవ్ స్క్రీన్‌ను ప్రారంభించే ముందు ప్రస్తుత భాగస్వామ్య సెషన్‌ను ఆపివేయండి.',
+        'live_screen_pin_label': 'చేరడానికి PIN: %1$s',
+        'live_screen_pin_hint': 'వీక్షకులు చూడటానికి ముందు ఈ PIN అడగబడుతుంది.',
+        'quick_text_blocked_by_live_screen': 'త్వరిత వచనాన్ని ఉపయోగించే ముందు లైవ్ స్క్రీన్‌ను ఆపివేయండి.',
+        'web_live_pin_entry_title': 'లైవ్ PIN నమోదు చేయండి',
+        'web_live_pin_entry_desc': 'చూడటం ప్రారంభించడానికి హోస్ట్ ఫోన్‌లో చూపిన PINని నమోదు చేయండి.',
+        'web_live_pin_entry_submit': 'చూడటం ప్రారంభించండి',
+        'web_live_pin_entry_invalid': 'ఆ PIN సరిపోలలేదు. మళ్ళీ ప్రయత్నించండి.'
     },
     'ml': {
         'library_selection_step_2': 'ഘട്ടം 2: തിരഞ്ഞെടുത്ത %1$d ഫയലുകളിൽ%2$s നിന്ന് സംരക്ഷിച്ച ഷെയർ സൃഷ്ടിക്കുക.',
@@ -644,7 +815,16 @@ TRANSLATIONS = {
         'web_live_unmute': 'അൺമ്യൂട്ട്',
         'web_live_unsupported': 'ഈ ബ്രൗസറിൽ WebRTC പിന്തുണയ്ക്കുന്നില്ല.',
         'web_live_busy': 'മറ്റൊരു ബ്രൗസർ ഇതിനകം ഈ ലൈവ് സ്ക്ρίൻ കാണുന്നുണ്ട്.',
-        'web_live_pin_required': 'കാണുന്നതിന് സെഷൻ പിൻ ആവശ്യമാണ്.'
+        'web_live_pin_required': 'കാണുന്നതിന് സെഷൻ പിൻ ആവശ്യമാണ്.',
+        'sharing_blocked_by_live_screen': 'സാധാരണ പങ്കിടൽ സെഷൻ ആരംഭിക്കുന്നതിന് മുമ്പ് ലൈവ് സ്ക്രീൻ നിർത്തുക.',
+        'live_screen_blocked_by_sharing': 'ലൈവ് സ്ക്രീൻ ആരംഭിക്കുന്നതിന് മുമ്പ് നിലവിലെ പങ്കിടൽ സെഷൻ നിർത്തുക.',
+        'live_screen_pin_label': 'ചേരാനുള്ള PIN: %1$s',
+        'live_screen_pin_hint': 'കാണുന്നതിന് മുമ്പ് കാഴ്ചക്കാരോട് ഈ PIN ആവശ്യപ്പെടും.',
+        'quick_text_blocked_by_live_screen': 'ക്വിക്ക് ടെക്സ്റ്റ് ഉപയോഗിക്കുന്നതിന് മുമ്പ് ലൈവ് സ്ക്രീൻ നിർത്തുക.',
+        'web_live_pin_entry_title': 'ലൈവ് PIN നൽകുക',
+        'web_live_pin_entry_desc': 'കാണാൻ തുടങ്ങുന്നതിന് ഹോസ്റ്റ് ഫോണിൽ കാണിച്ചിരിക്കുന്ന PIN നൽകുക.',
+        'web_live_pin_entry_submit': 'കാണാൻ തുടങ്ങുക',
+        'web_live_pin_entry_invalid': 'ആ PIN പൊരുത്തപ്പെടുന്നില്ല. വീണ്ടും ശ്രമിക്കുക.'
     },
     'fr': {
         'library_selection_step_2': 'Étape 2 : Créer le partage enregistré à partir des %1$d fichiers sélectionnés%2$s.',
@@ -676,7 +856,16 @@ TRANSLATIONS = {
         'web_live_unmute': 'Réactiver le son',
         'web_live_unsupported': 'WebRTC n\'est pas supporté par ce navigateur.',
         'web_live_busy': 'Un autre navigateur consulte déjà cet écran en direct.',
-        'web_live_pin_required': 'Un code PIN de session est requis avant de visionner.'
+        'web_live_pin_required': 'Un code PIN de session est requis avant de visionner.',
+        'sharing_blocked_by_live_screen': 'Arrêtez l\'écran en direct avant de démarrer une session de partage normale.',
+        'live_screen_blocked_by_sharing': 'Arrêtez la session de partage actuelle avant de démarrer l\'écran en direct.',
+        'live_screen_pin_label': 'Code PIN pour rejoindre : %1$s',
+        'live_screen_pin_hint': 'Les spectateurs devront saisir ce code PIN avant de pouvoir regarder.',
+        'quick_text_blocked_by_live_screen': 'Arrêtez l\'écran en direct avant d\'utiliser le texte rapide.',
+        'web_live_pin_entry_title': 'Saisissez le code PIN',
+        'web_live_pin_entry_desc': 'Saisissez le code PIN affiché sur le téléphone hôte pour commencer à regarder.',
+        'web_live_pin_entry_submit': 'Commencer à regarder',
+        'web_live_pin_entry_invalid': 'Ce code PIN ne correspond pas. Réessayez.'
     },
     'de': {
         'library_selection_step_2': 'Schritt 2: Erstellen Sie die gespeicherte Freigabe aus den %1$d ausgewählten Dateien%2$s.',
@@ -708,7 +897,16 @@ TRANSLATIONS = {
         'web_live_unmute': 'Ton einschalten',
         'web_live_unsupported': 'WebRTC wird in diesem Browser nicht unterstützt.',
         'web_live_busy': 'Ein anderer Browser zeigt diesen Live-Bildschirm bereits an.',
-        'web_live_pin_required': 'Ein Sitzungs-PIN ist zum Ansehen erforderlich.'
+        'web_live_pin_required': 'Ein Sitzungs-PIN ist zum Ansehen erforderlich.',
+        'sharing_blocked_by_live_screen': 'Stoppen Sie den Live-Bildschirm, bevor Sie eine normale Freigabesitzung starten.',
+        'live_screen_blocked_by_sharing': 'Stoppen Sie die aktuelle Freigabesitzung, bevor Sie den Live-Bildschirm starten.',
+        'live_screen_pin_label': 'PIN zum Beitritt: %1$s',
+        'live_screen_pin_hint': 'Zuschauer werden nach dieser PIN gefragt, bevor sie zusehen können.',
+        'quick_text_blocked_by_live_screen': 'Stoppen Sie den Live-Bildschirm, bevor Sie Schnelltext verwenden.',
+        'web_live_pin_entry_title': 'Live-PIN eingeben',
+        'web_live_pin_entry_desc': 'Geben Sie die auf dem Host-Telefon angezeigte PIN ein, um mit dem Zuschauen zu beginnen.',
+        'web_live_pin_entry_submit': 'Zuschauen starten',
+        'web_live_pin_entry_invalid': 'Diese PIN stimmte nicht überein. Versuchen Sie es erneut.'
     },
     'it': {
         'library_selection_step_2': 'Passaggio 2: Crea la condivisione salvata dai %1$d file selezionati%2$s.',
@@ -740,7 +938,16 @@ TRANSLATIONS = {
         'web_live_unmute': 'Riattiva audio',
         'web_live_unsupported': 'WebRTC non è supportato da questo browser.',
         'web_live_busy': 'Un altro browser sta già visualizzando questo schermo dal vivo.',
-        'web_live_pin_required': 'È richiesto un PIN di sessione per la visualizzazione.'
+        'web_live_pin_required': 'È richiesto un PIN di sessione per la visualizzazione.',
+        'sharing_blocked_by_live_screen': 'Interrompi lo schermo dal vivo prima di avviare una normale sessione di condivisione.',
+        'live_screen_blocked_by_sharing': 'Interrompi la sessione di condivisione corrente prima di avviare lo schermo dal vivo.',
+        'live_screen_pin_label': 'PIN per partecipare: %1$s',
+        'live_screen_pin_hint': 'Agli spettatori verrà chiesto questo PIN prima di poter guardare.',
+        'quick_text_blocked_by_live_screen': 'Interrompi lo schermo dal vivo prima di utilizzare Testo rapido.',
+        'web_live_pin_entry_title': 'Inserisci il PIN',
+        'web_live_pin_entry_desc': 'Inserisci il PIN mostrato sul telefono host per iniziare a guardare.',
+        'web_live_pin_entry_submit': 'Inizia a guardare',
+        'web_live_pin_entry_invalid': 'Il PIN non corrisponde. Riprova.'
     },
     'pt': {
         'library_selection_step_2': 'Passo 2: Criar a partilha guardada a partir dos %1$d ficheiros selecionados%2$s.',
@@ -772,7 +979,16 @@ TRANSLATIONS = {
         'web_live_unmute': 'Ativar som',
         'web_live_unsupported': 'WebRTC não é suportado por este navegador.',
         'web_live_busy': 'Outro navegador já está a ver este ecrã em tempo real.',
-        'web_live_pin_required': 'É necessário um PIN de sessão para ver.'
+        'web_live_pin_required': 'É necessário um PIN de sessão para ver.',
+        'sharing_blocked_by_live_screen': 'Interrompa o Ecrã em Tempo Real antes de iniciar uma sessão de partilha normal.',
+        'live_screen_blocked_by_sharing': 'Interrompa a sessão de partilha atual antes de iniciar o Ecrã em Tempo Real.',
+        'live_screen_pin_label': 'PIN para aderir: %1$s',
+        'live_screen_pin_hint': 'Será pedido este PIN aos espectadores antes de poderem assistir.',
+        'quick_text_blocked_by_live_screen': 'Interrompa o Ecrã em Tempo Real antes de utilizar o Texto Rápido.',
+        'web_live_pin_entry_title': 'Introduza o PIN em direto',
+        'web_live_pin_entry_desc': 'Introduza o PIN apresentado no telemóvel anfitrião para começar a assistir.',
+        'web_live_pin_entry_submit': 'Começar a assistir',
+        'web_live_pin_entry_invalid': 'O PIN não coincide. Tente novamente.'
     },
     'pt-rBR': {
         'library_selection_step_2': 'Passo 2: Criar o compartilhamento salvo a partir dos %1$d arquivos selecionados%2$s.',
@@ -804,8 +1020,17 @@ TRANSLATIONS = {
         'web_live_unmute': 'Ativar som',
         'web_live_unsupported': 'WebRTC não é suportado por este navegador.',
         'web_live_busy': 'Outro navegador já está vendo esta tela ao vivo.',
-        'web_live_pin_required': 'Um PIN de sessão é necessário para ver.'
-    }
+        'web_live_pin_required': 'Um PIN de sessão é necessário para ver.',
+        'sharing_blocked_by_live_screen': 'Interrompa a tela ao vivo antes de iniciar uma sessão de compartilhamento normal.',
+        'live_screen_blocked_by_sharing': 'Interrompa a sessão de compartilhamento atual antes de iniciar a tela ao vivo.',
+        'live_screen_pin_label': 'PIN para participar: %1$s',
+        'live_screen_pin_hint': 'Os espectadores deverão inserir este PIN antes de poderem assistir.',
+        'quick_text_blocked_by_live_screen': 'Interrompa a tela ao vivo antes de usar o Texto Rápido.',
+        'web_live_pin_entry_title': 'Digite o PIN ao vivo',
+        'web_live_pin_entry_desc': 'Digite o PIN exibido no telefone host para começar a assistir.',
+        'web_live_pin_entry_submit': 'Começar a assistir',
+        'web_live_pin_entry_invalid': 'Esse PIN não coincide. Tente novamente.'
+    },
 }
 
 def fix_locale(locale_name, base_res_path):

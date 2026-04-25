@@ -472,6 +472,7 @@
     <string name="sharing_same_wifi_needed">Συνδέστε και τις δύο συσκευές στο ίδιο Wi-Fi ή hotspot.</string>
     <string name="sharing_connect_before_start">Συνδέστε αυτήν τη συσκευή στο Wi-Fi ή ενεργοποιήστε το hotspot σας πριν ξεκινήσετε μια συνεδρία.</string>
     <string name="sharing_server_start_failed">Η εκκίνηση του διακομιστή απέτυχε: %1$s</string>
+    <string name="sharing_blocked_by_live_screen">Διακόψτε τη Ζωντανή οθόνη πριν ξεκινήσετε μια κανονική συνεδρία κοινής χρήσης.</string>
     <string name="sharing_stopped">Η κοινή χρήση σταμάτησε</string>
     <string name="sharing_device_android">Android</string>
     <string name="network_helper_wifi_ready">Οι κοντινές συσκευές μπορούν να συνδεθούν στο ίδιο Wi-Fi και να ανοίξουν αυτόν τον σύνδεσμο. Εάν ένα δημόσιο Wi-Fi αποκλείει την τοπική πρόσβαση, μεταβείτε στο hotspot σας.</string>
@@ -813,10 +814,13 @@
     <string name="live_screen_failed">Live screen could not start.</string>
     <string name="live_screen_ended">Live screen ended.</string>
     <string name="live_screen_busy_streams">Stop heavy active streams before starting Live Screen.</string>
+    <string name="live_screen_blocked_by_sharing">Διακόψτε την τρέχουσα συνεδρία κοινής χρήσης πριν ξεκινήσετε τη Ζωντανή οθόνη.</string>
     <string name="live_screen_notification_channel_name">Live screen sharing</string>
     <string name="live_screen_notification_channel_desc">Keeps live screen mirroring active in the background.</string>
     <string name="live_screen_notification_title">Screen sharing in progress</string>
     <string name="live_screen_notification_body">DirectServe is mirroring your screen to the browser.</string>
+    <string name="live_screen_pin_label">PIN για συμμετοχή: %1$s</string>
+    <string name="live_screen_pin_hint">Θα ζητηθεί από τους θεατές αυτό το PIN πριν μπορέσουν να παρακολουθήσουν.</string>
     <string name="quick_text_title">Quick Text</string>
     <string name="quick_text_send_title">Send Text</string>
     <string name="quick_text_placeholder">Paste text or a link</string>
@@ -831,6 +835,7 @@
     <string name="quick_text_clear_all">Clear All</string>
     <string name="quick_text_this_phone">This Phone</string>
     <string name="quick_text_sent">Text shared.</string>
+    <string name="quick_text_blocked_by_live_screen">Διακόψτε τη Ζωντανή οθόνη πριν χρησιμοποιήσετε το Γρήγορο κείμενο.</string>
     <string name="web_live_title">Ζωντανή οθόνη</string>
     <string name="web_live_waiting">Αναμονή για ροή</string>
     <string name="web_live_status_live">Ζωντανά</string>
@@ -856,6 +861,10 @@
     <string name="web_live_unsupported">Το WebRTC δεν υποστηρίζεται σε αυτό το πρόγραμμα περιήγησης.</string>
     <string name="web_live_busy">Ένα άλλο πρόγραμμα περιήγησης παρακολουθεί ήδη αυτήν τη ζωντανή οθόνη.</string>
     <string name="web_live_pin_required">Απαιτείται PIN συνεδρίας για την παρακολούθηση.</string>
+    <string name="web_live_pin_entry_title">Εισαγάγετε το PIN</string>
+    <string name="web_live_pin_entry_desc">Εισαγάγετε το PIN που εμφανίζεται στο τηλέφωνο του κεντρικού υπολογιστή για να ξεκινήσετε την παρακολούθηση.</string>
+    <string name="web_live_pin_entry_submit">Έναρξη παρακολούθησης</string>
+    <string name="web_live_pin_entry_invalid">Αυτό το PIN δεν ταιριάζει. Δοκιμάστε ξανά.</string>
     <string name="playback_reason_direct_non_video">Το στοιχείο που δεν είναι βίντεο παρακάμπτει τη ροή συμβατότητας</string>
     <string name="playback_reason_direct_safe">Ο περιέκτης και οι κωδικοποιητές είναι ασφαλείς για το πρόγραμμα περιήγησης αυτού του πελάτη</string>
     <string name="playback_reason_remux_audio_fix">Ο περιέκτης δεν είναι ασφαλής για το πρόγραμμα περιήγησης και ο ήχος πρέπει να μετατραπεί κατά την επανασυσκευασία</string>

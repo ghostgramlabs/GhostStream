@@ -472,6 +472,7 @@
     <string name="sharing_same_wifi_needed">두 기기 모두 동일한 Wi-Fi 또는 핫스팟에 연결해 주세요.</string>
     <string name="sharing_connect_before_start">세션을 시작하기 전에 이 기기를 Wi-Fi에 연결하거나 핫스팟을 켜주세요.</string>
     <string name="sharing_server_start_failed">서버를 시작할 수 없습니다: %1$s</string>
+    <string name="sharing_blocked_by_live_screen">일반 공유 세션을 시작하기 전에 라이브 스크린을 중지하세요.</string>
     <string name="sharing_stopped">공유 중지됨</string>
     <string name="sharing_device_android">Android</string>
     <string name="network_helper_wifi_ready">주변 기기가 동일한 Wi-Fi에 접속하여 이 링크를 열 수 있습니다. 공용 Wi-Fi가 로컬 접속을 차단하면 핫스팟으로 전환해 보세요.</string>
@@ -813,10 +814,13 @@
     <string name="live_screen_failed">Live screen could not start.</string>
     <string name="live_screen_ended">Live screen ended.</string>
     <string name="live_screen_busy_streams">Stop heavy active streams before starting Live Screen.</string>
+    <string name="live_screen_blocked_by_sharing">라이브 스크린을 시작하기 전에 현재 공유 세션을 중지하세요.</string>
     <string name="live_screen_notification_channel_name">Live screen sharing</string>
     <string name="live_screen_notification_channel_desc">Keeps live screen mirroring active in the background.</string>
     <string name="live_screen_notification_title">Screen sharing in progress</string>
     <string name="live_screen_notification_body">DirectServe is mirroring your screen to the browser.</string>
+    <string name="live_screen_pin_label">참여 PIN: %1$s</string>
+    <string name="live_screen_pin_hint">시청자는 시청을 시작하기 전에 이 PIN을 입력해야 합니다.</string>
     <string name="quick_text_title">Quick Text</string>
     <string name="quick_text_send_title">Send Text</string>
     <string name="quick_text_placeholder">Paste text or a link</string>
@@ -831,6 +835,7 @@
     <string name="quick_text_clear_all">Clear All</string>
     <string name="quick_text_this_phone">This Phone</string>
     <string name="quick_text_sent">Text shared.</string>
+    <string name="quick_text_blocked_by_live_screen">퀵 텍스트를 사용하기 전에 라이브 스크린을 중지하세요.</string>
     <string name="web_live_title">라이브 스크린</string>
     <string name="web_live_waiting">스트림 대기 중</string>
     <string name="web_live_status_live">라이브</string>
@@ -856,6 +861,10 @@
     <string name="web_live_unsupported">이 브라우저는 WebRTC를 지원하지 않습니다.</string>
     <string name="web_live_busy">다른 브라우저에서 이미 이 라이브 스크린을 시청하고 있습니다.</string>
     <string name="web_live_pin_required">시청하려면 세션 PIN이 필요합니다.</string>
+    <string name="web_live_pin_entry_title">라이브 PIN 입력</string>
+    <string name="web_live_pin_entry_desc">시청을 시작하려면 호스트 전화에 표시된 PIN을 입력하세요.</string>
+    <string name="web_live_pin_entry_submit">시청 시작</string>
+    <string name="web_live_pin_entry_invalid">PIN이 일치하지 않습니다. 다시 시도하세요.</string>
     <string name="playback_reason_direct_non_video">비동영상 항목은 호환성 파이프라인을 건너뜁니다</string>
     <string name="playback_reason_direct_safe">컨테이너와 코덱이 이 클라이언트 브라우저에 안전합니다</string>
     <string name="playback_reason_remux_audio_fix">컨테이너가 브라우저에 안전하지 않아 재포장 과정에서 오디오 변환이 필요합니다</string>

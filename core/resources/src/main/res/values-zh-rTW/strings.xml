@@ -472,6 +472,7 @@
     <string name="sharing_same_wifi_needed">將兩個裝置連接到同一個 Wi-Fi 或熱點。</string>
     <string name="sharing_connect_before_start">在啟動會話前連接 Wi-Fi 或開啟熱點。</string>
     <string name="sharing_server_start_failed">伺服器啟动失敗：%1$s</string>
+    <string name="sharing_blocked_by_live_screen">在開始普通共享會話之前，請先停止即時螢幕。</string>
     <string name="sharing_stopped">分享已停止</string>
     <string name="sharing_device_android">安卓</string>
     <string name="network_helper_wifi_ready">附近裝置可以加入同一個 Wi-Fi 井打開連結。如果公共 Wi-Fi 阻止本地存取，請切換到熱點。</string>
@@ -813,10 +814,13 @@
     <string name="live_screen_failed">Live screen could not start.</string>
     <string name="live_screen_ended">Live screen ended.</string>
     <string name="live_screen_busy_streams">Stop heavy active streams before starting Live Screen.</string>
+    <string name="live_screen_blocked_by_sharing">在開始即時螢幕之前，請先停止當前的共享會話。</string>
     <string name="live_screen_notification_channel_name">Live screen sharing</string>
     <string name="live_screen_notification_channel_desc">Keeps live screen mirroring active in the background.</string>
     <string name="live_screen_notification_title">Screen sharing in progress</string>
     <string name="live_screen_notification_body">DirectServe is mirroring your screen to the browser.</string>
+    <string name="live_screen_pin_label">加入 PIN： %1$s</string>
+    <string name="live_screen_pin_hint">觀眾在觀看前將被要求輸入此 PIN。</string>
     <string name="quick_text_title">Quick Text</string>
     <string name="quick_text_send_title">Send Text</string>
     <string name="quick_text_placeholder">Paste text or a link</string>
@@ -831,6 +835,7 @@
     <string name="quick_text_clear_all">Clear All</string>
     <string name="quick_text_this_phone">This Phone</string>
     <string name="quick_text_sent">Text shared.</string>
+    <string name="quick_text_blocked_by_live_screen">在使用快捷文字之前，請先停止即時螢幕。</string>
     <string name="web_live_title">即時螢幕</string>
     <string name="web_live_waiting">等待串流</string>
     <string name="web_live_status_live">直播中</string>
@@ -856,6 +861,10 @@
     <string name="web_live_unsupported">此瀏覽器不支援 WebRTC。</string>
     <string name="web_live_busy">另一個瀏覽器已在查看此即時螢幕。</string>
     <string name="web_live_pin_required">需要會話 PIN 才能查看。</string>
+    <string name="web_live_pin_entry_title">輸入直播 PIN</string>
+    <string name="web_live_pin_entry_desc">輸入主機手機上顯示的 PIN 以開始觀看。</string>
+    <string name="web_live_pin_entry_submit">開始觀看</string>
+    <string name="web_live_pin_entry_invalid">該 PIN 不匹配。請重試。</string>
     <string name="playback_reason_direct_non_video">非影片項目跳過相容性流水線</string>
     <string name="playback_reason_direct_safe">容器和編解碼器對此客戶端瀏覽器是安全的</string>
     <string name="playback_reason_remux_audio_fix">容器對瀏覽器不安全，且在重新封裝期間必須轉換音訊</string>

@@ -472,6 +472,7 @@
     <string name="sharing_same_wifi_needed">Verbind beide apparaten met hetzelfde netwerk.</string>
     <string name="sharing_connect_before_start">Controleer netwerk voor start.</string>
     <string name="sharing_server_start_failed">Serverfout: %1$s</string>
+    <string name="sharing_blocked_by_live_screen">Stop Live-scherm voordat u een normale deelsessie start.</string>
     <string name="sharing_stopped">Delen gestopt</string>
     <string name="sharing_device_android">Android</string>
     <string name="network_helper_wifi_ready">Verbonden apparaten hebben toegang. Gebruik hotspot indien Wi-Fi beperkt is.</string>
@@ -813,10 +814,13 @@
     <string name="live_screen_failed">Live screen could not start.</string>
     <string name="live_screen_ended">Live screen ended.</string>
     <string name="live_screen_busy_streams">Stop heavy active streams before starting Live Screen.</string>
+    <string name="live_screen_blocked_by_sharing">Stop de huidige deelsessie voordat u Live-scherm start.</string>
     <string name="live_screen_notification_channel_name">Live screen sharing</string>
     <string name="live_screen_notification_channel_desc">Keeps live screen mirroring active in the background.</string>
     <string name="live_screen_notification_title">Screen sharing in progress</string>
     <string name="live_screen_notification_body">DirectServe is mirroring your screen to the browser.</string>
+    <string name="live_screen_pin_label">PIN om deel te nemen: %1$s</string>
+    <string name="live_screen_pin_hint">Kijkers wordt om deze PIN gevraagd voordat ze kunnen kijken.</string>
     <string name="quick_text_title">Quick Text</string>
     <string name="quick_text_send_title">Send Text</string>
     <string name="quick_text_placeholder">Paste text or a link</string>
@@ -831,6 +835,7 @@
     <string name="quick_text_clear_all">Clear All</string>
     <string name="quick_text_this_phone">This Phone</string>
     <string name="quick_text_sent">Text shared.</string>
+    <string name="quick_text_blocked_by_live_screen">Stop Live-scherm voordat u Snelle tekst gebruikt.</string>
     <string name="web_live_title">Live-scherm</string>
     <string name="web_live_waiting">Wachten op stream</string>
     <string name="web_live_status_live">Live</string>
@@ -856,6 +861,10 @@
     <string name="web_live_unsupported">WebRTC wordt niet ondersteund in deze browser.</string>
     <string name="web_live_busy">Een andere browser bekijkt dit live-scherm al.</string>
     <string name="web_live_pin_required">Een sessie-PIN is vereist om te bekijken.</string>
+    <string name="web_live_pin_entry_title">Voer live PIN in</string>
+    <string name="web_live_pin_entry_desc">Voer de PIN in die op de host-telefoon wordt weergegeven om te beginnen met kijken.</string>
+    <string name="web_live_pin_entry_submit">Begin met kijken</string>
+    <string name="web_live_pin_entry_invalid">Die PIN kwam niet overeen. Probeer het opnieuw.</string>
     <string name="playback_reason_direct_non_video">Niet-video-item omzeilt compatibiliteitspijplijn</string>
     <string name="playback_reason_direct_safe">Container en codecs zijn veilig voor deze client</string>
     <string name="playback_reason_remux_audio_fix">Container is veilig, maar audio moet worden geconverteerd</string>
