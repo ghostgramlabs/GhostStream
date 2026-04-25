@@ -357,27 +357,36 @@ class LiveScreenCaptureService : Service() {
             .setUseHardwareAcousticEchoCanceler(false)
             .setUseHardwareNoiseSuppressor(false)
             .setAudioAttributes(mediaPlaybackAudioAttributes())
-            .setAudioBufferCallback { buffer, _, channelCount, sampleRate, _, captureTimestampNs ->
+            .setAudioBufferCallback { buffer, _, channelCount, sampleRate, bytesRead, captureTimestampNs ->
                 if (webrtcAudioFormat == null && sampleRate > 0 && channelCount > 0) {
                     val spec = WebRtcAudioFormat(sampleRate, channelCount, buffer.capacity())
                     webrtcAudioFormat = spec
                     container.debugLogRepository.log(
                         "LiveScreen",
-                        "webrtc audio buffer format observed sampleRate=${spec.sampleRate} channels=${spec.channelCount} capacity=${spec.bufferCapacity}",
+                        "webrtc audio buffer format observed sampleRate=${spec.sampleRate} channels=${spec.channelCount} capacity=${spec.bufferCapacity} firstBytesRead=$bytesRead",
                     )
                 }
-                val injectionTimestampNs = paceInjectedAudioCallback(sampleRate, channelCount, buffer.capacity())
+                // Overwrite the microphone PCM that WebRTC just captured with
+                // device-playback PCM. Riding on WebRTC's mic capture cadence
+                // means the resulting audio frames inherit the mic's native
+                // capture timestamp, which stays in lock-step with the screen-
+                // capture video clock — this is how A/V sync actually works.
                 val pump = playbackAudioPump
+                val targetBytes = if (bytesRead > 0) bytesRead else buffer.capacity()
                 if (pump != null) {
-                    val peak = pump.pull(buffer)
-                    if (peak > AUDIO_ACTIVITY_PEAK_THRESHOLD && !audioObserved) {
+                    val peak = pump.overwriteWithDeviceAudio(buffer, targetBytes)
+                    if (peak < 0) {
+                        // Pump not yet producing audio — replace mic PCM with
+                        // silence so nobody's microphone leaks into the stream.
+                        writeSilence(buffer)
+                    } else if (peak > AUDIO_ACTIVITY_PEAK_THRESHOLD && !audioObserved) {
                         audioObserved = true
                         updateAudioStatus(LiveAudioStatus.AUDIO_LIVE, "pcm_activity_peak_$peak")
                     }
                 } else {
                     writeSilence(buffer)
                 }
-                if (captureTimestampNs > 0) captureTimestampNs else injectionTimestampNs
+                captureTimestampNs
             }
             .setAudioRecordErrorCallback(object : JavaAudioDeviceModule.AudioRecordErrorCallback {
                 override fun onWebRtcAudioRecordInitError(errorMessage: String?) {
@@ -414,12 +423,18 @@ class LiveScreenCaptureService : Service() {
                 }
             })
             .createAudioDeviceModule()
-        audioModule.setAudioRecordEnabled(false)
+        // IMPORTANT: leave AudioRecord enabled. WebRTC's mic capture thread is
+        // what drives the audio buffer callback at a steady 10 ms cadence and
+        // assigns the capture timestamps that get correlated with the video
+        // clock. We overwrite the captured mic PCM with device-playback PCM
+        // inside the callback, so nothing from the actual microphone ever
+        // leaves the device, but A/V sync still works because WebRTC's
+        // timing machinery is intact.
         audioModule.setMicrophoneMute(false)
         audioModule.setSpeakerMute(true)
         container.debugLogRepository.log(
             "LiveScreen",
-            "WebRTC audio device created for playback capture injection; microphone AudioRecord disabled",
+            "WebRTC audio device created; mic AudioRecord enabled as pacing clock, PCM overwritten with playback capture",
         )
 
         val factory = PeerConnectionFactory.builder()
@@ -1492,9 +1507,10 @@ class LiveScreenCaptureService : Service() {
     }
 
     private fun writeSilence(buffer: java.nio.ByteBuffer) {
-        buffer.clear()
-        while (buffer.hasRemaining()) {
-            buffer.put(0)
+        // Absolute positioning only — WebRTC owns position/limit on this
+        // buffer and we must not disturb them from inside the callback.
+        for (i in 0 until buffer.capacity()) {
+            buffer.put(i, 0)
         }
     }
 

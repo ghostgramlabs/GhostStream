@@ -3783,9 +3783,22 @@ async function startLiveWebRtc(video, applyStatus, applyLiveState, audioText, au
     });
     return true;
   };
+  const tuneReceiverForLowLatency = (receiver) => {
+    if (!receiver) return;
+    // Ask the browser's jitter buffer to target the smallest playout delay it
+    // can sustain. Without this Chrome's NetEQ aims for ~100-200ms of audio
+    // buffering, which manifests as audio lagging the screen-mirror video.
+    try {
+      if ("jitterBufferTarget" in receiver) receiver.jitterBufferTarget = 0;
+    } catch (_) {}
+    try {
+      if ("playoutDelayHint" in receiver) receiver.playoutDelayHint = 0;
+    } catch (_) {}
+  };
   const attachReceiverTracks = (reason) => {
     let added = 0;
     peer.getReceivers().forEach((receiver) => {
+      tuneReceiverForLowLatency(receiver);
       if (addRemoteTrack(receiver.track)) added += 1;
     });
     debugTrace(
@@ -3803,6 +3816,7 @@ async function startLiveWebRtc(video, applyStatus, applyLiveState, audioText, au
 
   peer.ontrack = (event) => {
     console.info("[DirectServe] live remote track", event.track?.kind || "unknown");
+    tuneReceiverForLowLatency(event.receiver);
     let added = 0;
     if (event.streams?.length) {
       event.streams.forEach((stream) => {

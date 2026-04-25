@@ -9,14 +9,21 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.ghoststream.core.model.LiveAudioStatus
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import kotlin.math.abs
 import kotlin.math.min
 
 /**
- * Captures system playback audio via MediaProjection and buffers PCM for
- * injection into WebRTC's audio pipeline through [JavaAudioDeviceModule]'s
- * AudioBufferCallback. Opens a separate AudioRecord on the USAGE_MEDIA /
- * USAGE_GAME playback streams rather than the microphone.
+ * Synchronous wrapper around an [AudioPlaybackCaptureConfiguration]-backed
+ * [AudioRecord]. Designed to be driven from WebRTC's audio buffer callback
+ * thread: the callback already runs at the microphone's 10 ms cadence, so we
+ * simply [overwriteWithDeviceAudio] the mic PCM in place with freshly-read
+ * playback PCM. WebRTC then stamps the resulting audio with the mic's own
+ * capture clock — which is what keeps audio in sync with the screen-capture
+ * video track, because both tracks then share the same underlying timebase.
+ *
+ * This mirrors the ScreenStream / Stream.io pattern: do not fight WebRTC's
+ * internal audio pacing, ride on top of it.
  */
 @RequiresApi(Build.VERSION_CODES.Q)
 class PlaybackAudioPump(
@@ -27,27 +34,18 @@ class PlaybackAudioPump(
     private val onActivity: () -> Unit,
     private val logger: (String, Throwable?) -> Unit = { _, _ -> },
 ) {
-    private val ring: ByteArray
-    private val ringCapacity: Int
-    private val ringLock = Any()
-    private var ringHead: Int = 0
-    private var ringSize: Int = 0
-    private var activityReported: Boolean = false
-
     @Volatile
     private var audioRecord: AudioRecord? = null
 
     @Volatile
-    private var keepAlive: Boolean = false
+    private var reusableBuffer: ByteBuffer? = null
 
-    private var readerThread: Thread? = null
+    @Volatile
+    private var activityReported: Boolean = false
 
     init {
         require(sampleRate > 0)
         require(channelCount == 1 || channelCount == 2)
-        // Hold ~2 seconds of PCM16 so we can absorb jitter without blocking WebRTC.
-        ringCapacity = sampleRate * channelCount * BYTES_PER_SAMPLE * 2
-        ring = ByteArray(ringCapacity)
     }
 
     fun start(): Boolean {
@@ -57,7 +55,9 @@ class PlaybackAudioPump(
             onStatus(LiveAudioStatus.AUDIO_FAILED, "min_buffer_size_invalid_$minBuf")
             return false
         }
-        val bufferBytes = maxOf(minBuf, bytesPerFrame() * (sampleRate / 10)) // ~100ms
+        // Keep the AudioRecord buffer snug so we never drag behind WebRTC's
+        // 10 ms read cadence by more than a handful of milliseconds.
+        val bufferBytes = maxOf(minBuf, bytesPerFrame() * sampleRate * AUDIO_RECORD_BUFFER_MS / 1000)
 
         val config = runCatching {
             AudioPlaybackCaptureConfiguration.Builder(projection)
@@ -95,157 +95,94 @@ class PlaybackAudioPump(
             return false
         }
 
-        val actualSampleRate = record.sampleRate
-        val actualChannelCount = record.channelCount
-        if (actualSampleRate != sampleRate || actualChannelCount != channelCount) {
-            logger(
-                "playback AudioRecord format mismatch requested=${sampleRate}Hz/${channelCount}ch actual=${actualSampleRate}Hz/${actualChannelCount}ch",
-                null,
-            )
-        } else {
-            logger(
-                "playback AudioRecord format confirmed sampleRate=${actualSampleRate}Hz channels=$actualChannelCount bufferBytes=$bufferBytes",
-                null,
-            )
-        }
-
-        audioRecord = record
-        keepAlive = true
         runCatching { record.startRecording() }.onFailure {
             logger("playback AudioRecord startRecording failed", it)
             runCatching { record.release() }
-            audioRecord = null
             onStatus(LiveAudioStatus.AUDIO_FAILED, "playback_audiorecord_start_failed")
             return false
         }
 
-        val thread = Thread({ readLoop(bufferBytes) }, "DirectServeAudioPump")
-        thread.priority = Thread.NORM_PRIORITY + 2
-        thread.isDaemon = true
-        readerThread = thread
-        thread.start()
-
+        audioRecord = record
+        logger(
+            "playback AudioRecord ready sampleRate=$sampleRate channels=$channelCount bufferBytes=$bufferBytes",
+            null,
+        )
         onStatus(LiveAudioStatus.AUDIO_INITIALIZING, "playback_pump_started")
         return true
     }
 
     fun stop() {
-        keepAlive = false
         val record = audioRecord
         audioRecord = null
         runCatching { record?.stop() }
         runCatching { record?.release() }
-        readerThread?.let { thread ->
-            runCatching { thread.join(THREAD_JOIN_TIMEOUT_MS) }
-        }
-        readerThread = null
-        synchronized(ringLock) {
-            ringHead = 0
-            ringSize = 0
-        }
+        reusableBuffer = null
+        activityReported = false
     }
 
     /**
-     * Fills [dst] with PCM from the ring buffer, padding with silence if we
-     * are short on samples. WebRTC hands the buffer to us after its own
-     * read(), so we rewind to capacity-length writes from offset zero — that
-     * is what the native side will submit via the cached direct-buffer
-     * pointer. Returns the peak absolute PCM sample copied into WebRTC.
+     * Reads [bytesToFill] bytes of device playback PCM and writes them into
+     * [dst] starting at absolute index 0, leaving [dst]'s position and limit
+     * untouched (WebRTC is responsible for those). Returns the peak PCM-16
+     * sample magnitude observed, or -1 if the pump is not yet producing audio
+     * (caller should treat this as "keep mic PCM silent" — do NOT let the
+     * untouched mic audio leak out).
      */
-    fun pull(dst: ByteBuffer): Int {
-        val capacity = dst.capacity()
-        if (capacity == 0) return 0
-        dst.clear()
-        synchronized(ringLock) {
-            val available = min(ringSize, capacity)
-            var peak = 0
-            if (available > 0) {
-                peak = copyOutLocked(dst, available)
-                ringSize -= available
-                ringHead = (ringHead + available) % ringCapacity
-            }
-            val padding = capacity - available
-            if (padding > 0) {
-                val zeros = ByteArray(padding)
-                dst.put(zeros)
-            }
-            return peak
+    fun overwriteWithDeviceAudio(dst: ByteBuffer, bytesToFill: Int): Int {
+        val record = audioRecord ?: return -1
+        val capacityNeeded = bytesToFill.coerceAtMost(dst.capacity())
+        if (capacityNeeded <= 0) return -1
+        val temp = obtainReusableBuffer(capacityNeeded)
+        temp.clear()
+        val readBytes = runCatching {
+            record.read(temp, capacityNeeded, AudioRecord.READ_BLOCKING)
+        }.getOrElse { err ->
+            logger("playback AudioRecord read threw", err)
+            onStatus(LiveAudioStatus.AUDIO_FAILED, "playback_read_exception")
+            return -1
         }
-    }
-
-    private fun copyOutLocked(dst: ByteBuffer, count: Int): Int {
-        val first = min(count, ringCapacity - ringHead)
-        dst.put(ring, ringHead, first)
-        var peak = peakPcm16(ring, ringHead, first)
-        val remainder = count - first
-        if (remainder > 0) {
-            dst.put(ring, 0, remainder)
-            peak = maxOf(peak, peakPcm16(ring, 0, remainder))
+        if (readBytes <= 0) {
+            if (readBytes == AudioRecord.ERROR_INVALID_OPERATION || readBytes == AudioRecord.ERROR_BAD_VALUE) {
+                logger("playback AudioRecord read error code=$readBytes", null)
+                onStatus(LiveAudioStatus.AUDIO_FAILED, "playback_read_error_$readBytes")
+            }
+            return -1
         }
-        return peak
-    }
 
-    private fun readLoop(bufferBytes: Int) {
-        val buffer = ByteArray(bufferBytes)
-        while (keepAlive) {
-            val record = audioRecord ?: break
-            val bytesRead = runCatching { record.read(buffer, 0, buffer.size) }.getOrElse { err ->
-                logger("playback AudioRecord read threw", err)
-                onStatus(LiveAudioStatus.AUDIO_FAILED, "playback_read_exception")
-                return
-            }
-            if (bytesRead <= 0) {
-                if (bytesRead == AudioRecord.ERROR_INVALID_OPERATION || bytesRead == AudioRecord.ERROR_BAD_VALUE) {
-                    logger("playback AudioRecord read error code=$bytesRead", null)
-                    onStatus(LiveAudioStatus.AUDIO_FAILED, "playback_read_error_$bytesRead")
-                    return
-                }
-                continue
-            }
-            appendToRing(buffer, bytesRead)
-            if (!activityReported && hasNonSilentSample(buffer, bytesRead)) {
-                activityReported = true
-                onActivity()
-            }
-        }
-    }
-
-    private fun appendToRing(data: ByteArray, length: Int) {
-        synchronized(ringLock) {
-            val copyLength = min(length, ringCapacity)
-            val srcOffset = length - copyLength
-            val writeStart = (ringHead + ringSize) % ringCapacity
-            val first = min(copyLength, ringCapacity - writeStart)
-            System.arraycopy(data, srcOffset, ring, writeStart, first)
-            val remainder = copyLength - first
-            if (remainder > 0) {
-                System.arraycopy(data, srcOffset + first, ring, 0, remainder)
-            }
-            val newSize = ringSize + copyLength
-            if (newSize > ringCapacity) {
-                val overflow = newSize - ringCapacity
-                ringHead = (ringHead + overflow) % ringCapacity
-                ringSize = ringCapacity
-            } else {
-                ringSize = newSize
-            }
-        }
-    }
-
-    private fun hasNonSilentSample(buffer: ByteArray, length: Int): Boolean {
-        return peakPcm16(buffer, 0, length) > SILENCE_THRESHOLD
-    }
-
-    private fun peakPcm16(buffer: ByteArray, offset: Int, length: Int): Int {
+        temp.order(ByteOrder.LITTLE_ENDIAN)
         var peak = 0
         var i = 0
-        while (i + 1 < length) {
-            val index = offset + i
-            val sample = ((buffer[index + 1].toInt() shl 8) or (buffer[index].toInt() and 0xff)).toShort().toInt()
+        while (i + 1 < readBytes) {
+            val sample = temp.getShort(i).toInt()
             peak = maxOf(peak, abs(sample))
             i += 2
         }
+        // Overwrite dst[0..readBytes] using absolute positioning so WebRTC's
+        // position/limit state is preserved exactly as it handed us the buffer.
+        for (idx in 0 until readBytes) {
+            dst.put(idx, temp.get(idx))
+        }
+        // If the mic read was shorter than what WebRTC is expecting, pad the
+        // remainder with silence so no stale mic PCM leaks out.
+        if (readBytes < bytesToFill) {
+            for (idx in readBytes until bytesToFill.coerceAtMost(dst.capacity())) {
+                dst.put(idx, 0)
+            }
+        }
+
+        if (!activityReported && peak > SILENCE_THRESHOLD) {
+            activityReported = true
+            onActivity()
+        }
         return peak
+    }
+
+    private fun obtainReusableBuffer(capacity: Int): ByteBuffer {
+        val existing = reusableBuffer
+        if (existing != null && existing.capacity() >= capacity) return existing
+        val fresh = ByteBuffer.allocateDirect(capacity)
+        reusableBuffer = fresh
+        return fresh
     }
 
     private fun bytesPerFrame(): Int = BYTES_PER_SAMPLE * channelCount
@@ -253,6 +190,6 @@ class PlaybackAudioPump(
     companion object {
         private const val BYTES_PER_SAMPLE = 2
         private const val SILENCE_THRESHOLD = 8
-        private const val THREAD_JOIN_TIMEOUT_MS = 500L
+        private const val AUDIO_RECORD_BUFFER_MS = 20
     }
 }
