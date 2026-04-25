@@ -630,7 +630,7 @@ class MainViewModel(
                 localAddress = network.localAddress,
                 port = binding.port,
             ) ?: binding.url
-            val liveUrl = "${displayUrl.trimEnd('/')}/live"
+            val liveUrl = displayUrl.trimEnd('/')
             val livePin = when {
                 !settings.requireSessionPin -> null
                 settings.autoGeneratePin -> kotlin.random.Random.nextInt(1000, 9999).toString()
