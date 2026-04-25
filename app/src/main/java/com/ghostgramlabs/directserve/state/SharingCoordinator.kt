@@ -103,6 +103,10 @@ class SharingCoordinator(
             )
             return ShareStartResult.Failure(application.getString(R.string.sharing_connect_before_start))
         }
+        if (liveScreenStore.state.value.isActive) {
+            debugLogSink.log("SharingCoordinator", "beginSharing blocked because live screen is active")
+            return ShareStartResult.Failure(application.getString(R.string.sharing_blocked_by_live_screen))
+        }
         val nearbyDeviceLabel = formatGeneratedNameWithIp(network.localAddress!!)
 
         return try {

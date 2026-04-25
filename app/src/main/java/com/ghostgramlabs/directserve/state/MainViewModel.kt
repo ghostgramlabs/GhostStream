@@ -350,6 +350,12 @@ class MainViewModel(
     fun requestStartSharing() {
         viewModelScope.launch {
             if (startSharingInProgress.value) return@launch
+            if (container.liveScreenManager.state.value.isActive) {
+                container.debugLogRepository.log("MainViewModel", "requestStartSharing blocked because live screen is active")
+                pendingShareAfterNetworkReady.value = false
+                _events.emit(AppEvent.ShowMessage(application.getString(R.string.sharing_blocked_by_live_screen)))
+                return@launch
+            }
             if (container.sessionManager.sessionState.value.isSharing) {
                 container.debugLogRepository.log("MainViewModel", "requestStartSharing ignored because session already sharing")
                 _events.emit(AppEvent.NavigateSession)
@@ -403,6 +409,13 @@ class MainViewModel(
     fun resumePendingShareAfterNetworkReady() {
         viewModelScope.launch {
             if (!pendingShareAfterNetworkReady.value || startSharingInProgress.value) return@launch
+            if (container.liveScreenManager.state.value.isActive) {
+                container.debugLogRepository.log("MainViewModel", "resumePendingShareAfterNetworkReady blocked because live screen is active")
+                pendingShareAfterNetworkReady.value = false
+                startSharingInProgress.value = false
+                _events.emit(AppEvent.ShowMessage(application.getString(R.string.sharing_blocked_by_live_screen)))
+                return@launch
+            }
             container.debugLogRepository.log("MainViewModel", "resumePendingShareAfterNetworkReady")
             startSharingInProgress.value = true
             maybeRequestBatteryOptimizationExemption()
@@ -504,12 +517,20 @@ class MainViewModel(
 
     fun navigateToQuickText() {
         viewModelScope.launch {
+            if (container.liveScreenManager.state.value.isActive) {
+                _events.emit(AppEvent.ShowMessage(application.getString(R.string.quick_text_blocked_by_live_screen)))
+                return@launch
+            }
             _events.emit(AppEvent.NavigateQuickText)
         }
     }
 
     fun navigateToLiveScreen() {
         viewModelScope.launch {
+            if (container.sessionManager.sessionState.value.isSharing && !container.liveScreenManager.state.value.isActive) {
+                _events.emit(AppEvent.ShowMessage(application.getString(R.string.live_screen_blocked_by_sharing)))
+                return@launch
+            }
             _events.emit(AppEvent.NavigateLiveScreen)
         }
     }
@@ -523,6 +544,10 @@ class MainViewModel(
         val trimmed = text.trim()
         if (trimmed.isEmpty()) return
         viewModelScope.launch {
+            if (container.liveScreenManager.state.value.isActive) {
+                _events.emit(AppEvent.ShowMessage(application.getString(R.string.quick_text_blocked_by_live_screen)))
+                return@launch
+            }
             container.historyRepository.addQuickTextMessage(
                 QuickTextMessage(
                     id = java.util.UUID.randomUUID().toString(),
@@ -563,6 +588,11 @@ class MainViewModel(
                 return@launch
             }
             val sessionState = container.sessionManager.sessionState.value
+            if (sessionState.isSharing) {
+                container.debugLogRepository.log("MainViewModel", "requestLiveScreenStart blocked because normal sharing is active")
+                _events.emit(AppEvent.ShowMessage(application.getString(R.string.live_screen_blocked_by_sharing)))
+                return@launch
+            }
             val hasConflictingHeavyActivity = sessionState.connectedClients.any { client ->
                 client.activity == com.ghoststream.core.model.ClientActivity.WATCHING_VIDEO ||
                     client.activity == com.ghoststream.core.model.ClientActivity.PLAYING_MUSIC ||
@@ -583,6 +613,11 @@ class MainViewModel(
 
     fun startLiveScreenCapture(resultCode: Int, permissionData: Intent) {
         viewModelScope.launch {
+            if (container.sessionManager.sessionState.value.isSharing) {
+                container.debugLogRepository.log("MainViewModel", "startLiveScreenCapture blocked because normal sharing is active")
+                _events.emit(AppEvent.ShowMessage(application.getString(R.string.live_screen_blocked_by_sharing)))
+                return@launch
+            }
             val network = withContext(Dispatchers.IO) { container.networkInspector.inspect() }
             if (!network.isWifiOrHotspotReady) {
                 _events.emit(AppEvent.ShowMessage(application.getString(R.string.sharing_connect_before_start)))
@@ -591,16 +626,22 @@ class MainViewModel(
             val settings = container.settingsRepository.settings.first()
             val binding = container.server.start(settings.preferredPort.coerceIn(1024, 65535))
             val displayUrl = com.ghoststream.core.model.buildSessionAccessUrl(
-                sessionUrl = binding.url,
+                sessionUrl = null,
                 localAddress = network.localAddress,
                 port = binding.port,
             ) ?: binding.url
+            val liveUrl = "${displayUrl.trimEnd('/')}/live"
+            val livePin = when {
+                !settings.requireSessionPin -> null
+                settings.autoGeneratePin -> kotlin.random.Random.nextInt(1000, 9999).toString()
+                else -> settings.manualPin.filter(Char::isDigit).padEnd(4, '0').take(6)
+            }
             container.liveScreenManager.updateState {
                 it.copy(
                     status = LiveScreenStatus.STARTING,
-                    sessionUrl = "${binding.url}/live",
-                    displayUrl = "$displayUrl/live",
-                    pin = null,
+                    sessionUrl = liveUrl,
+                    displayUrl = liveUrl,
+                    pin = livePin,
                     audioStatus = LiveAudioStatus.AUDIO_UNAVAILABLE,
                     startedAtEpochMs = System.currentTimeMillis(),
                     lastError = null,
@@ -804,6 +845,13 @@ class MainViewModel(
 
     private suspend fun startSharingAfterReadyCheck() {
         container.debugLogRepository.log("MainViewModel", "startSharingAfterReadyCheck")
+        if (container.liveScreenManager.state.value.isActive) {
+            container.debugLogRepository.log("MainViewModel", "startSharingAfterReadyCheck blocked because live screen is active")
+            pendingShareAfterNetworkReady.value = false
+            startSharingInProgress.value = false
+            _events.emit(AppEvent.ShowMessage(application.getString(R.string.sharing_blocked_by_live_screen)))
+            return
+        }
         when (val startResult = withContext(Dispatchers.IO) {
             container.sharingCoordinator.beginSharing(assumePreflightReady = true)
         }) {
@@ -829,9 +877,10 @@ class MainViewModel(
         }
     }
 
-    fun connectedQuickTextDevices(): List<com.ghoststream.core.model.QuickTextDevice> {
-        val state = container.sessionManager.sessionState.value
-        val deviceNicknames = uiState.value.settings.deviceNicknames
+    fun connectedQuickTextDevices(snapshot: MainUiState = uiState.value): List<com.ghoststream.core.model.QuickTextDevice> {
+        val state = snapshot.sessionState
+        val deviceNicknames = snapshot.settings.deviceNicknames
+        val localAddress = state.networkAvailability.localAddress
         return buildList {
             add(
                 com.ghoststream.core.model.QuickTextDevice(
@@ -842,6 +891,13 @@ class MainViewModel(
                 ),
             )
             state.connectedClients
+                .filter { client -> client.ipAddress.isNotBlank() }
+                .filterNot { client -> client.ipAddress == localAddress || client.ipAddress == "127.0.0.1" || client.ipAddress == "::1" }
+                .distinctBy { it.ipAddress }
+                .sortedWith(
+                    compareByDescending<com.ghoststream.core.model.ConnectedClient> { it.lastSeenEpochMs }
+                        .thenBy { displayDeviceName(it.ipAddress, deviceNicknames).lowercase() },
+                )
                 .map { client ->
                     com.ghoststream.core.model.QuickTextDevice(
                         id = client.ipAddress,
@@ -849,7 +905,6 @@ class MainViewModel(
                         ipAddress = client.ipAddress,
                     )
                 }
-                .distinctBy { it.id }
                 .forEach(::add)
         }
     }

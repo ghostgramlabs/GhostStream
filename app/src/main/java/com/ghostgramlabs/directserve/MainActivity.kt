@@ -497,6 +497,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     connectingNearbyDeviceId = uiState.connectingNearbyDeviceId,
                     pendingUploadRequest = uiState.pendingUploadRequest,
                     isStartingShare = uiState.isStartingShare,
+                    isLiveScreenActive = uiState.liveScreenState.isActive,
                     onStartSharing = {
                         if (uiState.sessionState.isSharing) {
                             allowHomeBackToResumeSession = false
@@ -787,7 +788,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
             composable(Routes.QuickText) {
                 QuickTextScreen(
                     messages = uiState.quickTextHistory,
-                    devices = viewModel.connectedQuickTextDevices(),
+                    devices = viewModel.connectedQuickTextDevices(uiState),
                     onBack = { navController.popBackStack() },
                     onSend = viewModel::sendQuickText,
                     onCopyMessage = {

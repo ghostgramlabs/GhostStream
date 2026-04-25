@@ -31,6 +31,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,8 +65,17 @@ fun QuickTextScreen(
     var draft by rememberSaveable { mutableStateOf("") }
     val targetDevices = remember(devices) { devices.filterNot { it.isHostPhone } }
     val broadcastLabel = stringResource(R.string.quick_text_broadcast)
-    var selectedTargetId by rememberSaveable(targetDevices) {
-        mutableStateOf(targetDevices.firstOrNull()?.id ?: BROADCAST_ID)
+    var selectedTargetId by rememberSaveable { mutableStateOf<String?>(null) }
+    val activeTargetId = selectedTargetId
+        ?.takeIf { id -> id == BROADCAST_ID || targetDevices.any { it.id == id } }
+        ?: targetDevices.firstOrNull()?.id
+        ?: BROADCAST_ID
+
+    LaunchedEffect(targetDevices) {
+        val currentTargetId = selectedTargetId
+        if (currentTargetId == null || (currentTargetId != BROADCAST_ID && targetDevices.none { it.id == currentTargetId })) {
+            selectedTargetId = targetDevices.firstOrNull()?.id ?: BROADCAST_ID
+        }
     }
 
     LazyColumn(
@@ -126,20 +136,20 @@ fun QuickTextScreen(
                         targetDevices.forEach { device ->
                             TargetChip(
                                 label = device.name,
-                                selected = selectedTargetId == device.id,
+                                selected = activeTargetId == device.id,
                                 onClick = { selectedTargetId = device.id },
                             )
                         }
                         TargetChip(
                             label = broadcastLabel,
-                            selected = selectedTargetId == BROADCAST_ID,
+                            selected = activeTargetId == BROADCAST_ID,
                             onClick = { selectedTargetId = BROADCAST_ID },
                         )
                     }
                     Button(
                         onClick = {
-                            val isBroadcast = selectedTargetId == BROADCAST_ID
-                            val target = targetDevices.firstOrNull { it.id == selectedTargetId }
+                            val isBroadcast = activeTargetId == BROADCAST_ID
+                            val target = targetDevices.firstOrNull { it.id == activeTargetId }
                             onSend(
                                 draft,
                                 if (isBroadcast) QuickTextTargetType.BROADCAST else QuickTextTargetType.DEVICE,

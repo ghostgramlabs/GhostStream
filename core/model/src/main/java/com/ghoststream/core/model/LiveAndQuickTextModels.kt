@@ -185,6 +185,7 @@ data class QuickTextDevice(
     val name: String,
     val ipAddress: String,
     val isHostPhone: Boolean = false,
+    val isCurrentDevice: Boolean = false,
 )
 
 fun browserDeviceName(

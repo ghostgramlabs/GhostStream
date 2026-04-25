@@ -108,6 +108,7 @@ fun HomeScreen(
     connectingNearbyDeviceId: String?,
     pendingUploadRequest: com.ghoststream.core.model.UploadRequest?,
     isStartingShare: Boolean,
+    isLiveScreenActive: Boolean,
     onStartSharing: () -> Unit,
 
     onRefreshConnection: () -> Unit,
@@ -206,6 +207,7 @@ fun HomeScreen(
                 onOpenHistory = onOpenHistory,
                 onOpenLiveScreen = onOpenLiveScreen,
                 onOpenQuickText = onOpenQuickText,
+                isLiveScreenActive = isLiveScreenActive,
             )
         }
 
@@ -304,6 +306,7 @@ private fun FeatureSectionsCard(
     onOpenHistory: () -> Unit,
     onOpenLiveScreen: () -> Unit,
     onOpenQuickText: () -> Unit,
+    isLiveScreenActive: Boolean,
 ) {
     Card(
         modifier = Modifier
@@ -346,12 +349,14 @@ private fun FeatureSectionsCard(
                 detail = stringResource(R.string.home_feature_live_screen_desc),
                 onClick = onOpenLiveScreen,
             )
-            FeatureRow(
-                icon = Icons.Outlined.Textsms,
-                title = stringResource(R.string.home_feature_quick_text),
-                detail = stringResource(R.string.home_feature_quick_text_desc),
-                onClick = onOpenQuickText,
-            )
+            if (!isLiveScreenActive) {
+                FeatureRow(
+                    icon = Icons.Outlined.Textsms,
+                    title = stringResource(R.string.home_feature_quick_text),
+                    detail = stringResource(R.string.home_feature_quick_text_desc),
+                    onClick = onOpenQuickText,
+                )
+            }
 
             Text(
                 text = stringResource(R.string.home_section_network_tv),

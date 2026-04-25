@@ -20,6 +20,7 @@ const state = {
   libraryHasMore: false,
   libraryLoadingMore: false,
   libraryShowingAll: false,
+  libraryDownloadsAllowed: null,
   nowPlaying: null,
   plyr: null,
   plyrItemId: null,
@@ -59,6 +60,7 @@ const state = {
   liveStatsToken: 0,
   liveDisconnectPromise: null,
   liveScreenState: null,
+  livePin: null,
   liveModeGuardTimer: null,
   liveFitMode: "contain",
   quickTextTimer: null,
@@ -75,7 +77,20 @@ function saveLibraryScroll() {
     items: state.libraryItems.slice(),
     totalCount: state.libraryTotalCount,
     hasMore: state.libraryHasMore,
+    allowDownloads: state.libraryDownloadsAllowed,
     scrollY: window.scrollY || window.pageYOffset || 0,
+  });
+}
+
+function downloadsAllowedForLibrary() {
+  return state.libraryDownloadsAllowed ?? !state.bootstrap?.preventDownload;
+}
+
+function syncLibraryDownloadControls() {
+  const visible = downloadsAllowedForLibrary();
+  ["downloadAllBtn", "downloadAllZipBtn", "downloadSelectedBtn", "downloadSelectedZipBtn"].forEach((id) => {
+    const element = document.getElementById(id);
+    if (element) element.hidden = !visible;
   });
 }
 
@@ -1284,8 +1299,9 @@ async function renderLibrary(category, title) {
   const folderName = params.get("folderName");
   state.folderId = folderId;
   state.folderName = folderName;
+  state.libraryDownloadsAllowed = !state.bootstrap?.preventDownload;
 
-  const allowDownloads = !state.bootstrap?.preventDownload;
+  const allowDownloads = downloadsAllowedForLibrary();
   shell(`
     <section class="gs-section">
       ${folderId ? `
@@ -1346,19 +1362,26 @@ async function renderLibrary(category, title) {
     state.libraryItems = cached.items.slice();
     state.libraryTotalCount = cached.totalCount;
     state.libraryHasMore = cached.hasMore;
+    if (typeof cached.allowDownloads === "boolean") state.libraryDownloadsAllowed = cached.allowDownloads;
     state.libraryLoadingMore = false;
     renderLibraryGrid();
+    syncLibraryDownloadControls();
     bindLibraryControls();
     requestAnimationFrame(() => window.scrollTo(0, cached.scrollY || 0));
     return;
   }
 
   const page = await fetchLibraryPage(category, state.query, 0, LIBRARY_BATCH_SIZE, folderId);
+  if (downloadsAllowedForLibrary() && !allowDownloads) {
+    renderLibrary(category, title);
+    return;
+  }
   state.libraryItems = page.items;
   state.libraryTotalCount = page.totalCount;
   state.libraryHasMore = page.hasMore;
   state.libraryLoadingMore = false;
   renderLibraryGrid();
+  syncLibraryDownloadControls();
   bindLibraryControls();
 }
 
@@ -1501,6 +1524,10 @@ async function fetchLibraryPage(category, query, offset, limit, folderId) {
   const response = await api(
     `/api/items?category=${encodeURIComponent(category)}${qStr}${fStr}&offset=${offset}&limit=${limit}`,
   );
+  if (typeof response?.allowDownloads === "boolean") {
+    state.libraryDownloadsAllowed = response.allowDownloads;
+    if (state.bootstrap) state.bootstrap.preventDownload = !response.allowDownloads;
+  }
   return {
     items: Array.isArray(response?.items) ? response.items : [],
     totalCount: Number.isFinite(response?.totalCount) ? response.totalCount : 0,
@@ -1539,6 +1566,7 @@ async function loadMoreLibraryItems() {
   } finally {
     state.libraryLoadingMore = false;
     renderLibraryGrid();
+    syncLibraryDownloadControls();
   }
 }
 
@@ -1574,6 +1602,7 @@ async function loadAllLibraryItems() {
     state.libraryLoadingMore = false;
     state.libraryShowingAll = false;
     renderLibraryGrid();
+    syncLibraryDownloadControls();
   }
 }
 
@@ -1718,7 +1747,7 @@ function renderLibraryGrid() {
 
 function downloadItems(items) {
   if (!items.length) return;
-  if (state.bootstrap?.preventDownload) {
+  if (!downloadsAllowedForLibrary()) {
     alert(gsStr("web_error_downloads_disabled", "Downloads are disabled by the device owner."));
     return;
   }
@@ -1743,7 +1772,7 @@ function downloadItems(items) {
 }
 
 function downloadZip(items, filters = null) {
-  if (state.bootstrap?.preventDownload) {
+  if (!downloadsAllowedForLibrary()) {
     alert(gsStr("web_error_downloads_disabled", "Downloads are disabled by the device owner."));
     return;
   }
@@ -3682,22 +3711,62 @@ async function startLiveMuxedHls(video, applyStatus, applyLiveState, audioText, 
   }
 }
 
-async function startLiveWebRtc(video, applyStatus, applyLiveState, audioText, audioBtn) {
+function promptLivePin(video, applyStatus, applyLiveState, audioText, audioBtn, showError) {
+  const stage = video?.parentElement;
+  if (!stage) return;
+  const overlayId = "liveScreenPinOverlay";
+  const existing = document.getElementById(overlayId);
+  if (existing) existing.remove();
+  const wrapper = document.createElement("div");
+  wrapper.id = overlayId;
+  wrapper.style.cssText = "background:#050816;border-radius:20px;padding:32px 20px;display:flex;justify-content:center;";
+  wrapper.innerHTML = `
+    <form id="liveScreenPinForm" class="gs-login" style="margin:0;max-width:360px;width:100%;">
+      <h1>${gsStr("web_live_pin_entry_title", "Enter live PIN")}</h1>
+      <p class="gs-meta">${gsStr("web_live_pin_entry_desc", "")}</p>
+      <input id="liveScreenPinInput" class="gs-pin" inputmode="numeric" maxlength="6" placeholder="${gsStr("web_pin_entry_placeholder", "Enter PIN")}" autofocus>
+      ${showError ? `<p class="gs-error-text">${gsStr("web_live_pin_entry_invalid", "")}</p>` : ""}
+      <button class="gs-btn gs-btn-accent gs-btn-block" type="submit">${gsStr("web_live_pin_entry_submit", "Start watching")}</button>
+    </form>
+  `;
+  video.style.display = "none";
+  stage.appendChild(wrapper);
+  const form = wrapper.querySelector("#liveScreenPinForm");
+  const input = wrapper.querySelector("#liveScreenPinInput");
+  setTimeout(() => input?.focus(), 0);
+  form?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const pin = input?.value.trim() || "";
+    if (!pin) return;
+    wrapper.remove();
+    video.style.display = "";
+    startLiveWebRtc(video, applyStatus, applyLiveState, audioText, audioBtn, pin);
+  });
+}
+
+async function startLiveWebRtc(video, applyStatus, applyLiveState, audioText, audioBtn, pinOverride) {
   applyStatus(gsStr("web_live_status_connecting", ""));
   if (state.liveDisconnectPromise) {
     await state.liveDisconnectPromise;
   }
+  const pin = pinOverride !== undefined ? pinOverride : (state.livePin || null);
   const session = await api("/api/live/webrtc/session", {
     method: "POST",
-    body: JSON.stringify({ pin: null }),
+    body: JSON.stringify({ pin }),
   });
 
   if (!session.accepted || !session.viewerId) {
     if (session.status === "BUSY") applyStatus(gsStr("web_live_busy", ""));
-    else if (session.status === "PIN_REQUIRED") applyStatus(gsStr("web_live_pin_required", ""));
+    else if (session.status === "PIN_REQUIRED") {
+      applyStatus(gsStr("web_live_pin_required", ""));
+      const wrongPin = pin != null && pin !== "";
+      if (wrongPin) state.livePin = null;
+      promptLivePin(video, applyStatus, applyLiveState, audioText, audioBtn, wrongPin);
+    }
     else applyStatus(gsStr("web_live_stream_ended", ""));
     return;
   }
+  state.livePin = pin || null;
 
   const viewerId = session.viewerId;
   state.liveViewerId = viewerId;
@@ -4155,11 +4224,14 @@ function mountQuickText(initialPayload) {
   if (!input || !target || !historyEl || !sendBtn || !clearBtn) return;
 
   const renderPayload = (payload) => {
-    const devices = payload.devices || [];
+    const previousTarget = target.value;
+    const devices = (payload.devices || []).filter((device) => !device.isCurrentDevice);
     target.innerHTML = devices
-      .filter((device) => !device.isHostPhone)
       .map((device) => `<option value="${esc(device.id)}">${esc(device.name)}</option>`)
       .join("") + `<option value="__broadcast__">${esc(gsStr("web_quick_text_broadcast", ""))}</option>`;
+    if (previousTarget && Array.from(target.options).some((option) => option.value === previousTarget)) {
+      target.value = previousTarget;
+    }
 
     const messages = payload.messages || [];
     historyEl.innerHTML = messages.length === 0

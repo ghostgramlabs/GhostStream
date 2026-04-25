@@ -131,6 +131,19 @@ fun LiveScreenControlScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
+                    state.pin?.takeIf { it.isNotBlank() }?.let { pin ->
+                        Text(
+                            text = stringResource(R.string.live_screen_pin_label, pin),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                        Text(
+                            text = stringResource(R.string.live_screen_pin_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     state.displayUrl?.let {
                         Text(it, style = MaterialTheme.typography.bodyMedium)
                     }

@@ -480,6 +480,10 @@ class KtorGhostStreamServer(
                             "web_live_unsupported" to localizedContext.getString(R.string.web_live_unsupported),
                             "web_live_busy" to localizedContext.getString(R.string.web_live_busy),
                             "web_live_pin_required" to localizedContext.getString(R.string.web_live_pin_required),
+                            "web_live_pin_entry_title" to localizedContext.getString(R.string.web_live_pin_entry_title),
+                            "web_live_pin_entry_desc" to localizedContext.getString(R.string.web_live_pin_entry_desc),
+                            "web_live_pin_entry_submit" to localizedContext.getString(R.string.web_live_pin_entry_submit),
+                            "web_live_pin_entry_invalid" to localizedContext.getString(R.string.web_live_pin_entry_invalid),
                             "web_quick_text_title" to localizedContext.getString(R.string.quick_text_title),
                             "web_quick_text_placeholder" to localizedContext.getString(R.string.quick_text_placeholder),
                             "web_quick_text_send" to localizedContext.getString(R.string.quick_text_send),
@@ -642,6 +646,7 @@ class KtorGhostStreamServer(
                             offset = safeOffset,
                             limit = limit ?: DEFAULT_BROWSER_ITEMS_PAGE_SIZE,
                             hasMore = safeOffset + cards.size < items.size,
+                            allowDownloads = allowDownloads,
                         ),
                     )
                 } else {
@@ -1951,11 +1956,23 @@ class KtorGhostStreamServer(
                 ),
             )
             session.connectedClients
+                .filter { client -> client.ipAddress.isNotBlank() }
+                .filterNot { client ->
+                    client.ipAddress == session.networkAvailability.localAddress ||
+                        client.ipAddress == "127.0.0.1" ||
+                        client.ipAddress == "::1"
+                }
+                .distinctBy { it.ipAddress }
+                .sortedWith(
+                    compareByDescending<ConnectedClient> { it.lastSeenEpochMs }
+                        .thenBy { displayDeviceName(it.ipAddress, settings.deviceNicknames).lowercase() },
+                )
                 .map { client ->
                     QuickTextDevice(
                         id = client.ipAddress,
                         name = displayDeviceName(client.ipAddress, settings.deviceNicknames),
                         ipAddress = client.ipAddress,
+                        isCurrentDevice = client.ipAddress == requesterIp,
                     )
                 }
                 .plus(
@@ -1963,6 +1980,7 @@ class KtorGhostStreamServer(
                         id = requesterIp,
                         name = displayDeviceName(requesterIp, settings.deviceNicknames),
                         ipAddress = requesterIp,
+                        isCurrentDevice = true,
                     ),
                 )
                 .distinctBy { it.id }
@@ -3304,6 +3322,7 @@ class KtorGhostStreamServer(
         val offset: Int,
         val limit: Int,
         val hasMore: Boolean,
+        val allowDownloads: Boolean,
     )
 
     @Serializable
