@@ -1,9 +1,11 @@
 package com.ghostgramlabs.directserve
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -769,6 +771,21 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onOpenHelp = { navController.navigate(Routes.Help) },
                     onOpenPrivacyPolicy = { navController.navigate(Routes.PrivacyPolicy) },
                     onViewOnboarding = { navController.navigate(Routes.OnboardingPreview) },
+                    onRateApp = {
+                        val pkg = context.packageName.removeSuffix(".debug")
+                        val marketIntent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$pkg")).apply {
+                            setPackage("com.android.vending")
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        }
+                        try {
+                            context.startActivity(marketIntent)
+                        } catch (_: ActivityNotFoundException) {
+                            context.startActivity(
+                                Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$pkg"))
+                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                            )
+                        }
+                    },
                     showDebugTools = BuildConfig.DEBUG,
                     debugLogLocation = viewModel.debugLogLocationDescription(),
                     onShareDebugLog = viewModel::shareDebugLog,

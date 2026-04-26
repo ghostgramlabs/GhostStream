@@ -83,6 +83,7 @@ fun SettingsScreen(
     onOpenHelp: () -> Unit,
     onOpenPrivacyPolicy: () -> Unit,
     onViewOnboarding: () -> Unit,
+    onRateApp: () -> Unit,
     showDebugTools: Boolean = false,
     debugLogLocation: String = "",
     onShareDebugLog: () -> Unit = {},
@@ -239,6 +240,7 @@ fun SettingsScreen(
                 SettingsChoiceRow(stringResource(R.string.settings_view_onboarding), stringResource(R.string.settings_view_onboarding_desc), onViewOnboarding)
                 SettingsChoiceRow(stringResource(R.string.settings_how_it_works), stringResource(R.string.settings_how_it_works_desc), onOpenHelp)
                 SettingsChoiceRow(stringResource(R.string.settings_privacy_policy), stringResource(R.string.settings_privacy_policy_desc), onOpenPrivacyPolicy)
+                SettingsChoiceRow(stringResource(R.string.settings_rate_app), stringResource(R.string.settings_rate_app_desc), onRateApp)
                 SettingsChoiceRow(stringResource(R.string.settings_app_version), appVersionLabel, onClick = {})
                 Text(
                     text = stringResource(R.string.settings_recent_shares_count, recentSessions.size),

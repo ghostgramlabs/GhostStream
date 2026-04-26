@@ -108,6 +108,9 @@
     <string name="settings_view_onboarding_desc">See the welcome steps again.</string>
     <string name="settings_privacy_policy">Privacy Policy</string>
     <string name="settings_privacy_policy_desc">Read the local-only privacy basics and controls.</string>
+    <string name="settings_rate_app">Rate DirectServe</string>
+    <string name="settings_rate_app_desc">Open the Play Store to leave a rating or review.</string>
+    <string name="rate_app_unavailable">Could not open the Play Store.</string>
     <string name="settings_privacy_promise">Privacy promise</string>
     <string name="settings_privacy_promise_desc">Your files stay on this phone.</string>
     <string name="settings_how_it_works">Help and features</string>
