@@ -397,7 +397,7 @@
     <string name="library_compat_preparing">Đang xử lý...</string>
     <string name="library_compat_ready">Xong</string>
     <string name="library_compat_unavailable">Không hỗ trợ</string>
-    <string name="library_compat_message">%1$s | %2$s</string>
+    <string name="library_compat_message">%1$s| %2$s</string>
     <string name="selection_add_files_title">Chọn</string>
     <string name="selection_add_files_body">Chia sẻ gì?</string>
     <string name="selection_add_selected">Thêm</string>
@@ -731,15 +731,15 @@
     <string name="common_unit_s">S</string>
     <string name="common_unit_m">p</string>
     <string name="common_unit_h">g</string>
-    <string name="common_byte_format_decimal">%1$.1f %2$s</string>
-    <string name="common_byte_format_integer">%1$d %2$s</string>
+    <string name="common_byte_format_decimal">%1$.1f%2$s</string>
+    <string name="common_byte_format_integer">%1$d%2$s</string>
     <string name="common_duration_format_m_s">%1$dp %2$ds</string>
     <string name="common_duration_format_h_m">%1$dg %2$dp</string>
     <string name="common_duration_format_s">%1$ds</string>
     <string name="common_duration_timestamp_m_s">%1$d:%2$02d</string>
     <string name="common_duration_timestamp_h_m_s">%1$d:%2$02d:%3$02d</string>
-    <string name="service_file_index_pattern">%1$s (%2$d/%3$d)</string>
-    <string name="service_upload_progress_subtext_pattern">%1$s / %2$s</string>
+    <string name="service_file_index_pattern">%1$s(%2$d/%3$d)</string>
+    <string name="service_upload_progress_subtext_pattern">%1$s/%2$s</string>
     <string name="help_section_media_server">Máy chủ</string>
     <string name="help_line_media_server_1">Hub.</string>
     <string name="help_line_media_server_2">Gọn gàng.</string>
@@ -888,6 +888,8 @@
     <string name="web_error_missing_offset">Thiếu tham số offsetMs.</string>
     <string name="web_error_apple_hls_only">Thiết bị Apple phải dùng HLS để phát các bản đã chuẩn bị.</string>
     <string name="web_error_direct_not_ready">Phát trực tiếp không khả dụng cho đến khi quá trình chuyển đổi hoàn tất. Vui lòng dùng HLS.</string>
+    <string name="web_send_floating_title">Gửi tới thiết bị</string>
+    <string name="web_send_floating_subtitle">Tải ảnh, video và tập tin lên</string>
     <string name="pipeline_label_transcoding">Đang chuyển mã</string>
     <string name="pipeline_label_repackaging">Đang đóng gói lại</string>
     <string name="pipeline_reason_no_tracks">Nguồn không có luồng âm thanh hoặc video hợp lệ</string>

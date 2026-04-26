@@ -397,7 +397,7 @@
     <string name="library_compat_preparing">İşleniyor...</string>
     <string name="library_compat_ready">Tamam</string>
     <string name="library_compat_unavailable">Desteklenmiyor</string>
-    <string name="library_compat_message">%1$s | %2$s</string>
+    <string name="library_compat_message">%1$s| %2$s</string>
     <string name="selection_add_files_title">Seçim</string>
     <string name="selection_add_files_body">Ne paylaşılacak?</string>
     <string name="selection_add_selected">Ekle</string>
@@ -731,15 +731,15 @@
     <string name="common_unit_s">S</string>
     <string name="common_unit_m">d</string>
     <string name="common_unit_h">s</string>
-    <string name="common_byte_format_decimal">%1$.1f %2$s</string>
-    <string name="common_byte_format_integer">%1$d %2$s</string>
+    <string name="common_byte_format_decimal">%1$.1f%2$s</string>
+    <string name="common_byte_format_integer">%1$d%2$s</string>
     <string name="common_duration_format_m_s">%1$dd %2$ds</string>
     <string name="common_duration_format_h_m">%1$ds %2$dd</string>
     <string name="common_duration_format_s">%1$ds</string>
     <string name="common_duration_timestamp_m_s">%1$d:%2$02d</string>
     <string name="common_duration_timestamp_h_m_s">%1$d:%2$02d:%3$02d</string>
-    <string name="service_file_index_pattern">%1$s (%2$d/%3$d)</string>
-    <string name="service_upload_progress_subtext_pattern">%1$s / %2$s</string>
+    <string name="service_file_index_pattern">%1$s(%2$d/%3$d)</string>
+    <string name="service_upload_progress_subtext_pattern">%1$s/%2$s</string>
     <string name="help_section_media_server">Medya Sunucusu</string>
     <string name="help_line_media_server_1">Sunucu.</string>
     <string name="help_line_media_server_2">Düzenli.</string>
@@ -798,7 +798,7 @@
     <string name="live_screen_audio_unavailable">Ses kullanılamıyor</string>
     <string name="live_screen_audio_blocked_or_silent">Ses engellendi veya sessiz</string>
     <string name="live_screen_qr_content_desc">Canlı ekran QR kodu</string>
-    <string name="live_screen_stats">%1$dx%2$d | %3$d fps | %4$d kbps</string>
+    <string name="live_screen_stats">%1$dx%2$d| %3$dfps | %4$dkb/sn</string>
     <string name="live_screen_permission_denied">Ekran yakalama izni verilmedi.</string>
     <string name="live_screen_failed">Canlı ekran başlatılamadı.</string>
     <string name="live_screen_ended">Canlı ekran sona erdi.</string>
@@ -888,6 +888,8 @@
     <string name="web_error_missing_offset">offsetMs parametresi eksik.</string>
     <string name="web_error_apple_hls_only">Apple istemcileri hazırlanan oynatım için HLS kullanmalıdır.</string>
     <string name="web_error_direct_not_ready">Dönüştürme kesinleşene kadar doğrudan oynatım kullanılamaz. Lütfen HLS kullanın.</string>
+    <string name="web_send_floating_title">Cihaza gönder</string>
+    <string name="web_send_floating_subtitle">Fotoğraf, video ve dosya yükleyin</string>
     <string name="pipeline_label_transcoding">Transkodlama</string>
     <string name="pipeline_label_repackaging">Yeniden Paketleme</string>
     <string name="pipeline_reason_no_tracks">Kaynakta okunabilir ses veya video parçası yok</string>

@@ -397,7 +397,7 @@
     <string name="library_compat_preparing">処理中...</string>
     <string name="library_compat_ready">完了</string>
     <string name="library_compat_unavailable">非対応</string>
-    <string name="library_compat_message">%1$s | %2$s</string>
+    <string name="library_compat_message">%1$s| %2$s</string>
     <string name="selection_add_files_title">選択</string>
     <string name="selection_add_files_body">何を共有しますか？</string>
     <string name="selection_add_selected">追加</string>
@@ -731,15 +731,15 @@
     <string name="common_unit_s">秒</string>
     <string name="common_unit_m">分</string>
     <string name="common_unit_h">時</string>
-    <string name="common_byte_format_decimal">%1$.1f %2$s</string>
-    <string name="common_byte_format_integer">%1$d %2$s</string>
+    <string name="common_byte_format_decimal">%1$.1f%2$s</string>
+    <string name="common_byte_format_integer">%1$d%2$s</string>
     <string name="common_duration_format_m_s">%1$d分 %2$d秒</string>
     <string name="common_duration_format_h_m">%1$d時 %2$d分</string>
     <string name="common_duration_format_s">%1$d秒</string>
     <string name="common_duration_timestamp_m_s">%1$d:%2$02d</string>
     <string name="common_duration_timestamp_h_m_s">%1$d:%2$02d:%3$02d</string>
-    <string name="service_file_index_pattern">%1$s (%2$d/%3$d)</string>
-    <string name="service_upload_progress_subtext_pattern">%1$s / %2$s</string>
+    <string name="service_file_index_pattern">%1$s(%2$d/%3$d)</string>
+    <string name="service_upload_progress_subtext_pattern">%1$s/%2$s</string>
     <string name="help_section_media_server">サーバー</string>
     <string name="help_line_media_server_1">ハブ。</string>
     <string name="help_line_media_server_2">整理。</string>
@@ -798,7 +798,7 @@
     <string name="live_screen_audio_unavailable">オーディオ利用不可</string>
     <string name="live_screen_audio_blocked_or_silent">オーディオがブロックされているかミュートされています</string>
     <string name="live_screen_qr_content_desc">ライブスクリーンQRコード</string>
-    <string name="live_screen_stats">%1$dx%2$d | %3$d fps | %4$d kbps</string>
+    <string name="live_screen_stats">%1$dx%2$d| %3$dfps | %4$dkbps</string>
     <string name="live_screen_permission_denied">画面キャプチャの権限が許可されませんでした。</string>
     <string name="live_screen_failed">ライブスクリーンを開始できませんでした。</string>
     <string name="live_screen_ended">ライブスクリーンが終了しました。</string>
@@ -888,6 +888,8 @@
     <string name="web_error_missing_offset">offsetMsパラメータがありません。</string>
     <string name="web_error_apple_hls_only">Appleクライアントは準備された再生にHLSを使用する必要があります。</string>
     <string name="web_error_direct_not_ready">変換が完了するまでダイレクト再生は利用できません。HLSを使用してください。</string>
+    <string name="web_send_floating_title">デバイスに送信</string>
+    <string name="web_send_floating_subtitle">写真、ビデオ、ファイルをアップロードする</string>
     <string name="pipeline_label_transcoding">トランスコード</string>
     <string name="pipeline_label_repackaging">再パッケージ化</string>
     <string name="pipeline_reason_no_tracks">ソースに読み取り可能なオーディオまたは動画トラックがありません</string>

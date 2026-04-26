@@ -397,7 +397,7 @@
     <string name="library_compat_preparing">Подготовка</string>
     <string name="library_compat_ready">Готово</string>
     <string name="library_compat_unavailable">Не поддерживается</string>
-    <string name="library_compat_message">%1$s | %2$s</string>
+    <string name="library_compat_message">%1$s| %2$s</string>
     <string name="selection_add_files_title">Выбрать файлы</string>
     <string name="selection_add_files_body">Выберите, чем хотите поделиться.</string>
     <string name="selection_add_selected">Добавить</string>
@@ -731,15 +731,15 @@
     <string name="common_unit_s">с</string>
     <string name="common_unit_m">м</string>
     <string name="common_unit_h">ч</string>
-    <string name="common_byte_format_decimal">%1$.1f %2$s</string>
-    <string name="common_byte_format_integer">%1$d %2$s</string>
+    <string name="common_byte_format_decimal">%1$.1f%2$s</string>
+    <string name="common_byte_format_integer">%1$d%2$s</string>
     <string name="common_duration_format_m_s">%1$dм %2$dс</string>
     <string name="common_duration_format_h_m">%1$dч %2$dм</string>
     <string name="common_duration_format_s">%1$dс</string>
     <string name="common_duration_timestamp_m_s">%1$d:%2$02d</string>
     <string name="common_duration_timestamp_h_m_s">%1$d:%2$02d:%3$02d</string>
-    <string name="service_file_index_pattern">%1$s (%2$d/%3$d)</string>
-    <string name="service_upload_progress_subtext_pattern">%1$s / %2$s</string>
+    <string name="service_file_index_pattern">%1$s(%2$d/%3$d)</string>
+    <string name="service_upload_progress_subtext_pattern">%1$s/%2$s</string>
     <string name="help_section_media_server">Медиасервер</string>
     <string name="help_line_media_server_1">Ваш телефон как сервер.</string>
     <string name="help_line_media_server_2">Самоорганизующийся.</string>
@@ -888,6 +888,8 @@
     <string name="web_error_missing_offset">Отсутствует параметр offsetMs.</string>
     <string name="web_error_apple_hls_only">Клиенты Apple должны использовать HLS для подготовленного воспроизведения.</string>
     <string name="web_error_direct_not_ready">Прямое воспроизведение недоступно до завершения конвертации. Используйте HLS.</string>
+    <string name="web_send_floating_title">Отправить на устройство</string>
+    <string name="web_send_floating_subtitle">Загружайте фотографии, видео и файлы</string>
     <string name="pipeline_label_transcoding">Транскодирование</string>
     <string name="pipeline_label_repackaging">Перепаковка</string>
     <string name="pipeline_reason_no_tracks">Источник не содержит читаемых аудио- или видеодорожек</string>

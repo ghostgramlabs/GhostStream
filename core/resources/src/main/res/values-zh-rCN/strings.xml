@@ -397,7 +397,7 @@
     <string name="library_compat_preparing">处理中...</string>
     <string name="library_compat_ready">完成</string>
     <string name="library_compat_unavailable">不支持</string>
-    <string name="library_compat_message">%1$s | %2$s</string>
+    <string name="library_compat_message">%1$s| %2$s</string>
     <string name="selection_add_files_title">选择</string>
     <string name="selection_add_files_body">分享什么？</string>
     <string name="selection_add_selected">添加</string>
@@ -731,15 +731,15 @@
     <string name="common_unit_s">秒</string>
     <string name="common_unit_m">分</string>
     <string name="common_unit_h">时</string>
-    <string name="common_byte_format_decimal">%1$.1f %2$s</string>
-    <string name="common_byte_format_integer">%1$d %2$s</string>
+    <string name="common_byte_format_decimal">%1$.1f%2$s</string>
+    <string name="common_byte_format_integer">%1$d%2$s</string>
     <string name="common_duration_format_m_s">%1$d分 %2$d秒</string>
     <string name="common_duration_format_h_m">%1$d时 %2$d分</string>
     <string name="common_duration_format_s">%1$d秒</string>
     <string name="common_duration_timestamp_m_s">%1$d:%2$02d</string>
     <string name="common_duration_timestamp_h_m_s">%1$d:%2$02d:%3$02d</string>
     <string name="service_file_index_pattern">%1$s（%2$d/%3$d）</string>
-    <string name="service_upload_progress_subtext_pattern">%1$s / %2$s</string>
+    <string name="service_upload_progress_subtext_pattern">%1$s/%2$s</string>
     <string name="help_section_media_server">服务器</string>
     <string name="help_line_media_server_1">中心。</string>
     <string name="help_line_media_server_2">整洁。</string>
@@ -757,7 +757,7 @@
     <string name="settings_dlna">DLNA 电视</string>
     <string name="settings_dlna_desc">电视/VLC。</string>
     <string name="dlna_server_name">DirectServe</string>
-    <string name="dlna_server_name_template">DirectServe (%1$s)</string>
+    <string name="dlna_server_name_template">直接服务（%1$s）</string>
     <string name="web_action_download_zip">ZIP</string>
     <string name="web_btn_download_all_zip">全部打包</string>
     <string name="web_btn_download_selected_zip">打包下载</string>
@@ -798,7 +798,7 @@
     <string name="live_screen_audio_unavailable">音频不可用</string>
     <string name="live_screen_audio_blocked_or_silent">音频被阻止或静音</string>
     <string name="live_screen_qr_content_desc">实时屏幕二维码</string>
-    <string name="live_screen_stats">%1$dx%2$d | %3$d fps | %4$d kbps</string>
+    <string name="live_screen_stats">%1$dx%2$d| %3$d每秒帧数 | %4$dkbps</string>
     <string name="live_screen_permission_denied">未授予屏幕截图权限。</string>
     <string name="live_screen_failed">无法启动实时屏幕。</string>
     <string name="live_screen_ended">实时屏幕已结束。</string>
@@ -888,6 +888,8 @@
     <string name="web_error_missing_offset">缺少 offsetMs 参数。</string>
     <string name="web_error_apple_hls_only">Apple 客户端必须使用 HLS 进行准备好的播放。</string>
     <string name="web_error_direct_not_ready">在转换完成前，直接播放不可用。请使用 HLS。</string>
+    <string name="web_send_floating_title">发送至设备</string>
+    <string name="web_send_floating_subtitle">上传照片、视频和文件</string>
     <string name="pipeline_label_transcoding">转码</string>
     <string name="pipeline_label_repackaging">重新封装</string>
     <string name="pipeline_reason_no_tracks">源没有可读取的音频或视频轨道</string>

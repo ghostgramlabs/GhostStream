@@ -397,7 +397,7 @@
     <string name="library_compat_preparing">Memproses...</string>
     <string name="library_compat_ready">Siap</string>
     <string name="library_compat_unavailable">Tidak didukung</string>
-    <string name="library_compat_message">%1$s | %2$s</string>
+    <string name="library_compat_message">%1$s| %2$s</string>
     <string name="selection_add_files_title">Pilih</string>
     <string name="selection_add_files_body">Apa yang dibagikan?</string>
     <string name="selection_add_selected">Tambah</string>
@@ -731,15 +731,15 @@
     <string name="common_unit_s">d</string>
     <string name="common_unit_m">M</string>
     <string name="common_unit_h">j</string>
-    <string name="common_byte_format_decimal">%1$.1f %2$s</string>
-    <string name="common_byte_format_integer">%1$d %2$s</string>
+    <string name="common_byte_format_decimal">%1$.1f%2$s</string>
+    <string name="common_byte_format_integer">%1$d%2$s</string>
     <string name="common_duration_format_m_s">%1$dm %2$dd</string>
     <string name="common_duration_format_h_m">%1$dj %2$dm</string>
     <string name="common_duration_format_s">%1$dd</string>
     <string name="common_duration_timestamp_m_s">%1$d:%2$02d</string>
     <string name="common_duration_timestamp_h_m_s">%1$d:%2$02d:%3$02d</string>
-    <string name="service_file_index_pattern">%1$s (%2$d/%3$d)</string>
-    <string name="service_upload_progress_subtext_pattern">%1$s / %2$s</string>
+    <string name="service_file_index_pattern">%1$s(%2$d/%3$d)</string>
+    <string name="service_upload_progress_subtext_pattern">%1$s/%2$s</string>
     <string name="help_section_media_server">Server</string>
     <string name="help_line_media_server_1">Hub.</string>
     <string name="help_line_media_server_2">Diatur.</string>
@@ -888,6 +888,8 @@
     <string name="web_error_missing_offset">Parameter offsetMs hilang.</string>
     <string name="web_error_apple_hls_only">Klien Apple harus menggunakan HLS untuk pemutaran yang disiapkan.</string>
     <string name="web_error_direct_not_ready">Pemutaran langsung tidak tersedia hingga konversi difinalisasi. Harap gunakan HLS.</string>
+    <string name="web_send_floating_title">Kirim ke perangkat</string>
+    <string name="web_send_floating_subtitle">Unggah foto, video, dan file</string>
     <string name="pipeline_label_transcoding">Transkode</string>
     <string name="pipeline_label_repackaging">Pengemasan Ulang</string>
     <string name="pipeline_reason_no_tracks">Sumber tidak memiliki trek audio atau video yang dapat dibaca</string>

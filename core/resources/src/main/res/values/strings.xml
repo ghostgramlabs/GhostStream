@@ -639,6 +639,9 @@
     <string name="library_date_group_label">%1$s </string>
     <string name="web_upload_title">Send</string>
     <string name="web_upload_subtitle">Send files to this device over the local network.</string>
+    <string name="web_send_floating_title">Send to device</string>
+    <string name="web_send_floating_subtitle">Upload photos, videos, and files</string>
+
     <string name="web_upload_prompt_title">Drop media here or choose files</string>
     <string name="web_upload_prompt_desktop">Drag and drop here, or choose files below.</string>
     <string name="web_upload_prompt_mobile">Choose files from your device to send them here.</string>
@@ -921,6 +924,7 @@
     <string name="web_error_direct_not_ready">Direct playback is unavailable until conversion is finalized. Please use HLS.</string>
 
     <string name="pipeline_label_transcoding">Transcoding</string>
+
     <string name="pipeline_label_repackaging">Repackaging</string>
     <string name="pipeline_reason_no_tracks">Source has no readable audio or video tracks</string>
     <string name="pipeline_reason_video_incompatible">Video codec %1$s cannot be copied into browser-ready MP4 output</string>
