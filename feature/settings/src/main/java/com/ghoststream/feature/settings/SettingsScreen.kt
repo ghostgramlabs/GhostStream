@@ -69,11 +69,9 @@ fun SettingsScreen(
     onTogglePreventDownload: (Boolean) -> Unit,
     onToggleRequireUploadApproval: (Boolean) -> Unit,
     onToggleNotifyOnDeviceConnect: (Boolean) -> Unit,
-    onToggleNotifyOnFileDownload: (Boolean) -> Unit,
     onToggleNotifyOnUploadRequest: (Boolean) -> Unit,
     onToggleNotifyOnQuickText: (Boolean) -> Unit,
     onToggleQuickTextEnabled: (Boolean) -> Unit,
-    onToggleRequireDeviceApproval: (Boolean) -> Unit,
     onAutoStopSelected: (AutoStopOption) -> Unit,
     onPreferredPortChanged: (String) -> Unit,
     onManualPinChanged: (String) -> Unit,
@@ -185,7 +183,6 @@ fun SettingsScreen(
         item {
             SettingsGroup(title = stringResource(R.string.settings_group_notifications)) {
                 SettingsToggleRow(stringResource(R.string.settings_connection_alerts), stringResource(R.string.settings_connection_alerts_desc), settings.notifyOnDeviceConnect, onToggleNotifyOnDeviceConnect)
-                SettingsToggleRow(stringResource(R.string.settings_download_alerts), stringResource(R.string.settings_download_alerts_desc), settings.notifyOnFileDownload, onToggleNotifyOnFileDownload)
                 SettingsToggleRow(stringResource(R.string.settings_upload_requests), stringResource(R.string.settings_upload_requests_desc), settings.notifyOnUploadRequest, onToggleNotifyOnUploadRequest)
                 SettingsToggleRow(stringResource(R.string.settings_quick_text_enabled), stringResource(R.string.settings_quick_text_enabled_desc), settings.quickTextEnabled, onToggleQuickTextEnabled)
                 if (settings.quickTextEnabled) {
@@ -204,7 +201,6 @@ fun SettingsScreen(
                     }
                 }
                 SettingsToggleRow(stringResource(R.string.settings_approve_file_uploads), stringResource(R.string.settings_approve_file_uploads_desc), settings.requireUploadApproval, onToggleRequireUploadApproval)
-                SettingsToggleRow(stringResource(R.string.settings_approve_per_device), stringResource(R.string.settings_approve_per_device_desc), settings.requireDeviceApproval, onToggleRequireDeviceApproval)
                 SettingsChoiceRow(
                     stringResource(R.string.settings_received_files_location),
                     stringResource(R.string.settings_received_files_location_value),
