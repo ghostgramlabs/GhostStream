@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">누군가 파일을 다운로드하면 알림을 보냅니다.</string>
     <string name="settings_upload_requests">업로드 요청</string>
     <string name="settings_upload_requests_desc">누군가 파일 업로드를 요청하면 알림을 보냅니다.</string>
+    <string name="settings_quick_text_enabled">Quick text</string>
+    <string name="settings_quick_text_enabled_desc">Allow phones and browsers to share quick text messages and links.</string>
     <string name="settings_quick_text_alerts">퀵 텍스트 알림</string>
     <string name="settings_quick_text_alerts_desc">브라우저에서 퀵 텍스트 메시지를 보낼 때 알림을 받습니다.</string>
     <string name="settings_use_pin">PIN 코드 사용</string>
@@ -842,6 +844,8 @@
     <string name="quick_text_sent">텍스트가 공유되었습니다.</string>
     <string name="quick_text_blocked_by_live_screen">퀵 텍스트를 사용하기 전에 라이브 스크린을 중지하세요.</string>
     <string name="web_quick_text_delete_forbidden">본인이 보낸 메시지만 삭제할 수 있습니다.</string>
+    <string name="web_quick_text_disabled">Quick text is disabled by the device owner.</string>
+    <string name="web_quick_text_notify_title">New message from %s</string>
     <string name="web_live_title">라이브 스크린</string>
     <string name="web_live_waiting">스트림 대기 중</string>
     <string name="web_live_status_live">라이브</string>

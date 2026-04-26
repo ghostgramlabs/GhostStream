@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">Meddela dig när någon laddar ner en fil.</string>
     <string name="settings_upload_requests">Uppladdningsförfrågningar</string>
     <string name="settings_upload_requests_desc">Meddela dig när någon begär att få ladda upp en fil.</string>
+    <string name="settings_quick_text_enabled">Snabbtext</string>
+    <string name="settings_quick_text_enabled_desc">Tillåt telefoner och webbläsare att dela snabbtextmeddelanden och länkar.</string>
     <string name="settings_quick_text_alerts">Aviseringar för snabbtext</string>
     <string name="settings_quick_text_alerts_desc">Avisera när en webbläsare skickar ett snabbtextmeddelande.</string>
     <string name="settings_use_pin">Använd PIN-kod</string>
@@ -842,6 +844,8 @@
     <string name="quick_text_sent">Text delad.</string>
     <string name="quick_text_blocked_by_live_screen">Stoppa Liveskärm innan du använder Snabbtext.</string>
     <string name="web_quick_text_delete_forbidden">Du kan bara ta bort meddelanden som du har skickat.</string>
+    <string name="web_quick_text_disabled">Snabbtext är inaktiverat av enhetens ägare.</string>
+    <string name="web_quick_text_notify_title">Nytt meddelande från %s</string>
     <string name="web_live_title">Liveskärm</string>
     <string name="web_live_waiting">Väntar på ström</string>
     <string name="web_live_status_live">Live</string>

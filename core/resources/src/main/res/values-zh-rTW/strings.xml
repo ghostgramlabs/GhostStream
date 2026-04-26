@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">當有人下載文件時通知您。</string>
     <string name="settings_upload_requests">上傳請求</string>
     <string name="settings_upload_requests_desc">當有人請求上傳文件時通知您。</string>
+    <string name="settings_quick_text_enabled">快速文字</string>
+    <string name="settings_quick_text_enabled_desc">允許手機和瀏覽器共享快速文字訊息和連結。</string>
     <string name="settings_quick_text_alerts">快速文字提醒</string>
     <string name="settings_quick_text_alerts_desc">當瀏覽器發送快速文字訊息時通知。</string>
     <string name="settings_use_pin">使用 PIN 碼</string>
@@ -842,6 +844,8 @@
     <string name="quick_text_sent">文字已分享。</string>
     <string name="quick_text_blocked_by_live_screen">在使用快捷文字之前，請先停止即時螢幕。</string>
     <string name="web_quick_text_delete_forbidden">您只能刪除自己發送的訊息。</string>
+    <string name="web_quick_text_disabled">設備所有者已禁用快速文字。</string>
+    <string name="web_quick_text_notify_title">來自 %s 的新訊息</string>
     <string name="web_live_title">即時螢幕</string>
     <string name="web_live_waiting">等待串流</string>
     <string name="web_live_status_live">直播中</string>

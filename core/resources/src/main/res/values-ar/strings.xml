@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">تنبيهك عندما يقوم شخص ما بتحميل ملف.</string>
     <string name="settings_upload_requests">طلبات الرفع</string>
     <string name="settings_upload_requests_desc">تنبيهك عندما يطلب شخص ما رفع ملف.</string>
+    <string name="settings_quick_text_enabled">النص السريع</string>
+    <string name="settings_quick_text_enabled_desc">السماح للهواتف والمتصفحات بمشاركة رسائل النص السريع والروابط.</string>
     <string name="settings_quick_text_alerts">تنبيهات النص السريع</string>
     <string name="settings_quick_text_alerts_desc">التنبيه عند إرسال متصفح لرسالة نصية سريعة.</string>
     <string name="settings_use_pin">استخدام رمز PIN</string>
@@ -842,6 +844,8 @@
     <string name="quick_text_sent">تمت مشاركة النص.</string>
     <string name="quick_text_blocked_by_live_screen">أوقف البث المباشر للشاشة قبل استخدام النص السريع.</string>
     <string name="web_quick_text_delete_forbidden">يمكنك فقط حذف الرسائل التي أرسلتها.</string>
+    <string name="web_quick_text_disabled">تم تعطيل النص السريع من قبل مالك الجهاز.</string>
+    <string name="web_quick_text_notify_title">رسالة جديدة من %s</string>
     <string name="web_live_title">البث المباشر للشاشة</string>
     <string name="web_live_waiting">في انتظار البث</string>
     <string name="web_live_status_live">مباشر</string>

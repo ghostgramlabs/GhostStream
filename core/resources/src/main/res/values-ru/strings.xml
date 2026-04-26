@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">Уведомлять, когда кто-то скачивает файл.</string>
     <string name="settings_upload_requests">Запросы на отправку</string>
     <string name="settings_upload_requests_desc">Уведомлять, когда кто-то хочет отправить файл.</string>
+    <string name="settings_quick_text_enabled">Быстрый текст</string>
+    <string name="settings_quick_text_enabled_desc">Разрешить телефонам и браузерам обмениваться быстрыми текстовыми сообщениями и ссылками.</string>
     <string name="settings_quick_text_alerts">Оповещения быстрого текста</string>
     <string name="settings_quick_text_alerts_desc">Уведомлять, когда браузер отправляет быстрое текстовое сообщение.</string>
     <string name="settings_use_pin">Использовать PIN-код</string>
@@ -842,6 +844,8 @@
     <string name="quick_text_sent">Текст отправлен.</string>
     <string name="quick_text_blocked_by_live_screen">Остановите прямой эфир экрана перед использованием быстрого текста.</string>
     <string name="web_quick_text_delete_forbidden">Вы можете удалять только те сообщения, которые отправили вы.</string>
+    <string name="web_quick_text_disabled">Быстрый текст отключен владельцем устройства.</string>
+    <string name="web_quick_text_notify_title">Новое сообщение от %s</string>
     <string name="web_live_title">Прямой эфир экрана</string>
     <string name="web_live_waiting">Ожидание потока</string>
     <string name="web_live_status_live">В эфире</string>

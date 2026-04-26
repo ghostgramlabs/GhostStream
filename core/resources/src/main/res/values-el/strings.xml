@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">Ειδοποίηση όταν κάποιος κατεβάζει ένα αρχείο.</string>
     <string name="settings_upload_requests">Αιτήματα μεταφόρτωσης</string>
     <string name="settings_upload_requests_desc">Ειδοποίηση όταν κάποιος ζητά να μεταφορτώσει.</string>
+    <string name="settings_quick_text_enabled">Γρήγορο κείμενο</string>
+    <string name="settings_quick_text_enabled_desc">Να επιτρέπεται σε τηλέφωνα και προγράμματα περιήγησης να μοιράζονται μηνύματα γρήγορου κειμένου και συνδέσμους.</string>
     <string name="settings_quick_text_alerts">Ειδοποιήσεις γρήγορου κειμένου</string>
     <string name="settings_quick_text_alerts_desc">Ειδοποίηση όταν ένα πρόγραμμα περιήγησης στέλνει ένα μήνυμα γρήγορου κειμένου.</string>
     <string name="settings_use_pin">Χρήση PIN</string>
@@ -842,6 +844,8 @@
     <string name="quick_text_sent">Το κείμενο μοιράστηκε.</string>
     <string name="quick_text_blocked_by_live_screen">Διακόψτε τη Ζωντανή οθόνη πριν χρησιμοποιήσετε το Γρήγορο κείμενο.</string>
     <string name="web_quick_text_delete_forbidden">Μπορείτε να διαγράψετε μόνο μηνύματα που στείλατε εσείς.</string>
+    <string name="web_quick_text_disabled">Το γρήγορο κείμενο είναι απενεργοποιημένο από τον κάτοχο της συσκευής.</string>
+    <string name="web_quick_text_notify_title">Νέο μήνυμα από %s</string>
     <string name="web_live_title">Ζωντανή οθόνη</string>
     <string name="web_live_waiting">Αναμονή για ροή</string>
     <string name="web_live_status_live">Ζωντανά</string>

@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">Meld wanneer iemand \'n lêer aflaai.</string>
     <string name="settings_upload_requests">Oplaai-versoeke</string>
     <string name="settings_upload_requests_desc">Meld wanneer iemand vra om \'n lêer op te laai.</string>
+    <string name="settings_quick_text_enabled">Vinnige teks</string>
+    <string name="settings_quick_text_enabled_desc">Laat fone en blaaiers toe om vinnige teksboodskappe en skakels te deel.</string>
     <string name="settings_quick_text_alerts">Vinnige tekswaarskuwings</string>
     <string name="settings_quick_text_alerts_desc">Stel in kennis wanneer \'n blaaier \'n vinnige teksboodskap stuur.</string>
     <string name="settings_use_pin">Gebruik PIN-kode</string>
@@ -842,6 +844,8 @@
     <string name="quick_text_sent">Teks gedeel.</string>
     <string name="quick_text_blocked_by_live_screen">Stop Regstreekse skerm voordat u Vinnige teks gebruik.</string>
     <string name="web_quick_text_delete_forbidden">Jy kan net boodskappe uitvee wat jy gestuur het.</string>
+    <string name="web_quick_text_disabled">Vinnige teks is gedeaktiveer deur die eienaar van die toestel.</string>
+    <string name="web_quick_text_notify_title">Nuwe boodskap van %s</string>
     <string name="web_live_title">Regstreekse skerm</string>
     <string name="web_live_waiting">Wag vir stroom</string>
     <string name="web_live_status_live">Regstreeks</string>

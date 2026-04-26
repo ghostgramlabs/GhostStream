@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">Notifica você quando alguém baixa um arquivo.</string>
     <string name="settings_upload_requests">Solicitações de upload</string>
     <string name="settings_upload_requests_desc">Alerta você quando alguém solicita o envio de um arquivo.</string>
+    <string name="settings_quick_text_enabled">Texto rápido</string>
+    <string name="settings_quick_text_enabled_desc">Permitir que telefones e navegadores compartilhem mensagens de texto rápido e links.</string>
     <string name="settings_quick_text_alerts">Alertas de texto rápido</string>
     <string name="settings_quick_text_alerts_desc">Notificar quando um navegador enviar uma mensagem de texto rápido.</string>
     <string name="settings_use_pin">Usar código PIN</string>
@@ -844,6 +846,8 @@ Dados móveis sozinhos não podem criar uma sessão local. Certifique-se de que 
     <string name="quick_text_sent">Texto compartilhado.</string>
     <string name="quick_text_blocked_by_live_screen">Interrompa a tela ao vivo antes de usar o Texto Rápido.</string>
     <string name="web_quick_text_delete_forbidden">Você só pode excluir as mensagens que enviou.</string>
+    <string name="web_quick_text_disabled">O texto rápido foi desativado pelo proprietário do dispositivo.</string>
+    <string name="web_quick_text_notify_title">Nova mensagem de %s</string>
     <string name="web_live_title">Tela ao vivo</string>
     <string name="web_live_waiting">Aguardando transmissão</string>
     <string name="web_live_status_live">Ao vivo</string>

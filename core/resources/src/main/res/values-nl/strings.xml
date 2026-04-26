@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">Meld wanneer iemand een bestand downloadt.</string>
     <string name="settings_upload_requests">Uploadverzoeken</string>
     <string name="settings_upload_requests_desc">Meld wanneer iemand vraagt om een bestand te uploaden.</string>
+    <string name="settings_quick_text_enabled">Snelle tekst</string>
+    <string name="settings_quick_text_enabled_desc">Toestaan dat telefoons en browsers snelle tekstberichten en links delen.</string>
     <string name="settings_quick_text_alerts">Snelle tekstmeldingen</string>
     <string name="settings_quick_text_alerts_desc">Melding wanneer een browser een snel tekstbericht verzendt.</string>
     <string name="settings_use_pin">PIN-code gebruiken</string>
@@ -842,6 +844,8 @@
     <string name="quick_text_sent">Tekst gedeeld.</string>
     <string name="quick_text_blocked_by_live_screen">Stop Live-scherm voordat u Snelle tekst gebruikt.</string>
     <string name="web_quick_text_delete_forbidden">U kunt alleen berichten verwijderen die u zelf hebt verzonden.</string>
+    <string name="web_quick_text_disabled">Snelle tekst is uitgeschakeld door de eigenaar van het apparaat.</string>
+    <string name="web_quick_text_notify_title">Nieuw bericht van %s</string>
     <string name="web_live_title">Live-scherm</string>
     <string name="web_live_waiting">Wachten op stream</string>
     <string name="web_live_status_live">Live</string>

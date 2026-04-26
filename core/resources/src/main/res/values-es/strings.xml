@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">Avisa cuando alguien descarga un archivo.</string>
     <string name="settings_upload_requests">Solicitudes de subida</string>
     <string name="settings_upload_requests_desc">Avisa cuando alguien solicita subir un archivo.</string>
+    <string name="settings_quick_text_enabled">Texto rápido</string>
+    <string name="settings_quick_text_enabled_desc">Permitir que los teléfonos y navegadores compartan mensajes de texto rápido y enlaces.</string>
     <string name="settings_quick_text_alerts">Alertas de texto rápido</string>
     <string name="settings_quick_text_alerts_desc">Notificar cuando un navegador envíe un mensaje de texto rápido.</string>
     <string name="settings_use_pin">Usar PIN</string>
@@ -842,6 +844,8 @@
     <string name="quick_text_sent">Texto compartido.</string>
     <string name="quick_text_blocked_by_live_screen">Detén la pantalla en vivo antes de usar Texto rápido.</string>
     <string name="web_quick_text_delete_forbidden">Solo puedes eliminar los mensajes que enviaste.</string>
+    <string name="web_quick_text_disabled">El propietario del dispositivo ha desactivado el texto rápido.</string>
+    <string name="web_quick_text_notify_title">Nuevo mensaje de %s</string>
     <string name="web_live_title">Pantalla en vivo</string>
     <string name="web_live_waiting">Esperando transmisión</string>
     <string name="web_live_status_live">En vivo</string>

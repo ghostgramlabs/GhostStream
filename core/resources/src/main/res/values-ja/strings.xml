@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">誰かがファイルをダウンロードしたときに通知します。</string>
     <string name="settings_upload_requests">アップロードリクエスト</string>
     <string name="settings_upload_requests_desc">誰かがファイルのアップロードをリクエストしたときに通知します。</string>
+    <string name="settings_quick_text_enabled">クイックテキスト</string>
+    <string name="settings_quick_text_enabled_desc">スマートフォンとブラウザ間でクイックテキストメッセージやリンクを共有できるようにします。</string>
     <string name="settings_quick_text_alerts">クイックテキスト通知</string>
     <string name="settings_quick_text_alerts_desc">ブラウザからクイックテキストが送信されたときに通知します。</string>
     <string name="settings_use_pin">PINコードを使用</string>
@@ -842,6 +844,8 @@
     <string name="quick_text_sent">テキストを共有しました。</string>
     <string name="quick_text_blocked_by_live_screen">クイックテキストを使用する前にライブスクリーンを停止してください。</string>
     <string name="web_quick_text_delete_forbidden">自分が送信したメッセージのみ削除できます。</string>
+    <string name="web_quick_text_disabled">デバイスの所有者によってクイックテキストが無効にされています。</string>
+    <string name="web_quick_text_notify_title">%s からの新しいメッセージ</string>
     <string name="web_live_title">ライブスクリーン</string>
     <string name="web_live_waiting">配信を待機中</string>
     <string name="web_live_status_live">ライブ</string>

@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">Benachrichtigen, wenn jemand eine Datei herunterlädt.</string>
     <string name="settings_upload_requests">Upload-Anfragen</string>
     <string name="settings_upload_requests_desc">Benachrichtigen, wenn jemand einen Upload anfragt.</string>
+    <string name="settings_quick_text_enabled">Schnelltext</string>
+    <string name="settings_quick_text_enabled_desc">Erlauben Sie Telefonen und Browsern, Schnelltextnachrichten und Links zu teilen.</string>
     <string name="settings_quick_text_alerts">Schnelltext-Benachrichtigungen</string>
     <string name="settings_quick_text_alerts_desc">Benachrichtigen, wenn ein Browser eine Schnelltextnachricht sendet.</string>
     <string name="settings_use_pin">PIN verwenden</string>
@@ -842,6 +844,8 @@
     <string name="quick_text_sent">Text geteilt.</string>
     <string name="quick_text_blocked_by_live_screen">Stoppen Sie den Live-Bildschirm, bevor Sie Schnelltext verwenden.</string>
     <string name="web_quick_text_delete_forbidden">Sie können nur Nachrichten löschen, die Sie gesendet haben.</string>
+    <string name="web_quick_text_disabled">Schnelltext wurde vom Besitzer des Geräts deaktiviert.</string>
+    <string name="web_quick_text_notify_title">Neue Nachricht von %s</string>
     <string name="web_live_title">Live-Bildschirm</string>
     <string name="web_live_waiting">Warten auf Stream</string>
     <string name="web_live_status_live">Live</string>

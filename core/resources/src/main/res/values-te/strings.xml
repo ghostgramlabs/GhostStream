@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">ఎవరైనా ఫైల్‌ను డౌన్‌లోడ్ చేసినప్పుడు నోటిఫికేషన్ ఇస్తుంది.</string>
     <string name="settings_upload_requests">అప్‌లోడ్ అభ్యర్థనలు</string>
     <string name="settings_upload_requests_desc">ఎవరైనా ఫైల్ అప్‌లోడ్ చేయాలనుకుంటే అనుమతి కోరుతుంది.</string>
+    <string name="settings_quick_text_enabled">త్వరిత వచనం</string>
+    <string name="settings_quick_text_enabled_desc">ఫోన్‌లు మరియు బ్రౌజర్‌లు త్వరిత వచన సందేశాలను మరియు లింక్‌లను భాగస్వామ్యం చేయడానికి అనుమతించండి.</string>
     <string name="settings_quick_text_alerts">త్వరిత వచన హెచ్చరికలు</string>
     <string name="settings_quick_text_alerts_desc">బ్రౌజర్ త్వరిత వచన సందేశాన్ని పంపినప్పుడు తెలియజేయండి.</string>
     <string name="settings_use_pin">PIN కోడ్‌ను ఉపయోగించు</string>
@@ -842,6 +844,8 @@
     <string name="quick_text_sent">వచనం భాగస్వామ్యం చేయబడింది.</string>
     <string name="quick_text_blocked_by_live_screen">త్వరిత వచనాన్ని ఉపయోగించే ముందు లైవ్ స్క్రీన్‌ను ఆపివేయండి.</string>
     <string name="web_quick_text_delete_forbidden">మీరు పంపిన సందేశాలను మాత్రమే మీరు తొలగించగలరు.</string>
+    <string name="web_quick_text_disabled">పరికర యజమాని ద్వారా త్వరిత వచనం నిలిపివేయబడింది.</string>
+    <string name="web_quick_text_notify_title">%s నుండి కొత్త సందేశం</string>
     <string name="web_live_title">లైవ్ స్క్రీన్</string>
     <string name="web_live_waiting">స్ట్రీమ్ కోసం వేచి ఉంది</string>
     <string name="web_live_status_live">లైవ్</string>

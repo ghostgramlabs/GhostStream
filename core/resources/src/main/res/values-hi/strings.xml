@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">जब कोई फाइल डाउनलोड करे तो सूचित करें।</string>
     <string name="settings_upload_requests">अपलोड अनुरोध</string>
     <string name="settings_upload_requests_desc">जब कोई फाइल अपलोड करने का अनुरोध करे तो सूचित करें।</string>
+    <string name="settings_quick_text_enabled">त्वरित टेक्स्ट</string>
+    <string name="settings_quick_text_enabled_desc">फोन और ब्राउज़र को त्वरित टेक्स्ट संदेश और लिंक साझा करने की अनुमति दें।</string>
     <string name="settings_quick_text_alerts">त्वरित टेक्स्ट अलर्ट</string>
     <string name="settings_quick_text_alerts_desc">जब कोई ब्राउज़र त्वरित टेक्स्ट संदेश भेजे तो सूचित करें।</string>
     <string name="settings_use_pin">पिन का उपयोग करें</string>
@@ -842,6 +844,8 @@
     <string name="quick_text_sent">टेक्स्ट शेयर किया गया।</string>
     <string name="quick_text_blocked_by_live_screen">त्वरित टेक्स्ट का उपयोग करने से पहले लाइव स्क्रीन को रोकें।</string>
     <string name="web_quick_text_delete_forbidden">आप केवल अपने द्वारा भेजे गए संदेशों को ही हटा सकते हैं।</string>
+    <string name="web_quick_text_disabled">डिवाइस के मालिक द्वारा त्वरित टेक्स्ट अक्षम कर दिया गया है।</string>
+    <string name="web_quick_text_notify_title">%s से नया संदेश</string>
     <string name="web_live_title">लाइव स्क्रीन</string>
     <string name="web_live_waiting">स्ट्रीम का इंतज़ार है</string>
     <string name="web_live_status_live">लाइव</string>

@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">Bir dosya indirildiğinde sizi bilgilendirir.</string>
     <string name="settings_upload_requests">Yükleme İstekleri</string>
     <string name="settings_upload_requests_desc">Biri dosya yüklemek istediğinde sizi bilgilendirir.</string>
+    <string name="settings_quick_text_enabled">Hızlı metin</string>
+    <string name="settings_quick_text_enabled_desc">Telefonların và tarayıcıların hızlı metin mesajları ve bağlantılar paylaşmasına izin ver.</string>
     <string name="settings_quick_text_alerts">Hızlı metin uyarıları</string>
     <string name="settings_quick_text_alerts_desc">Bir tarayıcı hızlı metin mesajı gönderdiğinde bildir.</string>
     <string name="settings_use_pin">PIN Kodu Kullan</string>
@@ -842,6 +844,8 @@
     <string name="quick_text_sent">Metin paylaşıldı.</string>
     <string name="quick_text_blocked_by_live_screen">Hızlı Metni kullanmadan önce Canlı Ekranı durdurun.</string>
     <string name="web_quick_text_delete_forbidden">Yalnızca kendi gönderdiğiniz mesajları silebilirsiniz.</string>
+    <string name="web_quick_text_disabled">Hızlı metin, cihaz sahibi tarafından devre dışı bırakıldı.</string>
+    <string name="web_quick_text_notify_title">%s kişisinden yeni mesaj</string>
     <string name="web_live_title">Canlı Ekran</string>
     <string name="web_live_waiting">Yayın bekleniyor</string>
     <string name="web_live_status_live">Canlı</string>

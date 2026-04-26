@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">แจ้งเตือนเมื่อมีคนดาวน์โหลดไฟล์</string>
     <string name="settings_upload_requests">คำขออัปโหลด</string>
     <string name="settings_upload_requests_desc">แจ้งเตือนเมื่อมีคนขออัปโหลดไฟล์</string>
+    <string name="settings_quick_text_enabled">ข้อความด่วน</string>
+    <string name="settings_quick_text_enabled_desc">อนุญาตให้โทรศัพท์และเบราว์เซอร์แชร์ข้อความด่วนและลิงก์</string>
     <string name="settings_quick_text_alerts">การแจ้งเตือนข้อความด่วน</string>
     <string name="settings_quick_text_alerts_desc">แจ้งเตือนเมื่อเบราว์เซอร์ส่งข้อความด่วน</string>
     <string name="settings_use_pin">ใช้รหัส PIN</string>
@@ -842,6 +844,8 @@
     <string name="quick_text_sent">แชร์ข้อความแล้ว</string>
     <string name="quick_text_blocked_by_live_screen">หยุดหน้าจอสดก่อนใช้ข้อความด่วน</string>
     <string name="web_quick_text_delete_forbidden">คุณสามารถลบได้เฉพาะข้อความที่คุณส่งเท่านั้น</string>
+    <string name="web_quick_text_disabled">ข้อความด่วนถูกปิดใช้งานโดยเจ้าของอุปกรณ์</string>
+    <string name="web_quick_text_notify_title">ข้อความใหม่จาก %s</string>
     <string name="web_live_title">หน้าจอสด</string>
     <string name="web_live_waiting">รอสตรีม</string>
     <string name="web_live_status_live">สด</string>

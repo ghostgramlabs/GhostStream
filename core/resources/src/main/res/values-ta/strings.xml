@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">யாராவது கோப்பைப் பதிவிறக்கம் செய்யும்போது தெரிவிக்கும்.</string>
     <string name="settings_upload_requests">பதிவேற்றக் கோரிக்கைகள்</string>
     <string name="settings_upload_requests_desc">யாராவது பதிவேற்ற விரும்பினால் அனுமதி கேட்கும்.</string>
+    <string name="settings_quick_text_enabled">விரைவான உரை</string>
+    <string name="settings_quick_text_enabled_desc">போன்கள் மற்றும் உலாவிகள் விரைவான உரைச் செய்திகளையும் இணைப்புகளையும் பகிர அனுமதிக்கவும்.</string>
     <string name="settings_quick_text_alerts">விரைவான உரை விழிப்பூட்டல்கள்</string>
     <string name="settings_quick_text_alerts_desc">உலாவி விரைவான உரைச் செய்தியை அனுப்பும்போது அறிவிக்கவும்.</string>
     <string name="settings_use_pin">PIN குறியீட்டைப் பயன்படுத்து</string>
@@ -842,6 +844,8 @@
     <string name="quick_text_sent">உரை பகிரப்பட்டது.</string>
     <string name="quick_text_blocked_by_live_screen">விரைவான உரையைப் பயன்படுத்துவதற்கு முன் நேரடித் திரையை நிறுத்தவும்.</string>
     <string name="web_quick_text_delete_forbidden">நீங்கள் அனுப்பிய செய்திகளை மட்டுமே நீங்கள் நீக்க முடியும்.</string>
+    <string name="web_quick_text_disabled">சாதன உரிமையாளரால் விரைவான உரை முடக்கப்பட்டுள்ளது.</string>
+    <string name="web_quick_text_notify_title">%s இடமிருந்து புதிய செய்தி</string>
     <string name="web_live_title">நேரடி திரை</string>
     <string name="web_live_waiting">ஸ்ட்ரீமிற்காக காத்திருக்கிறது</string>
     <string name="web_live_status_live">நேரலை</string>

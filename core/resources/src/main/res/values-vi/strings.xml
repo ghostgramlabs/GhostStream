@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">Thông báo khi có người tải xuống một tệp.</string>
     <string name="settings_upload_requests">Yêu cầu tải lên</string>
     <string name="settings_upload_requests_desc">Thông báo khi có người yêu cầu tải tệp lên.</string>
+    <string name="settings_quick_text_enabled">Văn bản nhanh</string>
+    <string name="settings_quick_text_enabled_desc">Cho phép điện thoại và trình duyệt chia sẻ tin nhắn văn bản nhanh và liên kết.</string>
     <string name="settings_quick_text_alerts">Cảnh báo văn bản nhanh</string>
     <string name="settings_quick_text_alerts_desc">Thông báo khi trình duyệt gửi tin nhắn văn bản nhanh.</string>
     <string name="settings_use_pin">Sử dụng mã PIN</string>
@@ -842,6 +844,8 @@
     <string name="quick_text_sent">Văn bản đã được chia sẻ.</string>
     <string name="quick_text_blocked_by_live_screen">Dừng Màn hình trực tiếp trước khi sử dụng Văn bản nhanh.</string>
     <string name="web_quick_text_delete_forbidden">Bạn chỉ có thể xóa tin nhắn bạn đã gửi.</string>
+    <string name="web_quick_text_disabled">Văn bản nhanh đã bị chủ sở hữu thiết bị vô hiệu hóa.</string>
+    <string name="web_quick_text_notify_title">Tin nhắn mới từ %s</string>
     <string name="web_live_title">Màn hình trực tiếp</string>
     <string name="web_live_waiting">Đang chờ luồng</string>
     <string name="web_live_status_live">Trực tiếp</string>

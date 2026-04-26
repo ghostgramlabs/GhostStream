@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">Notificar quando alguém transfere um ficheiro.</string>
     <string name="settings_upload_requests">Pedidos de carregamento</string>
     <string name="settings_upload_requests_desc">Notificar quando alguém solicita um carregamento.</string>
+    <string name="settings_quick_text_enabled">Texto rápido</string>
+    <string name="settings_quick_text_enabled_desc">Permitir que telefones e navegadores partilhem mensagens de texto rápido e ligações.</string>
     <string name="settings_quick_text_alerts">Alertas de texto rápido</string>
     <string name="settings_quick_text_alerts_desc">Notificar quando um navegador enviar uma mensagem de texto rápido.</string>
     <string name="settings_use_pin">Usar PIN</string>
@@ -842,6 +844,8 @@
     <string name="quick_text_sent">Texto partilhado.</string>
     <string name="quick_text_blocked_by_live_screen">Interrompa o Ecrã em Tempo Real antes de utilizar o Texto Rápido.</string>
     <string name="web_quick_text_delete_forbidden">Só pode eliminar as mensagens que enviou.</string>
+    <string name="web_quick_text_disabled">O texto rápido foi desativado pelo proprietário do dispositivo.</string>
+    <string name="web_quick_text_notify_title">Nova mensagem de %s</string>
     <string name="web_live_title">Ecrã em tempo real</string>
     <string name="web_live_waiting">A aguardar transmissão</string>
     <string name="web_live_status_live">Em direto</string>

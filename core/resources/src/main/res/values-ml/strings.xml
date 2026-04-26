@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">ആരെങ്കിലും ഫയൽ ഡൗൺലോഡ് ചെയ്യുമ്പോൾ അറിയിപ്പ് നൽകും.</string>
     <string name="settings_upload_requests">അപ്‌ലോഡ് അപേക്ഷകൾ</string>
     <string name="settings_upload_requests_desc">ആരെങ്കിലും ഫയൽ അയക്കാൻ കാത്തിരിക്കുമ്പോൾ അനുവാദം ചോദിക്കും.</string>
+    <string name="settings_quick_text_enabled">ക്വിക്ക് ടെക്സ്റ്റ്</string>
+    <string name="settings_quick_text_enabled_desc">ഫോണുകളെയും ബ്രൗസറുകളെയും ക്വിക്ക് ടെക്സ്റ്റ് സന്ദേശങ്ങളും ലിങ്കുകളും പങ്കിടാൻ അനുവദിക്കുക.</string>
     <string name="settings_quick_text_alerts">ക്വിക്ക് ടെക്സ്റ്റ് അലേർട്ടുകൾ</string>
     <string name="settings_quick_text_alerts_desc">ഒരു ബ്രൗസർ ഒരു ക്വിക്ക് ടെക്സ്റ്റ് സന്ദേശം അയക്കുമ്പോൾ അറിയിക്കുക.</string>
     <string name="settings_use_pin">പിൻ കോഡ് ഉപയോഗിക്കുക</string>
@@ -842,6 +844,8 @@
     <string name="quick_text_sent">ടെക്സ്റ്റ് പങ്കിട്ടു.</string>
     <string name="quick_text_blocked_by_live_screen">ക്വിക്ക് ടെക്സ്റ്റ് ഉപയോഗിക്കുന്നതിന് മുമ്പ് ലൈവ് സ്ക്രീൻ നിർത്തുക.</string>
     <string name="web_quick_text_delete_forbidden">നിങ്ങൾ അയച്ച സന്ദേശങ്ങൾ മാത്രമേ നിങ്ങൾക്ക് ഇല്ലാതാക്കാൻ കഴിയൂ.</string>
+    <string name="web_quick_text_disabled">ഉപകരണ ഉടമ ക്വിക്ക് ടെക്സ്റ്റ് പ്രവർത്തനരഹിതമാക്കി.</string>
+    <string name="web_quick_text_notify_title">%s-ൽ നിന്നുള്ള പുതിയ സന്ദേശം</string>
     <string name="web_live_title">ലൈവ് സ്ക്രീൻ</string>
     <string name="web_live_waiting">സ്ട്രീമിനായി കാത്തിരിക്കുന്നു</string>
     <string name="web_live_status_live">ലൈവ്</string>
