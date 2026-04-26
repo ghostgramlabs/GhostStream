@@ -249,6 +249,7 @@
     <string name="session_metric_sent">Sent</string>
     <string name="session_metric_speed">Speed</string>
     <string name="session_metric_elapsed">Elapsed</string>
+    <string name="session_metric_remaining">Remaining</string>
     <string name="session_connected_waiting">Waiting for devices</string>
     <string name="session_connected_title">Connected devices</string>
     <string name="session_connected_waiting_body">They will appear here when someone opens your session.</string>
@@ -832,7 +833,7 @@
     <string name="live_screen_notification_channel_desc">Keeps live screen mirroring active in the background.</string>
     <string name="live_screen_notification_title">Screen sharing in progress</string>
     <string name="live_screen_notification_body">DirectServe is mirroring your screen to the browser.</string>
-    <string name="live_screen_pin_label">PIN to join: %1$s</string>
+    <string name="live_screen_pin_label">PIN for join: %1$s</string>
     <string name="live_screen_pin_hint">Viewers will be asked for this PIN before they can watch.</string>
     <string name="quick_text_title">Quick Text</string>
     <string name="quick_text_send_title">Send Text</string>
@@ -923,7 +924,7 @@
     <string name="pipeline_reason_no_tracks">Source has no readable audio or video tracks</string>
     <string name="pipeline_reason_video_incompatible">Video codec %1$s cannot be copied into browser-ready MP4 output</string>
     <string name="pipeline_reason_probe_failed">Track probe failed: %1$s</string>
-    <string name="pipeline_reason_audio_convert">Video can be copied, but audio must be converted to a browser-safe format</string>
+    <string name="pipeline_reason_audio_convert">Video can be copied, but audio must be converted to a format safe for the browser</string>
     <string name="pipeline_reason_container_repackage">Codecs are acceptable, but the container must be repackaged for the browser</string>
     <string name="pipeline_error_repackage_failed">Unable to repackage this file for browser playback.</string>
     <string name="pipeline_error_start_failed">Unable to start compatibility preparation.</string>
