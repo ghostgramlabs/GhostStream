@@ -108,6 +108,9 @@
     <string name="settings_view_onboarding_desc">Bekijk de welkom-stappen opnieuw.</string>
     <string name="settings_privacy_policy">Privacybeleid</string>
     <string name="settings_privacy_policy_desc">Lees meer over lokale privacy en controles.</string>
+    <string name="settings_rate_app">Beoordeel DirectServe</string>
+    <string name="settings_rate_app_desc">Open de Play Store om een ​​beoordeling of review achter te laten.</string>
+    <string name="rate_app_unavailable">Kan de Play Store niet openen.</string>
     <string name="settings_privacy_promise">Privacybelofte</string>
     <string name="settings_privacy_promise_desc">Je bestanden blijven op deze telefoon.</string>
     <string name="settings_how_it_works">Help &amp; functies</string>
@@ -619,6 +622,8 @@
     <string name="library_date_group_label">%1$s</string>
     <string name="web_upload_title">Versturen</string>
     <string name="web_upload_subtitle">Naar host.</string>
+    <string name="web_send_floating_title">Verzenden naar apparaat</string>
+    <string name="web_send_floating_subtitle">Upload foto\'s, video\'s en bestanden</string>
     <string name="web_upload_prompt_title">Bestanden uploaden</string>
     <string name="web_upload_prompt_desktop">Sleep of kies.</string>
     <string name="web_upload_prompt_mobile">Selecteer bestanden.</string>
@@ -888,8 +893,6 @@
     <string name="web_error_missing_offset">Ontbrekende offsetMs parameter.</string>
     <string name="web_error_apple_hls_only">Apple-apparaten moeten HLS gebruiken.</string>
     <string name="web_error_direct_not_ready">Direct afspelen niet beschikbaar tot conversie klaar is. Gebruik HLS.</string>
-    <string name="web_send_floating_title">Verzenden naar apparaat</string>
-    <string name="web_send_floating_subtitle">Upload foto\'s, video\'s en bestanden</string>
     <string name="pipeline_label_transcoding">Transcoderen</string>
     <string name="pipeline_label_repackaging">Herverpakken</string>
     <string name="pipeline_reason_no_tracks">Bron bevat geen leesbare audio- of videotracks</string>

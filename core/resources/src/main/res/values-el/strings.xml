@@ -108,6 +108,9 @@
     <string name="settings_view_onboarding_desc">Δείτε ξανά τα βήματα καλωσορίσματος.</string>
     <string name="settings_privacy_policy">Πολιτική Απορρήτου</string>
     <string name="settings_privacy_policy_desc">Διαβάστε τις βασικές αρχές και τα στοιχεία ελέγχου απορρήτου μόνο σε τοπικό επίπεδο.</string>
+    <string name="settings_rate_app">Βαθμολογήστε το DirectServe</string>
+    <string name="settings_rate_app_desc">Ανοίξτε το Play Store για να αφήσετε μια αξιολόγηση ή κριτική.</string>
+    <string name="rate_app_unavailable">Δεν ήταν δυνατό το άνοιγμα του Play Store.</string>
     <string name="settings_privacy_promise">Υπόσχεση απορρήτου</string>
     <string name="settings_privacy_promise_desc">Τα αρχεία σας παραμένουν σε αυτό το τηλέφωνο.</string>
     <string name="settings_how_it_works">Βοήθεια και δυνατότητες</string>
@@ -619,6 +622,8 @@
     <string name="library_date_group_label">%1$s</string>
     <string name="web_upload_title">Στέλνω</string>
     <string name="web_upload_subtitle">Στείλτε αρχεία σε αυτήν τη συσκευή μέσω του τοπικού δικτύου.</string>
+    <string name="web_send_floating_title">Αποστολή στη συσκευή</string>
+    <string name="web_send_floating_subtitle">Ανεβάστε φωτογραφίες, βίντεο και αρχεία</string>
     <string name="web_upload_prompt_title">Αποθέστε πολυμέσα εδώ ή επιλέξτε αρχεία</string>
     <string name="web_upload_prompt_desktop">Σύρετε και αποθέστε εδώ ή επιλέξτε αρχεία παρακάτω.</string>
     <string name="web_upload_prompt_mobile">Επιλέξτε αρχεία από τη συσκευή σας για να τα στείλετε εδώ.</string>
@@ -888,8 +893,6 @@
     <string name="web_error_missing_offset">Λείπει η παράμετρος offsetMs.</string>
     <string name="web_error_apple_hls_only">Οι πελάτες Apple πρέπει να χρησιμοποιούν HLS για προετοιμασμένη αναπαραγωγή.</string>
     <string name="web_error_direct_not_ready">Η άμεση αναπαραγωγή δεν είναι διαθέσιμη μέχρι να οριστικοποιηθεί η μετατροπή. Χρησιμοποιήστε το HLS.</string>
-    <string name="web_send_floating_title">Αποστολή στη συσκευή</string>
-    <string name="web_send_floating_subtitle">Ανεβάστε φωτογραφίες, βίντεο και αρχεία</string>
     <string name="pipeline_label_transcoding">Μετακωδικοποίηση</string>
     <string name="pipeline_label_repackaging">Επανασυσκευασία</string>
     <string name="pipeline_reason_no_tracks">Η πηγή δεν έχει αναγνώσιμα κομμάτια ήχου ή βίντεο</string>

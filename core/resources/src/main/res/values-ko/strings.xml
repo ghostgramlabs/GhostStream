@@ -108,6 +108,9 @@
     <string name="settings_view_onboarding_desc">다시 보기.</string>
     <string name="settings_privacy_policy">개인정보처리방침</string>
     <string name="settings_privacy_policy_desc">로컬 프라이버시.</string>
+    <string name="settings_rate_app">DirectServe 평가</string>
+    <string name="settings_rate_app_desc">평가나 리뷰를 남기려면 Play 스토어를 여세요.</string>
+    <string name="rate_app_unavailable">Play 스토어를 열 수 없습니다.</string>
     <string name="settings_privacy_promise">약속</string>
     <string name="settings_privacy_promise_desc">안전합니다.</string>
     <string name="settings_how_it_works">사용 방법</string>
@@ -619,6 +622,8 @@
     <string name="library_date_group_label">%1$s</string>
     <string name="web_upload_title">업로드</string>
     <string name="web_upload_subtitle">스마트폰으로.</string>
+    <string name="web_send_floating_title">장치로 보내기</string>
+    <string name="web_send_floating_subtitle">사진, 비디오, 파일 업로드</string>
     <string name="web_upload_prompt_title">파일을</string>
     <string name="web_upload_prompt_desktop">드래그.</string>
     <string name="web_upload_prompt_mobile">탭.</string>
@@ -888,8 +893,6 @@
     <string name="web_error_missing_offset">offsetMs 파라미터가 누락되었습니다.</string>
     <string name="web_error_apple_hls_only">Apple 클라이언트는 준비된 재생을 위해 HLS를 사용해야 합니다.</string>
     <string name="web_error_direct_not_ready">변환이 완료될 때까지 직접 재생을 사용할 수 없습니다. HLS를 사용하세요.</string>
-    <string name="web_send_floating_title">장치로 보내기</string>
-    <string name="web_send_floating_subtitle">사진, 비디오, 파일 업로드</string>
     <string name="pipeline_label_transcoding">트랜스코딩</string>
     <string name="pipeline_label_repackaging">재포장 중</string>
     <string name="pipeline_reason_no_tracks">소스에 읽을 수 있는 오디오 또는 동영상 트랙이 없습니다</string>

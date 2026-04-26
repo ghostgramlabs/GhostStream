@@ -108,6 +108,9 @@
     <string name="settings_view_onboarding_desc">शुरुआत देखें।</string>
     <string name="settings_privacy_policy">प्राइवेसी पॉलिसी</string>
     <string name="settings_privacy_policy_desc">सब सुरक्षित।</string>
+    <string name="settings_rate_app">डायरेक्टसर्व को रेट करें</string>
+    <string name="settings_rate_app_desc">रेटिंग या समीक्षा छोड़ने के लिए प्ले स्टोर खोलें।</string>
+    <string name="rate_app_unavailable">प्ले स्टोर नहीं खुल सका.</string>
     <string name="settings_privacy_promise">वादा</string>
     <string name="settings_privacy_promise_desc">डेटा आपका है।</string>
     <string name="settings_how_it_works">कैसे काम करता है</string>
@@ -619,6 +622,8 @@
     <string name="library_date_group_label">%1$s</string>
     <string name="web_upload_title">अपलोड</string>
     <string name="web_upload_subtitle">फोन पर।</string>
+    <string name="web_send_floating_title">डिवाइस पर भेजें</string>
+    <string name="web_send_floating_subtitle">फ़ोटो, वीडियो और फ़ाइलें अपलोड करें</string>
     <string name="web_upload_prompt_title">फाइलें दें</string>
     <string name="web_upload_prompt_desktop">ड्रैग।</string>
     <string name="web_upload_prompt_mobile">टैप।</string>
@@ -888,8 +893,6 @@
     <string name="web_error_missing_offset">offsetMs पैरामीटर गायब है।</string>
     <string name="web_error_apple_hls_only">Apple क्लाइंट्स को तैयार प्लेबैक के लिए HLS का उपयोग करना चाहिए।</string>
     <string name="web_error_direct_not_ready">कन्वर्जन अंतिम रूप दिए जाने तक डायरेक्ट प्लेबैक अनुपलब्ध है। कृपया HLS का उपयोग करें।</string>
-    <string name="web_send_floating_title">डिवाइस पर भेजें</string>
-    <string name="web_send_floating_subtitle">फ़ोटो, वीडियो और फ़ाइलें अपलोड करें</string>
     <string name="pipeline_label_transcoding">ट्रांसकोडिंग</string>
     <string name="pipeline_label_repackaging">रीपैकेजिंग</string>
     <string name="pipeline_reason_no_tracks">स्रोत में कोई पठनीय ऑडियो या वीडियो ट्रैक नहीं है</string>

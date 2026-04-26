@@ -108,6 +108,9 @@
     <string name="settings_view_onboarding_desc">Повторить шаги приветствия.</string>
     <string name="settings_privacy_policy">Политика конфиденциальности</string>
     <string name="settings_privacy_policy_desc">Читайте о локальной конфиденциальности.</string>
+    <string name="settings_rate_app">Оценить DirectServe</string>
+    <string name="settings_rate_app_desc">Откройте Play Store, чтобы оставить оценку или отзыв.</string>
+    <string name="rate_app_unavailable">Не удалось открыть Play Store.</string>
     <string name="settings_privacy_promise">Наше обещание</string>
     <string name="settings_privacy_promise_desc">Файлы никогда не покидают ваш телефон.</string>
     <string name="settings_how_it_works">Помощь и функции</string>
@@ -619,6 +622,8 @@
     <string name="library_date_group_label">%1$s</string>
     <string name="web_upload_title">Отправить</string>
     <string name="web_upload_subtitle">Отправить на хост.</string>
+    <string name="web_send_floating_title">Отправить на устройство</string>
+    <string name="web_send_floating_subtitle">Загружайте фотографии, видео и файлы</string>
     <string name="web_upload_prompt_title">Загрузите файлы</string>
     <string name="web_upload_prompt_desktop">Перетащите или выберите.</string>
     <string name="web_upload_prompt_mobile">Выберите файлы.</string>
@@ -888,8 +893,6 @@
     <string name="web_error_missing_offset">Отсутствует параметр offsetMs.</string>
     <string name="web_error_apple_hls_only">Клиенты Apple должны использовать HLS для подготовленного воспроизведения.</string>
     <string name="web_error_direct_not_ready">Прямое воспроизведение недоступно до завершения конвертации. Используйте HLS.</string>
-    <string name="web_send_floating_title">Отправить на устройство</string>
-    <string name="web_send_floating_subtitle">Загружайте фотографии, видео и файлы</string>
     <string name="pipeline_label_transcoding">Транскодирование</string>
     <string name="pipeline_label_repackaging">Перепаковка</string>
     <string name="pipeline_reason_no_tracks">Источник не содержит читаемых аудио- или видеодорожек</string>

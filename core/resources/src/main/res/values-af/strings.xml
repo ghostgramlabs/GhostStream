@@ -108,6 +108,9 @@
     <string name="settings_view_onboarding_desc">Sien weer die welkomstappe.</string>
     <string name="settings_privacy_policy">Privaatheidsbeleid</string>
     <string name="settings_privacy_policy_desc">Lees die basiese beginsels en kontroles vir slegs plaaslike privaatheid.</string>
+    <string name="settings_rate_app">Beoordeel DirectServe</string>
+    <string name="settings_rate_app_desc">Maak die Play Winkel oop om \'n gradering of resensie te gee.</string>
+    <string name="rate_app_unavailable">Kon nie die Play Winkel oopmaak nie.</string>
     <string name="settings_privacy_promise">Privaatheid belofte</string>
     <string name="settings_privacy_promise_desc">Jou lêers bly op hierdie foon.</string>
     <string name="settings_how_it_works">Hulp en kenmerke</string>
@@ -619,6 +622,8 @@
     <string name="library_date_group_label">%1$s</string>
     <string name="web_upload_title">Stuur</string>
     <string name="web_upload_subtitle">Stuur lêers na hierdie toestel oor die plaaslike netwerk.</string>
+    <string name="web_send_floating_title">Stuur na toestel</string>
+    <string name="web_send_floating_subtitle">Laai foto\'s, video\'s en lêers op</string>
     <string name="web_upload_prompt_title">Los media hier of kies lêers</string>
     <string name="web_upload_prompt_desktop">Sleep en los hier, of kies lêers hieronder.</string>
     <string name="web_upload_prompt_mobile">Kies lêers van jou toestel af om hulle hierheen te stuur.</string>
@@ -888,8 +893,6 @@
     <string name="web_error_missing_offset">Ontbrekende offsetMs parameter.</string>
     <string name="web_error_apple_hls_only">Apple-kliënte moet HLS gebruik vir voorbereide afspeel.</string>
     <string name="web_error_direct_not_ready">Direkte afspeel is nie beskikbaar totdat omskakeling gefinaliseer is nie. Gebruik asseblief HLS.</string>
-    <string name="web_send_floating_title">Stuur na toestel</string>
-    <string name="web_send_floating_subtitle">Laai foto\'s, video\'s en lêers op</string>
     <string name="pipeline_label_transcoding">Transkodering</string>
     <string name="pipeline_label_repackaging">Herverpakking</string>
     <string name="pipeline_reason_no_tracks">Bron het geen leesbare klank- of video-snitte nie</string>

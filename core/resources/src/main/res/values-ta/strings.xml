@@ -108,6 +108,9 @@
     <string name="settings_view_onboarding_desc">மீண்டும் ஒருமுறை அறிமுகக் காட்சிகளைப் பார்க்கவும்.</string>
     <string name="settings_privacy_policy">தனியுரிமைக் கொள்கை</string>
     <string name="settings_privacy_policy_desc">உங்கள் தரவு பாதுகாப்பு குறித்த விபரங்களைப் படிக்கவும்.</string>
+    <string name="settings_rate_app">DirectServe ஐ மதிப்பிடவும்</string>
+    <string name="settings_rate_app_desc">மதிப்பீடு அல்லது மதிப்பாய்வை வழங்க Play Store ஐத் திறக்கவும்.</string>
+    <string name="rate_app_unavailable">Play Store ஐ திறக்க முடியவில்லை.</string>
     <string name="settings_privacy_promise">பாதுகாப்பு உறுதிமொழி</string>
     <string name="settings_privacy_promise_desc">உங்கள் கோப்புகள் எப்போதும் உங்கள் போனிலேயே இருக்கும்.</string>
     <string name="settings_how_it_works">உதவி மற்றும் அம்சங்கள்</string>
@@ -619,6 +622,8 @@
     <string name="library_date_group_label">%1$s</string>
     <string name="web_upload_title">பதிவேற்றம்</string>
     <string name="web_upload_subtitle">இச்சாதனத்திற்குக் கோப்புகளை அனுப்பவும்.</string>
+    <string name="web_send_floating_title">சாதனத்திற்கு அனுப்பவும்</string>
+    <string name="web_send_floating_subtitle">புகைப்படங்கள், வீடியோக்கள் மற்றும் கோப்புகளைப் பதிவேற்றவும்</string>
     <string name="web_upload_prompt_title">இழுத்து விடவும் அல்லது தேர்ந்தெடுக்கவும்</string>
     <string name="web_upload_prompt_desktop">கோப்புகளை இங்கே இழுத்துப் போடவும்.</string>
     <string name="web_upload_prompt_mobile">கோப்புகளைத் தேர்ந்தெடுக்கவும்.</string>
@@ -888,8 +893,6 @@
     <string name="web_error_missing_offset">offsetMs அளவுரு இல்லை.</string>
     <string name="web_error_apple_hls_only">ஆப்பிள் சாதனங்கள் HLS-ஐப் பயன்படுத்த வேண்டும்.</string>
     <string name="web_error_direct_not_ready">மாற்றம் முடியும் வரை நேரடி இயக்கம் கிடைக்காது. HLS-ஐப் பயன்படுத்தவும்.</string>
-    <string name="web_send_floating_title">சாதனத்திற்கு அனுப்பவும்</string>
-    <string name="web_send_floating_subtitle">புகைப்படங்கள், வீடியோக்கள் மற்றும் கோப்புகளைப் பதிவேற்றவும்</string>
     <string name="pipeline_label_transcoding">டிரான்ஸ்கோடிங் (Transcoding)</string>
     <string name="pipeline_label_repackaging">மறுபேக்கேஜிங் (Repackaging)</string>
     <string name="pipeline_reason_no_tracks">ஆதாரம் வாசிக்கக்கூடிய ஆடியோ அல்லது வீடியோ ட்ராக்குகளைக் கொண்டிருக்கவில்லை</string>

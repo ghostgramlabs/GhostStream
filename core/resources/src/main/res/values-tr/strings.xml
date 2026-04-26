@@ -108,6 +108,9 @@
     <string name="settings_view_onboarding_desc">Başlangıca dön.</string>
     <string name="settings_privacy_policy">Gizlilik Politikası</string>
     <string name="settings_privacy_policy_desc">Tamamen yerel.</string>
+    <string name="settings_rate_app">DirectServe\'i Değerlendirin</string>
+    <string name="settings_rate_app_desc">Derecelendirme veya inceleme bırakmak için Play Store\'u açın.</string>
+    <string name="rate_app_unavailable">Play Store açılamadı.</string>
     <string name="settings_privacy_promise">Sözümüz</string>
     <string name="settings_privacy_promise_desc">Dosyalar buluta gitmez.</string>
     <string name="settings_how_it_works">Nasıl Çalışır</string>
@@ -619,6 +622,8 @@
     <string name="library_date_group_label">%1$s</string>
     <string name="web_upload_title">Yükleme</string>
     <string name="web_upload_subtitle">Telefona.</string>
+    <string name="web_send_floating_title">Cihaza gönder</string>
+    <string name="web_send_floating_subtitle">Fotoğraf, video ve dosya yükleyin</string>
     <string name="web_upload_prompt_title">Dosya Ver</string>
     <string name="web_upload_prompt_desktop">Sürükle.</string>
     <string name="web_upload_prompt_mobile">Dokun.</string>
@@ -888,8 +893,6 @@
     <string name="web_error_missing_offset">offsetMs parametresi eksik.</string>
     <string name="web_error_apple_hls_only">Apple istemcileri hazırlanan oynatım için HLS kullanmalıdır.</string>
     <string name="web_error_direct_not_ready">Dönüştürme kesinleşene kadar doğrudan oynatım kullanılamaz. Lütfen HLS kullanın.</string>
-    <string name="web_send_floating_title">Cihaza gönder</string>
-    <string name="web_send_floating_subtitle">Fotoğraf, video ve dosya yükleyin</string>
     <string name="pipeline_label_transcoding">Transkodlama</string>
     <string name="pipeline_label_repackaging">Yeniden Paketleme</string>
     <string name="pipeline_reason_no_tracks">Kaynakta okunabilir ses veya video parçası yok</string>

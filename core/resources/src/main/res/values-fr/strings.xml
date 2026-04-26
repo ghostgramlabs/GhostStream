@@ -108,6 +108,9 @@
     <string name="settings_view_onboarding_desc">Revoir les étapes de bienvenue.</string>
     <string name="settings_privacy_policy">Politique de confidentialité</string>
     <string name="settings_privacy_policy_desc">Lire les principes de confidentialité locale.</string>
+    <string name="settings_rate_app">Évaluez DirectServe</string>
+    <string name="settings_rate_app_desc">Ouvrez le Play Store pour laisser une note ou un avis.</string>
+    <string name="rate_app_unavailable">Impossible d\'ouvrir le Play Store.</string>
     <string name="settings_privacy_promise">Promesse de confidentialité</string>
     <string name="settings_privacy_promise_desc">Vos fichiers ne quittent jamais votre téléphone.</string>
     <string name="settings_how_it_works">Aide et fonctions</string>
@@ -619,6 +622,8 @@
     <string name="library_date_group_label">%1$s</string>
     <string name="web_upload_title">Envoyer</string>
     <string name="web_upload_subtitle">Vers l\'hôte.</string>
+    <string name="web_send_floating_title">Envoyer à l\'appareil</string>
+    <string name="web_send_floating_subtitle">Téléchargez des photos, des vidéos et des fichiers</string>
     <string name="web_upload_prompt_title">Envoyez vos fichiers</string>
     <string name="web_upload_prompt_desktop">Glissez ou choisissez.</string>
     <string name="web_upload_prompt_mobile">Sélectionnez.</string>
@@ -888,8 +893,6 @@
     <string name="web_error_missing_offset">Paramètre offsetMs manquant.</string>
     <string name="web_error_apple_hls_only">Les clients Apple doivent utiliser HLS pour la lecture préparée.</string>
     <string name="web_error_direct_not_ready">La lecture directe est indisponible tant que la conversion n\'est pas finalisée. Veuillez utiliser HLS.</string>
-    <string name="web_send_floating_title">Envoyer à l\'appareil</string>
-    <string name="web_send_floating_subtitle">Téléchargez des photos, des vidéos et des fichiers</string>
     <string name="pipeline_label_transcoding">Transcodage</string>
     <string name="pipeline_label_repackaging">Rempaquetage</string>
     <string name="pipeline_reason_no_tracks">La source n\'a aucune piste audio ou vidéo lisible</string>

@@ -108,6 +108,9 @@
     <string name="settings_view_onboarding_desc">ดูขั้นตอนการต้อนรับอีกครั้ง</string>
     <string name="settings_privacy_policy">นโยบายความเป็นส่วนตัว</string>
     <string name="settings_privacy_policy_desc">อ่านพื้นฐานความเป็นส่วนตัวและการควบคุมภายใน</string>
+    <string name="settings_rate_app">ให้คะแนนบริการโดยตรง</string>
+    <string name="settings_rate_app_desc">เปิด Play Store เพื่อให้คะแนนหรือวิจารณ์</string>
+    <string name="rate_app_unavailable">ไม่สามารถเปิด Play Store ได้</string>
     <string name="settings_privacy_promise">คำมั่นสัญญาด้านความเป็นส่วนตัว</string>
     <string name="settings_privacy_promise_desc">ไฟล์ของคุณจะอยู่เพียงในโทรศัพท์เครื่องนี้</string>
     <string name="settings_how_it_works">ความช่วยเหลือและฟีเจอร์</string>
@@ -619,6 +622,8 @@
     <string name="library_date_group_label">%1$s</string>
     <string name="web_upload_title">อัปโหลด</string>
     <string name="web_upload_subtitle">โยนไฟล์เข้าเครื่องโทรศัพท์เครื่องนี้</string>
+    <string name="web_send_floating_title">ส่งไปยังอุปกรณ์</string>
+    <string name="web_send_floating_subtitle">อัปโหลดรูปภาพ วิดีโอ และไฟล์</string>
     <string name="web_upload_prompt_title">ลากไฟล์มาวางที่นี่</string>
     <string name="web_upload_prompt_desktop">เอาไฟล์มาหย่อนได้เลย</string>
     <string name="web_upload_prompt_mobile">เลือกไฟล์จากเครื่องส่งมา</string>
@@ -888,8 +893,6 @@
     <string name="web_error_missing_offset">ขาดค่ากำหนดตำแหน่งวิดีโอ (offsetMs)</string>
     <string name="web_error_apple_hls_only">เครื่อง Apple ต้องใช้ HLS ถึงจะดูไฟล์ที่เตรียมไว้ได้</string>
     <string name="web_error_direct_not_ready">ดูสดไม่ได้จนกว่าจะแปลงไฟล์เสร็จจ้า โปรดใช้ HLS แทนไปก่อน</string>
-    <string name="web_send_floating_title">ส่งไปยังอุปกรณ์</string>
-    <string name="web_send_floating_subtitle">อัปโหลดรูปภาพ วิดีโอ และไฟล์</string>
     <string name="pipeline_label_transcoding">กำลังแปลงรหัส</string>
     <string name="pipeline_label_repackaging">กำลังเปลี่ยนหีบห่อ</string>
     <string name="pipeline_reason_no_tracks">ไฟล์ต้นทางไม่มีเสียงหรือภาพที่อ่านได้เลย</string>

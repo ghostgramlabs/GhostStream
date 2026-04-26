@@ -108,6 +108,9 @@
     <string name="settings_view_onboarding_desc">Starta introduktionen igen.</string>
     <string name="settings_privacy_policy">Integritetspolicy</string>
     <string name="settings_privacy_policy_desc">Läs om din lokala integritet.</string>
+    <string name="settings_rate_app">Betygsätt DirectServe</string>
+    <string name="settings_rate_app_desc">Öppna Play Butik för att lämna ett betyg eller omdöme.</string>
+    <string name="rate_app_unavailable">Det gick inte att öppna Play Butik.</string>
     <string name="settings_privacy_promise">Vårt löfte</string>
     <string name="settings_privacy_promise_desc">Filer lämnar aldrig telefonen.</string>
     <string name="settings_how_it_works">Hjälp och Funktioner</string>
@@ -619,6 +622,8 @@
     <string name="library_date_group_label">%1$s</string>
     <string name="web_upload_title">Skicka</string>
     <string name="web_upload_subtitle">Skicka till telefonen.</string>
+    <string name="web_send_floating_title">Skicka till enheten</string>
+    <string name="web_send_floating_subtitle">Ladda upp foton, videor och filer</string>
     <string name="web_upload_prompt_title">Välj filer</string>
     <string name="web_upload_prompt_desktop">Dra eller klicka.</string>
     <string name="web_upload_prompt_mobile">Tryck här.</string>
@@ -888,8 +893,6 @@
     <string name="web_error_missing_offset">Saknar offsetMs-parameter.</string>
     <string name="web_error_apple_hls_only">Apple-klienter måste använda HLS för förberedd uppspelning.</string>
     <string name="web_error_direct_not_ready">Direktuppspelning är inte tillgänglig förrän konverteringen är klar. Använd HLS.</string>
-    <string name="web_send_floating_title">Skicka till enheten</string>
-    <string name="web_send_floating_subtitle">Ladda upp foton, videor och filer</string>
     <string name="pipeline_label_transcoding">Transkodning</string>
     <string name="pipeline_label_repackaging">Omförpackning</string>
     <string name="pipeline_reason_no_tracks">Källan har inga läsbara ljud- eller videospår</string>

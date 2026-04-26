@@ -108,6 +108,9 @@
     <string name="settings_view_onboarding_desc">Veja novamente os passos de boas-vindas.</string>
     <string name="settings_privacy_policy">Política de privacidade</string>
     <string name="settings_privacy_policy_desc">Leia sobre controles de privacidade local.</string>
+    <string name="settings_rate_app">Avaliar DirectServe</string>
+    <string name="settings_rate_app_desc">Abra a Play Store para deixar uma avaliação ou comentário.</string>
+    <string name="rate_app_unavailable">Não foi possível abrir a Play Store.</string>
     <string name="settings_privacy_promise">Promessa de privacidade</string>
     <string name="settings_privacy_promise_desc">Seus arquivos nunca saem do seu celular.</string>
     <string name="settings_how_it_works">Ajuda e funções</string>
@@ -619,6 +622,8 @@
     <string name="library_date_group_label">%1$s</string>
     <string name="web_upload_title">Enviar</string>
     <string name="web_upload_subtitle">Enviar para o host.</string>
+    <string name="web_send_floating_title">Enviar para dispositivo</string>
+    <string name="web_send_floating_subtitle">Faça upload de fotos, vídeos e arquivos</string>
     <string name="web_upload_prompt_title">Carregue seus arquivos</string>
     <string name="web_upload_prompt_desktop">Arraste ou escolha arquivos.</string>
     <string name="web_upload_prompt_mobile">Selecione arquivos.</string>
@@ -888,8 +893,6 @@
     <string name="web_error_missing_offset">Parâmetro offsetMs em falta.</string>
     <string name="web_error_apple_hls_only">Dispositivos Apple devem usar HLS.</string>
     <string name="web_error_direct_not_ready">Reprodução direta indisponível até a conversão terminar. Use HLS.</string>
-    <string name="web_send_floating_title">Enviar para dispositivo</string>
-    <string name="web_send_floating_subtitle">Faça upload de fotos, vídeos e arquivos</string>
     <string name="pipeline_label_transcoding">Transcodificação</string>
     <string name="pipeline_label_repackaging">Re-empacotamento (Repackaging)</string>
     <string name="pipeline_reason_no_tracks">A fonte não contém faixas de áudio ou vídeo legíveis</string>

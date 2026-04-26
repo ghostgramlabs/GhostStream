@@ -108,6 +108,9 @@
     <string name="settings_view_onboarding_desc">സഹായാ കുറിപ്പുകൾ വീണ്ടും കാണുക.</string>
     <string name="settings_privacy_policy">സ്വകാര്യതാനയം</string>
     <string name="settings_privacy_policy_desc">നിങ്ങളുടെ ഫയലുകളുടെ സുരക്ഷയെക്കുറിച്ച് വായിക്കാം.</string>
+    <string name="settings_rate_app">DirectServe റേറ്റ് ചെയ്യുക</string>
+    <string name="settings_rate_app_desc">ഒരു റേറ്റിംഗ് അല്ലെങ്കിൽ അവലോകനം നൽകാൻ Play സ്റ്റോർ തുറക്കുക.</string>
+    <string name="rate_app_unavailable">പ്ലേ സ്റ്റോർ തുറക്കാനായില്ല.</string>
     <string name="settings_privacy_promise">സ്വകാര്യതാ വാഗ്ദാനം</string>
     <string name="settings_privacy_promise_desc">ഫയലുകൾ സുരക്ഷിതമായി നിങ്ങളുടെ ഫോണിൽ തന്നെയുണ്ടാകും.</string>
     <string name="settings_how_it_works">വിവരങ്ങളും സവിശേഷതകളും</string>
@@ -619,6 +622,8 @@
     <string name="library_date_group_label">%1$s</string>
     <string name="web_upload_title">അപ്‌ലോഡ്</string>
     <string name="web_upload_subtitle">ഫോണിലേക്ക് അയക്കാം.</string>
+    <string name="web_send_floating_title">ഉപകരണത്തിലേക്ക് അയയ്ക്കുക</string>
+    <string name="web_send_floating_subtitle">ഫോട്ടോകളും വീഡിയോകളും ഫയലുകളും അപ്‌ലോഡ് ചെയ്യുക</string>
     <string name="web_upload_prompt_title">സെലക്ട് ചെയ്യൂ</string>
     <string name="web_upload_prompt_desktop">ഫയലുകൾ ഇങ്ങോട്ട് വെക്കാം.</string>
     <string name="web_upload_prompt_mobile">തിരഞ്ഞെടുക്കാം.</string>
@@ -888,8 +893,6 @@
     <string name="web_error_missing_offset">സമയ വിവരങ്ങൾ ലഭിച്ചില്ല.</string>
     <string name="web_error_apple_hls_only">ഐഫോണുകളിൽ HLS മാത്രമേ പ്രവർത്തിക്കൂ.</string>
     <string name="web_error_direct_not_ready">വീഡിയോ റെഡിയാവാതെ നേരിട്ട് കാണാൻ പറ്റില്ല. HLS ഉപയോഗിക്കുക.</string>
-    <string name="web_send_floating_title">ഉപകരണത്തിലേക്ക് അയയ്ക്കുക</string>
-    <string name="web_send_floating_subtitle">ഫോട്ടോകളും വീഡിയോകളും ഫയലുകളും അപ്‌ലോഡ് ചെയ്യുക</string>
     <string name="pipeline_label_transcoding">ട്രാൻസ്കോഡിംഗ്</string>
     <string name="pipeline_label_repackaging">റീപാക്കേജിംഗ്</string>
     <string name="pipeline_reason_no_tracks">ശബ്ദമോ വീഡിയോയോ ഇതിലില്ല</string>

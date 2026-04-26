@@ -108,6 +108,9 @@
     <string name="settings_view_onboarding_desc">Sehen Sie sich die Willkommensschritte noch einmal an.</string>
     <string name="settings_privacy_policy">Datenschutzrichtlinie</string>
     <string name="settings_privacy_policy_desc">Lesen Sie die Grundlagen und Kontrollen zum lokalen Datenschutz.</string>
+    <string name="settings_rate_app">Bewerten Sie DirectServe</string>
+    <string name="settings_rate_app_desc">Öffnen Sie den Play Store, um eine Bewertung oder Rezension abzugeben.</string>
+    <string name="rate_app_unavailable">Der Play Store konnte nicht geöffnet werden.</string>
     <string name="settings_privacy_promise">Datenschutzversprechen</string>
     <string name="settings_privacy_promise_desc">Ihre Dateien bleiben auf diesem Telefon.</string>
     <string name="settings_how_it_works">Hilfe und Funktionen</string>
@@ -619,6 +622,8 @@
     <string name="library_date_group_label">%1$s</string>
     <string name="web_upload_title">Schicken</string>
     <string name="web_upload_subtitle">Senden Sie Dateien über das lokale Netzwerk an dieses Gerät.</string>
+    <string name="web_send_floating_title">An Gerät senden</string>
+    <string name="web_send_floating_subtitle">Laden Sie Fotos, Videos und Dateien hoch</string>
     <string name="web_upload_prompt_title">Legen Sie Medien hier ab oder wählen Sie Dateien aus</string>
     <string name="web_upload_prompt_desktop">Ziehen Sie sie hierher und legen Sie sie dort ab, oder wählen Sie unten Dateien aus.</string>
     <string name="web_upload_prompt_mobile">Wählen Sie Dateien von Ihrem Gerät aus, um sie hierher zu senden.</string>
@@ -888,8 +893,6 @@
     <string name="web_error_missing_offset">Fehlender offsetMs-Parameter.</string>
     <string name="web_error_apple_hls_only">Apple-Clients müssen HLS für die vorbereitete Wiedergabe verwenden.</string>
     <string name="web_error_direct_not_ready">Direktwiedergabe ist nicht verfügbar, bis die Konvertierung finalisiert ist. Bitte verwenden Sie HLS.</string>
-    <string name="web_send_floating_title">An Gerät senden</string>
-    <string name="web_send_floating_subtitle">Laden Sie Fotos, Videos und Dateien hoch</string>
     <string name="pipeline_label_transcoding">Transkodierung</string>
     <string name="pipeline_label_repackaging">Neuverpackung</string>
     <string name="pipeline_reason_no_tracks">Quelle hat keine lesbaren Audio- oder Videospuren</string>

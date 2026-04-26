@@ -108,6 +108,9 @@
     <string name="settings_view_onboarding_desc">重新显示引导。</string>
     <string name="settings_privacy_policy">隐私政策</string>
     <string name="settings_privacy_policy_desc">本地隐私。</string>
+    <string name="settings_rate_app">评价直接服务</string>
+    <string name="settings_rate_app_desc">打开 Play 商店留下评分或评论。</string>
+    <string name="rate_app_unavailable">无法打开 Play 商店。</string>
     <string name="settings_privacy_promise">承诺</string>
     <string name="settings_privacy_promise_desc">文件永远不会上传到云端。</string>
     <string name="settings_how_it_works">工作原理</string>
@@ -619,6 +622,8 @@
     <string name="library_date_group_label">%1$s</string>
     <string name="web_upload_title">上传</string>
     <string name="web_upload_subtitle">到手机。</string>
+    <string name="web_send_floating_title">发送至设备</string>
+    <string name="web_send_floating_subtitle">上传照片、视频和文件</string>
     <string name="web_upload_prompt_title">放入文件</string>
     <string name="web_upload_prompt_desktop">拖放。</string>
     <string name="web_upload_prompt_mobile">点击。</string>
@@ -888,8 +893,6 @@
     <string name="web_error_missing_offset">缺少 offsetMs 参数。</string>
     <string name="web_error_apple_hls_only">Apple 客户端必须使用 HLS 进行准备好的播放。</string>
     <string name="web_error_direct_not_ready">在转换完成前，直接播放不可用。请使用 HLS。</string>
-    <string name="web_send_floating_title">发送至设备</string>
-    <string name="web_send_floating_subtitle">上传照片、视频和文件</string>
     <string name="pipeline_label_transcoding">转码</string>
     <string name="pipeline_label_repackaging">重新封装</string>
     <string name="pipeline_reason_no_tracks">源没有可读取的音频或视频轨道</string>

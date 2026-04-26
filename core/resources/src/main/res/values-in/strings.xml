@@ -108,6 +108,9 @@
     <string name="settings_view_onboarding_desc">Ulangi panduan awal.</string>
     <string name="settings_privacy_policy">Kebijakan Privasi</string>
     <string name="settings_privacy_policy_desc">Privasi lokal.</string>
+    <string name="settings_rate_app">Nilai DirectServe</string>
+    <string name="settings_rate_app_desc">Buka Play Store untuk memberikan rating atau ulasan.</string>
+    <string name="rate_app_unavailable">Tidak dapat membuka Play Store.</string>
     <string name="settings_privacy_promise">Janji Kami</string>
     <string name="settings_privacy_promise_desc">File tidak pernah pergi ke cloud.</string>
     <string name="settings_how_it_works">Cara Kerja</string>
@@ -619,6 +622,8 @@
     <string name="library_date_group_label">%1$s</string>
     <string name="web_upload_title">Unggah</string>
     <string name="web_upload_subtitle">Ke ponsel.</string>
+    <string name="web_send_floating_title">Kirim ke perangkat</string>
+    <string name="web_send_floating_subtitle">Unggah foto, video, dan file</string>
     <string name="web_upload_prompt_title">Beri File</string>
     <string name="web_upload_prompt_desktop">Seret.</string>
     <string name="web_upload_prompt_mobile">Ketuk.</string>
@@ -888,8 +893,6 @@
     <string name="web_error_missing_offset">Parameter offsetMs hilang.</string>
     <string name="web_error_apple_hls_only">Klien Apple harus menggunakan HLS untuk pemutaran yang disiapkan.</string>
     <string name="web_error_direct_not_ready">Pemutaran langsung tidak tersedia hingga konversi difinalisasi. Harap gunakan HLS.</string>
-    <string name="web_send_floating_title">Kirim ke perangkat</string>
-    <string name="web_send_floating_subtitle">Unggah foto, video, dan file</string>
     <string name="pipeline_label_transcoding">Transkode</string>
     <string name="pipeline_label_repackaging">Pengemasan Ulang</string>
     <string name="pipeline_reason_no_tracks">Sumber tidak memiliki trek audio atau video yang dapat dibaca</string>
