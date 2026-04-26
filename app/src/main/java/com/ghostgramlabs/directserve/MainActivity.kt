@@ -359,9 +359,15 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                         }
                     }
                 }
-                is AppEvent.NavigateHistory -> navController.navigate(Routes.History)
-                AppEvent.NavigateQuickText -> navController.navigate(Routes.QuickText)
-                AppEvent.NavigateLiveScreen -> navController.navigate(Routes.LiveScreen)
+                is AppEvent.NavigateHistory -> navController.navigate(Routes.History) {
+                    launchSingleTop = true
+                }
+                AppEvent.NavigateQuickText -> navController.navigate(Routes.QuickText) {
+                    launchSingleTop = true
+                }
+                AppEvent.NavigateLiveScreen -> navController.navigate(Routes.LiveScreen) {
+                    launchSingleTop = true
+                }
                 is AppEvent.OpenFile -> {
                     runCatching {
                         val uri = android.net.Uri.parse(event.fileUri)
