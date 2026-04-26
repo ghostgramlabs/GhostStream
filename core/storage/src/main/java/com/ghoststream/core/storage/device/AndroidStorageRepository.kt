@@ -49,7 +49,10 @@ class AndroidStorageRepository(
     private val context: Context,
     private val mediaAnalyzer: MediaAnalyzer,
     private val historyRepository: HistoryRepository,
-    private val json: Json = Json { ignoreUnknownKeys = true },
+    private val json: Json = Json {
+        ignoreUnknownKeys = true
+        coerceInputValues = true
+    },
 ) : StorageRepository {
 
     private val addFilesDispatcher = Dispatchers.IO.limitedParallelism(
@@ -63,6 +66,9 @@ class AndroidStorageRepository(
     )
     private val stateMutex = Mutex()
     private val _libraryState = MutableStateFlow(LibraryState())
+
+    @Volatile
+    private var restoreFailed = false
 
     override val libraryState: StateFlow<LibraryState> = _libraryState.asStateFlow()
 
@@ -397,20 +403,33 @@ class AndroidStorageRepository(
                 if (error is IOException) emit(emptyPreferences()) else throw error
             }
             .map { preferences ->
-                preferences[LIBRARY_KEY]
-                    ?.let { encoded ->
-                        runCatching {
-                            json.decodeFromString(PersistedLibrary.serializer(), encoded)
-                        }.getOrNull()
-                    }
-                    ?.toState()
-                    ?.withSummary()
-                    ?: LibraryState()
+                val encoded = preferences[LIBRARY_KEY] ?: return@map LibraryState()
+                try {
+                    json.decodeFromString(PersistedLibrary.serializer(), encoded)
+                        .toState()
+                        .withSummary()
+                } catch (t: Throwable) {
+                    restoreFailed = true
+                    android.util.Log.e(
+                        "GhostLibrary",
+                        "Failed to decode persisted library; preserving raw JSON for recovery in a future build. ${t.message}",
+                        t,
+                    )
+                    LibraryState()
+                }
             }
             .first()
     }
 
     private suspend fun persistAndPublish(state: LibraryState) {
+        if (restoreFailed) {
+            android.util.Log.w(
+                "GhostLibrary",
+                "Skipping persist: previous library decode failed; original encoded JSON preserved.",
+            )
+            _libraryState.value = state
+            return
+        }
         persistence.edit { preferences ->
             preferences[LIBRARY_KEY] = json.encodeToString(
                 PersistedLibrary.serializer(),
