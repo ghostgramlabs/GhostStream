@@ -349,7 +349,7 @@ private fun FeatureSectionsCard(
                 detail = stringResource(R.string.home_feature_live_screen_desc),
                 onClick = onOpenLiveScreen,
             )
-            if (!isLiveScreenActive) {
+            if (!isLiveScreenActive && settings.quickTextEnabled) {
                 FeatureRow(
                     icon = Icons.Outlined.Textsms,
                     title = stringResource(R.string.home_feature_quick_text),

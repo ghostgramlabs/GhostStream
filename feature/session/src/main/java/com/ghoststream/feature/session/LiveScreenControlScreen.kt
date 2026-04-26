@@ -147,25 +147,27 @@ fun LiveScreenControlScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        OutlinedButton(
-                            onClick = {
-                                if (pinProtectionEnabled) onRegeneratePin() else onTogglePinProtection(true)
-                            },
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text(
-                                text = stringResource(
-                                    if (pinProtectionEnabled) R.string.session_new_pin else R.string.session_turn_pin_on
-                                ),
-                            )
-                        }
-                        if (pinProtectionEnabled) {
+                    if (state.isActive) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             OutlinedButton(
-                                onClick = { onTogglePinProtection(false) },
+                                onClick = {
+                                    if (pinProtectionEnabled) onRegeneratePin() else onTogglePinProtection(true)
+                                },
                                 modifier = Modifier.weight(1f),
                             ) {
-                                Text(stringResource(R.string.session_turn_pin_off))
+                                Text(
+                                    text = stringResource(
+                                        if (pinProtectionEnabled) R.string.session_new_pin else R.string.session_turn_pin_on
+                                    ),
+                                )
+                            }
+                            if (pinProtectionEnabled) {
+                                OutlinedButton(
+                                    onClick = { onTogglePinProtection(false) },
+                                    modifier = Modifier.weight(1f),
+                                ) {
+                                    Text(stringResource(R.string.session_turn_pin_off))
+                                }
                             }
                         }
                     }

@@ -41,6 +41,7 @@ data class AppSettings(
     val notifyOnFileDownload: Boolean = true,
     val notifyOnUploadRequest: Boolean = true,
     val notifyOnQuickText: Boolean = true,
+    val quickTextEnabled: Boolean = true,
     val requireDeviceApproval: Boolean = false,
     val preventDownload: Boolean = false,
     val mediaServerMode: Boolean = false,

@@ -386,6 +386,7 @@ class KtorGhostStreamServer(
                         preventDownload = settings.preventDownload,
                         deviceName = deviceName,
                         deviceIp = clientIp,
+                        quickTextEnabled = settings.quickTextEnabled,
                         strings = mapOf(
                             "web_hero_eyebrow" to localizedContext.getString(R.string.web_hero_eyebrow),
                             "web_hero_title" to localizedContext.getString(R.string.web_hero_title),
@@ -494,6 +495,7 @@ class KtorGhostStreamServer(
                             "web_quick_text_open_link" to localizedContext.getString(R.string.quick_text_open_link),
                             "web_quick_text_clear_all" to localizedContext.getString(R.string.quick_text_clear_all),
                             "web_quick_text_target" to localizedContext.getString(R.string.quick_text_target_label),
+                            "web_quick_text_notify_title" to localizedContext.getString(R.string.web_quick_text_notify_title),
                             "common_delete" to localizedContext.getString(R.string.common_delete),
                             "web_library_desc_download" to localizedContext.getString(R.string.web_library_desc_download),
                             "web_library_desc_browse" to localizedContext.getString(R.string.web_library_desc_browse),
@@ -1648,6 +1650,9 @@ class KtorGhostStreamServer(
 
             get("/api/quick-text/messages") {
                 if (!call.authorizeBrowserCall()) return@get
+                if (!settingsRepository.settings.first().quickTextEnabled) {
+                    return@get call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.web_quick_text_disabled)))
+                }
                 call.respond(
                     QuickTextHistoryPayload(
                         messages = historyRepository.quickTextMessages.first(),
@@ -1659,10 +1664,13 @@ class KtorGhostStreamServer(
 
             post("/api/quick-text/messages") {
                 if (!call.authorizeBrowserCall()) return@post
+                val settings = settingsRepository.settings.first()
+                if (!settings.quickTextEnabled) {
+                    return@post call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.web_quick_text_disabled)))
+                }
                 val payload = call.receiveNullable<QuickTextSendPayload>()
                     ?: return@post call.respond(HttpStatusCode.BadRequest, ErrorPayload(localizedContext().getString(R.string.web_error_invalid_upload_request)))
                 val clientIp = call.request.origin.remoteHost
-                val settings = settingsRepository.settings.first()
                 val senderName = displayDeviceName(clientIp, settings.deviceNicknames)
                 val message = QuickTextMessage(
                     id = UUID.randomUUID().toString(),
@@ -1680,6 +1688,9 @@ class KtorGhostStreamServer(
 
             post("/api/quick-text/delete/{id}") {
                 if (!call.authorizeBrowserCall()) return@post
+                if (!settingsRepository.settings.first().quickTextEnabled) {
+                    return@post call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.web_quick_text_disabled)))
+                }
                 val id = call.parameters["id"]
                     ?: return@post call.respond(HttpStatusCode.BadRequest, ErrorPayload(localizedContext().getString(R.string.web_error_invalid_upload_request)))
                 val message = historyRepository.getQuickTextMessage(id)
@@ -1693,6 +1704,9 @@ class KtorGhostStreamServer(
 
             post("/api/quick-text/clear") {
                 if (!call.authorizeBrowserCall()) return@post
+                if (!settingsRepository.settings.first().quickTextEnabled) {
+                    return@post call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.web_quick_text_disabled)))
+                }
                 historyRepository.clearQuickTextMessages()
                 call.respond(AuthResult(success = true))
             }
@@ -3247,6 +3261,7 @@ class KtorGhostStreamServer(
         val preventDownload: Boolean,
         val deviceName: String,
         val deviceIp: String,
+        val quickTextEnabled: Boolean,
         val strings: Map<String, String>,
     )
 

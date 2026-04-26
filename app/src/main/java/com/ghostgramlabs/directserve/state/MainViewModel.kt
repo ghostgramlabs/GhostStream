@@ -508,18 +508,18 @@ class MainViewModel(
             container.settingsRepository.update { current.copy(requireSessionPin = enabled) }
             val newPin = if (enabled) generateLivePin(current) else null
             container.liveScreenManager.updateState { it.copy(pin = newPin) }
-            _events.emit(
-                AppEvent.ShowMessage(
-                    if (enabled) application.getString(R.string.message_pin_on) else application.getString(R.string.message_pin_off)
-                )
-            )
         }
     }
 
     fun regenerateLiveScreenPin() {
         viewModelScope.launch {
             val current = container.settingsRepository.settings.first()
-            if (!current.requireSessionPin) return@launch
+            val enabled = current.requireSessionPin
+            val effective = if (!enabled) {
+                container.settingsRepository.update { it.copy(requireSessionPin = true) }
+                true
+            } else true
+            if (!effective) return@launch
             val newPin = generateLivePin(current)
             container.liveScreenManager.updateState { it.copy(pin = newPin) }
         }

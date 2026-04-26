@@ -732,6 +732,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onToggleNotifyOnFileDownload = { viewModel.updateSettings { current -> current.copy(notifyOnFileDownload = it) } },
                     onToggleNotifyOnUploadRequest = { viewModel.updateSettings { current -> current.copy(notifyOnUploadRequest = it) } },
                     onToggleNotifyOnQuickText = { viewModel.updateSettings { current -> current.copy(notifyOnQuickText = it) } },
+                    onToggleQuickTextEnabled = { viewModel.updateSettings { current -> current.copy(quickTextEnabled = it) } },
                     onToggleRequireDeviceApproval = { viewModel.updateSettings { current -> current.copy(requireDeviceApproval = it) } },
                     onAutoStopSelected = viewModel::updateAutoStop,
                     onPreferredPortChanged = { port ->

@@ -67,6 +67,8 @@
     <string name="settings_download_alerts_desc">Alert when someone downloads a file.</string>
     <string name="settings_upload_requests">Upload requests</string>
     <string name="settings_upload_requests_desc">Alert when someone requests to upload.</string>
+    <string name="settings_quick_text_enabled">Quick text</string>
+    <string name="settings_quick_text_enabled_desc">Allow phones and browsers to share quick text messages and links.</string>
     <string name="settings_quick_text_alerts">Quick text alerts</string>
     <string name="settings_quick_text_alerts_desc">Notify when a browser sends a quick text message.</string>
     <string name="settings_use_pin">Use PIN</string>
@@ -848,6 +850,8 @@
     <string name="quick_text_sent">Text shared.</string>
     <string name="quick_text_blocked_by_live_screen">Stop Live Screen before using Quick Text.</string>
     <string name="web_quick_text_delete_forbidden">You can only delete messages you sent.</string>
+    <string name="web_quick_text_disabled">Quick text is disabled by the device owner.</string>
+    <string name="web_quick_text_notify_title">New message from %s</string>
     <string name="web_live_title">Live Screen</string>
     <string name="web_live_waiting">Waiting for stream</string>
     <string name="web_live_status_live">Live</string>

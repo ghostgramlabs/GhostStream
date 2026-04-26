@@ -171,7 +171,7 @@ class GhostStreamForegroundService : Service() {
                         seenQuickTextIds = currentIds
                         return@collectLatest
                     }
-                    if (settings.notifyOnQuickText) {
+                    if (settings.quickTextEnabled && settings.notifyOnQuickText) {
                         messages
                             .filter { it.id !in previouslySeen && it.senderId != QUICK_TEXT_PHONE_ID }
                             .forEach { showQuickTextNotification(it) }

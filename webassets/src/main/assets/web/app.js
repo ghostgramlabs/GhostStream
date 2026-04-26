@@ -64,6 +64,10 @@ const state = {
   liveModeGuardTimer: null,
   liveFitMode: "contain",
   quickTextTimer: null,
+  quickTextNotifyTimer: null,
+  quickTextSeenIds: null,
+  quickTextUnreadCount: 0,
+  quickTextNotificationPermissionRequested: false,
 };
 
 function libraryCacheKey(category, query, folderId) {
@@ -121,7 +125,11 @@ const routes = {
     renderLibrary("files", titleForPath("/files"));
   },
   "/live": renderLiveScreen,
-  "/quick-text": renderQuickText,
+  "/quick-text": () => {
+    if (state.bootstrap?.quickTextEnabled === false) { navigate("/", true); return; }
+    clearQuickTextUnread();
+    return renderQuickText();
+  },
   "/folders": () => renderFolders(titleForPath("/folders")),
   "/upload": renderUpload,
 };
@@ -406,8 +414,14 @@ async function boot() {
     }
     debugTrace("bootstrap_loaded", `route=${path} auth=${state.bootstrap?.authEnabled} theme=${state.bootstrap?.themeMode}`);
     if (path === "/login") {
+      destroyQuickTextNotifications();
       renderLogin();
       return;
+    }
+    if (state.bootstrap?.quickTextEnabled === false) {
+      destroyQuickTextNotifications();
+    } else if (!state.quickTextNotifyTimer) {
+      startQuickTextNotifications();
     }
     if (path.startsWith("/player/video/")) {
       renderVideoPlayer(path.split("/").pop());
@@ -1143,7 +1157,7 @@ function shell(content, options = {}) {
               <a class="gs-tab${mediaActive ? " on" : ""}" data-link href="/">${gsStr("web_nav_media", "Media")}</a>
               ${isCategoryEnabled("files") ? `<a class="gs-tab${path === "/files" ? " on" : ""}" data-link href="/files">${gsStr("web_nav_files", "Files")}</a>` : ""}
               ${path === "/live" ? `<a class="gs-tab on" data-link href="/live">${gsStr("web_live_title", "")}</a>` : ""}
-              <a class="gs-tab${path === "/quick-text" ? " on" : ""}" data-link href="/quick-text">${gsStr("web_quick_text_title", "")}</a>
+              ${bootstrap?.quickTextEnabled === false ? "" : `<a class="gs-tab${path === "/quick-text" ? " on" : ""}" data-link href="/quick-text">${gsStr("web_quick_text_title", "")}<span class="gs-nav-badge" id="quickTextBadge" hidden></span></a>`}
             `}
           </div>
           <div class="gs-nav-meta">
@@ -1212,6 +1226,7 @@ function shell(content, options = {}) {
     await api("/auth/logout", { method: "POST" });
     navigate("/login", true);
   });
+  applyQuickTextBadge();
   if (!liveMirrorExclusive) {
     startLiveModeGuard();
   }
@@ -3520,6 +3535,90 @@ async function destroyLiveScreen(options = {}) {
   if (wait && disconnectPromise) {
     await disconnectPromise;
   }
+}
+
+function destroyQuickTextNotifications() {
+  if (state.quickTextNotifyTimer) {
+    clearInterval(state.quickTextNotifyTimer);
+    state.quickTextNotifyTimer = null;
+  }
+  state.quickTextSeenIds = null;
+  state.quickTextUnreadCount = 0;
+  applyQuickTextBadge();
+}
+
+function applyQuickTextBadge() {
+  const badge = document.getElementById("quickTextBadge");
+  if (!badge) return;
+  const count = state.quickTextUnreadCount || 0;
+  if (count <= 0) {
+    badge.hidden = true;
+    badge.textContent = "";
+  } else {
+    badge.hidden = false;
+    badge.textContent = count > 99 ? "99+" : String(count);
+  }
+}
+
+function clearQuickTextUnread() {
+  if (!state.quickTextUnreadCount) return;
+  state.quickTextUnreadCount = 0;
+  applyQuickTextBadge();
+}
+
+function removeQuickTextNavLink() {
+  const badge = document.getElementById("quickTextBadge");
+  const link = badge?.closest("a.gs-tab");
+  link?.remove();
+}
+
+function startQuickTextNotifications() {
+  destroyQuickTextNotifications();
+  state.quickTextSeenIds = new Set();
+  const tick = async () => {
+    if (location.pathname === "/login") return;
+    let payload;
+    try {
+      payload = await api("/api/quick-text/messages");
+    } catch (error) {
+      if (error?.status === 404) {
+        if (state.bootstrap) state.bootstrap.quickTextEnabled = false;
+        removeQuickTextNavLink();
+        destroyQuickTextNotifications();
+        if (location.pathname === "/quick-text") navigate("/", true);
+      }
+      return;
+    }
+    const messages = payload?.messages || [];
+    const myId = payload?.myDeviceId || "";
+    const seen = state.quickTextSeenIds;
+    if (!seen) return;
+    if (seen.size === 0) {
+      // Baseline pass — record current ids without notifying.
+      messages.forEach((message) => seen.add(message.id));
+      return;
+    }
+    const fresh = messages.filter((message) => !seen.has(message.id) && message.senderId !== myId);
+    messages.forEach((message) => seen.add(message.id));
+    if (fresh.length === 0) return;
+    if (location.pathname === "/quick-text") return; // already visible to the user
+    state.quickTextUnreadCount = (state.quickTextUnreadCount || 0) + fresh.length;
+    applyQuickTextBadge();
+    if (typeof Notification !== "undefined" && Notification.permission === "granted" && document.hidden) {
+      const heading = gsStr("web_quick_text_notify_title", "New message from %s", fresh[0].senderName);
+      try { new Notification(heading, { body: (fresh[0].text || "").slice(0, 140) }); } catch (_) {}
+    }
+    if (
+      typeof Notification !== "undefined" &&
+      Notification.permission === "default" &&
+      !state.quickTextNotificationPermissionRequested
+    ) {
+      state.quickTextNotificationPermissionRequested = true;
+      try { Notification.requestPermission().catch(() => {}); } catch (_) {}
+    }
+  };
+  state.quickTextNotifyTimer = window.setInterval(tick, 4000);
+  tick();
 }
 
 function destroyQuickTextPolling() {
