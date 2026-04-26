@@ -61,8 +61,8 @@
     <string name="settings_auto_stop_15m">15 min</string>
     <string name="settings_auto_stop_30m">30 min</string>
     <string name="settings_auto_stop_1h">1 hour</string>
-    <string name="settings_connection_alerts">Connection alerts</string>
-    <string name="settings_connection_alerts_desc">Alert when someone connects to your session.</string>
+    <string name="settings_connection_alerts">New device notifications</string>
+    <string name="settings_connection_alerts_desc">Show a notification when a new device connects to your sharing session. On by default.</string>
     <string name="settings_download_alerts">Download alerts</string>
     <string name="settings_download_alerts_desc">Alert when someone downloads a file.</string>
     <string name="settings_upload_requests">Upload requests</string>
@@ -216,10 +216,10 @@
     <string name="session_browser_prep_manual_note">This file may not play on all devices without preparation.</string>
     <string name="session_prepare_browser_files">Prepare for web</string>
     <string name="session_stop_browser_files">Stop preparation</string>
-    <string name="session_library_refresh_title">Add more to this share</string>
+    <string name="session_library_refresh_title">Refresh shared library</string>
     <string name="session_library_refresh_pending">%1$d new files and %2$d new folders are ready to join this live share.</string>
     <string name="session_library_refresh_up_to_date">This live share already matches your current share.</string>
-    <string name="session_refresh_library">Add More</string>
+    <string name="session_refresh_library">Refresh</string>
     <string name="message_live_library_refreshed_updates">Added %1$d new files and %2$d new folders to this live share.</string>
     <string name="message_live_library_refreshed_current">This live share was already up to date.</string>
     <string name="message_browser_playback_queued_all">Added all files to preparation queue.</string>
@@ -937,13 +937,13 @@
     <string name="dlna_screen_title">DLNA &amp; TV streaming</string>
     <string name="dlna_intro_title">Stream to Smart TVs and media players</string>
     <string name="dlna_intro_body">DLNA lets nearby Smart TVs, gaming consoles, VLC, and Kodi discover this phone as a media server on the same Wi-Fi or hotspot.</string>
-    <string name="dlna_status_enabled">DLNA is on. Start sharing to make this phone visible.</string>
-    <string name="dlna_status_disabled">DLNA is off. Turn it on to be discoverable.</string>
+    <string name="dlna_status_enabled">DLNA is on. Start a sharing session from the home screen to make this phone visible.</string>
+    <string name="dlna_status_disabled">DLNA is off. Turn it on to be discoverable when a sharing session is active.</string>
     <string name="dlna_toggle_on">Turn DLNA on</string>
     <string name="dlna_toggle_off">Turn DLNA off</string>
     <string name="dlna_section_tv">Connect a Smart TV</string>
     <string name="dlna_step_tv_1">1. Make sure your TV is on the same Wi-Fi network as this phone.</string>
-    <string name="dlna_step_tv_2">2. On this phone, start sharing from the home screen.</string>
+    <string name="dlna_step_tv_2">2. On this phone, start a sharing session from the home screen.</string>
     <string name="dlna_step_tv_3">3. On your TV, open the media or source menu (sometimes called \"Inputs\", \"Apps\", or \"Media\").</string>
     <string name="dlna_step_tv_4">4. Look for \"DirectServe Media Server\" in the source list and select it.</string>
     <string name="dlna_step_tv_5">5. Browse your shared videos, music, and photos directly from the TV remote.</string>
@@ -958,7 +958,7 @@
     <string name="dlna_section_troubleshoot">Troubleshooting</string>
     <string name="dlna_trouble_1">If your TV does not see this phone, make sure both are on the same Wi-Fi network or hotspot.</string>
     <string name="dlna_trouble_2">Public Wi-Fi sometimes blocks device-to-device discovery. Use your phone hotspot as a reliable fallback.</string>
-    <string name="dlna_trouble_3">DLNA only works while sharing is active. Tap Start Sharing on the home screen first.</string>
+    <string name="dlna_trouble_3">DLNA only works while a sharing session is active. Start a session from the home screen first.</string>
 
     <!-- Onboarding Pages 7 and 8 for New Features -->
     <string name="onboarding_page_7_title">Quick text messaging</string>

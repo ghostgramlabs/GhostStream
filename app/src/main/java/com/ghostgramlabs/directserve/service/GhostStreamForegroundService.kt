@@ -62,7 +62,11 @@ class GhostStreamForegroundService : Service() {
         createNotificationChannel()
         debugLogRepository.log("ForegroundService", "onCreate")
         serviceScope.launch {
-            container.sessionManager.sessionState.collectLatest { state ->
+            combine(
+                container.sessionManager.sessionState,
+                container.settingsRepository.settings,
+            ) { state, settings -> state to settings }
+                .collectLatest { (state, settings) ->
                 runCatching {
                     updateSharingLocks(state.isSharing)
                     if (!state.isSharing && !startupInProgress) {
@@ -107,7 +111,7 @@ class GhostStreamForegroundService : Service() {
                         }
                     }
 
-                    if (state.isSharing && newClients.isNotEmpty()) {
+                    if (state.isSharing && newClients.isNotEmpty() && settings.notifyOnDeviceConnect) {
                         showDeviceConnectionNotification(newClients, state.connectedClients.size)
                     }
                     lastConnectedClientIds = state.connectedClients.mapTo(linkedSetOf()) { it.id }
