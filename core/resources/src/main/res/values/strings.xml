@@ -627,6 +627,7 @@
     <string name="home_feature_live_screen_desc">Mirror your phone screen to a browser on the local network.</string>
     <string name="home_feature_quick_text">Quick Text</string>
     <string name="home_feature_quick_text_desc">Send text or links to nearby browser devices.</string>
+    <string name="home_feature_quick_text_disabled_live">Available when screen mirroring is off.</string>
     <string name="home_saved_shares">Saved shares</string>
     <string name="home_saved_shares_save_now">Save now</string>
     <string name="home_saved_shares_open">Open</string>
@@ -931,6 +932,33 @@
 
     <!-- Latest Activity Strings -->
     <string name="history_latest_activity_desc">Shows the most recent file transfer from your current or last session.</string>
+
+    <!-- DLNA Screen Strings -->
+    <string name="dlna_screen_title">DLNA &amp; TV streaming</string>
+    <string name="dlna_intro_title">Stream to Smart TVs and media players</string>
+    <string name="dlna_intro_body">DLNA lets nearby Smart TVs, gaming consoles, VLC, and Kodi discover this phone as a media server on the same Wi-Fi or hotspot.</string>
+    <string name="dlna_status_enabled">DLNA is on. Start sharing to make this phone visible.</string>
+    <string name="dlna_status_disabled">DLNA is off. Turn it on to be discoverable.</string>
+    <string name="dlna_toggle_on">Turn DLNA on</string>
+    <string name="dlna_toggle_off">Turn DLNA off</string>
+    <string name="dlna_section_tv">Connect a Smart TV</string>
+    <string name="dlna_step_tv_1">1. Make sure your TV is on the same Wi-Fi network as this phone.</string>
+    <string name="dlna_step_tv_2">2. On this phone, start sharing from the home screen.</string>
+    <string name="dlna_step_tv_3">3. On your TV, open the media or source menu (sometimes called \"Inputs\", \"Apps\", or \"Media\").</string>
+    <string name="dlna_step_tv_4">4. Look for \"DirectServe Media Server\" in the source list and select it.</string>
+    <string name="dlna_step_tv_5">5. Browse your shared videos, music, and photos directly from the TV remote.</string>
+    <string name="dlna_section_vlc">Connect with VLC</string>
+    <string name="dlna_step_vlc_1">1. Open VLC on your laptop, desktop, or mobile device.</string>
+    <string name="dlna_step_vlc_2">2. Go to View → Playlist (desktop) or open the side menu (mobile).</string>
+    <string name="dlna_step_vlc_3">3. Look for \"Universal Plug \'n\' Play\" or \"Local Network\" in the sidebar.</string>
+    <string name="dlna_step_vlc_4">4. Select \"DirectServe Media Server\" from the discovered devices.</string>
+    <string name="dlna_step_vlc_5">5. Browse and play your shared media directly inside VLC.</string>
+    <string name="dlna_section_other">Other compatible apps</string>
+    <string name="dlna_other_apps">Works with Kodi, Windows Media Player, PlayStation, Xbox, and most modern Smart TVs that support DLNA or UPnP.</string>
+    <string name="dlna_section_troubleshoot">Troubleshooting</string>
+    <string name="dlna_trouble_1">If your TV does not see this phone, make sure both are on the same Wi-Fi network or hotspot.</string>
+    <string name="dlna_trouble_2">Public Wi-Fi sometimes blocks device-to-device discovery. Use your phone hotspot as a reliable fallback.</string>
+    <string name="dlna_trouble_3">DLNA only works while sharing is active. Tap Start Sharing on the home screen first.</string>
 
     <!-- Onboarding Pages 7 and 8 for New Features -->
     <string name="onboarding_page_7_title">Quick text messaging</string>

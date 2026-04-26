@@ -75,6 +75,7 @@ import com.ghoststream.feature.networksetup.NetworkSetupScreen
 import com.ghoststream.feature.onboarding.OnboardingScreen
 import com.ghoststream.feature.session.ActiveSessionScreen
 import com.ghoststream.feature.session.LiveScreenControlScreen
+import com.ghoststream.feature.settings.DlnaScreen
 import com.ghoststream.feature.settings.HelpScreen
 import com.ghoststream.feature.settings.PrivacyPolicyScreen
 import com.ghoststream.feature.settings.SettingsScreen
@@ -540,6 +541,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onOpenQuickText = viewModel::navigateToQuickText,
                     onOpenSettings = { navController.navigate(Routes.Settings) },
                     onOpenHistory = viewModel::navigateToHistory,
+                    onOpenDlna = { navController.navigate(Routes.Dlna) },
                     onImportAllMedia = startMediaServerWithPermission,
                     onClearAllMedia = viewModel::clearAllMedia,
                     onRequestAllFilesAccess = viewModel::requestAllFilesAccess,
@@ -858,6 +860,14 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     modifier = Modifier.padding(innerPadding),
                 )
             }
+            composable(Routes.Dlna) {
+                DlnaScreen(
+                    dlnaEnabled = uiState.settings.dlnaEnabled,
+                    onToggleDlna = { viewModel.updateSettings { current -> current.copy(dlnaEnabled = it) } },
+                    onBack = { navController.popBackStack() },
+                    modifier = Modifier.padding(innerPadding),
+                )
+            }
         }
     }
 }
@@ -916,6 +926,7 @@ private object Routes {
     const val LiveScreen = "live_screen"
     const val Help = "help"
     const val PrivacyPolicy = "privacy_policy"
+    const val Dlna = "dlna"
 }
 
 private fun selectedLanguageLabel(languageTag: String?): String {

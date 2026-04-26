@@ -119,6 +119,7 @@ fun HomeScreen(
     onOpenQuickText: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenHistory: () -> Unit,
+    onOpenDlna: () -> Unit,
     libraryImportingCount: Int,
     onImportAllMedia: () -> Unit,
     onClearAllMedia: () -> Unit,
@@ -200,18 +201,6 @@ fun HomeScreen(
         }
 
         item {
-            FeatureSectionsCard(
-                settings = settings,
-                onOpenLibrary = onOpenLibrary,
-                onOpenSettings = onOpenSettings,
-                onOpenHistory = onOpenHistory,
-                onOpenLiveScreen = onOpenLiveScreen,
-                onOpenQuickText = onOpenQuickText,
-                isLiveScreenActive = isLiveScreenActive,
-            )
-        }
-
-        item {
             ContentFilterCard(
                 settings = settings,
                 libraryState = libraryState,
@@ -219,6 +208,19 @@ fun HomeScreen(
                 onToggleMusic = onToggleShareMusic,
                 onTogglePhotos = onToggleSharePhotos,
                 onToggleFiles = onToggleShareFiles,
+            )
+        }
+
+        item {
+            FeatureSectionsCard(
+                settings = settings,
+                onOpenLibrary = onOpenLibrary,
+                onOpenSettings = onOpenSettings,
+                onOpenHistory = onOpenHistory,
+                onOpenLiveScreen = onOpenLiveScreen,
+                onOpenQuickText = onOpenQuickText,
+                onOpenDlna = onOpenDlna,
+                isLiveScreenActive = isLiveScreenActive,
             )
         }
 
@@ -306,6 +308,7 @@ private fun FeatureSectionsCard(
     onOpenHistory: () -> Unit,
     onOpenLiveScreen: () -> Unit,
     onOpenQuickText: () -> Unit,
+    onOpenDlna: () -> Unit,
     isLiveScreenActive: Boolean,
 ) {
     Card(
@@ -331,12 +334,6 @@ private fun FeatureSectionsCard(
                 detail = stringResource(R.string.home_feature_library_desc),
                 onClick = onOpenLibrary,
             )
-            FeatureRow(
-                icon = Icons.Outlined.History,
-                title = stringResource(R.string.home_feature_transfers),
-                detail = stringResource(R.string.home_feature_transfers_desc),
-                onClick = onOpenHistory,
-            )
 
             Text(
                 text = stringResource(R.string.home_section_live_tools),
@@ -349,12 +346,17 @@ private fun FeatureSectionsCard(
                 detail = stringResource(R.string.home_feature_live_screen_desc),
                 onClick = onOpenLiveScreen,
             )
-            if (!isLiveScreenActive && settings.quickTextEnabled) {
+            if (settings.quickTextEnabled) {
                 FeatureRow(
                     icon = Icons.Outlined.Textsms,
                     title = stringResource(R.string.home_feature_quick_text),
-                    detail = stringResource(R.string.home_feature_quick_text_desc),
+                    detail = if (isLiveScreenActive) {
+                        stringResource(R.string.home_feature_quick_text_disabled_live)
+                    } else {
+                        stringResource(R.string.home_feature_quick_text_desc)
+                    },
                     onClick = onOpenQuickText,
+                    enabled = !isLiveScreenActive,
                 )
             }
 
@@ -371,7 +373,7 @@ private fun FeatureSectionsCard(
                 } else {
                     stringResource(R.string.home_feature_dlna_desc)
                 },
-                onClick = onOpenSettings,
+                onClick = onOpenDlna,
             )
         }
     }
@@ -383,12 +385,16 @@ private fun FeatureRow(
     title: String,
     detail: String,
     onClick: () -> Unit,
+    enabled: Boolean = true,
 ) {
+    val contentAlpha = if (enabled) 1f else 0.45f
     Surface(
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        modifier = Modifier.clickable(onClick = onClick),
+        modifier = Modifier
+            .graphicsLayer { alpha = contentAlpha }
+            .clickable(enabled = enabled, onClick = onClick),
     ) {
         Row(
             modifier = Modifier

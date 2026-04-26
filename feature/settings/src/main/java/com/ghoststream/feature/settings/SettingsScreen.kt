@@ -478,6 +478,101 @@ fun PrivacyPolicyScreen(
 }
 
 @Composable
+fun DlnaScreen(
+    dlnaEnabled: Boolean,
+    onToggleDlna: (Boolean) -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(
+                horizontal = GhostSpacing.screenHorizontal,
+                vertical = GhostSpacing.screenVertical,
+            ),
+    ) {
+        val scrollState = rememberScrollState()
+        Column(
+            modifier = Modifier.verticalScroll(scrollState),
+            verticalArrangement = Arrangement.spacedBy(GhostSpacing.section),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onBack) {
+                    Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back))
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(stringResource(R.string.dlna_screen_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            }
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(28.dp),
+                colors = CardDefaults.cardColors(containerColor = ghostPanelColor()),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+            ) {
+                Column(
+                    modifier = Modifier.padding(GhostSpacing.heroCard),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    Text(stringResource(R.string.dlna_intro_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.dlna_intro_body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        text = if (dlnaEnabled) stringResource(R.string.dlna_status_enabled) else stringResource(R.string.dlna_status_disabled),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (dlnaEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Button(
+                        onClick = { onToggleDlna(!dlnaEnabled) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                    ) {
+                        Text(
+                            text = if (dlnaEnabled) stringResource(R.string.dlna_toggle_off) else stringResource(R.string.dlna_toggle_on),
+                        )
+                    }
+                }
+            }
+            HelpSectionCard(
+                title = stringResource(R.string.dlna_section_tv),
+                lines = listOf(
+                    stringResource(R.string.dlna_step_tv_1),
+                    stringResource(R.string.dlna_step_tv_2),
+                    stringResource(R.string.dlna_step_tv_3),
+                    stringResource(R.string.dlna_step_tv_4),
+                    stringResource(R.string.dlna_step_tv_5),
+                ),
+            )
+            HelpSectionCard(
+                title = stringResource(R.string.dlna_section_vlc),
+                lines = listOf(
+                    stringResource(R.string.dlna_step_vlc_1),
+                    stringResource(R.string.dlna_step_vlc_2),
+                    stringResource(R.string.dlna_step_vlc_3),
+                    stringResource(R.string.dlna_step_vlc_4),
+                    stringResource(R.string.dlna_step_vlc_5),
+                ),
+            )
+            HelpSectionCard(
+                title = stringResource(R.string.dlna_section_other),
+                lines = listOf(stringResource(R.string.dlna_other_apps)),
+            )
+            HelpSectionCard(
+                title = stringResource(R.string.dlna_section_troubleshoot),
+                lines = listOf(
+                    stringResource(R.string.dlna_trouble_1),
+                    stringResource(R.string.dlna_trouble_2),
+                    stringResource(R.string.dlna_trouble_3),
+                ),
+            )
+            Spacer(modifier = Modifier.height(GhostSpacing.section))
+        }
+    }
+}
+
+@Composable
 private fun HelpSectionCard(
     title: String,
     lines: List<String>,
