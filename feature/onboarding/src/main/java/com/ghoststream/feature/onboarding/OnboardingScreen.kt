@@ -28,6 +28,8 @@ import androidx.compose.material.icons.outlined.Devices
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.QrCode2
 import androidx.compose.material.icons.outlined.SyncAlt
+import androidx.compose.material.icons.outlined.Textsms
+import androidx.compose.material.icons.outlined.LiveTv
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -86,6 +88,16 @@ fun OnboardingScreen(
             icon = Icons.Outlined.Lock,
             title = stringResource(R.string.onboarding_page_6_title),
             description = stringResource(R.string.onboarding_page_6_description),
+        ),
+        OnboardingCard(
+            icon = Icons.Outlined.Textsms,
+            title = stringResource(R.string.onboarding_page_7_title),
+            description = stringResource(R.string.onboarding_page_7_description),
+        ),
+        OnboardingCard(
+            icon = Icons.Outlined.LiveTv,
+            title = stringResource(R.string.onboarding_page_8_title),
+            description = stringResource(R.string.onboarding_page_8_description),
         ),
     )
     val pagerState = rememberPagerState(pageCount = { pages.size })

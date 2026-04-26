@@ -413,6 +413,23 @@ fun HelpScreen(
                     stringResource(R.string.help_line_flow_4),
                 ),
             )
+            HelpSectionCard(
+                title = stringResource(R.string.help_section_quick_text),
+                lines = listOf(
+                    stringResource(R.string.help_line_quick_text_share),
+                    stringResource(R.string.help_line_quick_text_notify),
+                    stringResource(R.string.help_line_quick_text_no_history),
+                ),
+            )
+            HelpSectionCard(
+                title = stringResource(R.string.help_section_live_screen),
+                lines = listOf(
+                    stringResource(R.string.help_line_live_screen_start),
+                    stringResource(R.string.help_line_live_screen_pin),
+                    stringResource(R.string.help_line_live_screen_pin_regen),
+                    stringResource(R.string.help_line_live_screen_pin_manual),
+                ),
+            )
         }
     }
 }
