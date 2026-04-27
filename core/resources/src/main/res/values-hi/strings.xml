@@ -464,6 +464,8 @@
     <string name="share_preset_restore_failed">एरर।</string>
     <string name="sharing_preflight_failed">एरर: %1$s</string>
     <string name="sharing_add_content_first">कुछ डालें।</string>
+    <string name="sharing_battery_exemption_first">पृष्ठभूमि गतिविधि की अनुमति दें, फिर पुनः साझा करना प्रारंभ करें पर टैप करें।</string>
+    <string name="live_screen_battery_exemption_first">पृष्ठभूमि गतिविधि की अनुमति दें, फिर दोबारा प्रारंभ करें पर टैप करें।</string>
     <string name="sharing_same_wifi_needed">सेम वाई-फाई।</string>
     <string name="sharing_connect_before_start">जुड़ें।</string>
     <string name="sharing_server_start_failed">एरर: %1$s</string>

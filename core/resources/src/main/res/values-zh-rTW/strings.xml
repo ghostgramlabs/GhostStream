@@ -464,6 +464,8 @@
     <string name="share_preset_restore_failed">錯誤。</string>
     <string name="sharing_preflight_failed">錯誤: %1$s</string>
     <string name="sharing_add_content_first">添加一些檔案。</string>
+    <string name="sharing_battery_exemption_first">允許後台活動，然後再次點選「開始分享」。</string>
+    <string name="live_screen_battery_exemption_first">允許後台活動，然後再次點選「開始」。</string>
     <string name="sharing_same_wifi_needed">需要同一個 Wi-Fi。</string>
     <string name="sharing_connect_before_start">先連接網路。</string>
     <string name="sharing_server_start_failed">錯誤: %1$s</string>

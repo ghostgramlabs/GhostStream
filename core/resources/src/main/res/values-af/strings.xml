@@ -464,6 +464,8 @@
     <string name="share_preset_restore_failed">Daardie versameling kon nie herstel word nie. Sommige lêers of toestemmings is nie meer beskikbaar nie.</string>
     <string name="sharing_preflight_failed">Voorafvlugkontrole het misluk: %1$s</string>
     <string name="sharing_add_content_first">Voeg eers \'n bietjie inhoud by om te begin deel.</string>
+    <string name="sharing_battery_exemption_first">Laat agtergrondaktiwiteit toe en tik dan weer op Begin deel.</string>
+    <string name="live_screen_battery_exemption_first">Laat agtergrondaktiwiteit toe en tik dan Begin weer.</string>
     <string name="sharing_same_wifi_needed">Koppel albei toestelle aan dieselfde Wi-Fi of hotspot.</string>
     <string name="sharing_connect_before_start">Koppel hierdie toestel aan Wi-Fi of skakel jou hotspot aan voordat jy \'n sessie begin.</string>
     <string name="sharing_server_start_failed">Bediener kon nie begin nie: %1$s</string>

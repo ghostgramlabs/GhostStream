@@ -464,6 +464,8 @@
     <string name="share_preset_restore_failed">Esa colección no se pudo restaurar. Algunos archivos o permisos ya no están disponibles.</string>
     <string name="sharing_preflight_failed">Error en la verificación previa: %1$s</string>
     <string name="sharing_add_content_first">Primero agregue algún contenido para comenzar a compartir.</string>
+    <string name="sharing_battery_exemption_first">Permita la actividad en segundo plano, luego toque Comenzar a compartir nuevamente.</string>
+    <string name="live_screen_battery_exemption_first">Permita la actividad en segundo plano, luego toque Iniciar nuevamente.</string>
     <string name="sharing_same_wifi_needed">Conecte ambos dispositivos al mismo Wi-Fi o hotspot.</string>
     <string name="sharing_connect_before_start">Conecte este dispositivo a Wi-Fi o encienda su hotspot antes de iniciar una sesión.</string>
     <string name="sharing_server_start_failed">El servidor no pudo iniciarse: %1$s</string>

@@ -464,6 +464,8 @@
     <string name="share_preset_restore_failed">에러.</string>
     <string name="sharing_preflight_failed">에러: %1$s</string>
     <string name="sharing_add_content_first">파일 넣어.</string>
+    <string name="sharing_battery_exemption_first">백그라운드 활동을 허용한 다음 공유 시작을 다시 탭하세요.</string>
+    <string name="live_screen_battery_exemption_first">백그라운드 활동을 허용한 다음 시작을 다시 탭하세요.</string>
     <string name="sharing_same_wifi_needed">같은 Wi-Fi.</string>
     <string name="sharing_connect_before_start">연결.</string>
     <string name="sharing_server_start_failed">에러: %1$s</string>

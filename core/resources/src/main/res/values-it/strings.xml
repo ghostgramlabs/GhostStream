@@ -464,6 +464,8 @@
     <string name="share_preset_restore_failed">Errore ripristino.</string>
     <string name="sharing_preflight_failed">Check fallito: %1$s</string>
     <string name="sharing_add_content_first">Aggiungi qualcosa prima.</string>
+    <string name="sharing_battery_exemption_first">Consenti attività in background, quindi tocca nuovamente Avvia condivisione.</string>
+    <string name="live_screen_battery_exemption_first">Consenti attività in background, quindi tocca di nuovo Avvia.</string>
     <string name="sharing_same_wifi_needed">Usa la stessa rete.</string>
     <string name="sharing_connect_before_start">Connettiti prima di iniziare.</string>
     <string name="sharing_server_start_failed">Errore server: %1$s</string>

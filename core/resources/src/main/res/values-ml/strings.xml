@@ -464,6 +464,8 @@
     <string name="share_preset_restore_failed">റീ-സ്റ്റോർ പറ്റിയില്ല.</string>
     <string name="sharing_preflight_failed">തുടങ്ങാൻ കഴിഞ്ഞില്ല: %1$s</string>
     <string name="sharing_add_content_first">എന്തെങ്കിലും കൂടി ചേർക്കാം.</string>
+    <string name="sharing_battery_exemption_first">പശ്ചാത്തല പ്രവർത്തനം അനുവദിക്കുക, തുടർന്ന് വീണ്ടും പങ്കിടൽ ആരംഭിക്കുക ടാപ്പ് ചെയ്യുക.</string>
+    <string name="live_screen_battery_exemption_first">പശ്ചാത്തല പ്രവർത്തനം അനുവദിക്കുക, തുടർന്ന് വീണ്ടും ആരംഭിക്കുക ടാപ്പ് ചെയ്യുക.</string>
     <string name="sharing_same_wifi_needed">ഒരേ വൈഫൈ കണക്ഷൻ വേണം.</string>
     <string name="sharing_connect_before_start">നെറ്റ് ഉണ്ടോ എന്ന് നോക്കൂ.</string>
     <string name="sharing_server_start_failed">സർവർ കിട്ടിയില്ല: %1$s</string>

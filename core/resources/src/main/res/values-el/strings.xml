@@ -464,6 +464,8 @@
     <string name="share_preset_restore_failed">Δεν ήταν δυνατή η αποκατάσταση αυτής της συλλογής. Ορισμένα αρχεία ή δικαιώματα δεν είναι πλέον διαθέσιμα.</string>
     <string name="sharing_preflight_failed">Ο έλεγχος πριν από την πτήση απέτυχε: %1$s</string>
     <string name="sharing_add_content_first">Προσθέστε πρώτα κάποιο περιεχόμενο για να ξεκινήσει η κοινή χρήση.</string>
+    <string name="sharing_battery_exemption_first">Επιτρέψτε τη δραστηριότητα στο παρασκήνιο και, στη συνέχεια, πατήστε ξανά Έναρξη κοινής χρήσης.</string>
+    <string name="live_screen_battery_exemption_first">Επιτρέψτε τη δραστηριότητα στο παρασκήνιο και, στη συνέχεια, πατήστε ξανά Έναρξη.</string>
     <string name="sharing_same_wifi_needed">Συνδέστε και τις δύο συσκευές στο ίδιο Wi-Fi ή hotspot.</string>
     <string name="sharing_connect_before_start">Συνδέστε αυτήν τη συσκευή στο Wi-Fi ή ενεργοποιήστε το hotspot πριν ξεκινήσετε μια περίοδο λειτουργίας.</string>
     <string name="sharing_server_start_failed">Ο διακομιστής απέτυχε να ξεκινήσει: %1$s</string>

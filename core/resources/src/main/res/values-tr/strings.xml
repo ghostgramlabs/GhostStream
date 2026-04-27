@@ -464,6 +464,8 @@
     <string name="share_preset_restore_failed">Hata.</string>
     <string name="sharing_preflight_failed">Hata: %1$s</string>
     <string name="sharing_add_content_first">Bir şeyler ekle.</string>
+    <string name="sharing_battery_exemption_first">Arka plan etkinliğine izin verin ve ardından Paylaşımı Başlat\'a tekrar dokunun.</string>
+    <string name="live_screen_battery_exemption_first">Arka plan etkinliğine izin verin ve ardından tekrar Başlat\'a dokunun.</string>
     <string name="sharing_same_wifi_needed">Aynı Wi-Fi.</string>
     <string name="sharing_connect_before_start">Bağlan.</string>
     <string name="sharing_server_start_failed">Hata: %1$s</string>

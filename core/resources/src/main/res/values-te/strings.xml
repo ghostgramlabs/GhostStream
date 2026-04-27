@@ -464,6 +464,8 @@
     <string name="share_preset_restore_failed">రిస్టోర్ అవ్వలేదు, అనుమతులు చూడండి.</string>
     <string name="sharing_preflight_failed">మొదలవ్వలేదు: %1$s</string>
     <string name="sharing_add_content_first">ముందు సమాచారాన్ని జోడించి షేర్ చేయండి.</string>
+    <string name="sharing_battery_exemption_first">బ్యాక్‌గ్రౌండ్ యాక్టివిటీని అనుమతించి, మళ్లీ షేర్ చేయడాన్ని ప్రారంభించు ట్యాప్ చేయండి.</string>
+    <string name="live_screen_battery_exemption_first">నేపథ్య కార్యాచరణను అనుమతించి, ఆపై మళ్లీ ప్రారంభించు నొక్కండి.</string>
     <string name="sharing_same_wifi_needed">రెండూ ఒకే వైఫై లో ఉండాలి.</string>
     <string name="sharing_connect_before_start">నెట్‌వర్క్ కనెక్షన్ చూడండి.</string>
     <string name="sharing_server_start_failed">సర్వర్ సమస్య: %1$s</string>

@@ -464,6 +464,8 @@
     <string name="share_preset_restore_failed">ไม่สามารถคืนค่ากลุ่มนี้ได้ สิทธิ์การเข้าถึงไฟล์อาจเปลี่ยนไป</string>
     <string name="sharing_preflight_failed">ไม่สามารถเริ่มการแชร์: %1$s</string>
     <string name="sharing_add_content_first">แชร์วิดีโอหรือไฟล์ของคุณก่อน</string>
+    <string name="sharing_battery_exemption_first">อนุญาตกิจกรรมเบื้องหลัง จากนั้นแตะเริ่มการแชร์อีกครั้ง</string>
+    <string name="live_screen_battery_exemption_first">อนุญาตกิจกรรมเบื้องหลัง จากนั้นแตะเริ่มอีกครั้ง</string>
     <string name="sharing_same_wifi_needed">ต่อ Wi-Fi วงเดียวกันทั้งสองเครื่อง</string>
     <string name="sharing_connect_before_start">โปรดต่อ Wi-Fi ก่อนเปิดระบบแชร์</string>
     <string name="sharing_server_start_failed">ระบบหลักขัดข้อง: %1$s</string>

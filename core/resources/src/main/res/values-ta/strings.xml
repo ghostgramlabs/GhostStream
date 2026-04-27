@@ -464,6 +464,8 @@
     <string name="share_preset_restore_failed">மீட்டெடுக்க முடியவில்லை, அனுமதிகளைச் சோதிக்கவும்.</string>
     <string name="sharing_preflight_failed">தொடங்க முடியவில்லை: %1$s</string>
     <string name="sharing_add_content_first">பகிர உள்ளடக்கத்தைச் சேர்க்கவும்.</string>
+    <string name="sharing_battery_exemption_first">பின்புல செயல்பாட்டை அனுமதித்து, மீண்டும் பகிர்வதைத் தொடங்கு என்பதைத் தட்டவும்.</string>
+    <string name="live_screen_battery_exemption_first">பின்னணி செயல்பாட்டை அனுமதித்து, மீண்டும் தொடங்கு என்பதைத் தட்டவும்.</string>
     <string name="sharing_same_wifi_needed">சாதனங்களை ஒரே நெட்வொர்க்கில் இணைக்கவும்.</string>
     <string name="sharing_connect_before_start">தொடங்கும் முன் இணைப்பைச் சோதிக்கவும்.</string>
     <string name="sharing_server_start_failed">பிழை: %1$s</string>

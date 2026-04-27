@@ -464,6 +464,8 @@
     <string name="share_preset_restore_failed">Kunde ej återställa.</string>
     <string name="sharing_preflight_failed">Misslyckades: %1$s</string>
     <string name="sharing_add_content_first">Lägg till innehåll.</string>
+    <string name="sharing_battery_exemption_first">Tillåt bakgrundsaktivitet och tryck sedan på Börja dela igen.</string>
+    <string name="live_screen_battery_exemption_first">Tillåt bakgrundsaktivitet och tryck sedan på Starta igen.</string>
     <string name="sharing_same_wifi_needed">Använd samma nätverk.</string>
     <string name="sharing_connect_before_start">Anslut först.</string>
     <string name="sharing_server_start_failed">Fel: %1$s</string>

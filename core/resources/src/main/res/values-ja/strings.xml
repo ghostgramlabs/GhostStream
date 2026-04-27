@@ -464,6 +464,8 @@
     <string name="share_preset_restore_failed">エラー。</string>
     <string name="sharing_preflight_failed">エラー: %1$s</string>
     <string name="sharing_add_content_first">ファイルを入れて。</string>
+    <string name="sharing_battery_exemption_first">バックグラウンドアクティビティを許可し、再度「共有の開始」をタップします。</string>
+    <string name="live_screen_battery_exemption_first">バックグラウンドアクティビティを許可し、「もう一度開始」をタップします。</string>
     <string name="sharing_same_wifi_needed">同じWi-Fi。</string>
     <string name="sharing_connect_before_start">接続して。</string>
     <string name="sharing_server_start_failed">エラー: %1$s</string>
