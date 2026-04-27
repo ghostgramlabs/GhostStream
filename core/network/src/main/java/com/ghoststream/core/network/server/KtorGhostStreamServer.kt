@@ -1653,6 +1653,9 @@ class KtorGhostStreamServer(
                 if (!settingsRepository.settings.first().quickTextEnabled) {
                     return@get call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.web_quick_text_disabled)))
                 }
+                // Mark this browser as an active client so the phone-side device picker shows it,
+                // even if the user only opened Quick Text without browsing files first.
+                sessionManager.observeClient(call.request.origin.remoteHost, call.request.header(HttpHeaders.UserAgent), ClientActivity.BROWSING)
                 call.respond(
                     QuickTextHistoryPayload(
                         messages = historyRepository.quickTextMessages.first(),
@@ -1671,6 +1674,7 @@ class KtorGhostStreamServer(
                 val payload = call.receiveNullable<QuickTextSendPayload>()
                     ?: return@post call.respond(HttpStatusCode.BadRequest, ErrorPayload(localizedContext().getString(R.string.web_error_invalid_upload_request)))
                 val clientIp = call.request.origin.remoteHost
+                sessionManager.observeClient(clientIp, call.request.header(HttpHeaders.UserAgent), ClientActivity.BROWSING)
                 val senderName = displayDeviceName(clientIp, settings.deviceNicknames)
                 val message = QuickTextMessage(
                     id = UUID.randomUUID().toString(),
@@ -1691,6 +1695,7 @@ class KtorGhostStreamServer(
                 if (!settingsRepository.settings.first().quickTextEnabled) {
                     return@post call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.web_quick_text_disabled)))
                 }
+                sessionManager.observeClient(call.request.origin.remoteHost, call.request.header(HttpHeaders.UserAgent), ClientActivity.BROWSING)
                 val id = call.parameters["id"]
                     ?: return@post call.respond(HttpStatusCode.BadRequest, ErrorPayload(localizedContext().getString(R.string.web_error_invalid_upload_request)))
                 val message = historyRepository.getQuickTextMessage(id)
@@ -1707,6 +1712,7 @@ class KtorGhostStreamServer(
                 if (!settingsRepository.settings.first().quickTextEnabled) {
                     return@post call.respond(HttpStatusCode.NotFound, ErrorPayload(localizedContext().getString(R.string.web_quick_text_disabled)))
                 }
+                sessionManager.observeClient(call.request.origin.remoteHost, call.request.header(HttpHeaders.UserAgent), ClientActivity.BROWSING)
                 historyRepository.clearQuickTextMessages()
                 call.respond(AuthResult(success = true))
             }
