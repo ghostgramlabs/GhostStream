@@ -306,7 +306,9 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
             when (event) {
                 is AppEvent.ShowMessage -> snackbarHostState.showSnackbar(event.message)
                 AppEvent.NavigateNetworkSetup -> navController.navigate(Routes.NetworkSetup)
-                AppEvent.NavigateSession -> navController.navigate(Routes.Session)
+                AppEvent.NavigateSession -> navController.navigate(Routes.Session) {
+                    launchSingleTop = true
+                }
                 AppEvent.NavigateHome -> navController.navigate(Routes.Home) {
                     popUpTo(Routes.Home) { inclusive = true }
                 }

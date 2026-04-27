@@ -85,6 +85,9 @@ class MainViewModel(
     // session. Prevents re-prompting if the user denied at launch and then taps Start Sharing
     // shortly after — they'd otherwise see the dialog twice in quick succession.
     private var batteryPromptedThisSession = false
+    // Belt-and-braces debounce in case the launch trigger and a tap-driven trigger race
+    // (e.g., user taps Start Sharing before the launch coroutine has set the flag).
+    private var lastBatteryPromptAtMs = 0L
     private val _browserPrepManuallyTriggered = MutableStateFlow(false)
     private val _hasAllFilesAccess = MutableStateFlow(false)
     private val _events = MutableSharedFlow<AppEvent>(extraBufferCapacity = 8)
@@ -454,10 +457,13 @@ class MainViewModel(
     private suspend fun maybeRequestBatteryOptimizationExemption(): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false
         if (batteryPromptedThisSession) return false
+        val now = System.currentTimeMillis()
+        if (now - lastBatteryPromptAtMs < 5_000L) return false
         val powerManager = application.getSystemService(Context.POWER_SERVICE) as PowerManager
         if (powerManager.isIgnoringBatteryOptimizations(application.packageName)) return false
 
         batteryPromptedThisSession = true
+        lastBatteryPromptAtMs = now
         container.debugLogRepository.log("MainViewModel", "requesting battery optimization exemption")
         _events.emit(AppEvent.RequestBatteryOptimizationExemption)
         return true
@@ -706,7 +712,9 @@ class MainViewModel(
                 )
             }
             _events.emit(AppEvent.StartLiveScreenService(resultCode, permissionData))
-            _events.emit(AppEvent.NavigateLiveScreen)
+            // The user is already on the LiveScreen page when permission grant returns —
+            // re-emitting NavigateLiveScreen here can race past launchSingleTop and add a
+            // second stack entry, requiring two back presses to leave the screen.
         }
     }
 
