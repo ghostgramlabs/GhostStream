@@ -480,6 +480,8 @@
     <string name="share_preset_restore_failed">That collection couldn\'t be restored. Some files or permissions are no longer available.</string>
     <string name="sharing_preflight_failed">Preflight check failed: %1$s</string>
     <string name="sharing_add_content_first">Add some content first to start sharing.</string>
+    <string name="sharing_battery_exemption_first">Allow background activity, then tap Start Sharing again.</string>
+    <string name="live_screen_battery_exemption_first">Allow background activity, then tap Start again.</string>
     <string name="sharing_same_wifi_needed">Connect both devices to the same Wi-Fi or hotspot.</string>
     <string name="sharing_connect_before_start">Connect this device to Wi-Fi or turn on your hotspot before starting a session.</string>
     <string name="sharing_server_start_failed">Server failed to start: %1$s</string>

@@ -80,6 +80,11 @@ class MainViewModel(
     private val startSharingInProgress = MutableStateFlow(false)
     private val libraryImportingCount = MutableStateFlow(0)
     private val connectingNearbyDeviceId = MutableStateFlow<String?>(null)
+
+    // Tracks whether we've already shown the battery optimization prompt during this app
+    // session. Prevents re-prompting if the user denied at launch and then taps Start Sharing
+    // shortly after — they'd otherwise see the dialog twice in quick succession.
+    private var batteryPromptedThisSession = false
     private val _browserPrepManuallyTriggered = MutableStateFlow(false)
     private val _hasAllFilesAccess = MutableStateFlow(false)
     private val _events = MutableSharedFlow<AppEvent>(extraBufferCapacity = 8)
@@ -191,11 +196,12 @@ class MainViewModel(
 
         // Surface the battery optimization prompt at launch (after onboarding) so it
         // isn't lost behind the Active Session screen when the user taps Start Sharing.
+        // Re-prompts every cold launch until the OS reports the exemption is granted.
         container.settingsRepository.settings
-            .filter { it.onboardingCompleted && !it.batteryOptimizationPromptShown }
+            .filter { it.onboardingCompleted }
             .take(1)
             .onEach {
-                delay(1500) // Let the home screen settle before opening the system dialog.
+                delay(800) // Brief settle so the home screen has its first frame before the system dialog covers it.
                 maybeRequestBatteryOptimizationExemption()
             }
             .launchIn(viewModelScope)
@@ -376,6 +382,11 @@ class MainViewModel(
                 _events.emit(AppEvent.NavigateSession)
                 return@launch
             }
+            if (maybeRequestBatteryOptimizationExemption()) {
+                // Holding the share off for one tap so the system battery dialog isn't auto-dismissed by the Active Session navigation.
+                _events.emit(AppEvent.ShowMessage(application.getString(R.string.sharing_battery_exemption_first)))
+                return@launch
+            }
 
             container.debugLogRepository.log("MainViewModel", "requestStartSharing started")
             startSharingInProgress.value = true
@@ -384,7 +395,6 @@ class MainViewModel(
                     SharePreflightResult.NoContent -> {
                         container.debugLogRepository.log("MainViewModel", "preflight result: no content (allowing for receiving)")
                         pendingShareAfterNetworkReady.value = false
-                        maybeRequestBatteryOptimizationExemption()
                         startSharingAfterReadyCheck()
                     }
 
@@ -408,7 +418,6 @@ class MainViewModel(
                     SharePreflightResult.Ready -> {
                         container.debugLogRepository.log("MainViewModel", "preflight result: ready")
                         pendingShareAfterNetworkReady.value = false
-                        maybeRequestBatteryOptimizationExemption()
                         startSharingAfterReadyCheck()
                     }
                 }
@@ -433,23 +442,25 @@ class MainViewModel(
             }
             container.debugLogRepository.log("MainViewModel", "resumePendingShareAfterNetworkReady")
             startSharingInProgress.value = true
-            maybeRequestBatteryOptimizationExemption()
             startSharingAfterReadyCheck()
         }
     }
 
-    private suspend fun maybeRequestBatteryOptimizationExemption() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
-        val settings = container.settingsRepository.settings.first()
-        if (settings.batteryOptimizationPromptShown) return
+    /**
+     * Returns true if a battery-optimization prompt was emitted, false otherwise.
+     * Callers can use the return value to gate follow-up navigation (e.g. Start Sharing)
+     * so the prompt isn't auto-dismissed by a new screen launch.
+     */
+    private suspend fun maybeRequestBatteryOptimizationExemption(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return false
+        if (batteryPromptedThisSession) return false
         val powerManager = application.getSystemService(Context.POWER_SERVICE) as PowerManager
-        if (powerManager.isIgnoringBatteryOptimizations(application.packageName)) return
+        if (powerManager.isIgnoringBatteryOptimizations(application.packageName)) return false
 
-        container.settingsRepository.update { current ->
-            current.copy(batteryOptimizationPromptShown = true)
-        }
+        batteryPromptedThisSession = true
         container.debugLogRepository.log("MainViewModel", "requesting battery optimization exemption")
         _events.emit(AppEvent.RequestBatteryOptimizationExemption)
+        return true
     }
 
     fun requestStopSharing() {
@@ -647,6 +658,10 @@ class MainViewModel(
                     "requestLiveScreenStart blocked by conflicting client activity=${sessionState.connectedClients.joinToString { it.activity.name }}",
                 )
                 _events.emit(AppEvent.ShowMessage(application.getString(R.string.live_screen_busy_streams)))
+                return@launch
+            }
+            if (maybeRequestBatteryOptimizationExemption()) {
+                _events.emit(AppEvent.ShowMessage(application.getString(R.string.live_screen_battery_exemption_first)))
                 return@launch
             }
             container.debugLogRepository.log("MainViewModel", "requestLiveScreenStart requesting MediaProjection permission")
