@@ -1,3 +1,10 @@
+# NOTE: Minification is currently disabled in app/build.gradle.kts because the
+# webrtc-sdk artifact's native library crashes in JNI_OnLoad on Android 16 when
+# R8 runs (any combination of shrinking/optimization/obfuscation reproduces it,
+# even with broad -keep class org.webrtc.** { *; } rules). Rules below are kept
+# as a record of what was tried so future re-enablement attempts have a starting
+# point. They are inert while isMinifyEnabled = false.
+
 # GhostStream relies on kotlinx serialization and Ktor route data classes.
 -keepclassmembers class kotlinx.serialization.** { *; }
 -keep class kotlinx.serialization.** { *; }
@@ -11,19 +18,18 @@
 -keepclassmembers class io.ktor.** { *; }
 -keepclassmembers class * implements io.ktor.server.engine.ApplicationEngineFactory { *; }
 
-# WebRTC: heavy JNI bridge — R8 must not strip or rename anything in org.webrtc.
-# Native code calls back into these classes by exact name/signature; without this
-# rule Live Screen capture and audio pump fail with NoSuchMethodError on release.
+# WebRTC keep rules (insufficient on their own — see note above).
+-keepattributes *Annotation*, Signature, InnerClasses, EnclosingMethod, Exceptions
 -keep class org.webrtc.** { *; }
+-keep interface org.webrtc.** { *; }
 -keepclassmembers class org.webrtc.** { *; }
--keepnames class org.webrtc.** { *; }
 -dontwarn org.webrtc.**
+-keep class * extends org.webrtc.** { *; }
+-keep class * implements org.webrtc.** { *; }
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
 
-# Subclasses we register with WebRTC (callbacks invoked from native code).
--keep class * implements org.webrtc.PeerConnection$Observer { *; }
--keep class * implements org.webrtc.SdpObserver { *; }
--keep class * implements org.webrtc.VideoSink { *; }
-
-# Media3 muxer uses native code paths via reflection in some helper classes.
+# Media3 muxer
 -keep class androidx.media3.muxer.** { *; }
 -dontwarn androidx.media3.muxer.**

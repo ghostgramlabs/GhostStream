@@ -49,8 +49,13 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            // R8 minification (any combination of shrinking/optimization/obfuscation)
+            // breaks WebRTC's JNI_OnLoad with a SIGTRAP/RTC_CHECK assertion on
+            // Android 16, even with broad -keep rules for org.webrtc.**. The native
+            // library expects a class layout R8 cannot guarantee. We trade the ~13MB
+            // size benefit for a working Live Screen feature.
+            isMinifyEnabled = false
+            isShrinkResources = false
             ndk {
                 debugSymbolLevel = "FULL"
             }
