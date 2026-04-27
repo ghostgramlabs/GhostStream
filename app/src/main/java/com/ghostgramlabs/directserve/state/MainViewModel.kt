@@ -42,11 +42,14 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -185,6 +188,17 @@ class MainViewModel(
         ) { settings, session ->
             syncDlnaAnnouncer(settings.dlnaEnabled, session)
         }.launchIn(viewModelScope)
+
+        // Surface the battery optimization prompt at launch (after onboarding) so it
+        // isn't lost behind the Active Session screen when the user taps Start Sharing.
+        container.settingsRepository.settings
+            .filter { it.onboardingCompleted && !it.batteryOptimizationPromptShown }
+            .take(1)
+            .onEach {
+                delay(1500) // Let the home screen settle before opening the system dialog.
+                maybeRequestBatteryOptimizationExemption()
+            }
+            .launchIn(viewModelScope)
     }
 
     fun refreshAllFilesAccessStatus() {
