@@ -591,12 +591,14 @@ class AndroidStorageRepository(
     private fun CoroutineScope.launchStateRestore() {
         launch {
             val restored = currentPersistedState().withSummary()
+            // Publish persisted state immediately so the UI never blanks out during refresh.
+            _libraryState.value = restored
             val refreshed = refreshExistingState(restored)
-            if (refreshed != restored) {
-                persistAndPublish(refreshed)
-            } else {
-                _libraryState.value = refreshed
-            }
+            // Only update in-memory state. Availability flags are ephemeral runtime state
+            // and must never overwrite the persisted JSON — early-startup SAF providers can
+            // briefly return "unavailable" for valid URIs, which previously wiped the library
+            // on every app update.
+            _libraryState.value = refreshed
         }
     }
 
