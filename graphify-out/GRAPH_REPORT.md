@@ -1,7 +1,7 @@
 # Graph Report - C:\Users\sudhi\.gemini\antigravity\scratch\GhostStream  (2026-04-27)
 
 ## Corpus Check
-- 170 files · ~409,588 words
+- 170 files · ~409,638 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -737,12 +737,12 @@ Nodes (0):
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
+- **Why does `get()` connect `Community 3` to `Community 0`, `Community 1`, `Community 2`, `Community 4`, `Community 5`, `Community 6`?**
+  _High betweenness centrality (0.028) - this node is a cross-community bridge._
+- **Why does `toString()` connect `Community 3` to `Community 0`, `Community 1`, `Community 2`, `Community 4`, `Community 5`, `Community 6`?**
+  _High betweenness centrality (0.026) - this node is a cross-community bridge._
 - **Why does `filter()` connect `Community 5` to `Community 0`, `Community 1`, `Community 2`, `Community 3`, `Community 4`, `Community 6`?**
   _High betweenness centrality (0.021) - this node is a cross-community bridge._
-- **Why does `get()` connect `Community 3` to `Community 0`, `Community 1`, `Community 2`, `Community 4`, `Community 5`, `Community 6`?**
-  _High betweenness centrality (0.021) - this node is a cross-community bridge._
-- **Why does `toString()` connect `Community 3` to `Community 0`, `Community 1`, `Community 2`, `Community 4`, `Community 5`, `Community 6`?**
-  _High betweenness centrality (0.019) - this node is a cross-community bridge._
 - **Are the 102 inferred relationships involving `l()` (e.g. with `qi()` and `ov()`) actually correct?**
   _`l()` has 102 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 74 inferred relationships involving `O()` (e.g. with `cv()` and `vt()`) actually correct?**
