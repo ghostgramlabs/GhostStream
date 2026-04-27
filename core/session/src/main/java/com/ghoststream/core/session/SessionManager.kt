@@ -72,6 +72,7 @@ interface SessionManager {
     fun isPinValid(pin: String): Boolean
     fun regeneratePin(): String
     fun disconnectAllClients()
+    fun pruneStaleClients(maxAgeMs: Long)
 
     val pendingUploadRequest: StateFlow<UploadRequest?>
     val incomingUploadProgress: StateFlow<IncomingUploadProgress?>

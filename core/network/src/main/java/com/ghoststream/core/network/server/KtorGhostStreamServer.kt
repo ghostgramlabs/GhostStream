@@ -1655,12 +1655,20 @@ class KtorGhostStreamServer(
                 }
                 // Mark this browser as an active client so the phone-side device picker shows it,
                 // even if the user only opened Quick Text without browsing files first.
-                sessionManager.observeClient(call.request.origin.remoteHost, call.request.header(HttpHeaders.UserAgent), ClientActivity.BROWSING)
+                val requesterIp = call.request.origin.remoteHost
+                sessionManager.observeClient(requesterIp, call.request.header(HttpHeaders.UserAgent), ClientActivity.BROWSING)
+                // Browsers only see broadcasts, messages they sent, and messages targeted to them.
+                // The phone reads history directly from the DB, so its view is unaffected.
+                val visible = historyRepository.quickTextMessages.first().filter { msg ->
+                    msg.targetType == QuickTextTargetType.BROADCAST ||
+                        msg.senderId == requesterIp ||
+                        msg.targetId == requesterIp
+                }
                 call.respond(
                     QuickTextHistoryPayload(
-                        messages = historyRepository.quickTextMessages.first(),
-                        devices = quickTextDevicesFor(call.request.origin.remoteHost),
-                        myDeviceId = call.request.origin.remoteHost,
+                        messages = visible,
+                        devices = quickTextDevicesFor(requesterIp),
+                        myDeviceId = requesterIp,
                     ),
                 )
             }

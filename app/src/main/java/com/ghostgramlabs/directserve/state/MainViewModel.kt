@@ -935,6 +935,12 @@ class MainViewModel(
         }
     }
 
+    fun refreshQuickTextDevices() {
+        // Drop browsers that haven't polled in the last 15s. Active browsers poll every
+        // 2.5s, so anyone still connected re-appears immediately after their next ping.
+        container.sessionManager.pruneStaleClients(15_000L)
+    }
+
     fun connectedQuickTextDevices(snapshot: MainUiState = uiState.value): List<com.ghoststream.core.model.QuickTextDevice> {
         val state = snapshot.sessionState
         val deviceNicknames = snapshot.settings.deviceNicknames

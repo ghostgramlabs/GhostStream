@@ -848,6 +848,7 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     },
                     onDeleteMessage = viewModel::deleteQuickTextMessage,
                     onClearAll = viewModel::clearQuickTextHistory,
+                    onRefreshDevices = viewModel::refreshQuickTextDevices,
                     modifier = Modifier.padding(innerPadding),
                 )
             }

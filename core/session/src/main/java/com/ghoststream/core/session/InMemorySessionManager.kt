@@ -344,6 +344,15 @@ class InMemorySessionManager(
         authTokens.clear()
     }
 
+    override fun pruneStaleClients(maxAgeMs: Long) {
+        val cutoff = System.currentTimeMillis() - maxAgeMs
+        _sessionState.update { current ->
+            val pruned = current.connectedClients.filter { it.lastSeenEpochMs >= cutoff }
+            if (pruned.size == current.connectedClients.size) current
+            else current.copy(connectedClients = pruned)
+        }
+    }
+
     override val pendingUploadRequest: StateFlow<UploadRequest?> = _pendingUploadRequest.asStateFlow()
 
     override fun registerUploadRequest(request: UploadRequest) {

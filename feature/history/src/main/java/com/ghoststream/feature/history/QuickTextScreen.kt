@@ -20,6 +20,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -60,6 +61,7 @@ fun QuickTextScreen(
     onOpenLink: (String) -> Unit,
     onDeleteMessage: (String) -> Unit,
     onClearAll: () -> Unit,
+    onRefreshDevices: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var draft by rememberSaveable { mutableStateOf("") }
@@ -97,7 +99,11 @@ fun QuickTextScreen(
                     text = stringResource(R.string.quick_text_title),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.weight(1f),
                 )
+                IconButton(onClick = onRefreshDevices) {
+                    Icon(Icons.Outlined.Refresh, contentDescription = stringResource(R.string.common_refresh))
+                }
             }
         }
 
