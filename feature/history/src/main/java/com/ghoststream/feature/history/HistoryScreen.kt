@@ -39,7 +39,6 @@ fun HistoryScreen(
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf(
-        stringResource(R.string.history_tab_all), 
         stringResource(R.string.history_tab_received),
         stringResource(R.string.history_sent)
     )
@@ -58,9 +57,8 @@ fun HistoryScreen(
                 TextButton(
                     onClick = {
                         when (selectedTab) {
-                            1 -> onClearReceivedHistory()
-                            2 -> onClearSentHistory()
-                            else -> onClearHistory()
+                            0 -> onClearReceivedHistory()
+                            else -> onClearSentHistory()
                         }
                         showClearConfirmation = false
                     },
@@ -78,9 +76,8 @@ fun HistoryScreen(
     }
 
     val filteredHistory = when (selectedTab) {
-        1 -> history.filter { it.direction == TransferDirection.RECEIVED }
-        2 -> history.filter { it.direction == TransferDirection.SENT }
-        else -> history
+        0 -> history.filter { it.direction == TransferDirection.RECEIVED }
+        else -> history.filter { it.direction == TransferDirection.SENT }
     }
 
     Scaffold(

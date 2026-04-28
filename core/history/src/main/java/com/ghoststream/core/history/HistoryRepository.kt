@@ -26,6 +26,8 @@ class RoomHistoryRepository(context: Context) : HistoryRepository {
     private val db = HistoryDatabase.create(context)
     private val dao = db.dao
     private val quickTextDao = db.quickTextDao
+    
+    private val recentTransfers = java.util.concurrent.ConcurrentHashMap<String, Long>()
 
     override val allHistory: Flow<List<TransferRecord>> = dao.getAllHistory().map { entities ->
         entities.map { it.toDomain() }
@@ -40,6 +42,13 @@ class RoomHistoryRepository(context: Context) : HistoryRepository {
     }
 
     override suspend fun addRecord(record: TransferRecord) {
+        val key = "${record.direction}_${record.name}_${record.peer}"
+        val now = System.currentTimeMillis()
+        val lastTime = recentTransfers[key]
+        if (lastTime != null && (now - lastTime) < 5000L) {
+            return
+        }
+        recentTransfers[key] = now
         dao.insert(TransferEntity.from(record))
     }
 
