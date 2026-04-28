@@ -276,12 +276,14 @@
     <string name="history_tab_received">ที่ได้รับ</string>
     <string name="history_empty_all">ว่าง.</string>
     <string name="history_empty_received">ยังไม่มีไฟล์ที่ได้รับ</string>
+    <string name="history_empty_sent">ยังไม่มีไฟล์ที่ส่ง</string>
     <string name="history_sent">ส่งแล้ว</string>
     <string name="history_received">ได้รับแล้ว</string>
     <string name="history_open">เปิด</string>
     <string name="history_delete">ลบ</string>
     <string name="history_delete_desc">ลบออกจากประวัติ</string>
     <string name="history_date_time_format">%1$s เมื่อ %2$s</string>
+    <string name="home_library_summary">%1$d รายการ • %2$d โฟลเดอร์</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">การแชร์ท้องถิ่นแบบส่วนตัว</string>
     <string name="privacy_policy_title">นโยบายความเป็นส่วนตัว</string>
@@ -945,6 +947,8 @@
     <string name="help_line_live_screen_pin_manual">ตั้งค่า PIN ที่กำหนดเองในส่วนการตั้งค่าหากคุณต้องการรหัสเฉพาะแทนรหัสที่สร้างขึ้นโดยอัตโนมัติ</string>
     <string name="session_rename_device">เปลี่ยนชื่ออุปกรณ์</string>
     <string name="session_nickname_label">ชื่อเล่นของอุปกรณ์ (สูงสุด 30 ตัวอักษร)</string>
+    <string name="history_clear_title">ล้างประวัติการโอน</string>
+    <string name="history_clear_message">คุณแน่ใจหรือไม่ว่าต้องการลบบันทึกประวัติการโอนทั้งหมดอย่างถาวร การดำเนินการนี้ไม่สามารถยกเลิกได้</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">เชื่อมต่ออุปกรณ์ใหม่แล้ว</item>
         <item quantity="other">เชื่อมต่ออุปกรณ์ใหม่ %1$d เครื่องแล้ว</item>

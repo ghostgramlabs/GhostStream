@@ -136,14 +136,7 @@ fun HomeScreen(
 ) {
     var showAllFilesDialog by rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(settings) {
-        if (!settings.shareVideos && !settings.shareMusic && !settings.sharePhotos && !settings.shareFiles) {
-            onToggleShareVideos(true)
-            onToggleShareMusic(true)
-            onToggleSharePhotos(true)
-            onToggleShareFiles(true)
-        }
-    }
+
 
 
     if (showAllFilesDialog) {
@@ -676,7 +669,7 @@ private fun SessionHeroSection(
         Spacer(modifier = Modifier.height(32.dp))
 
         Text(
-            text = "${libraryState.summary.totalItems} ITEMS • ${libraryState.folders.size} FOLDERS",
+            text = stringResource(R.string.home_library_summary, libraryState.summary.totalItems, libraryState.folders.size),
             style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.2.sp),
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
         )

@@ -276,12 +276,14 @@
     <string name="history_tab_received">Mottagna</string>
     <string name="history_empty_all">Inget här än.</string>
     <string name="history_empty_received">Inga mottagna filer.</string>
+    <string name="history_empty_sent">Inga skickade filer ännu.</string>
     <string name="history_sent">Skickat</string>
     <string name="history_received">Mottaget</string>
     <string name="history_open">Öppna</string>
     <string name="history_delete">Ta bort</string>
     <string name="history_delete_desc">Ta bort från historik</string>
     <string name="history_date_time_format">%1$s kl %2$s</string>
+    <string name="home_library_summary">%1$d OBJEKT • %2$d MAPPAR</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">Privat Lokal Delning</string>
     <string name="privacy_policy_title">Integritet</string>
@@ -945,6 +947,8 @@
     <string name="help_line_live_screen_pin_manual">Ställ in en anpassad PIN i Inställningar om du föredrar en specifik kod istället för automatiskt genererade.</string>
     <string name="session_rename_device">Byt namn på enheten</string>
     <string name="session_nickname_label">Smeknamn på enheten (max 30 tecken)</string>
+    <string name="history_clear_title">Rensa överföringshistorik</string>
+    <string name="history_clear_message">Är du säker på att du vill ta bort alla överföringshistorikposter permanent? Denna åtgärd kan inte ångras.</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Enhet ansluten</item>
         <item quantity="other">%1$d enheter anslutna</item>

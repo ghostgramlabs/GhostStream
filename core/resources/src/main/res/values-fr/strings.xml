@@ -276,12 +276,14 @@
     <string name="history_tab_received">Reçus</string>
     <string name="history_empty_all">Aucune activité pour le moment.</string>
     <string name="history_empty_received">Aucun fichier reçu.</string>
+    <string name="history_empty_sent">Aucun fichier envoyé pour l\'instant.</string>
     <string name="history_sent">Envoyé</string>
     <string name="history_received">Reçu</string>
     <string name="history_open">Ouvrir</string>
     <string name="history_delete">Supprimer</string>
     <string name="history_delete_desc">Retirer de l\'historique</string>
     <string name="history_date_time_format">%1$s à %2$s</string>
+    <string name="home_library_summary">%1$d ARTICLES • %2$d DOSSIERS</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">Partage local privé</string>
     <string name="privacy_policy_title">Confidentialité</string>
@@ -945,6 +947,8 @@
     <string name="help_line_live_screen_pin_manual">Définissez un code PIN personnalisé dans les paramètres si vous préférez un code spécifique au lieu des codes générés automatiquement.</string>
     <string name="session_rename_device">Renommer l\'appareil</string>
     <string name="session_nickname_label">Pseudonyme de l\'appareil (30 caractères maximum)</string>
+    <string name="history_clear_title">Effacer l\'historique des transferts</string>
+    <string name="history_clear_message">Êtes-vous sûr de vouloir supprimer définitivement tous les enregistrements de l\'historique des transferts ? Cette action ne peut pas être annulée.</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Appareil connecté</item>
         <item quantity="other">%1$d appareils connectés</item>

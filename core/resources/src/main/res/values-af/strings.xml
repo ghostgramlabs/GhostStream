@@ -276,12 +276,14 @@
     <string name="history_tab_received">Ontvang</string>
     <string name="history_empty_all">Nog geen aktiwiteit nie. Begin \'n sessie om die jongste oordrag te sien.</string>
     <string name="history_empty_received">Nog geen lêers wat ontvang is nie.</string>
+    <string name="history_empty_sent">Nog geen gestuurde lêers nie.</string>
     <string name="history_sent">Gestuur</string>
     <string name="history_received">Ontvang</string>
     <string name="history_open">Maak oop</string>
     <string name="history_delete">Vee uit</string>
     <string name="history_delete_desc">Vee uit geskiedenis uit</string>
     <string name="history_date_time_format">%1$s by %2$s</string>
+    <string name="home_library_summary">%1$d ITEMS • %2$d DOUPE</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">Privaat plaaslike deling</string>
     <string name="privacy_policy_title">Privaatheidsbeleid</string>
@@ -945,6 +947,8 @@
     <string name="help_line_live_screen_pin_manual">Stel \'n pasgemaakte PIN in Instellings as jy \'n spesifieke kode verkies in plaas van outomaties gegenereerde kodes.</string>
     <string name="session_rename_device">Hernoem Toestel</string>
     <string name="session_nickname_label">Toestelbynaam (Maksimum 30 tekens)</string>
+    <string name="history_clear_title">Vee oordraggeskiedenis uit</string>
+    <string name="history_clear_message">Is jy seker jy wil alle oordraggeskiedenisrekords permanent uitvee? Hierdie handeling kan nie ontdoen word nie.</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Nuwe toestel gekoppel</item>
         <item quantity="other">%1$d nuwe toestelle gekoppel</item>

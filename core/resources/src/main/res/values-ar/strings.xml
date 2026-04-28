@@ -276,12 +276,14 @@
     <string name="history_tab_received">تلقى</string>
     <string name="history_empty_all">لا يوجد نشاط بعد. ابدأ جلسة لرؤية أحدث عملية نقل.</string>
     <string name="history_empty_received">لم يتم تلقي أي ملفات حتى الآن.</string>
+    <string name="history_empty_sent">لا توجد ملفات مرسلة حتى الآن.</string>
     <string name="history_sent">مرسل</string>
     <string name="history_received">تلقى</string>
     <string name="history_open">يفتح</string>
     <string name="history_delete">يمسح</string>
     <string name="history_delete_desc">حذف من التاريخ</string>
     <string name="history_date_time_format">%1$s في %2$s</string>
+    <string name="home_library_summary">%1$d العناصر • %2$d المجلدات</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">المشاركة المحلية الخاصة</string>
     <string name="privacy_policy_title">سياسة الخصوصية</string>
@@ -945,6 +947,8 @@
     <string name="help_line_live_screen_pin_manual">قم بتعيين رقم تعريف شخصي مخصص في الإعدادات إذا كنت تفضل رمزًا محددًا بدلاً من الرموز التي يتم إنشاؤها تلقائيًا.</string>
     <string name="session_rename_device">إعادة تسمية الجهاز</string>
     <string name="session_nickname_label">الاسم المستعار للجهاز (30 حرفًا كحد أقصى)</string>
+    <string name="history_clear_title">مسح سجل النقل</string>
+    <string name="history_clear_message">هل أنت متأكد أنك تريد حذف جميع سجلات سجل النقل نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">جهاز جديد متصل</item>
         <item quantity="other">%1$d الأجهزة الجديدة المتصلة</item>

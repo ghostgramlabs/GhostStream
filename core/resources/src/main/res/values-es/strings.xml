@@ -276,12 +276,14 @@
     <string name="history_tab_received">Recibió</string>
     <string name="history_empty_all">Aún no hay actividad. Inicie una sesión para ver la última transferencia.</string>
     <string name="history_empty_received">Aún no se han recibido archivos.</string>
+    <string name="history_empty_sent">Aún no se han enviado archivos.</string>
     <string name="history_sent">Enviado</string>
     <string name="history_received">Recibió</string>
     <string name="history_open">Abierto</string>
     <string name="history_delete">Borrar</string>
     <string name="history_delete_desc">Eliminar del historial</string>
     <string name="history_date_time_format">%1$s en %2$s</string>
+    <string name="home_library_summary">%1$d ARTÍCULOS • %2$d CARPETAS</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">Compartir local privado</string>
     <string name="privacy_policy_title">política de privacidad</string>
@@ -945,6 +947,8 @@
     <string name="help_line_live_screen_pin_manual">Establezca un PIN personalizado en Configuración si prefiere un código específico en lugar de los generados automáticamente.</string>
     <string name="session_rename_device">Cambiar nombre del dispositivo</string>
     <string name="session_nickname_label">Apodo del dispositivo (máximo 30 caracteres)</string>
+    <string name="history_clear_title">Borrar historial de transferencias</string>
+    <string name="history_clear_message">¿Está seguro de que desea eliminar permanentemente todos los registros del historial de transferencias? Esta acción no se puede deshacer.</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Nuevo dispositivo conectado</item>
         <item quantity="other">%1$d nuevos dispositivos conectados</item>

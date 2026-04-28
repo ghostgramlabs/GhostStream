@@ -828,6 +828,9 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onBack = { navController.popBackStack() },
                     onDeleteRecord = viewModel::deleteHistoryRecord,
                     onOpenFile = viewModel::openReceivedFile,
+                    onClearHistory = viewModel::clearHistory,
+                    onClearSentHistory = viewModel::clearSentHistory,
+                    onClearReceivedHistory = viewModel::clearReceivedHistory,
                     modifier = Modifier.padding(innerPadding),
                 )
             }

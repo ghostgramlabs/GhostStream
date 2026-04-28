@@ -276,12 +276,14 @@
     <string name="history_tab_received">수신됨</string>
     <string name="history_empty_all">비었음.</string>
     <string name="history_empty_received">비었음.</string>
+    <string name="history_empty_sent">아직 전송된 파일이 없습니다.</string>
     <string name="history_sent">송신</string>
     <string name="history_received">수신</string>
     <string name="history_open">열기</string>
     <string name="history_delete">삭제</string>
     <string name="history_delete_desc">기록 삭제</string>
     <string name="history_date_time_format">%1$s %2$s</string>
+    <string name="home_library_summary">%1$d 항목 • %2$d 폴더</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">프라이빗 공유</string>
     <string name="privacy_policy_title">개인정보</string>
@@ -945,6 +947,8 @@
     <string name="help_line_live_screen_pin_manual">자동 생성된 코드 대신 특정 코드를 선호하는 경우 설정에서 사용자 지정 PIN을 설정하세요.</string>
     <string name="session_rename_device">장치 이름 바꾸기</string>
     <string name="session_nickname_label">장치 닉네임(최대 30자)</string>
+    <string name="history_clear_title">이체 내역 지우기</string>
+    <string name="history_clear_message">모든 이체 내역 기록을 영구적으로 삭제하시겠습니까? 이 작업은 취소할 수 없습니다.</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">디바이스 연결</item>
         <item quantity="other">%1$d 디바이스 연결</item>

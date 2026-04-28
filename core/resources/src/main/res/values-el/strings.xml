@@ -276,12 +276,14 @@
     <string name="history_tab_received">Ελήφθη</string>
     <string name="history_empty_all">Καμία δραστηριότητα ακόμα. Ξεκινήστε μια συνεδρία για να δείτε την πιο πρόσφατη μεταφορά.</string>
     <string name="history_empty_received">Δεν έχουν ληφθεί ακόμη αρχεία.</string>
+    <string name="history_empty_sent">Δεν έχουν αποσταλεί ακόμα αρχεία.</string>
     <string name="history_sent">Στάλθηκε</string>
     <string name="history_received">Ελήφθη</string>
     <string name="history_open">Ανοιχτό</string>
     <string name="history_delete">Διαγράφω</string>
     <string name="history_delete_desc">Διαγραφή από το ιστορικό</string>
     <string name="history_date_time_format">%1$s στο %2$s</string>
+    <string name="home_library_summary">%1$d ΕΙΔΗ • %2$d ΦΑΚΕΛΟΙ</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">Ιδιωτική τοπική κοινή χρήση</string>
     <string name="privacy_policy_title">Πολιτική Απορρήτου</string>
@@ -945,6 +947,8 @@
     <string name="help_line_live_screen_pin_manual">Ορίστε ένα προσαρμοσμένο PIN στις Ρυθμίσεις εάν προτιμάτε έναν συγκεκριμένο κωδικό αντί για τους αυτόματα δημιουργημένους.</string>
     <string name="session_rename_device">Μετονομασία συσκευής</string>
     <string name="session_nickname_label">Ψευδώνυμο συσκευής (Μέγ. 30 χαρακτήρες)</string>
+    <string name="history_clear_title">Εκκαθάριση ιστορικού μεταφοράς</string>
+    <string name="history_clear_message">Είστε βέβαιοι ότι θέλετε να διαγράψετε οριστικά όλες τις εγγραφές ιστορικού μεταφοράς; Αυτή η ενέργεια δεν μπορεί να αναιρεθεί.</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Νέα συσκευή συνδέθηκε</item>
         <item quantity="other">%1$d νέες συσκευές συνδέθηκαν</item>

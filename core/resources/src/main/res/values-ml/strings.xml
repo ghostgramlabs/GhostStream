@@ -276,12 +276,14 @@
     <string name="history_tab_received">ലഭിച്ചവ</string>
     <string name="history_empty_all">ശൂന്യം.</string>
     <string name="history_empty_received">ഫയലുകൾ ഒന്നും ലഭിച്ചിട്ടില്ല.</string>
+    <string name="history_empty_sent">ഇതുവരെ അയച്ച ഫയലുകളൊന്നുമില്ല.</string>
     <string name="history_sent">അയച്ചവ</string>
     <string name="history_received">ലഭിച്ചവ</string>
     <string name="history_open">തുറക്കുക</string>
     <string name="history_delete">നീക്കം ചെയ്യാം</string>
     <string name="history_delete_desc">ചരിത്രത്തിൽ നിന്ന് മാറ്റാം</string>
     <string name="history_date_time_format">%1$s സമയം %2$s</string>
+    <string name="home_library_summary">%1$d ഇനങ്ങൾ • %2$d ഫോൾഡറുകൾ</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">സുരക്ഷിത കൈമാറ്റം</string>
     <string name="privacy_policy_title">സ്വകാര്യതാനയം</string>
@@ -945,6 +947,8 @@
     <string name="help_line_live_screen_pin_manual">സ്വയമേവ ജനറേറ്റ് ചെയ്യുന്ന കോഡുകൾക്ക് പകരം ഒരു പ്രത്യേക കോഡാണ് നിങ്ങൾ ആഗ്രഹിക്കുന്നതെങ്കിൽ ക്രമീകരണങ്ങളിൽ ഒരു ഇഷ്‌ടാനുസൃത PIN സജ്ജീകരിക്കുക.</string>
     <string name="session_rename_device">ഉപകരണത്തിൻ്റെ പേര് മാറ്റുക</string>
     <string name="session_nickname_label">ഉപകരണത്തിൻ്റെ വിളിപ്പേര് (പരമാവധി 30 അക്ഷരങ്ങൾ)</string>
+    <string name="history_clear_title">കൈമാറ്റ ചരിത്രം മായ്‌ക്കുക</string>
+    <string name="history_clear_message">എല്ലാ കൈമാറ്റ ചരിത്ര രേഖകളും ശാശ്വതമായി ഇല്ലാതാക്കണമെന്ന് തീർച്ചയാണോ? ഈ പ്രവർത്തനം പഴയപടിയാക്കാനാകില്ല.</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">പുതിയ ഉപകരണം ബന്ധിപ്പിച്ചു</item>
         <item quantity="other">%1$d പുതിയ ഉപകരണങ്ങൾ ബന്ധിപ്പിച്ചു</item>

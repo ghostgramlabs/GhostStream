@@ -276,12 +276,14 @@
     <string name="history_tab_received">मिले</string>
     <string name="history_empty_all">खाली।</string>
     <string name="history_empty_received">खाली।</string>
+    <string name="history_empty_sent">अभी तक कोई फ़ाइल नहीं भेजी गई.</string>
     <string name="history_sent">गए</string>
     <string name="history_received">मिले</string>
     <string name="history_open">खोलें</string>
     <string name="history_delete">हटाएं</string>
     <string name="history_delete_desc">क्लीन करें</string>
     <string name="history_date_time_format">%1$s - %2$s</string>
+    <string name="home_library_summary">%1$d आइटम • %2$d फ़ोल्डर</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">प्राइवेट शेयर</string>
     <string name="privacy_policy_title">प्राइवेसी</string>
@@ -945,6 +947,8 @@
     <string name="help_line_live_screen_pin_manual">यदि आप ऑटो-जनरेट किए गए कोड के बजाय एक विशिष्ट कोड पसंद करते हैं तो सेटिंग्स में एक कस्टम PIN सेट करें।</string>
     <string name="session_rename_device">डिवाइस का नाम बदलें</string>
     <string name="session_nickname_label">डिवाइस उपनाम (अधिकतम 30 अक्षर)</string>
+    <string name="history_clear_title">स्थानांतरण इतिहास साफ़ करें</string>
+    <string name="history_clear_message">क्या आप वाकई सभी स्थानांतरण इतिहास रिकॉर्ड को स्थायी रूप से हटाना चाहते हैं? इस एक्शन को वापस नहीं किया जा सकता।</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">डिवाइस जुड़ा</item>
         <item quantity="other">%1$d डिवाइस</item>

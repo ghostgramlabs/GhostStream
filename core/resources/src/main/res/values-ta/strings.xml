@@ -276,12 +276,14 @@
     <string name="history_tab_received">பெறப்பட்டவை</string>
     <string name="history_empty_all">காலி.</string>
     <string name="history_empty_received">கோப்புகள் எதுவும் பெறப்படவில்லை.</string>
+    <string name="history_empty_sent">இதுவரை அனுப்பப்பட்ட கோப்புகள் எதுவும் இல்லை.</string>
     <string name="history_sent">அனுப்பப்பட்டது</string>
     <string name="history_received">பெறப்பட்டது</string>
     <string name="history_open">திற</string>
     <string name="history_delete">நீக்கு</string>
     <string name="history_delete_desc">வரலாற்றிலிருந்து நீக்கு</string>
     <string name="history_date_time_format">%1$s %2$s மணிக்கு</string>
+    <string name="home_library_summary">%1$d உருப்படிகள் • %2$d கோப்புறைகள்</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">பாதுகாப்பான லோக்கல் பகிர்வு</string>
     <string name="privacy_policy_title">தனியுரிமைக் கொள்கை</string>
@@ -945,6 +947,8 @@
     <string name="help_line_live_screen_pin_manual">தானாக உருவாக்கப்பட்ட குறியீடுகளுக்குப் பதிலாக குறிப்பிட்ட குறியீட்டை நீங்கள் விரும்பினால் அமைப்புகளில் தனிப்பயன் PIN ஐ அமைக்கவும்.</string>
     <string name="session_rename_device">சாதனத்தை மறுபெயரிடவும்</string>
     <string name="session_nickname_label">சாதனத்தின் புனைப்பெயர் (அதிகபட்சம் 30 எழுத்துகள்)</string>
+    <string name="history_clear_title">பரிமாற்ற வரலாற்றை அழிக்கவும்</string>
+    <string name="history_clear_message">எல்லா பரிமாற்ற வரலாற்றுப் பதிவுகளையும் நிரந்தரமாக நீக்க விரும்புகிறீர்களா? இந்தச் செயலைச் செயல்தவிர்க்க முடியாது.</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">புதிய சாதனம் இணைக்கப்பட்டது</item>
         <item quantity="other">%1$d புதிய சாதனங்கள் இணைக்கப்பட்டன</item>

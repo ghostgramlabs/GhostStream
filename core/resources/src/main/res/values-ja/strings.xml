@@ -276,12 +276,14 @@
     <string name="history_tab_received">受信済</string>
     <string name="history_empty_all">空です。</string>
     <string name="history_empty_received">空です。</string>
+    <string name="history_empty_sent">まだ送信されたファイルはありません。</string>
     <string name="history_sent">送信</string>
     <string name="history_received">受信</string>
     <string name="history_open">開く</string>
     <string name="history_delete">削除</string>
     <string name="history_delete_desc">履歴から削除</string>
     <string name="history_date_time_format">%1$s %2$s</string>
+    <string name="home_library_summary">%1$d アイテム • %2$d フォルダー</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">プライベート共有</string>
     <string name="privacy_policy_title">プライバシー</string>
@@ -945,6 +947,8 @@
     <string name="help_line_live_screen_pin_manual">自動生成されたコードではなく特定のコードを使用したい場合は、設定でカスタムPINを設定します。</string>
     <string name="session_rename_device">デバイス名の変更</string>
     <string name="session_nickname_label">デバイスのニックネーム (最大 30 文字)</string>
+    <string name="history_clear_title">転送履歴をクリアする</string>
+    <string name="history_clear_message">すべての転送履歴レコードを完全に削除してもよろしいですか?この操作は元に戻すことができません。</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">デバイスが参加</item>
         <item quantity="other">%1$d デバイスが参加</item>

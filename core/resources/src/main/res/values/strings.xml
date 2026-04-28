@@ -127,7 +127,7 @@
     <string name="help_about_3">No cloud. No account. No internet required.</string>
     <string name="help_section_what_you_can_do">What you can do</string>
     <string name="help_section_video_playback">Video playback</string>
-    <string name="help_section_browser_preparation">Browser preparation</string>
+    <string name="help_section_browser_preparation">Smart media optimization</string>
     <string name="help_section_receiving_files">Receiving files</string>
     <string name="help_section_drop_zone">Browser uploads and drop zone</string>
     <string name="help_section_multiple_devices">Multiple devices</string>
@@ -138,12 +138,12 @@
     <string name="help_line_open_session">Open the session in a browser on Android phones, iPhone, iPad, Windows laptops, Mac, Linux, tablets, desktops, and many smart TVs.</string>
     <string name="help_line_same_network">Any device with Wi-Fi or hotspot access and a browser can connect on the same local network.</string>
     <string name="help_line_multiple_browse">Keep one share open while several devices browse at the same time.</string>
-    <string name="help_line_video_direct">Most videos can play directly in the browser.</string>
-    <string name="help_line_video_temporary">Some videos need a temporary browser-ready version for smoother playback on certain devices.</string>
-    <string name="help_line_video_original">The original file stays on your phone, and playback preparation does not replace your source file.</string>
-    <string name="help_line_prep_optional">Browser preparation is optional and mainly helps videos that need conversion open faster in some browsers.</string>
-    <string name="help_line_prep_control">You can start preparation when you want it, stop it any time, and keep watching while it runs.</string>
-    <string name="help_line_prep_batch">Larger batches can take longer and may warm the phone a little, so it is best used only when needed.</string>
+    <string name="help_line_video_direct">DirectServe serves raw media directly whenever client browsers offer native codec support.</string>
+    <string name="help_line_video_temporary">If a codec mismatch occurs, optimization triggers automatically when starting playback.</string>
+    <string name="help_line_video_original">Original files stay completely untouched on your phone storage.</string>
+    <string name="help_line_prep_optional">Transmuxing preferences always choose light container fixes over heavy re-encoding.</string>
+    <string name="help_line_prep_control">Temporary conversions cache dynamically to preserve your hardware battery life.</string>
+    <string name="help_line_prep_batch">Streaming manifests verify safety durations accurately before feeding connections.</string>
     <string name="help_line_receive_upload">Other devices can send files to your phone through the web view when uploads are allowed.</string>
     <string name="help_line_receive_approval">If upload approval is turned on, you will see a request before the files are accepted.</string>
     <string name="help_line_receive_history">Received files are saved on your device and can appear in your history.</string>
@@ -155,7 +155,7 @@
     <string name="help_line_multi_controls">You can block devices, disconnect everyone, or protect the session with a PIN.</string>
     <string name="help_line_privacy_local">DirectServe does not require an account and does not move your library into cloud storage.</string>
     <string name="help_line_privacy_session">Nearby devices only see the files and folders that are part of your current live session.</string>
-    <string name="help_line_privacy_controls">You can stop sharing, turn on a PIN, block devices, disable downloads, or stop browser preparation whenever you want.</string>
+    <string name="help_line_privacy_controls">You can stop sharing, turn on a PIN, block devices, or disable downloads whenever you want.</string>
     <string name="help_line_wifi_hotspot">Both devices should be on the same Wi-Fi network or your phone hotspot.</string>
     <string name="help_line_public_wifi">Public Wi-Fi sometimes blocks local device-to-device traffic, so hotspot is often the best fallback.</string>
     <string name="help_line_downloads_disabled">If downloads are disabled in Settings, the web UI hides download actions completely.</string>
@@ -276,12 +276,14 @@
     <string name="history_tab_received">Received</string>
     <string name="history_empty_all">No activity yet. Start a session to see the latest transfer.</string>
     <string name="history_empty_received">No received files yet.</string>
+    <string name="history_empty_sent">No sent files yet.</string>
     <string name="history_sent">Sent</string>
     <string name="history_received">Received</string>
     <string name="history_open">Open</string>
     <string name="history_delete">Delete</string>
     <string name="history_delete_desc">Delete from history</string>
     <string name="history_date_time_format">%1$s at %2$s</string>
+    <string name="home_library_summary">%1$d ITEMS • %2$d FOLDERS</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">Private local sharing</string>
     <string name="privacy_policy_title">Privacy Policy</string>
@@ -980,7 +982,7 @@
     <string name="help_section_live_screen">Live screen mirror</string>
     <string name="help_line_quick_text_share">Send text messages and links between your phone and connected browsers during an active session.</string>
     <string name="help_line_quick_text_notify">Enable notifications in Settings to get instant alerts when a browser sends you a message.</string>
-    <string name="help_line_quick_text_no_history">Quick text messages are transient and do not persist after your session ends.</string>
+    <string name="help_line_quick_text_no_history">Quick text messages are saved on your device and can be viewed in Quick Text history.</string>
     <string name="help_line_live_screen_start">Use the Live Screen feature to mirror your phone screen to nearby devices on the same Wi-Fi or hotspot.</string>
     <string name="help_line_live_screen_pin">Enable PIN protection to require connected devices to verify with a code before they can view your live screen.</string>
     <string name="help_line_live_screen_pin_regen">You can create a new PIN anytime during a live screen session by tapping the Regenerate PIN button.</string>
@@ -989,5 +991,8 @@
     <!-- Session Device Renaming -->
     <string name="session_rename_device">Rename Device</string>
     <string name="session_nickname_label">Device Nickname (Max 30 chars)</string>
+
+    <string name="history_clear_title">Clear Transfer History</string>
+    <string name="history_clear_message">Are you sure you want to permanently delete all transfer history records? This action cannot be undone.</string>
 
 </resources>

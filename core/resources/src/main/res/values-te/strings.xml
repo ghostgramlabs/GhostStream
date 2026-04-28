@@ -276,12 +276,14 @@
     <string name="history_tab_received">స్వీకరించినవి</string>
     <string name="history_empty_all">ఖాళీ.</string>
     <string name="history_empty_received">ఇంకా ఏ ఫైల్‌లూ రాలేదు.</string>
+    <string name="history_empty_sent">ఇంకా పంపిన ఫైల్‌లు లేవు.</string>
     <string name="history_sent">పంపినవి</string>
     <string name="history_received">స్వీకరించినవి</string>
     <string name="history_open">తెరువు</string>
     <string name="history_delete">తొలగించు</string>
     <string name="history_delete_desc">హిస్టరీ నుండి తొలగించు</string>
     <string name="history_date_time_format">%1$s నాడు %2$s కి</string>
+    <string name="home_library_summary">%1$d అంశాలు • %2$d ఫోల్డర్‌లు</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">సురక్షిత లోకల్ షేరింగ్</string>
     <string name="privacy_policy_title">ప్రైవసీ పాలసీ</string>
@@ -945,6 +947,8 @@
     <string name="help_line_live_screen_pin_manual">మీరు ఆటో-జనరేటెడ్ కోడ్‌లకు బదులుగా నిర్దిష్ట కోడ్‌ని ఇష్టపడితే సెట్టింగ్‌లలో అనుకూల PINని సెట్ చేయండి.</string>
     <string name="session_rename_device">పరికరం పేరు మార్చండి</string>
     <string name="session_nickname_label">పరికరం మారుపేరు (గరిష్టంగా 30 అక్షరాలు)</string>
+    <string name="history_clear_title">బదిలీ చరిత్రను క్లియర్ చేయండి</string>
+    <string name="history_clear_message">మీరు ఖచ్చితంగా అన్ని బదిలీ చరిత్ర రికార్డులను శాశ్వతంగా తొలగించాలనుకుంటున్నారా? ఈ చర్య రద్దు చేయబడదు.</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">కొత్త పరికరం కనెక్ట్ చేయబడింది</item>
         <item quantity="other">%1$d కొత్త పరికరాలు కనెక్ట్ చేయబడ్డాయి</item>

@@ -276,12 +276,14 @@
     <string name="history_tab_received">Ontvangen</string>
     <string name="history_empty_all">Nog geen activiteit.</string>
     <string name="history_empty_received">Nog geen bestanden ontvangen.</string>
+    <string name="history_empty_sent">Nog geen verzonden bestanden.</string>
     <string name="history_sent">Verzonden</string>
     <string name="history_received">Ontvangen</string>
     <string name="history_open">Openen</string>
     <string name="history_delete">Wissen</string>
     <string name="history_delete_desc">Uit geschiedenis wissen</string>
     <string name="history_date_time_format">%1$s om %2$s</string>
+    <string name="home_library_summary">%1$d ITEMS • %2$d MAPPEN</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">Privé lokaal delen</string>
     <string name="privacy_policy_title">Privacybeleid</string>
@@ -945,6 +947,8 @@
     <string name="help_line_live_screen_pin_manual">Stel een aangepaste PIN in bij Instellingen als je de voorkeur geeft aan een specifieke code in plaats van automatisch gegenereerde codes.</string>
     <string name="session_rename_device">Hernoem apparaat</string>
     <string name="session_nickname_label">Bijnaam apparaat (max. 30 tekens)</string>
+    <string name="history_clear_title">Wis de overdrachtsgeschiedenis</string>
+    <string name="history_clear_message">Weet u zeker dat u alle overdrachtgeschiedenisrecords definitief wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Apparaat verbonden</item>
         <item quantity="other">%1$d apparaten verbonden</item>

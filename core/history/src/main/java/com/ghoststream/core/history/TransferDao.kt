@@ -22,4 +22,10 @@ internal interface TransferDao {
 
     @Query("DELETE FROM transfers")
     suspend fun clearAll()
+
+    @Query("DELETE FROM transfers WHERE direction = 'SENT'")
+    suspend fun clearSent()
+
+    @Query("DELETE FROM transfers WHERE direction = 'RECEIVED'")
+    suspend fun clearReceived()
 }

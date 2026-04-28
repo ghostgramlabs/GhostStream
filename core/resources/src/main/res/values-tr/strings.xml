@@ -276,12 +276,14 @@
     <string name="history_tab_received">Alınanlar</string>
     <string name="history_empty_all">Boş.</string>
     <string name="history_empty_received">Boş.</string>
+    <string name="history_empty_sent">Henüz gönderilen dosya yok.</string>
     <string name="history_sent">Gitti</string>
     <string name="history_received">Geldi</string>
     <string name="history_open">Aç</string>
     <string name="history_delete">Sil</string>
     <string name="history_delete_desc">Temizle</string>
     <string name="history_date_time_format">%1$s - %2$s</string>
+    <string name="home_library_summary">%1$d ÖĞELER • %2$d KLASÖRLER</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">Yerel Paylaşım</string>
     <string name="privacy_policy_title">Gizlilik</string>
@@ -945,6 +947,8 @@
     <string name="help_line_live_screen_pin_manual">Otomatik oluşturulanlar yerine belirli bir kod tercih ediyorsanız Ayarlar\'da özel bir PIN ayarlayın.</string>
     <string name="session_rename_device">Cihazı Yeniden Adlandır</string>
     <string name="session_nickname_label">Cihaz Takma Adı (Maks. 30 karakter)</string>
+    <string name="history_clear_title">Aktarım Geçmişini Temizle</string>
+    <string name="history_clear_message">Tüm aktarım geçmişi kayıtlarını kalıcı olarak silmek istediğinizden emin misiniz? Bu eylem geri alınamaz.</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Cihaz bağlandı</item>
         <item quantity="other">%1$d bağlandı</item>

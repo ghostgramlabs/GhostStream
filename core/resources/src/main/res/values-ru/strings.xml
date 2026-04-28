@@ -276,12 +276,14 @@
     <string name="history_tab_received">Получено</string>
     <string name="history_empty_all">Пока нет активности.</string>
     <string name="history_empty_received">Нет полученных файлов.</string>
+    <string name="history_empty_sent">Отправленных файлов пока нет.</string>
     <string name="history_sent">Отправлено</string>
     <string name="history_received">Получено</string>
     <string name="history_open">Открыть</string>
     <string name="history_delete">Удалить</string>
     <string name="history_delete_desc">Убрать из истории</string>
     <string name="history_date_time_format">%1$s в %2$s</string>
+    <string name="home_library_summary">%1$d ЭЛЕМЕНТЫ • %2$d ПАПКИ</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">Приватный локальный обмен</string>
     <string name="privacy_policy_title">Конфиденциальность</string>
@@ -945,6 +947,8 @@
     <string name="help_line_live_screen_pin_manual">Установите собственный PIN-код в Настройках, если предпочитаете конкретный код вместо автоматически генерируемых.</string>
     <string name="session_rename_device">Переименовать устройство</string>
     <string name="session_nickname_label">Псевдоним устройства (максимум 30 символов)</string>
+    <string name="history_clear_title">Очистить историю переводов</string>
+    <string name="history_clear_message">Вы уверены, что хотите навсегда удалить все записи истории переводов? Это действие невозможно отменить.</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Подключено новое устройство</item>
         <item quantity="other">%1$d устройств подключилось</item>

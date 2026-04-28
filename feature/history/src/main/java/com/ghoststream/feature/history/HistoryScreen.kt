@@ -31,14 +31,55 @@ fun HistoryScreen(
     history: List<TransferRecord>,
     onBack: () -> Unit,
     onDeleteRecord: (String) -> Unit,
-    onOpenFile: (String) -> Unit, // fileUri
+    onOpenFile: (String) -> Unit,
+    onClearHistory: () -> Unit,
+    onClearSentHistory: () -> Unit,
+    onClearReceivedHistory: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf(stringResource(R.string.history_tab_all), stringResource(R.string.history_tab_received))
+    val tabs = listOf(
+        stringResource(R.string.history_tab_all), 
+        stringResource(R.string.history_tab_received),
+        stringResource(R.string.history_sent)
+    )
+    var showClearConfirmation by remember { mutableStateOf(false) }
+
+    if (showClearConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showClearConfirmation = false },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            tonalElevation = 0.dp,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            title = { Text(stringResource(R.string.history_clear_title)) },
+            text = { Text(stringResource(R.string.history_clear_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        when (selectedTab) {
+                            1 -> onClearReceivedHistory()
+                            2 -> onClearSentHistory()
+                            else -> onClearHistory()
+                        }
+                        showClearConfirmation = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text(stringResource(SharedR.string.common_delete))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearConfirmation = false }) {
+                    Text(stringResource(SharedR.string.common_cancel))
+                }
+            }
+        )
+    }
 
     val filteredHistory = when (selectedTab) {
-        1 -> history.filter { it.direction == TransferDirection.RECEIVED && it.fileUri != null }
+        1 -> history.filter { it.direction == TransferDirection.RECEIVED }
+        2 -> history.filter { it.direction == TransferDirection.SENT }
         else -> history
     }
 
@@ -49,6 +90,17 @@ fun HistoryScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back))
+                    }
+                },
+                actions = {
+                    if (filteredHistory.isNotEmpty()) {
+                        IconButton(onClick = { showClearConfirmation = true }) {
+                            Icon(
+                                imageVector = Icons.Outlined.DeleteSweep,
+                                contentDescription = "Clear History",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                 }
             )
@@ -105,7 +157,11 @@ fun HistoryScreen(
 
             if (filteredHistory.isEmpty()) {
                 EmptyHistoryState(
-                    message = if (selectedTab == 0) stringResource(R.string.history_empty_all) else stringResource(R.string.history_empty_received)
+                    message = when (selectedTab) {
+                        1 -> stringResource(R.string.history_empty_received)
+                        2 -> stringResource(R.string.history_empty_sent)
+                        else -> stringResource(R.string.history_empty_all)
+                    }
                 )
             } else {
                 LazyColumn(

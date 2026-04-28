@@ -276,12 +276,14 @@
     <string name="history_tab_received">Erhalten</string>
     <string name="history_empty_all">Noch keine Aktivität. Starten Sie eine Sitzung, um die letzte Übertragung anzuzeigen.</string>
     <string name="history_empty_received">Noch keine Dateien erhalten.</string>
+    <string name="history_empty_sent">Es wurden noch keine Dateien gesendet.</string>
     <string name="history_sent">Gesendet</string>
     <string name="history_received">Erhalten</string>
     <string name="history_open">Offen</string>
     <string name="history_delete">Löschen</string>
     <string name="history_delete_desc">Aus dem Verlauf löschen</string>
     <string name="history_date_time_format">%1$s bei %2$s</string>
+    <string name="home_library_summary">%1$d ELEMENTE • %2$d ORDNER</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">Private lokale Freigabe</string>
     <string name="privacy_policy_title">Datenschutzrichtlinie</string>
@@ -945,6 +947,8 @@
     <string name="help_line_live_screen_pin_manual">Legen Sie in den Einstellungen eine benutzerdefinierte PIN fest, wenn Sie einen bestimmten Code anstelle von automatisch generierten bevorzugen.</string>
     <string name="session_rename_device">Gerät umbenennen</string>
     <string name="session_nickname_label">Geräte-Spitzname (max. 30 Zeichen)</string>
+    <string name="history_clear_title">Übertragungsverlauf löschen</string>
+    <string name="history_clear_message">Sind Sie sicher, dass Sie alle Übertragungsverlaufsdatensätze dauerhaft löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Neues Gerät verbunden</item>
         <item quantity="other">%1$d neue Geräte verbunden</item>

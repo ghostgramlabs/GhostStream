@@ -14,6 +14,8 @@ interface HistoryRepository {
     suspend fun addRecord(record: TransferRecord)
     suspend fun deleteRecord(id: String)
     suspend fun clearAll()
+    suspend fun clearSent()
+    suspend fun clearReceived()
     suspend fun addQuickTextMessage(message: QuickTextMessage)
     suspend fun getQuickTextMessage(id: String): QuickTextMessage?
     suspend fun deleteQuickTextMessage(id: String)
@@ -47,6 +49,14 @@ class RoomHistoryRepository(context: Context) : HistoryRepository {
 
     override suspend fun clearAll() {
         dao.clearAll()
+    }
+
+    override suspend fun clearSent() {
+        dao.clearSent()
+    }
+
+    override suspend fun clearReceived() {
+        dao.clearReceived()
     }
 
     override suspend fun addQuickTextMessage(message: QuickTextMessage) {

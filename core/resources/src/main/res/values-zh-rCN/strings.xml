@@ -276,12 +276,14 @@
     <string name="history_tab_received">已接收</string>
     <string name="history_empty_all">空。</string>
     <string name="history_empty_received">空。</string>
+    <string name="history_empty_sent">尚未发送文件。</string>
     <string name="history_sent">发送</string>
     <string name="history_received">接收</string>
     <string name="history_open">打开</string>
     <string name="history_delete">删除</string>
     <string name="history_delete_desc">从记录中清除</string>
     <string name="history_date_time_format">%1$s %2$s</string>
+    <string name="home_library_summary">%1$d 项目 • %2$d 文件夹</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">私密本地分享</string>
     <string name="privacy_policy_title">隐私</string>
@@ -945,6 +947,8 @@
     <string name="help_line_live_screen_pin_manual">如果您更喜欢特定代码而不是自动生成的代码，请在设置中设置自定义 PIN 码。</string>
     <string name="session_rename_device">重命名设备</string>
     <string name="session_nickname_label">设备昵称（最多 30 个字符）</string>
+    <string name="history_clear_title">清除传输历史记录</string>
+    <string name="history_clear_message">您确定要永久删除所有转账历史记录吗？此操作无法撤消。</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">设备已连接</item>
         <item quantity="other">%1$d 台设备已连接</item>

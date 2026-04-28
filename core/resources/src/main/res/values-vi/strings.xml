@@ -276,12 +276,14 @@
     <string name="history_tab_received">Đã nhận</string>
     <string name="history_empty_all">Trống.</string>
     <string name="history_empty_received">Trống.</string>
+    <string name="history_empty_sent">Chưa có tập tin nào được gửi.</string>
     <string name="history_sent">Gửi</string>
     <string name="history_received">Nhận</string>
     <string name="history_open">Mở</string>
     <string name="history_delete">Xóa</string>
     <string name="history_delete_desc">Xóa khỏi lịch sử</string>
     <string name="history_date_time_format">%1$s lúc %2$s</string>
+    <string name="home_library_summary">%1$d MỤC • %2$d THƯ MỤC</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">Chia sẻ cục bộ</string>
     <string name="privacy_policy_title">Bảo mật</string>
@@ -945,6 +947,8 @@
     <string name="help_line_live_screen_pin_manual">Thiết lập mã PIN tùy chỉnh trong Cài đặt nếu bạn muốn sử dụng một mã cụ thể thay vì mã được tạo tự động.</string>
     <string name="session_rename_device">Đổi tên thiết bị</string>
     <string name="session_nickname_label">Biệt hiệu của thiết bị (Tối đa 30 ký tự)</string>
+    <string name="history_clear_title">Xóa lịch sử chuyển khoản</string>
+    <string name="history_clear_message">Bạn có chắc chắn muốn xóa vĩnh viễn tất cả hồ sơ lịch sử chuyển khoản không? Không thể hoàn tác hành động này.</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Thiết bị đã kết nối</item>
         <item quantity="other">%1$d thiết bị kết nối</item>

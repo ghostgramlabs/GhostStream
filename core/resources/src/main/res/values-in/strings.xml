@@ -276,12 +276,14 @@
     <string name="history_tab_received">Diterima</string>
     <string name="history_empty_all">Kosong.</string>
     <string name="history_empty_received">Kosong.</string>
+    <string name="history_empty_sent">Belum ada file yang terkirim.</string>
     <string name="history_sent">Terkirim</string>
     <string name="history_received">Diterima</string>
     <string name="history_open">Buka</string>
     <string name="history_delete">Hapus</string>
     <string name="history_delete_desc">Hapus Riwayat</string>
     <string name="history_date_time_format">%1$s pada %2$s</string>
+    <string name="home_library_summary">%1$d ITEM • %2$d FOLDER</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">Berbagi Privat</string>
     <string name="privacy_policy_title">Privasi</string>
@@ -945,6 +947,8 @@
     <string name="help_line_live_screen_pin_manual">Atur PIN khusus di Pengaturan jika Anda lebih menyukai kode tertentu daripada kode yang dibuat secara otomatis.</string>
     <string name="session_rename_device">Ganti Nama Perangkat</string>
     <string name="session_nickname_label">Nama Panggilan Perangkat (Maks 30 karakter)</string>
+    <string name="history_clear_title">Hapus Riwayat Transfer</string>
+    <string name="history_clear_message">Apakah Anda yakin ingin menghapus semua catatan riwayat transfer secara permanen? Tindakan ini tidak dapat dibatalkan.</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Perangkat bergabung</item>
         <item quantity="other">%1$d perangkat bergabung</item>

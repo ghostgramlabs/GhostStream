@@ -276,12 +276,14 @@
     <string name="history_tab_received">Ricevuti</string>
     <string name="history_empty_all">Nessuna attività recente.</string>
     <string name="history_empty_received">Nessun file ricevuto.</string>
+    <string name="history_empty_sent">Nessun file inviato ancora.</string>
     <string name="history_sent">Inviato</string>
     <string name="history_received">Ricevuto</string>
     <string name="history_open">Apri</string>
     <string name="history_delete">Elimina</string>
     <string name="history_delete_desc">Rimuovi dalla cronologia</string>
     <string name="history_date_time_format">%1$s alle %2$s</string>
+    <string name="home_library_summary">%1$d ELEMENTI • %2$d CARTELLE</string>
     <string name="splash_title">DirectServe</string>
     <string name="splash_subtitle">Condivisione locale privata</string>
     <string name="privacy_policy_title">Privacy</string>
@@ -945,6 +947,8 @@
     <string name="help_line_live_screen_pin_manual">Imposta un PIN personalizzato nelle Impostazioni se preferisci un codice specifico invece di quelli generati automaticamente.</string>
     <string name="session_rename_device">Rinomina dispositivo</string>
     <string name="session_nickname_label">Nickname dispositivo (max 30 caratteri)</string>
+    <string name="history_clear_title">Cancella cronologia trasferimenti</string>
+    <string name="history_clear_message">Sei sicuro di voler eliminare definitivamente tutti i record della cronologia dei trasferimenti? Questa azione non può essere annullata.</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Dispositivo unito</item>
         <item quantity="other">%1$d dispositivi uniti</item>

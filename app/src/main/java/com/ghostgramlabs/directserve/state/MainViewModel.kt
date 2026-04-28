@@ -795,6 +795,24 @@ class MainViewModel(
         }
     }
 
+    fun clearHistory() {
+        viewModelScope.launch {
+            container.historyRepository.clearAll()
+        }
+    }
+
+    fun clearSentHistory() {
+        viewModelScope.launch {
+            container.historyRepository.clearSent()
+        }
+    }
+
+    fun clearReceivedHistory() {
+        viewModelScope.launch {
+            container.historyRepository.clearReceived()
+        }
+    }
+
     fun debugLogLocationDescription(): String = container.debugLogRepository.locationDescription()
 
     fun shareDebugLog() {
