@@ -29,7 +29,7 @@
     <string name="onboarding_page_5_description">Sadece Wi-Fi veya Hotspot.</string>
     <string name="onboarding_page_6_title">Gizlilik</string>
     <string name="onboarding_page_6_description">Tüm dosyalar telefonunuzda kalır.</string>
-    <string name="onboarding_page_counter">%1$d / %2$d</string>
+    <string name="onboarding_page_counter">%1$d of %2$d</string>
     <string name="onboarding_next">İleri</string>
     <string name="onboarding_get_started">Başla</string>
     <string name="settings_title">Ayarlar</string>
@@ -763,7 +763,7 @@
     <string name="help_line_search_2">Üstte.</string>
     <string name="settings_dlna">DLNA TV</string>
     <string name="settings_dlna_desc">TV/VLC.</string>
-    <string name="dlna_server_name">DirectServe</string>
+    <string name="dlna_server_name">DirectServe Media Server</string>
     <string name="dlna_server_name_template">DirectServe (%1$s)</string>
     <string name="web_action_download_zip">ZIP İndir</string>
     <string name="web_btn_download_all_zip">Hepsi ZIP</string>
@@ -943,6 +943,8 @@
     <string name="help_line_live_screen_pin">Bağlı cihazların canlı ekranınızı görmeden önce bir kodla doğrulanmasını gerektirmek için PIN korumasını etkinleştirin.</string>
     <string name="help_line_live_screen_pin_regen">Canlı ekran oturumu sırasında istediğiniz zaman PIN\'i Yeniden Oluştur düğmesine dokunarak yeni bir PIN oluşturabilirsiniz.</string>
     <string name="help_line_live_screen_pin_manual">Otomatik oluşturulanlar yerine belirli bir kod tercih ediyorsanız Ayarlar\'da özel bir PIN ayarlayın.</string>
+    <string name="session_rename_device">Cihazı Yeniden Adlandır</string>
+    <string name="session_nickname_label">Cihaz Takma Adı (Maks. 30 karakter)</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Cihaz bağlandı</item>
         <item quantity="other">%1$d bağlandı</item>

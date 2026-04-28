@@ -986,4 +986,8 @@
     <string name="help_line_live_screen_pin_regen">You can create a new PIN anytime during a live screen session by tapping the Regenerate PIN button.</string>
     <string name="help_line_live_screen_pin_manual">Set a custom PIN in Settings if you prefer a specific code instead of auto-generated ones.</string>
 
+    <!-- Session Device Renaming -->
+    <string name="session_rename_device">Rename Device</string>
+    <string name="session_nickname_label">Device Nickname (Max 30 chars)</string>
+
 </resources>

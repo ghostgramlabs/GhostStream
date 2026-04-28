@@ -29,7 +29,7 @@
     <string name="onboarding_page_5_description">Wi-Fiまたはアクセスポイントで動作。</string>
     <string name="onboarding_page_6_title">プライバシー</string>
     <string name="onboarding_page_6_description">ファイルはスマホ内に残ります。</string>
-    <string name="onboarding_page_counter">%1$d / %2$d</string>
+    <string name="onboarding_page_counter">%1$d of %2$d</string>
     <string name="onboarding_next">次へ</string>
     <string name="onboarding_get_started">始める</string>
     <string name="settings_title">設定</string>
@@ -763,7 +763,7 @@
     <string name="help_line_search_2">上。</string>
     <string name="settings_dlna">DLNA TV</string>
     <string name="settings_dlna_desc">TV/VLC。</string>
-    <string name="dlna_server_name">DirectServe</string>
+    <string name="dlna_server_name">DirectServe Media Server</string>
     <string name="dlna_server_name_template">ダイレクトサーブ (%1$s)</string>
     <string name="web_action_download_zip">ZIP</string>
     <string name="web_btn_download_all_zip">すべてZIP</string>
@@ -943,6 +943,8 @@
     <string name="help_line_live_screen_pin">PIN保護を有効にすると、接続されたデバイスがライブ画面を表示する前にコードによる確認を求めるようになります。</string>
     <string name="help_line_live_screen_pin_regen">ライブ画面セッション中、いつでも[PINを再生成]ボタンをタップして新しいPINを作成できます。</string>
     <string name="help_line_live_screen_pin_manual">自動生成されたコードではなく特定のコードを使用したい場合は、設定でカスタムPINを設定します。</string>
+    <string name="session_rename_device">デバイス名の変更</string>
+    <string name="session_nickname_label">デバイスのニックネーム (最大 30 文字)</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">デバイスが参加</item>
         <item quantity="other">%1$d デバイスが参加</item>

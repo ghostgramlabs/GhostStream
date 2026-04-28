@@ -29,7 +29,7 @@
     <string name="onboarding_page_5_description">Allt fungerar via ditt Wi-Fi eller hotspot. Snabbt och pålitligt.</string>
     <string name="onboarding_page_6_title">Privat som standard</string>
     <string name="onboarding_page_6_description">Din data stannar på telefonen. Inga konton eller moln.</string>
-    <string name="onboarding_page_counter">%1$d av %2$d</string>
+    <string name="onboarding_page_counter">%1$d of %2$d</string>
     <string name="onboarding_next">Nästa</string>
     <string name="onboarding_get_started">Börja nu</string>
     <string name="settings_title">Inställningar</string>
@@ -763,7 +763,7 @@
     <string name="help_line_search_2">Alltid där.</string>
     <string name="settings_dlna">DLNA TV</string>
     <string name="settings_dlna_desc">Hitta från TVn.</string>
-    <string name="dlna_server_name">DirectServe</string>
+    <string name="dlna_server_name">DirectServe Media Server</string>
     <string name="dlna_server_name_template">DirectServe (%1$s)</string>
     <string name="web_action_download_zip">Ladda ner ZIP</string>
     <string name="web_btn_download_all_zip">Alla som ZIP</string>
@@ -943,6 +943,8 @@
     <string name="help_line_live_screen_pin">Aktivera PIN-skydd för att kräva att anslutna enheter verifierar med en kod innan de kan se din liveskärm.</string>
     <string name="help_line_live_screen_pin_regen">Du kan skapa en ny PIN när som helst under en liveskärmssession genom att trycka på knappen Regenerera PIN.</string>
     <string name="help_line_live_screen_pin_manual">Ställ in en anpassad PIN i Inställningar om du föredrar en specifik kod istället för automatiskt genererade.</string>
+    <string name="session_rename_device">Byt namn på enheten</string>
+    <string name="session_nickname_label">Smeknamn på enheten (max 30 tecken)</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Enhet ansluten</item>
         <item quantity="other">%1$d enheter anslutna</item>

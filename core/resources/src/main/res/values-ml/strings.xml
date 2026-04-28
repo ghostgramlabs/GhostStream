@@ -29,7 +29,7 @@
     <string name="onboarding_page_5_description">ഒരേ വൈഫൈ അല്ലെങ്കിൽ നിങ്ങളുടെ ഹോട്ട്‌സ്‌പോട്ട് വഴി ഫയലുകൾ വേഗത്തിലും സുരക്ഷിതമായും കൈമാറാം.</string>
     <string name="onboarding_page_6_title">രഹസ്യസ്വഭാവം ഉറപ്പ്</string>
     <string name="onboarding_page_6_description">നിങ്ങളുടെ ഫയലുകൾ നിങ്ങളുടെ ഫോണിൽ തന്നെ സുരക്ഷിതമായിരിക്കും, ക്ലൗഡിലേക്ക് അപ്‌ലോഡ് ചെയ്യപ്പെടുന്നില്ല.</string>
-    <string name="onboarding_page_counter">%1$d / %2$d</string>
+    <string name="onboarding_page_counter">%1$d of %2$d</string>
     <string name="onboarding_next">അടുത്തത്</string>
     <string name="onboarding_get_started">തുടങ്ങാം</string>
     <string name="settings_title">സെറ്റിംഗ്സ്</string>
@@ -763,7 +763,7 @@
     <string name="help_line_search_2">സെർച്ച് ബാർ എപ്പോഴും സ്ക്രീനിന്റെ മുകളിൽ തന്നെ കാണാൻ സാധിക്കും.</string>
     <string name="settings_dlna">DLNA മീഡിയ സർവർ</string>
     <string name="settings_dlna_desc">സ്മാർട്ട് ടിവികൾക്കും VLC-ക്കും ഈ ഉപകരണം കണ്ടെത്താൻ അനുമതി നൽകുക.</string>
-    <string name="dlna_server_name">DirectServe മീഡിയ സെർവർ</string>
+    <string name="dlna_server_name">DirectServe Media Server</string>
     <string name="dlna_server_name_template">DirectServe (%1$s)</string>
     <string name="web_action_download_zip">സിപ്പ് (ZIP) ആയി ഡൗൺലോഡ് ചെയ്യാം</string>
     <string name="web_btn_download_all_zip">എല്ലാം സിപ്പ് ആയി ഡൗൺലോഡ് ചെയ്യാം</string>
@@ -943,6 +943,8 @@
     <string name="help_line_live_screen_pin">കണക്റ്റുചെയ്‌ത ഉപകരണങ്ങൾ നിങ്ങളുടെ തത്സമയ സ്‌ക്രീൻ കാണുന്നതിന് മുമ്പ് ഒരു കോഡ് ഉപയോഗിച്ച് പരിശോധിച്ചുറപ്പിക്കുന്നതിന് PIN പരിരക്ഷ പ്രവർത്തനക്ഷമമാക്കുക.</string>
     <string name="help_line_live_screen_pin_regen">റീജനറേറ്റ് PIN ബട്ടൺ ടാപ്പുചെയ്യുന്നതിലൂടെ തത്സമย സ്ക്രീൻ സെഷനിൽ ഏത് സമയത്തും നിങ്ങൾക്ക് പുതിയ PIN സൃഷ്ടിക്കാൻ കഴിയും.</string>
     <string name="help_line_live_screen_pin_manual">സ്വയമേവ ജനറേറ്റ് ചെയ്യുന്ന കോഡുകൾക്ക് പകരം ഒരു പ്രത്യേക കോഡാണ് നിങ്ങൾ ആഗ്രഹിക്കുന്നതെങ്കിൽ ക്രമീകരണങ്ങളിൽ ഒരു ഇഷ്‌ടാനുസൃത PIN സജ്ജീകരിക്കുക.</string>
+    <string name="session_rename_device">ഉപകരണത്തിൻ്റെ പേര് മാറ്റുക</string>
+    <string name="session_nickname_label">ഉപകരണത്തിൻ്റെ വിളിപ്പേര് (പരമാവധി 30 അക്ഷരങ്ങൾ)</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">പുതിയ ഉപകരണം ബന്ധിപ്പിച്ചു</item>
         <item quantity="other">%1$d പുതിയ ഉപകരണങ്ങൾ ബന്ധിപ്പിച്ചു</item>

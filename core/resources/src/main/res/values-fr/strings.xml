@@ -29,7 +29,7 @@
     <string name="onboarding_page_5_description">Tout passe par votre Wi-Fi ou votre point d\'accès mobile. Rapide, privé et fiable.</string>
     <string name="onboarding_page_6_title">Confidentialité garantie</string>
     <string name="onboarding_page_6_description">Vos données restent sur votre appareil. Pas de compte, pas de cloud, pas d\'accès distant.</string>
-    <string name="onboarding_page_counter">%1$d sur %2$d</string>
+    <string name="onboarding_page_counter">%1$d of %2$d</string>
     <string name="onboarding_next">Suivant</string>
     <string name="onboarding_get_started">Commencer</string>
     <string name="settings_title">Paramètres</string>
@@ -763,7 +763,7 @@
     <string name="help_line_search_2">En haut.</string>
     <string name="settings_dlna">DLNA</string>
     <string name="settings_dlna_desc">TV/VLC trouvent l\'hôte.</string>
-    <string name="dlna_server_name">Serveur média DirectServe</string>
+    <string name="dlna_server_name">DirectServe Media Server</string>
     <string name="dlna_server_name_template">Service Direct (%1$s)</string>
     <string name="web_action_download_zip">Sauver ZIP</string>
     <string name="web_btn_download_all_zip">Tout ZIP</string>
@@ -943,6 +943,8 @@
     <string name="help_line_live_screen_pin">Activez la protection par code PIN para exiger que les appareils connectés se vérifient avec un code avant de pouvoir visionner votre écran en direct.</string>
     <string name="help_line_live_screen_pin_regen">Vous pouvez créer un nouveau code PIN à tout moment pendant une session d\'écran en direct en appuyant sur le bouton Régénérer le code PIN.</string>
     <string name="help_line_live_screen_pin_manual">Définissez un code PIN personnalisé dans les paramètres si vous préférez un code spécifique au lieu des codes générés automatiquement.</string>
+    <string name="session_rename_device">Renommer l\'appareil</string>
+    <string name="session_nickname_label">Pseudonyme de l\'appareil (30 caractères maximum)</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Appareil connecté</item>
         <item quantity="other">%1$d appareils connectés</item>

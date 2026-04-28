@@ -499,6 +499,19 @@ class MainViewModel(
         }
     }
 
+    fun updateDeviceNickname(ipAddress: String, nickname: String) {
+        updateSettings { current ->
+            val updatedMap = current.deviceNicknames.toMutableMap().apply {
+                if (nickname.isBlank()) {
+                    remove(ipAddress)
+                } else {
+                    put(ipAddress, nickname)
+                }
+            }
+            current.copy(deviceNicknames = updatedMap)
+        }
+    }
+
     fun updateAutoStop(autoStopOption: AutoStopOption) {
         updateSettings { it.copy(autoStop = autoStopOption) }
     }
@@ -963,10 +976,7 @@ class MainViewModel(
                 .filter { client -> client.ipAddress.isNotBlank() }
                 .filterNot { client -> client.ipAddress == localAddress || client.ipAddress == "127.0.0.1" || client.ipAddress == "::1" }
                 .distinctBy { it.ipAddress }
-                .sortedWith(
-                    compareByDescending<com.ghoststream.core.model.ConnectedClient> { it.lastSeenEpochMs }
-                        .thenBy { displayDeviceName(it.ipAddress, deviceNicknames).lowercase() },
-                )
+                .sortedBy { displayDeviceName(it.ipAddress, deviceNicknames).lowercase() }
                 .map { client ->
                     com.ghoststream.core.model.QuickTextDevice(
                         id = client.ipAddress,

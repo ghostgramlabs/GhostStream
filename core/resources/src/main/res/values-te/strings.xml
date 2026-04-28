@@ -29,7 +29,7 @@
     <string name="onboarding_page_5_description">అన్నీ ఒకే వైఫై నెట్‌వర్క్ లేదా మీ హాట్‌స్పాట్ ద్వారా పనిచేస్తాయి, కాబట్టి షేరింగ్ వేగంగా మరియు నమ్మకమైనదిగా ఉంటుంది.</string>
     <string name="onboarding_page_6_title">గోప్యతే ముఖ్యం</string>
     <string name="onboarding_page_6_description">మీ డేటా మీ పరికరంలోనే ఉంటుంది, క్లౌడ్ అప్‌లోడ్‌లు లేవు, అకౌంట్ అవసరం లేదు మరియు ఈ వెర్షన్‌లో రిమోట్ యాక్సెస్ లేదు.</string>
-    <string name="onboarding_page_counter">%1$d / %2$d</string>
+    <string name="onboarding_page_counter">%1$d of %2$d</string>
     <string name="onboarding_next">తదుపరి</string>
     <string name="onboarding_get_started">ప్రారంభించు</string>
     <string name="settings_title">సెట్టింగ్స్</string>
@@ -763,7 +763,7 @@
     <string name="help_line_search_2">బ్రౌజ్ చేస్తున్నప్పుడు సులభంగా యాక్సెస్ చేయడానికి సెర్చ్ బార్ బ్రౌజర్ ఎగువన ఉంటుంది.</string>
     <string name="settings_dlna">DLNA మీడియా సర్వర్</string>
     <string name="settings_dlna_desc">స్మార్ట్ టీవీలు, Kodi మరియు VLC వంటివి ఈ పరికరాన్ని కనుగొనడానికి అనుమతించండి.</string>
-    <string name="dlna_server_name">డైరెక్ట్‌సర్వ్ (DirectServe) మీడియా సర్వర్</string>
+    <string name="dlna_server_name">DirectServe Media Server</string>
     <string name="dlna_server_name_template">డైరెక్ట్‌సర్వ్ (%1$s)</string>
     <string name="web_action_download_zip">ZIP గా డౌన్‌లోడ్ చేయి</string>
     <string name="web_btn_download_all_zip">అన్నీ ZIP గా డౌన్‌లోడ్ చేయి</string>
@@ -943,6 +943,8 @@
     <string name="help_line_live_screen_pin">కనెక్ట్ చేయబడిన పరికరాలు మీ లైవ్ స్క్రీన్‌ని చూసే ముందు కోడ్‌తో ధృవీకరించడానికి PIN రక్షణను ప్రారంభించండి.</string>
     <string name="help_line_live_screen_pin_regen">మీరు రీజెనరేట్ PIN బటన్‌ను నొక్కడం ద్వారా లైవ్ స్క్రీన్ సెషన్ సమయంలో ఎప్పుడైనా కొత్త PINని సృஷ்டించవచ్చు.</string>
     <string name="help_line_live_screen_pin_manual">మీరు ఆటో-జనరేటెడ్ కోడ్‌లకు బదులుగా నిర్దిష్ట కోడ్‌ని ఇష్టపడితే సెట్టింగ్‌లలో అనుకూల PINని సెట్ చేయండి.</string>
+    <string name="session_rename_device">పరికరం పేరు మార్చండి</string>
+    <string name="session_nickname_label">పరికరం మారుపేరు (గరిష్టంగా 30 అక్షరాలు)</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">కొత్త పరికరం కనెక్ట్ చేయబడింది</item>
         <item quantity="other">%1$d కొత్త పరికరాలు కనెక్ట్ చేయబడ్డాయి</item>

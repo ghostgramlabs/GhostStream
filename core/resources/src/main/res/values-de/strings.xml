@@ -29,7 +29,7 @@
     <string name="onboarding_page_5_description">Alles funktioniert über dasselbe Wi-Fi-Netzwerk oder Ihr Telefon hotspot, sodass die lokale Freigabe schnell und zuverlässig bleibt.</string>
     <string name="onboarding_page_6_title">Von Natur aus privat</string>
     <string name="onboarding_page_6_description">Ihre Daten bleiben in diesem Build auf Ihrem Gerät, ohne Cloud-Upload, ohne Konto und ohne Remote-Internetzugang.</string>
-    <string name="onboarding_page_counter">%1$d von %2$d</string>
+    <string name="onboarding_page_counter">%1$d of %2$d</string>
     <string name="onboarding_next">Nächste</string>
     <string name="onboarding_get_started">Legen Sie los</string>
     <string name="settings_title">Einstellungen</string>
@@ -763,7 +763,7 @@
     <string name="help_line_search_2">Die Suchleiste bleibt oben in der Browseransicht sichtbar, sodass Sie beim Scrollen schnell darauf zugreifen können.</string>
     <string name="settings_dlna">DLNA Medienserver</string>
     <string name="settings_dlna_desc">Erlauben Sie Smart TVs, Kodi und VLC, dieses Gerät über das Netzwerk zu finden.</string>
-    <string name="dlna_server_name">DirectServe Mediaserver</string>
+    <string name="dlna_server_name">DirectServe Media Server</string>
     <string name="dlna_server_name_template">DirectServe (%1$s)</string>
     <string name="web_action_download_zip">Als ZIP herunterladen</string>
     <string name="web_btn_download_all_zip">Laden Sie alles als ZIP herunter</string>
@@ -943,6 +943,8 @@
     <string name="help_line_live_screen_pin">Aktivieren Sie den PIN-Schutz, um von verbundenen Geräten eine Verifizierung mit einem Code zu verlangen, bevor sie Ihren Live-Bildschirm sehen können.</string>
     <string name="help_line_live_screen_pin_regen">Sie können während einer Live-Bildschirm-Sitzung jederzeit eine neue PIN erstellen, indem Sie auf die Schaltfläche PIN neu generieren tippen.</string>
     <string name="help_line_live_screen_pin_manual">Legen Sie in den Einstellungen eine benutzerdefinierte PIN fest, wenn Sie einen bestimmten Code anstelle von automatisch generierten bevorzugen.</string>
+    <string name="session_rename_device">Gerät umbenennen</string>
+    <string name="session_nickname_label">Geräte-Spitzname (max. 30 Zeichen)</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Neues Gerät verbunden</item>
         <item quantity="other">%1$d neue Geräte verbunden</item>

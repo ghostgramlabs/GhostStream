@@ -1172,7 +1172,7 @@ function shell(content, options = {}) {
           </div>
           <div class="gs-inline-note">
             <span class="gs-inline-note-label">${gsStr("web_strip_device", "Device")}</span>
-            <span>${bootstrap?.deviceName ? `${esc(bootstrap.deviceName)} • ${esc(bootstrap.deviceIp)}` : gsStr("web_status_unknown", "Unknown")}</span>
+            <span>${bootstrap?.deviceName ? `<span id="deviceNameText">${esc(bootstrap.deviceName)}</span> <button class="gs-btn gs-btn-sm" id="editDeviceNameBtn" style="padding:2px 6px; font-size:10px; min-height:unset; margin-left:4px; background:rgba(255,255,255,0.1); border-radius:4px; border:1px solid rgba(255,255,255,0.2); color:white; cursor:pointer;">✏️</button> • ${esc(bootstrap.deviceIp)}` : gsStr("web_status_unknown", "Unknown")}</span>
           </div>
           ${sessionLink}
         </div>
@@ -1221,6 +1221,30 @@ function shell(content, options = {}) {
         </div>
       </div>
     </div>`;
+
+  document.getElementById("editDeviceNameBtn")?.addEventListener("click", async () => {
+    const oldName = document.getElementById("deviceNameText")?.innerText || "";
+    let newName = prompt("Enter your Device Name (Max 30 chars):", oldName);
+    if (newName !== null) {
+      newName = newName.trim();
+      if (newName.length > 30) {
+        alert("Name is too long! Please limit it to 30 characters.");
+        return;
+      }
+      if (newName !== oldName) {
+        try {
+          await api("/api/client/nickname", {
+            method: "POST",
+            body: JSON.stringify({ nickname: newName })
+          });
+          state.bootstrap = null;
+          boot();
+        } catch (e) {
+          console.error("Failed to update nickname:", e);
+        }
+      }
+    }
+  });
 
   document.getElementById("logoutBtn")?.addEventListener("click", async () => {
     await api("/auth/logout", { method: "POST" });
@@ -4301,7 +4325,7 @@ async function renderQuickText() {
         <button class="gs-btn gs-btn-sm" id="quickTextClearBtn">${gsStr("web_quick_text_clear_all", "")}</button>
       </div>
       <div class="gs-category-card" style="margin-bottom:20px;">
-        <textarea id="quickTextInput" class="gs-search" rows="4" placeholder="${esc(gsStr("web_quick_text_placeholder", ""))}"></textarea>
+        <textarea id="quickTextInput" class="gs-search" rows="4" placeholder="${esc(gsStr("web_quick_text_placeholder", ""))}" maxlength="1000"></textarea>
         <div class="gs-toolbar-actions" style="margin-top:12px;">
           <label for="quickTextTarget">${gsStr("web_quick_text_target", "")}</label>
           <select id="quickTextTarget" class="gs-search" style="max-width:260px;"></select>

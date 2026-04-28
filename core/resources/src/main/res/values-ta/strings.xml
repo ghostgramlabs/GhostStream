@@ -29,7 +29,7 @@
     <string name="onboarding_page_5_description">அனைத்தும் ஒரே வைஃபை நெட்வொர்க் அல்லது உங்கள் ஹாட்ஸ்பாட் மூலம் செயல்படும், எனவே பகிர்வு வேகமாகவும் பாதுகாப்பாகவும் இருக்கும்.</string>
     <string name="onboarding_page_6_title">தனியுரிமை உறுதி</string>
     <string name="onboarding_page_6_description">உங்கள் தரவு உங்கள் சாதனத்திலேயே இருக்கும், கிளவுட்டில் பதிவேற்றப்படாது. கணக்கு தேவையில்லை, இந்த பதிப்பில் ரிமோட் அக்சஸ் கிடையாது.</string>
-    <string name="onboarding_page_counter">%1$d / %2$d</string>
+    <string name="onboarding_page_counter">%1$d of %2$d</string>
     <string name="onboarding_next">அடுத்து</string>
     <string name="onboarding_get_started">தொடங்கு</string>
     <string name="settings_title">அமைப்புகள்</string>
@@ -763,7 +763,7 @@
     <string name="help_line_search_2">உலாவும்போது விரைவான அணுகலுக்காகத் தேடல் பட்டி உலாவியின் மேற்புறத்தில் இருக்கும்.</string>
     <string name="settings_dlna">DLNA மீடியா சர்வர்</string>
     <string name="settings_dlna_desc">ஸ்மார்ட் டிவி, Kodi மற்றும் VLC போன்றவை இந்தச் சாதனத்தைக் கண்டறிய அனுமதிக்கவும்.</string>
-    <string name="dlna_server_name">டைரக்ட்சர்வ் (DirectServe) மீடியா சர்வர்</string>
+    <string name="dlna_server_name">DirectServe Media Server</string>
     <string name="dlna_server_name_template">டைரக்ட்சர்வ் (%1$s)</string>
     <string name="web_action_download_zip">ZIP ஆகப் பதிவிறக்கு</string>
     <string name="web_btn_download_all_zip">அனைத்தையும் ZIP ஆகப் பதிவிறக்கு</string>
@@ -943,6 +943,8 @@
     <string name="help_line_live_screen_pin">இணைக்கப்பட்ட சாதனங்கள் உங்கள் நேரடித் திரையைப் பார்ப்பதற்கு முன் குறியீட்டுடன் சரிபார்க்க PIN பாதுகாப்பை இயக்கவும்.</string>
     <string name="help_line_live_screen_pin_regen">Regenerate PIN பொத்தானைத் தட்டுவதன் மூலம் நேரடித் திரை அமர்வின் போது எந்த நேரத்திலும் புதிய PIN ஐ உருவாக்கலாம்.</string>
     <string name="help_line_live_screen_pin_manual">தானாக உருவாக்கப்பட்ட குறியீடுகளுக்குப் பதிலாக குறிப்பிட்ட குறியீட்டை நீங்கள் விரும்பினால் அமைப்புகளில் தனிப்பயன் PIN ஐ அமைக்கவும்.</string>
+    <string name="session_rename_device">சாதனத்தை மறுபெயரிடவும்</string>
+    <string name="session_nickname_label">சாதனத்தின் புனைப்பெயர் (அதிகபட்சம் 30 எழுத்துகள்)</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">புதிய சாதனம் இணைக்கப்பட்டது</item>
         <item quantity="other">%1$d புதிய சாதனங்கள் இணைக்கப்பட்டன</item>

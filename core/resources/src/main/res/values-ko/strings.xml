@@ -29,7 +29,7 @@
     <string name="onboarding_page_5_description">Wi-Fi나 핫스팟으로 동작.</string>
     <string name="onboarding_page_6_title">완벽한 프라이버시</string>
     <string name="onboarding_page_6_description">파일은 휴대폰에 남습니다.</string>
-    <string name="onboarding_page_counter">%1$d / %2$d</string>
+    <string name="onboarding_page_counter">%1$d of %2$d</string>
     <string name="onboarding_next">다음</string>
     <string name="onboarding_get_started">시작하기</string>
     <string name="settings_title">설정</string>
@@ -763,7 +763,7 @@
     <string name="help_line_search_2">위.</string>
     <string name="settings_dlna">DLNA TV</string>
     <string name="settings_dlna_desc">TV/VLC.</string>
-    <string name="dlna_server_name">DirectServe</string>
+    <string name="dlna_server_name">DirectServe Media Server</string>
     <string name="dlna_server_name_template">다이렉트서브(%1$s)</string>
     <string name="web_action_download_zip">ZIP</string>
     <string name="web_btn_download_all_zip">모두 ZIP</string>
@@ -943,6 +943,8 @@
     <string name="help_line_live_screen_pin">PIN 보호를 활성화하여 연결된 장치가 라이브 화면을 보기 전에 코드로 확인하도록 요청하세요.</string>
     <string name="help_line_live_screen_pin_regen">라이브 화면 세션 중 언제든지 PIN 재생성 버튼을 눌러 새 PIN을 만들 수 있습니다.</string>
     <string name="help_line_live_screen_pin_manual">자동 생성된 코드 대신 특정 코드를 선호하는 경우 설정에서 사용자 지정 PIN을 설정하세요.</string>
+    <string name="session_rename_device">장치 이름 바꾸기</string>
+    <string name="session_nickname_label">장치 닉네임(최대 30자)</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">디바이스 연결</item>
         <item quantity="other">%1$d 디바이스 연결</item>

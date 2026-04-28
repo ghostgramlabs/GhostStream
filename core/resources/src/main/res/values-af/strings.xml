@@ -29,7 +29,7 @@
     <string name="onboarding_page_5_description">Alles werk oor dieselfde Wi-Fi-netwerk of jou foon hotspot, so plaaslike deling bly vinnig en betroubaar.</string>
     <string name="onboarding_page_6_title">Privaat deur ontwerp</string>
     <string name="onboarding_page_6_description">Jou data bly op jou toestel met geen wolkoplaai, geen rekening en geen afgeleë internettoegang in hierdie gebou nie.</string>
-    <string name="onboarding_page_counter">%1$d / %2$d</string>
+    <string name="onboarding_page_counter">%1$d of %2$d</string>
     <string name="onboarding_next">Volgende</string>
     <string name="onboarding_get_started">Begin</string>
     <string name="settings_title">Instellings</string>
@@ -763,7 +763,7 @@
     <string name="help_line_search_2">Die soekbalk bly sigbaar aan die bokant van die blaaieraansig vir vinnige toegang terwyl jy blaai.</string>
     <string name="settings_dlna">DLNA Mediabediener</string>
     <string name="settings_dlna_desc">Laat Smart TV\'s, Kodi en VLC toe om hierdie toestel oor die netwerk te vind.</string>
-    <string name="dlna_server_name">DirectServe-mediabediener</string>
+    <string name="dlna_server_name">DirectServe Media Server</string>
     <string name="dlna_server_name_template">DirectServe (%1$s)</string>
     <string name="web_action_download_zip">Laai af as zip</string>
     <string name="web_btn_download_all_zip">Laai alles af as zip</string>
@@ -943,6 +943,8 @@
     <string name="help_line_live_screen_pin">Aktiveer PIN-beskerming om van gekoppelde toestelle te vereis om met \'n kode te verifieer voordat hulle jou regstreekse skerm kan sien.</string>
     <string name="help_line_live_screen_pin_regen">Jy kan enige tyd tydens \'n regstreekse skermsessie \'n nuwe PIN skep deur op die Hergenereer PIN-knoppie te tik.</string>
     <string name="help_line_live_screen_pin_manual">Stel \'n pasgemaakte PIN in Instellings as jy \'n spesifieke kode verkies in plaas van outomaties gegenereerde kodes.</string>
+    <string name="session_rename_device">Hernoem Toestel</string>
+    <string name="session_nickname_label">Toestelbynaam (Maksimum 30 tekens)</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Nuwe toestel gekoppel</item>
         <item quantity="other">%1$d nuwe toestelle gekoppel</item>

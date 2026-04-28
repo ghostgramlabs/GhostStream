@@ -115,19 +115,22 @@ def process_locale(folder, res_dir, base_strings, base_plurals):
     
     if folder not in LANG_MAP: return
     locale_path = os.path.join(res_dir, folder, "strings.xml")
+    existing_strings, existing_plurals = load_xml(locale_path)
     translator = GoogleTranslator(source='en', target=LANG_MAP[folder])
     
-    print(f"[{folder}] Starting full translation (Target: {LANG_MAP[folder]})...", flush=True)
+    print(f"[{folder}] Starting incremental translation (Target: {LANG_MAP[folder]})...", flush=True)
     
     to_translate = []
     for key, text in base_strings.items():
         if not text: continue
         if key in skip_keys: continue
+        if key in existing_strings: continue
         to_translate.append((key, text, 'string', None))
             
     for key, items in base_plurals.items():
         for qty, text in items.items():
             if not text: continue
+            if key in existing_plurals and qty in existing_plurals[key]: continue
             to_translate.append((key, text, 'plural', qty))
                 
     translated_results = {}
@@ -140,14 +143,15 @@ def process_locale(folder, res_dir, base_strings, base_plurals):
         return re.sub(r"(?<!\\)'", r"\'", text) if text else text
 
     for key, text in base_strings.items():
-        final_text = translated_results.get(key, text)
+        final_text = translated_results.get(key, existing_strings.get(key, text))
         if key in skip_keys: final_text = text
         ET.SubElement(new_root, 'string', {'name': key}).text = escape_apostrophes(final_text)
         
     for key, items in base_plurals.items():
         pl_node = ET.SubElement(new_root, 'plurals', {'name': key})
         for qty, text in items.items():
-            final_text = translated_results.get(f"{key}:{qty}", text)
+            orig_text = existing_plurals.get(key, {}).get(qty, text)
+            final_text = translated_results.get(f"{key}:{qty}", orig_text)
             ET.SubElement(pl_node, 'item', {'quantity': qty}).text = escape_apostrophes(final_text)
             
     ET.indent(new_root, space="    ", level=0)

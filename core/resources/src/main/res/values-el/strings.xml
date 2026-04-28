@@ -29,7 +29,7 @@
     <string name="onboarding_page_5_description">Όλα λειτουργούν στο ίδιο δίκτυο Wi-Fi ή στο τηλέφωνό σας hotspot, έτσι η τοπική κοινή χρήση παραμένει γρήγορη και αξιόπιστη.</string>
     <string name="onboarding_page_6_title">Ιδιωτικό από σχέδιο</string>
     <string name="onboarding_page_6_description">Τα δεδομένα σας παραμένουν στη συσκευή σας χωρίς μεταφόρτωση στο cloud, χωρίς λογαριασμό και απομακρυσμένη πρόσβαση στο διαδίκτυο σε αυτήν την έκδοση.</string>
-    <string name="onboarding_page_counter">%1$d από %2$d</string>
+    <string name="onboarding_page_counter">%1$d of %2$d</string>
     <string name="onboarding_next">Επόμενος</string>
     <string name="onboarding_get_started">Ξεκινήστε</string>
     <string name="settings_title">Ρυθμίσεις</string>
@@ -763,7 +763,7 @@
     <string name="help_line_search_2">Η γραμμή αναζήτησης παραμένει ορατή στο επάνω μέρος της προβολής του προγράμματος περιήγησης για γρήγορη πρόσβαση κατά την κύλιση.</string>
     <string name="settings_dlna">Διακομιστής πολυμέσων DLNA</string>
     <string name="settings_dlna_desc">Επιτρέψτε σε Smart TV, Kodi και VLC να βρουν αυτήν τη συσκευή μέσω του δικτύου.</string>
-    <string name="dlna_server_name">Διακομιστής πολυμέσων DirectServe</string>
+    <string name="dlna_server_name">DirectServe Media Server</string>
     <string name="dlna_server_name_template">DirectServe (%1$s)</string>
     <string name="web_action_download_zip">Λήψη ως ZIP</string>
     <string name="web_btn_download_all_zip">Λήψη όλων ως ZIP</string>
@@ -943,6 +943,8 @@
     <string name="help_line_live_screen_pin">Ενεργοποιήστε την προστασία PIN για να απαιτείται από τις συνδεδεμένες συσκευές να επαληθεύονται με έναν κωδικό προτού μπορέσουν να δουν τη ζωντανή οθόνη σας.</string>
     <string name="help_line_live_screen_pin_regen">Μπορείτε να δημιουργήσετε ένα νέο PIN ανά πάσα στιγμή κατά τη διάρκεια μιας συνεδρίας ζωντανής οθόνης πατώντας το κουμπί Αναγέννηση PIN.</string>
     <string name="help_line_live_screen_pin_manual">Ορίστε ένα προσαρμοσμένο PIN στις Ρυθμίσεις εάν προτιμάτε έναν συγκεκριμένο κωδικό αντί για τους αυτόματα δημιουργημένους.</string>
+    <string name="session_rename_device">Μετονομασία συσκευής</string>
+    <string name="session_nickname_label">Ψευδώνυμο συσκευής (Μέγ. 30 χαρακτήρες)</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Νέα συσκευή συνδέθηκε</item>
         <item quantity="other">%1$d νέες συσκευές συνδέθηκαν</item>

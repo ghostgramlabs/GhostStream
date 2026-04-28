@@ -29,7 +29,7 @@
     <string name="onboarding_page_5_description">Всё работает через ваш Wi-Fi или точку доступа. Быстро и приватно.</string>
     <string name="onboarding_page_6_title">Конфиденциально по умолчанию</string>
     <string name="onboarding_page_6_description">Данные остаются на устройстве. Без аккаунтов, без облака.</string>
-    <string name="onboarding_page_counter">%1$d из %2$d</string>
+    <string name="onboarding_page_counter">%1$d of %2$d</string>
     <string name="onboarding_next">Далее</string>
     <string name="onboarding_get_started">Начать</string>
     <string name="settings_title">Настройки</string>
@@ -763,7 +763,7 @@
     <string name="help_line_search_2">Всегда сверху.</string>
     <string name="settings_dlna">DLNA</string>
     <string name="settings_dlna_desc">ТВ и VLC найдут хост.</string>
-    <string name="dlna_server_name">Медиасервер DirectServe</string>
+    <string name="dlna_server_name">DirectServe Media Server</string>
     <string name="dlna_server_name_template">Директсерве (%1$s)</string>
     <string name="web_action_download_zip">Скачать ZIP</string>
     <string name="web_btn_download_all_zip">Всё в ZIP</string>
@@ -943,6 +943,8 @@
     <string name="help_line_live_screen_pin">Включите защиту PIN-кодом, чтобы требовать от подключенных устройств проверки кода перед просмотром вашего экрана.</string>
     <string name="help_line_live_screen_pin_regen">Вы можете создать новый PIN-код в любое время во время сеанса трансляции экрана, нажав кнопку Обновить PIN-код.</string>
     <string name="help_line_live_screen_pin_manual">Установите собственный PIN-код в Настройках, если предпочитаете конкретный код вместо автоматически генерируемых.</string>
+    <string name="session_rename_device">Переименовать устройство</string>
+    <string name="session_nickname_label">Псевдоним устройства (максимум 30 символов)</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Подключено новое устройство</item>
         <item quantity="other">%1$d устройств подключилось</item>

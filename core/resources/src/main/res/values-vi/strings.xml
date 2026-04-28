@@ -29,7 +29,7 @@
     <string name="onboarding_page_5_description">Hoạt động qua mạng Wi-Fi hoặc điểm phát sóng (Hotspot).</string>
     <string name="onboarding_page_6_title">Quyền riêng tư</string>
     <string name="onboarding_page_6_description">Tệp của bạn không bao giờ rời khỏi thiết bị.</string>
-    <string name="onboarding_page_counter">%1$d / %2$d</string>
+    <string name="onboarding_page_counter">%1$d of %2$d</string>
     <string name="onboarding_next">Tiếp theo</string>
     <string name="onboarding_get_started">Bắt đầu</string>
     <string name="settings_title">Cài đặt</string>
@@ -763,7 +763,7 @@
     <string name="help_line_search_2">Trên.</string>
     <string name="settings_dlna">DLNA TV</string>
     <string name="settings_dlna_desc">TV/VLC.</string>
-    <string name="dlna_server_name">DirectServe</string>
+    <string name="dlna_server_name">DirectServe Media Server</string>
     <string name="dlna_server_name_template">Phục vụ Trực tiếp (%1$s)</string>
     <string name="web_action_download_zip">ZIP</string>
     <string name="web_btn_download_all_zip">Tất cả ZIP</string>
@@ -943,6 +943,8 @@
     <string name="help_line_live_screen_pin">Bật bảo vệ bằng mã PIN để yêu cầu các thiết bị đã kết nối xác minh bằng mã trước khi họ có thể xem màn hình trực tiếpของ bạn.</string>
     <string name="help_line_live_screen_pin_regen">Bạn có thể tạo mã PIN mới bất kỳ lúc nào trong phiên màn hình trực tiếp bằng cách nhấn vào nút Tạo lại mã PIN.</string>
     <string name="help_line_live_screen_pin_manual">Thiết lập mã PIN tùy chỉnh trong Cài đặt nếu bạn muốn sử dụng một mã cụ thể thay vì mã được tạo tự động.</string>
+    <string name="session_rename_device">Đổi tên thiết bị</string>
+    <string name="session_nickname_label">Biệt hiệu của thiết bị (Tối đa 30 ký tự)</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Thiết bị đã kết nối</item>
         <item quantity="other">%1$d thiết bị kết nối</item>

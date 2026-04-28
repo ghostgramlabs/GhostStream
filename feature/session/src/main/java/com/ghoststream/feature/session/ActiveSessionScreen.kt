@@ -56,6 +56,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material.icons.outlined.Edit
+import com.ghoststream.core.model.displayDeviceName
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -110,6 +116,8 @@ fun ActiveSessionScreen(
     onDisconnectAll: () -> Unit,
     pendingUploadRequest: UploadRequest? = null,
     onResolveUploadRequest: (String, Boolean) -> Unit = { _, _ -> },
+    deviceNicknames: Map<String, String> = emptyMap(),
+    onUpdateDeviceNickname: (String, String) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
     val haptics = LocalHapticFeedback.current
@@ -188,6 +196,8 @@ fun ActiveSessionScreen(
                 sessionState = sessionState,
                 onBlockClient = onBlockClient,
                 onDisconnectAll = onDisconnectAll,
+                deviceNicknames = deviceNicknames,
+                onUpdateDeviceNickname = onUpdateDeviceNickname,
             )
         }
 
@@ -661,8 +671,7 @@ private fun SessionQrCard(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
     ) {
         Column(
             modifier = Modifier.padding(GhostSpacing.card),
@@ -683,7 +692,7 @@ private fun SessionQrCard(
             Surface(
                 shape = RoundedCornerShape(24.dp),
                 color = Color.White,
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                shadowElevation = 4.dp,
             ) {
                 Box(
                     modifier = Modifier
@@ -725,8 +734,7 @@ private fun SessionAccessPanel(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
     ) {
         Column(
             modifier = Modifier.padding(GhostSpacing.card),
@@ -734,8 +742,7 @@ private fun SessionAccessPanel(
         ) {
             Surface(
                 shape = RoundedCornerShape(20.dp),
-                color = Color.Transparent,
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                color = MaterialTheme.colorScheme.background.copy(alpha = 0.5f),
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -904,6 +911,8 @@ private fun ConnectedDevicesCard(
     sessionState: SessionState,
     onBlockClient: (String) -> Unit,
     onDisconnectAll: () -> Unit,
+    deviceNicknames: Map<String, String>,
+    onUpdateDeviceNickname: (String, String) -> Unit,
 ) {
     Card(
         modifier = Modifier
@@ -966,7 +975,12 @@ private fun ConnectedDevicesCard(
                 }
             } else {
                 sessionState.connectedClients.forEach { client ->
-                    ConnectedClientRow(client = client, onBlockClient = onBlockClient)
+                    ConnectedClientRow(
+                        client = client,
+                        onBlockClient = onBlockClient,
+                        deviceNicknames = deviceNicknames,
+                        onUpdateDeviceNickname = onUpdateDeviceNickname,
+                    )
                 }
             }
         }
@@ -977,7 +991,50 @@ private fun ConnectedDevicesCard(
 private fun ConnectedClientRow(
     client: ConnectedClient,
     onBlockClient: (String) -> Unit,
+    deviceNicknames: Map<String, String>,
+    onUpdateDeviceNickname: (String, String) -> Unit,
 ) {
+    var showRenameDialog by remember { mutableStateOf(false) }
+    var newNickname by remember { mutableStateOf(deviceNicknames[client.ipAddress] ?: "") }
+
+    if (showRenameDialog) {
+        AlertDialog(
+            onDismissRequest = { showRenameDialog = false },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            tonalElevation = 0.dp,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            iconContentColor = MaterialTheme.colorScheme.primary,
+            title = { Text(stringResource(R.string.session_rename_device)) },
+            text = {
+                OutlinedTextField(
+                    value = newNickname,
+                    onValueChange = { 
+                        if (it.length <= 30) {
+                            newNickname = it 
+                        }
+                    },
+                    label = { Text(stringResource(R.string.session_nickname_label)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onUpdateDeviceNickname(client.ipAddress, newNickname.trim())
+                    showRenameDialog = false
+                }) {
+                    Text(stringResource(SharedR.string.common_save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRenameDialog = false }) {
+                    Text(stringResource(SharedR.string.common_cancel))
+                }
+            }
+        )
+    }
+
     Surface(
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
@@ -991,7 +1048,11 @@ private fun ConnectedClientRow(
             val stacked = maxWidth < 520.dp
             if (stacked) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    ConnectedClientSummary(client = client)
+                    ConnectedClientSummary(
+                        client = client,
+                        deviceNicknames = deviceNicknames,
+                        onRenameClick = { showRenameDialog = true }
+                    )
                     OutlinedButton(
                         onClick = { onBlockClient(client.ipAddress) },
                         modifier = Modifier.fillMaxWidth(),
@@ -1009,7 +1070,12 @@ private fun ConnectedClientRow(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    ConnectedClientSummary(client = client, modifier = Modifier.weight(1f))
+                    ConnectedClientSummary(
+                        client = client,
+                        deviceNicknames = deviceNicknames,
+                        onRenameClick = { showRenameDialog = true },
+                        modifier = Modifier.weight(1f)
+                    )
                     Spacer(modifier = Modifier.width(12.dp))
                     OutlinedButton(
                         onClick = { onBlockClient(client.ipAddress) },
@@ -1030,16 +1096,35 @@ private fun ConnectedClientRow(
 @Composable
 private fun ConnectedClientSummary(
     client: ConnectedClient,
+    deviceNicknames: Map<String, String>,
+    onRenameClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val identity = deviceIdentity(client.ipAddress)
+    val displayName = remember(client.ipAddress, deviceNicknames) {
+        displayDeviceName(client.ipAddress, deviceNicknames)
+    }
     Column(modifier = modifier) {
-        Text(
-            text = identity.generatedName,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = displayName,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(
+                onClick = onRenameClick,
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Edit,
+                    contentDescription = "Rename",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+        }
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = listOfNotNull(

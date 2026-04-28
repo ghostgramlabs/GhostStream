@@ -29,7 +29,7 @@
     <string name="onboarding_page_5_description">Todo funciona en la misma red Wi-Fi o en tu teléfono hotspot, por lo que el uso compartido local sigue siendo rápido y confiable.</string>
     <string name="onboarding_page_6_title">Privado por diseño</string>
     <string name="onboarding_page_6_description">Sus datos permanecen en su dispositivo sin carga en la nube, sin cuenta y sin acceso remoto a Internet en esta versión.</string>
-    <string name="onboarding_page_counter">%1$d de %2$d</string>
+    <string name="onboarding_page_counter">%1$d of %2$d</string>
     <string name="onboarding_next">Próximo</string>
     <string name="onboarding_get_started">Empezar</string>
     <string name="settings_title">Ajustes</string>
@@ -763,7 +763,7 @@
     <string name="help_line_search_2">La barra de búsqueda permanece visible en la parte superior de la vista del navegador para un acceso rápido mientras se desplaza.</string>
     <string name="settings_dlna">DLNA Servidor de medios</string>
     <string name="settings_dlna_desc">Permita que Smart TV, Kodi y VLC encuentren este dispositivo a través de la red.</string>
-    <string name="dlna_server_name">Servidor multimedia DirectServe</string>
+    <string name="dlna_server_name">DirectServe Media Server</string>
     <string name="dlna_server_name_template">Servicio directo (%1$s)</string>
     <string name="web_action_download_zip">Descargar como ZIP</string>
     <string name="web_btn_download_all_zip">Descargar todo como ZIP</string>
@@ -943,6 +943,8 @@
     <string name="help_line_live_screen_pin">Habilite la protección con PIN para exigir que los dispositivos conectados se verifiquen con un código antes de que puedan ver su pantalla en vivo.</string>
     <string name="help_line_live_screen_pin_regen">Puede crear un nuevo PIN en cualquier momento durante una sesión de pantalla en vivo tocando el botón Regenerar PIN.</string>
     <string name="help_line_live_screen_pin_manual">Establezca un PIN personalizado en Configuración si prefiere un código específico en lugar de los generados automáticamente.</string>
+    <string name="session_rename_device">Cambiar nombre del dispositivo</string>
+    <string name="session_nickname_label">Apodo del dispositivo (máximo 30 caracteres)</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Nuevo dispositivo conectado</item>
         <item quantity="other">%1$d nuevos dispositivos conectados</item>

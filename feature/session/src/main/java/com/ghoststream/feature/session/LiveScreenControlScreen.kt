@@ -82,17 +82,12 @@ fun LiveScreenControlScreen(
         }
 
         item {
-            Card(
+            Column(
                 modifier = Modifier
                     .padding(horizontal = GhostSpacing.screenHorizontal)
                     .fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Column(
-                    modifier = Modifier.padding(GhostSpacing.card),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
-                ) {
                     Text(
                         text = when (state.status) {
                             LiveScreenStatus.LIVE -> stringResource(R.string.live_screen_status_live)
@@ -224,7 +219,6 @@ fun LiveScreenControlScreen(
                         }
                     }
                 }
-            }
         }
     }
 }

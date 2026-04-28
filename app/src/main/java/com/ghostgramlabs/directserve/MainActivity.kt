@@ -715,6 +715,8 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                     onDisconnectAll = viewModel::disconnectAll,
                     pendingUploadRequest = uiState.pendingUploadRequest,
                     onResolveUploadRequest = viewModel::resolveUploadRequest,
+                    deviceNicknames = uiState.settings.deviceNicknames,
+                    onUpdateDeviceNickname = viewModel::updateDeviceNickname,
                     modifier = Modifier.padding(innerPadding),
                 )
             }

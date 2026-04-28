@@ -29,7 +29,7 @@
     <string name="onboarding_page_5_description">ทุกอย่างทำงานผ่านเครือข่าย Wi-Fi เดียวกันหรือฮอตสปอตของคุณ การแชร์จึงรวดเร็วและเชื่อถือได้</string>
     <string name="onboarding_page_6_title">ความเป็นส่วนตัวโดยการออกแบบ</string>
     <string name="onboarding_page_6_description">ข้อมูลของคุณจะอยู่บนอุปกรณ์ของคุณโดยไม่มีการอัปโหลดขึ้นคลาวด์ ไม่ต้องมีบัญชี และไม่มีการเข้าถึงระยะไกลในเวอร์ชันนี้</string>
-    <string name="onboarding_page_counter">%1$d จาก %2$d</string>
+    <string name="onboarding_page_counter">%1$d of %2$d</string>
     <string name="onboarding_next">ถัดไป</string>
     <string name="onboarding_get_started">เริ่มต้น</string>
     <string name="settings_title">การตั้งค่า</string>
@@ -763,7 +763,7 @@
     <string name="help_line_search_2">แถบค้นหาจะอยู่ด้านบนเสมอแม้คุณจะเลื่อนหน้าจอลงไป เพื่อให้ค้นหาได้สะดวก</string>
     <string name="settings_dlna">เซิร์ฟเวอร์สื่อ DLNA</string>
     <string name="settings_dlna_desc">ให้สมาร์ททีวี Kodi และ VLC หาเครื่องนี้เจอในวงเครือข่าย</string>
-    <string name="dlna_server_name">เซิร์ฟเวอร์สื่อ DirectServe</string>
+    <string name="dlna_server_name">DirectServe Media Server</string>
     <string name="dlna_server_name_template">เสิร์ฟโดยตรง (%1$s)</string>
     <string name="web_action_download_zip">โหลดเป็น ZIP</string>
     <string name="web_btn_download_all_zip">โหลดทั้งหมดเป็น ZIP</string>
@@ -943,6 +943,8 @@
     <string name="help_line_live_screen_pin">เปิดใช้งานการป้องกันด้วย PIN เพื่อกำหนดให้อุปกรณ์ที่เชื่อมต่อต้องยืนยันด้วยรหัสก่อนที่จะสามารถดูหน้าจอสดของคุณได้</string>
     <string name="help_line_live_screen_pin_regen">คุณสามารถสร้าง PIN ใหม่ได้ทุกเมื่อระหว่างเซสชันหน้าจอสดโดยแตะปุ่มสร้าง PIN ใหม่</string>
     <string name="help_line_live_screen_pin_manual">ตั้งค่า PIN ที่กำหนดเองในส่วนการตั้งค่าหากคุณต้องการรหัสเฉพาะแทนรหัสที่สร้างขึ้นโดยอัตโนมัติ</string>
+    <string name="session_rename_device">เปลี่ยนชื่ออุปกรณ์</string>
+    <string name="session_nickname_label">ชื่อเล่นของอุปกรณ์ (สูงสุด 30 ตัวอักษร)</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">เชื่อมต่ออุปกรณ์ใหม่แล้ว</item>
         <item quantity="other">เชื่อมต่ออุปกรณ์ใหม่ %1$d เครื่องแล้ว</item>

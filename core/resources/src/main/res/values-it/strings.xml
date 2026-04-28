@@ -29,7 +29,7 @@
     <string name="onboarding_page_5_description">Tutto passa per il tuo Wi-Fi o hotspot locale. Veloce, privato e affidabile.</string>
     <string name="onboarding_page_6_title">Privacy per scelta</string>
     <string name="onboarding_page_6_description">I tuoi dati restano sul dispositivo. Niente account, niente cloud, niente accesso remoto.</string>
-    <string name="onboarding_page_counter">%1$d di %2$d</string>
+    <string name="onboarding_page_counter">%1$d of %2$d</string>
     <string name="onboarding_next">Avanti</string>
     <string name="onboarding_get_started">Inizia</string>
     <string name="settings_title">Impostazioni</string>
@@ -763,7 +763,7 @@
     <string name="help_line_search_2">In alto.</string>
     <string name="settings_dlna">DLNA</string>
     <string name="settings_dlna_desc">TV/VLC trovano l\'host.</string>
-    <string name="dlna_server_name">Server media DirectServe</string>
+    <string name="dlna_server_name">DirectServe Media Server</string>
     <string name="dlna_server_name_template">Servizio diretto (%1$s)</string>
     <string name="web_action_download_zip">Salva ZIP</string>
     <string name="web_btn_download_all_zip">Tutto ZIP</string>
@@ -943,6 +943,8 @@
     <string name="help_line_live_screen_pin">Attiva la protezione PIN per richiedere ai dispositivi connessi di verificarsi con un codice prima di poter visualizzare lo schermo live.</string>
     <string name="help_line_live_screen_pin_regen">Puoi creare un nuovo PIN in qualsiasi momento durante una sessione di schermo live toccando il pulsante Rigenera PIN.</string>
     <string name="help_line_live_screen_pin_manual">Imposta un PIN personalizzato nelle Impostazioni se preferisci un codice specifico invece di quelli generati automaticamente.</string>
+    <string name="session_rename_device">Rinomina dispositivo</string>
+    <string name="session_nickname_label">Nickname dispositivo (max 30 caratteri)</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Dispositivo unito</item>
         <item quantity="other">%1$d dispositivi uniti</item>

@@ -29,7 +29,7 @@
     <string name="onboarding_page_5_description">通过 Wi-Fi 或热点运行。</string>
     <string name="onboarding_page_6_title">隐私保护</string>
     <string name="onboarding_page_6_description">文件始终留在您的手机中。</string>
-    <string name="onboarding_page_counter">%1$d / %2$d</string>
+    <string name="onboarding_page_counter">%1$d of %2$d</string>
     <string name="onboarding_next">下一步</string>
     <string name="onboarding_get_started">开始</string>
     <string name="settings_title">设置</string>
@@ -763,7 +763,7 @@
     <string name="help_line_search_2">上方。</string>
     <string name="settings_dlna">DLNA 电视</string>
     <string name="settings_dlna_desc">电视/VLC。</string>
-    <string name="dlna_server_name">DirectServe</string>
+    <string name="dlna_server_name">DirectServe Media Server</string>
     <string name="dlna_server_name_template">直接服务（%1$s）</string>
     <string name="web_action_download_zip">ZIP</string>
     <string name="web_btn_download_all_zip">全部打包</string>
@@ -943,6 +943,8 @@
     <string name="help_line_live_screen_pin">启用 PIN 码保护，要求连接的设备在查看您的实时屏幕前进行代码验证。</string>
     <string name="help_line_live_screen_pin_regen">您可以在实时屏幕会话期间随时点击“重新生成 PIN 码”按钮来创建新代码。</string>
     <string name="help_line_live_screen_pin_manual">如果您更喜欢特定代码而不是自动生成的代码，请在设置中设置自定义 PIN 码。</string>
+    <string name="session_rename_device">重命名设备</string>
+    <string name="session_nickname_label">设备昵称（最多 30 个字符）</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">设备已连接</item>
         <item quantity="other">%1$d 台设备已连接</item>

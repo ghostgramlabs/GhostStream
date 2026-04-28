@@ -29,7 +29,7 @@
     <string name="onboarding_page_5_description">वाई-फाई या हॉटस्पॉट पर काम करता है।</string>
     <string name="onboarding_page_6_title">पूरी प्राइवेसी</string>
     <string name="onboarding_page_6_description">क्लाउड या अकाउंट की कोई जरूरत नहीं।</string>
-    <string name="onboarding_page_counter">%1$d / %2$d</string>
+    <string name="onboarding_page_counter">%1$d of %2$d</string>
     <string name="onboarding_next">अगला</string>
     <string name="onboarding_get_started">शुरू करें</string>
     <string name="settings_title">सेटिंग्स</string>
@@ -763,7 +763,7 @@
     <string name="help_line_search_2">ऊपर।</string>
     <string name="settings_dlna">DLNA TV</string>
     <string name="settings_dlna_desc">टीवी/VLC।</string>
-    <string name="dlna_server_name">DirectServe</string>
+    <string name="dlna_server_name">DirectServe Media Server</string>
     <string name="dlna_server_name_template">डायरेक्टसर्व (%1$s)</string>
     <string name="web_action_download_zip">ज़िप (ZIP)</string>
     <string name="web_btn_download_all_zip">सब ज़िप</string>
@@ -943,6 +943,8 @@
     <string name="help_line_live_screen_pin">कनेक्टेड उपकरणों को आपकी लाइव स्क्रीन देखने से पहले कोड के साथ सत्यापित करने की आवश्यकता के लिए PIN सुरक्षा सक्षम करें।</string>
     <string name="help_line_live_screen_pin_regen">आप रीजेनरेट PIN बटन पर टैप करके लाइव स्क्रीन सत्र के दौरान किसी भी समय एक नया PIN बना सकते हैं।</string>
     <string name="help_line_live_screen_pin_manual">यदि आप ऑटो-जनरेट किए गए कोड के बजाय एक विशिष्ट कोड पसंद करते हैं तो सेटिंग्स में एक कस्टम PIN सेट करें।</string>
+    <string name="session_rename_device">डिवाइस का नाम बदलें</string>
+    <string name="session_nickname_label">डिवाइस उपनाम (अधिकतम 30 अक्षर)</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">डिवाइस जुड़ा</item>
         <item quantity="other">%1$d डिवाइस</item>

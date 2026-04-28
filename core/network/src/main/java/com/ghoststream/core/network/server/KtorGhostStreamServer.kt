@@ -428,6 +428,8 @@ class KtorGhostStreamServer(
                             "web_send_files_to_device" to localizedContext.getString(R.string.web_send_files_to_device),
                             "web_upload_title" to localizedContext.getString(R.string.web_upload_title),
                             "web_upload_subtitle" to localizedContext.getString(R.string.web_upload_subtitle),
+                            "web_send_floating_title" to localizedContext.getString(R.string.web_send_floating_title),
+                            "web_send_floating_subtitle" to localizedContext.getString(R.string.web_send_floating_subtitle),
                             "web_upload_prompt_title" to localizedContext.getString(R.string.web_upload_prompt_title),
                             "web_upload_prompt_desktop" to localizedContext.getString(R.string.web_upload_prompt_desktop),
                             "web_upload_prompt_mobile" to localizedContext.getString(R.string.web_upload_prompt_mobile),
@@ -1055,6 +1057,24 @@ class KtorGhostStreamServer(
                         maxAge = 0,
                     ),
                 )
+                call.respond(AuthResult(success = true))
+            }
+
+            post("/api/client/nickname") {
+                if (!call.authorizeBrowserCall()) return@post
+                val payload = call.receiveNullable<ClientNicknamePayload>()
+                val ipAddress = call.remoteHost()
+                val nickname = payload?.nickname.orEmpty()
+                settingsRepository.update { current ->
+                    val updatedMap = current.deviceNicknames.toMutableMap().apply {
+                        if (nickname.isBlank()) {
+                            remove(ipAddress)
+                        } else {
+                            put(ipAddress, nickname)
+                        }
+                    }
+                    current.copy(deviceNicknames = updatedMap)
+                }
                 call.respond(AuthResult(success = true))
             }
 
@@ -3195,6 +3215,11 @@ class KtorGhostStreamServer(
             output.toByteArray()
         }
     }
+
+    @Serializable
+    private data class ClientNicknamePayload(
+        val nickname: String,
+    )
 
     @Serializable
     private data class LoginPayload(

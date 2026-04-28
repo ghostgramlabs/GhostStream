@@ -119,7 +119,11 @@ fun QuickTextScreen(
                     )
                     OutlinedTextField(
                         value = draft,
-                        onValueChange = { draft = it },
+                        onValueChange = { 
+                            if (it.length <= 1000) {
+                                draft = it 
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 3,
                         placeholder = { Text(stringResource(R.string.quick_text_placeholder)) },

@@ -29,7 +29,7 @@
     <string name="onboarding_page_5_description">Alles werkt via hetzelfde Wi-Fi netwerk of de hotspot van je telefoon. Snel, privé en betrouwbaar.</string>
     <string name="onboarding_page_6_title">Privacy voorop</string>
     <string name="onboarding_page_6_description">Je gegevens blijven op je apparaat. Geen account, geen cloud en geen toegang op afstand via internet.</string>
-    <string name="onboarding_page_counter">%1$d van %2$d</string>
+    <string name="onboarding_page_counter">%1$d of %2$d</string>
     <string name="onboarding_next">Volgende</string>
     <string name="onboarding_get_started">Aan de slag</string>
     <string name="settings_title">Instellingen</string>
@@ -763,7 +763,7 @@
     <string name="help_line_search_2">Bovenaan.</string>
     <string name="settings_dlna">DLNA</string>
     <string name="settings_dlna_desc">TV/VLC vinden host.</string>
-    <string name="dlna_server_name">DirectServe mediaserver</string>
+    <string name="dlna_server_name">DirectServe Media Server</string>
     <string name="dlna_server_name_template">DirectServe (%1$s)</string>
     <string name="web_action_download_zip">Opslaan ZIP</string>
     <string name="web_btn_download_all_zip">Alles ZIP</string>
@@ -943,6 +943,8 @@
     <string name="help_line_live_screen_pin">Schakel PIN-beveiliging in om te vereisen dat verbonden apparaten verifiëren met een code voordat ze je live scherm kunnen bekijken.</string>
     <string name="help_line_live_screen_pin_regen">Je kunt op elk moment tijdens een live schermsessie een nieuwe PIN maken door op de knop PIN regenereren te tikken.</string>
     <string name="help_line_live_screen_pin_manual">Stel een aangepaste PIN in bij Instellingen als je de voorkeur geeft aan een specifieke code in plaats van automatisch gegenereerde codes.</string>
+    <string name="session_rename_device">Hernoem apparaat</string>
+    <string name="session_nickname_label">Bijnaam apparaat (max. 30 tekens)</string>
     <plurals name="service_new_devices_connected">
         <item quantity="one">Apparaat verbonden</item>
         <item quantity="other">%1$d apparaten verbonden</item>
