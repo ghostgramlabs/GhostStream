@@ -95,7 +95,7 @@ fun SettingsScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
         contentPadding = PaddingValues(vertical = GhostSpacing.screenVertical),
-        verticalArrangement = Arrangement.spacedBy(GhostSpacing.section),
+        verticalArrangement = Arrangement.spacedBy(32.dp),
     ) {
         item {
             Row(
@@ -281,7 +281,7 @@ fun HelpScreen(
         val scrollState = rememberScrollState()
         Column(
             modifier = Modifier.verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(GhostSpacing.section)
+            verticalArrangement = Arrangement.spacedBy(32.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
@@ -290,22 +290,14 @@ fun HelpScreen(
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(stringResource(R.string.help_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             }
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(28.dp),
-                colors = CardDefaults.cardColors(containerColor = ghostPanelColor()),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp), // Slight lift helps the intro card read as the primary entry section.
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = GhostSpacing.screenHorizontal),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Column(
-                    modifier = Modifier.padding(GhostSpacing.heroCard),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
-                ) {
                     Text(stringResource(R.string.help_about_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
                     Text(stringResource(R.string.help_about_1), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(stringResource(R.string.help_about_2), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(stringResource(R.string.help_about_3), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
             }
             HelpSectionCard(
                 title = stringResource(R.string.help_section_what_you_can_do),
@@ -446,7 +438,7 @@ fun PrivacyPolicyScreen(
                 vertical = GhostSpacing.screenVertical,
             ),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(GhostSpacing.section)) {
+        Column(verticalArrangement = Arrangement.spacedBy(32.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
                     Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = stringResource(R.string.common_back))
@@ -454,22 +446,15 @@ fun PrivacyPolicyScreen(
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(stringResource(R.string.privacy_policy_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             }
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(28.dp),
-                colors = CardDefaults.cardColors(containerColor = ghostPanelColor()),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = GhostSpacing.screenHorizontal),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Column(
-                    modifier = Modifier.padding(GhostSpacing.heroCard),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
                     Text(stringResource(R.string.privacy_policy_intro), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(stringResource(R.string.privacy_policy_line_1), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(stringResource(R.string.privacy_policy_line_2), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(stringResource(R.string.privacy_policy_line_3), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(stringResource(R.string.privacy_policy_line_4), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
             }
         }
     }
@@ -494,7 +479,7 @@ fun DlnaScreen(
         val scrollState = rememberScrollState()
         Column(
             modifier = Modifier.verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(GhostSpacing.section),
+            verticalArrangement = Arrangement.spacedBy(32.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
@@ -503,17 +488,10 @@ fun DlnaScreen(
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(stringResource(R.string.dlna_screen_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             }
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(28.dp),
-                colors = CardDefaults.cardColors(containerColor = ghostPanelColor()),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = GhostSpacing.screenHorizontal),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Column(
-                    modifier = Modifier.padding(GhostSpacing.heroCard),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
-                ) {
                     Text(stringResource(R.string.dlna_intro_title), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
                     Text(stringResource(R.string.dlna_intro_body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
@@ -528,9 +506,8 @@ fun DlnaScreen(
                         shape = RoundedCornerShape(16.dp),
                     ) {
                         Text(
-                            text = if (dlnaEnabled) stringResource(R.string.dlna_toggle_off) else stringResource(R.string.dlna_toggle_on),
-                        )
-                    }
+                        text = if (dlnaEnabled) stringResource(R.string.dlna_toggle_off) else stringResource(R.string.dlna_toggle_on),
+                    )
                 }
             }
             HelpSectionCard(
@@ -575,49 +552,36 @@ private fun HelpSectionCard(
     title: String,
     lines: List<String>,
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = ghostPanelColor()),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = GhostSpacing.screenHorizontal, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(GhostSpacing.card),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-            lines.forEach { line ->
-                Text(
-                    text = line,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+        lines.forEach { line ->
+            Text(
+                text = line,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
 
 @Composable
 private fun SettingsGroup(title: String, content: @Composable () -> Unit) {
-    Card(
+    Column(
         modifier = Modifier
+            .fillMaxWidth()
             .padding(horizontal = GhostSpacing.screenHorizontal)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = ghostPanelColor()),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
-        Column(modifier = Modifier.padding(vertical = 12.dp)) {
-            Text(
-                text = title,
-                modifier = Modifier.padding(horizontal = GhostSpacing.listItem, vertical = 8.dp),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-            )
-            content()
-        }
+        Text(
+            text = title,
+            modifier = Modifier.padding(horizontal = GhostSpacing.listItem, vertical = 8.dp),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        content()
     }
 }
 

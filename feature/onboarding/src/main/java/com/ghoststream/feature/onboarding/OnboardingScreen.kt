@@ -160,14 +160,8 @@ fun OnboardingScreen(
                         .weight(1f)
                         .fillMaxWidth(),
                 ) { page ->
-                    Card(
+                    Column(
                         modifier = Modifier.fillMaxSize(),
-                        shape = RoundedCornerShape(28.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = ghostPanelColor(),
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), // Subtle lift improves hierarchy without overpowering the content.
                     ) {
                         Column(
                             modifier = Modifier

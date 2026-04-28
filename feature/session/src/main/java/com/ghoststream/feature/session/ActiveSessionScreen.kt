@@ -278,16 +278,11 @@ private fun SessionLibraryRefreshCard(
     pendingFolderCount: Int,
     onRefreshLibrary: () -> Unit,
 ) {
-    Card(
-        modifier = Modifier
-            .padding(horizontal = GhostSpacing.screenHorizontal)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    Column(
+        modifier = Modifier.padding(horizontal = GhostSpacing.screenHorizontal).fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(GhostSpacing.card),
+            modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
@@ -333,16 +328,11 @@ private fun SessionBrowserPrepCard(
     onPrepareBrowserFiles: () -> Unit,
     onStopBrowserFiles: () -> Unit,
 ) {
-    Card(
-        modifier = Modifier
-            .padding(horizontal = GhostSpacing.screenHorizontal)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    Column(
+        modifier = Modifier.padding(horizontal = GhostSpacing.screenHorizontal).fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(GhostSpacing.card),
+            modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             val inProgress = !activeFileName.isNullOrBlank() || queuedCount > 0
@@ -480,19 +470,11 @@ private fun SessionHeroCard(
             ),
             label = "sessionHeroLivePulseAlpha",
         )
-    Card(
-        modifier = Modifier
-            .padding(horizontal = GhostSpacing.screenHorizontal)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = cardContainerColor.value),
-        border = androidx.compose.foundation.BorderStroke(
-            if (sessionState.isSharing) 2.dp else 1.dp,
-            if (sessionState.isSharing) MaterialTheme.colorScheme.primary.copy(alpha = liveHeroPulse) else cardBorderColor.value,
-        ),
+    Column(
+        modifier = Modifier.padding(horizontal = GhostSpacing.screenHorizontal).fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(GhostSpacing.card),
+            modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(GhostSpacing.section),
         ) {
             Row(

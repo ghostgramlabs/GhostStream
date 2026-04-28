@@ -382,7 +382,6 @@ class MainViewModel(
             }
             if (container.sessionManager.sessionState.value.isSharing) {
                 container.debugLogRepository.log("MainViewModel", "requestStartSharing ignored because session already sharing")
-                _events.emit(AppEvent.NavigateSession)
                 return@launch
             }
             if (maybeRequestBatteryOptimizationExemption()) {
@@ -930,8 +929,6 @@ class MainViewModel(
                 startSharingInProgress.value = false
                 container.debugLogRepository.log("MainViewModel", "emitting StartSharingService")
                 _events.emit(AppEvent.StartSharingService)
-                container.debugLogRepository.log("MainViewModel", "emitting NavigateSession")
-                _events.emit(AppEvent.NavigateSession)
             }
             
             is ShareStartResult.Failure -> {

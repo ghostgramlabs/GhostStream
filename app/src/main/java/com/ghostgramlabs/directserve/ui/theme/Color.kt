@@ -21,8 +21,8 @@ val GhostLightAccent = Color(0xFF0284C7)
 val GhostLightAccentPressed = Color(0xFF0369A1)
 val GhostLightAccentForeground = Color(0xFFFFFFFF)
 
-val GhostDarkAccent = Color(0xFF7DD3FC)
-val GhostDarkAccentPressed = Color(0xFF38BDF8)
+val GhostDarkAccent = Color(0xFF90CAF9)
+val GhostDarkAccentPressed = Color(0xFF64B5F6)
 val GhostDarkAccentForeground = GhostLightTextPrimary
 
 val GhostAccent = GhostDarkAccent

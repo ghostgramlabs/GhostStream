@@ -108,17 +108,10 @@ fun QuickTextScreen(
         }
 
         item {
-            Card(
-                modifier = Modifier
-                    .padding(horizontal = GhostSpacing.screenHorizontal)
-                    .fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            Column(
+                modifier = Modifier.padding(horizontal = GhostSpacing.screenHorizontal),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Column(
-                    modifier = Modifier.padding(GhostSpacing.card),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
-                ) {
                     Text(
                         text = stringResource(R.string.quick_text_send_title),
                         style = MaterialTheme.typography.titleMedium,
@@ -169,7 +162,6 @@ fun QuickTextScreen(
                     ) {
                         Text(stringResource(R.string.quick_text_send))
                     }
-                }
             }
         }
 
@@ -234,17 +226,10 @@ private fun QuickTextMessageCard(
     } else {
         message.targetName.orEmpty()
     }
-    Card(
-        modifier = Modifier
-            .padding(horizontal = GhostSpacing.screenHorizontal)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    Column(
+        modifier = Modifier.padding(horizontal = GhostSpacing.screenHorizontal, vertical = 12.dp).fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(GhostSpacing.card),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
             Text(message.text, style = MaterialTheme.typography.bodyLarge)
             Text(
                 text = listOf(message.senderName, targetLabel, DateFormat.format("MMM d, h:mm a", message.timestampMs).toString())
@@ -272,7 +257,6 @@ private fun QuickTextMessageCard(
                 }
             }
         }
-    }
 }
 
 @Composable

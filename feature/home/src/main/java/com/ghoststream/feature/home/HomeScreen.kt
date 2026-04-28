@@ -55,6 +55,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -80,6 +84,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ghostgramlabs.directserve.core.resources.R
 import com.ghostgramlabs.directserve.core.resources.ui.GhostSpacing
 import com.ghostgramlabs.directserve.core.resources.util.LocalizationUtils
@@ -102,7 +107,6 @@ fun HomeScreen(
     sessionState: SessionState,
     settings: com.ghoststream.core.model.AppSettings,
     recentSessions: List<RecentSession>,
-
     connectionDiagnostics: ConnectionDiagnostics,
     nearbyDiscoveryState: NearbyDiscoveryState,
     connectingNearbyDeviceId: String?,
@@ -110,7 +114,6 @@ fun HomeScreen(
     isStartingShare: Boolean,
     isLiveScreenActive: Boolean,
     onStartSharing: () -> Unit,
-
     onRefreshConnection: () -> Unit,
     onRefreshNearby: () -> Unit,
     onOpenNearbyDevice: (NearbyDevice) -> Unit,
@@ -132,6 +135,16 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
 ) {
     var showAllFilesDialog by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(settings) {
+        if (!settings.shareVideos && !settings.shareMusic && !settings.sharePhotos && !settings.shareFiles) {
+            onToggleShareVideos(true)
+            onToggleShareMusic(true)
+            onToggleSharePhotos(true)
+            onToggleShareFiles(true)
+        }
+    }
+
 
     if (showAllFilesDialog) {
         AlertDialog(
@@ -169,12 +182,14 @@ fun HomeScreen(
         )
     }
 
+    val appBackground = MaterialTheme.colorScheme.background
+    val hasLibraryContent = libraryState.items.isNotEmpty() || libraryState.folders.isNotEmpty()
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        contentPadding = PaddingValues(vertical = GhostSpacing.screenVertical),
-        verticalArrangement = Arrangement.spacedBy(GhostSpacing.section),
+            .background(appBackground),
+        contentPadding = PaddingValues(bottom = 64.dp),
     ) {
         item {
             TopBrandHeader(
@@ -184,35 +199,41 @@ fun HomeScreen(
         }
 
         item {
-                SessionHeroCard(
-                    hasAllFilesAccess = hasAllFilesAccess,
-                    libraryState = libraryState,
-                    sessionState = sessionState,
-                    settings = settings,
-                    connectionDiagnostics = connectionDiagnostics,
-                    isStartingShare = isStartingShare,
-                    onOpenLibrary = onOpenLibrary,
-                    onStartSharing = onStartSharing,
-                    onImportAllMedia = onImportAllMedia,
-                    onClearAllMedia = onClearAllMedia,
-                    libraryImportingCount = libraryImportingCount,
-                    onRequestAllFilesAccess = { showAllFilesDialog = true },
-                )
+            SessionHeroSection(
+                hasAllFilesAccess = hasAllFilesAccess,
+                libraryState = libraryState,
+                sessionState = sessionState,
+                settings = settings,
+                connectionDiagnostics = connectionDiagnostics,
+                isStartingShare = isStartingShare,
+                onOpenLibrary = onOpenLibrary,
+                onStartSharing = onStartSharing,
+                onImportAllMedia = onImportAllMedia,
+                onClearAllMedia = onClearAllMedia,
+                libraryImportingCount = libraryImportingCount,
+                onRequestAllFilesAccess = { showAllFilesDialog = true },
+                isLiveScreenActive = isLiveScreenActive,
+            )
         }
 
+        item { Spacer(modifier = Modifier.height(16.dp)) }
+
         item {
-            ContentFilterCard(
+            ContentFilterRow(
                 settings = settings,
                 libraryState = libraryState,
                 onToggleVideos = onToggleShareVideos,
                 onToggleMusic = onToggleShareMusic,
                 onTogglePhotos = onToggleSharePhotos,
                 onToggleFiles = onToggleShareFiles,
+                enabled = !isLiveScreenActive,
             )
         }
 
+        item { Spacer(modifier = Modifier.height(48.dp)) }
+
         item {
-            FeatureSectionsCard(
+            FeatureSections(
                 settings = settings,
                 onOpenLibrary = onOpenLibrary,
                 onOpenSettings = onOpenSettings,
@@ -221,8 +242,12 @@ fun HomeScreen(
                 onOpenQuickText = onOpenQuickText,
                 onOpenDlna = onOpenDlna,
                 isLiveScreenActive = isLiveScreenActive,
+                hasLibraryContent = hasLibraryContent,
+                isSharing = sessionState.isSharing,
             )
         }
+
+        item { Spacer(modifier = Modifier.height(40.dp)) }
 
         item {
             SupportPanel(
@@ -237,12 +262,11 @@ fun HomeScreen(
         }
 
         if (recentSessions.isNotEmpty()) {
+            item { Spacer(modifier = Modifier.height(32.dp)) }
             item {
-                RecentSessionsCard(recentSessions = recentSessions)
+                RecentSessionsSection(recentSessions = recentSessions)
             }
         }
-
-        item { Spacer(modifier = Modifier.height(4.dp)) }
     }
 
     pendingUploadRequest?.let { request ->
@@ -301,7 +325,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun FeatureSectionsCard(
+private fun FeatureSections(
     settings: com.ghoststream.core.model.AppSettings,
     onOpenLibrary: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -310,112 +334,111 @@ private fun FeatureSectionsCard(
     onOpenQuickText: () -> Unit,
     onOpenDlna: () -> Unit,
     isLiveScreenActive: Boolean,
+    hasLibraryContent: Boolean,
+    isSharing: Boolean,
 ) {
-    Card(
-        modifier = Modifier
-            .padding(horizontal = GhostSpacing.screenHorizontal)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    Column(
+        modifier = Modifier.padding(horizontal = 24.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(GhostSpacing.card),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.home_section_library),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-            )
-            FeatureRow(
-                icon = Icons.Outlined.Collections,
-                title = stringResource(R.string.home_feature_library),
-                detail = stringResource(R.string.home_feature_library_desc),
-                onClick = onOpenLibrary,
-            )
+        Text(
+            text = stringResource(R.string.home_section_library),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        FlatFeatureRow(
+            icon = Icons.Outlined.Collections,
+            title = stringResource(R.string.home_feature_library),
+            detail = stringResource(R.string.home_feature_library_desc),
+            onClick = onOpenLibrary,
+            isAccent = hasLibraryContent,
+        )
 
-            Text(
-                text = stringResource(R.string.home_section_live_tools),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-            )
-            FeatureRow(
-                icon = Icons.Outlined.LiveTv,
-                title = stringResource(R.string.home_feature_live_screen),
-                detail = stringResource(R.string.home_feature_live_screen_desc),
-                onClick = onOpenLiveScreen,
-            )
-            if (settings.quickTextEnabled) {
-                FeatureRow(
-                    icon = Icons.Outlined.Textsms,
-                    title = stringResource(R.string.home_feature_quick_text),
-                    detail = if (isLiveScreenActive) {
-                        stringResource(R.string.home_feature_quick_text_disabled_live)
-                    } else {
-                        stringResource(R.string.home_feature_quick_text_desc)
-                    },
-                    onClick = onOpenQuickText,
-                    enabled = !isLiveScreenActive,
-                )
-            }
+        Spacer(modifier = Modifier.height(40.dp))
 
-            Text(
-                text = stringResource(R.string.home_section_network_tv),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-            )
-            FeatureRow(
-                icon = Icons.Outlined.NetworkCheck,
-                title = stringResource(R.string.home_feature_dlna),
-                detail = if (settings.dlnaEnabled) {
-                    stringResource(R.string.home_feature_dlna_enabled)
+        Text(
+            text = stringResource(R.string.home_section_live_tools),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        FlatFeatureRow(
+            icon = Icons.Outlined.LiveTv,
+            title = stringResource(R.string.home_feature_live_screen),
+            detail = stringResource(R.string.home_feature_live_screen_desc),
+            onClick = onOpenLiveScreen,
+            isAccent = isLiveScreenActive,
+        )
+        if (settings.quickTextEnabled) {
+            FlatFeatureRow(
+                icon = Icons.Outlined.Textsms,
+                title = stringResource(R.string.home_feature_quick_text),
+                detail = if (isLiveScreenActive) {
+                    stringResource(R.string.home_feature_quick_text_disabled_live)
                 } else {
-                    stringResource(R.string.home_feature_dlna_desc)
+                    stringResource(R.string.home_feature_quick_text_desc)
                 },
-                onClick = onOpenDlna,
+                onClick = onOpenQuickText,
+                enabled = !isLiveScreenActive,
+                isAccent = settings.quickTextEnabled && isSharing,
             )
         }
+
+        Spacer(modifier = Modifier.height(40.dp))
+
+        Text(
+            text = stringResource(R.string.home_section_network_tv),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        FlatFeatureRow(
+            icon = Icons.Outlined.NetworkCheck,
+            title = stringResource(R.string.home_feature_dlna),
+            detail = if (settings.dlnaEnabled) {
+                stringResource(R.string.home_feature_dlna_enabled)
+            } else {
+                stringResource(R.string.home_feature_dlna_desc)
+            },
+            onClick = onOpenDlna,
+            isAccent = settings.dlnaEnabled,
+        )
     }
 }
 
 @Composable
-private fun FeatureRow(
+private fun FlatFeatureRow(
     icon: ImageVector,
     title: String,
     detail: String,
     onClick: () -> Unit,
     enabled: Boolean = true,
+    isAccent: Boolean = false,
 ) {
     val contentAlpha = if (enabled) 1f else 0.45f
-    Surface(
-        shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    Row(
         modifier = Modifier
+            .fillMaxWidth()
             .graphicsLayer { alpha = contentAlpha }
-            .clickable(enabled = enabled, onClick = onClick),
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
+        val containerColor = if (isAccent) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant
+        val iconTint = if (isAccent) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 14.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .size(48.dp)
+                .background(containerColor, RoundedCornerShape(16.dp)),
+            contentAlignment = Alignment.Center,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(ghostAccentSurface(), RoundedCornerShape(12.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(24.dp))
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -452,44 +475,38 @@ private fun TopBrandHeader(
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = ghostAccentSurface(),
-                border = BorderStroke(1.dp, ghostAccentBorder()),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
                 modifier = Modifier
-                    .heightIn(min = 48.dp)
+                    .size(44.dp)
                     .clickable(onClick = onOpenHistory),
             ) {
-                Box(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
+                Box(contentAlignment = Alignment.Center) {
                     Icon(
                         Icons.Outlined.History,
                         contentDescription = stringResource(R.string.home_history_content_desc),
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
             Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = ghostAccentSurface(),
-                border = BorderStroke(1.dp, ghostAccentBorder()),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
                 modifier = Modifier
-                    .heightIn(min = 48.dp)
+                    .size(44.dp)
                     .clickable(onClick = onOpenSettings),
             ) {
-                Box(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
+                Box(contentAlignment = Alignment.Center) {
                     Icon(
                         Icons.Outlined.Settings,
                         contentDescription = stringResource(R.string.home_settings_content_desc),
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -499,7 +516,7 @@ private fun TopBrandHeader(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SessionHeroCard(
+private fun SessionHeroSection(
     hasAllFilesAccess: Boolean,
     libraryState: LibraryState,
     sessionState: SessionState,
@@ -512,32 +529,13 @@ private fun SessionHeroCard(
     onClearAllMedia: () -> Unit,
     libraryImportingCount: Int,
     onRequestAllFilesAccess: () -> Unit,
+    isLiveScreenActive: Boolean,
 ) {
     val canStartSession = sessionState.networkAvailability.isWifiOrHotspotReady
     val hasLibraryContent = libraryState.items.isNotEmpty() || libraryState.folders.isNotEmpty()
     val mediaServerModeActive = settings.mediaServerMode && hasLibraryContent
     var showNoNetworkDialog by rememberSaveable { mutableStateOf(false) }
     
-    val heroContainerColor by animateColorAsState(
-        targetValue = if (sessionState.isSharing) ghostLiveSurface() else MaterialTheme.colorScheme.surfaceVariant,
-        label = "homeHeroContainer",
-    )
-    val heroBorderColor by animateColorAsState(
-        targetValue = if (sessionState.isSharing) ghostLiveBorder() else MaterialTheme.colorScheme.outline,
-        label = "homeHeroBorder",
-    )
-    val liveHeroPulse by rememberInfiniteTransition(label = "homeHeroLivePulse")
-        .animateFloat(
-            initialValue = 0.48f,
-            targetValue = 0.94f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(1400, easing = FastOutSlowInEasing),
-                repeatMode = RepeatMode.Reverse,
-            ),
-            label = "homeHeroLivePulseAlpha",
-        )
-    
-    // Show error dialog if no network
     if (showNoNetworkDialog) {
         AlertDialog(
             onDismissRequest = { showNoNetworkDialog = false },
@@ -559,254 +557,128 @@ private fun SessionHeroCard(
         )
     }
     
-    Card(
+    Column(
         modifier = Modifier
-            .padding(horizontal = GhostSpacing.screenHorizontal)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = heroContainerColor),
-        border = BorderStroke(
-            if (sessionState.isSharing) 2.dp else 1.dp,
-            if (sessionState.isSharing) MaterialTheme.colorScheme.primary.copy(alpha = liveHeroPulse) else heroBorderColor,
-        ),
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(
-            modifier = Modifier
-                .padding(GhostSpacing.heroCard),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                MinimalChip(label = stringResource(R.string.home_chip_local_session))
-                StatusChip(sessionState = sessionState)
-            }
+        Box(modifier = Modifier.fillMaxWidth()) {
+            LiveStatusIndicator(
+                sessionState = sessionState,
+                modifier = Modifier.align(Alignment.CenterStart)
+            )
+        }
 
-            Spacer(modifier = Modifier.height(18.dp))
-            if (sessionState.isSharing) {
-                val liveBorderPulse by rememberInfiniteTransition(label = "homeLiveBorderPulse")
-                    .animateFloat(
-                        initialValue = 0.28f,
-                        targetValue = 0.72f,
-                        animationSpec = infiniteRepeatable(
-                            animation = tween(1600, easing = FastOutSlowInEasing),
-                            repeatMode = RepeatMode.Reverse,
-                        ),
-                        label = "homeLiveBorderPulseAlpha",
-                    )
-                Surface(
-                    shape = RoundedCornerShape(18.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f + (liveBorderPulse * 0.06f)),
-                    border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary.copy(alpha = liveBorderPulse)),
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        PulsingLiveDot(dotColor = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = if (mediaServerModeActive) stringResource(R.string.home_media_server_active) else stringResource(R.string.home_live_banner),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Button(
+            onClick = {
+                if (sessionState.isSharing || canStartSession) {
+                    onStartSharing()
+                } else {
+                    showNoNetworkDialog = true
                 }
-                Spacer(modifier = Modifier.height(18.dp))
-            }
-            if (sessionState.isSharing) {
+            },
+            enabled = !isStartingShare && !isLiveScreenActive,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            shape = RoundedCornerShape(16.dp),
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
+            colors = ghostPrimaryButtonColors(),
+        ) {
+            if (isStartingShare) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp,
+                )
+                Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = stringResource(R.string.home_title_live),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 3,
+                    stringResource(R.string.home_button_starting),
+                    style = MaterialTheme.typography.titleLarge,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = heroMessage(
-                        sessionState = sessionState,
-                        libraryState = libraryState,
-                        diagnostics = connectionDiagnostics,
-                    ),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    softWrap = true,
-                )
             } else {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color.Transparent,
-                    border = BorderStroke(1.dp, ghostAccentBorder()),
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        MinimalChip(label = stringResource(R.string.home_summary_current_share), showAccentDot = true)
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(
-                            text = stringResource(R.string.home_title_start),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "${stringResource(R.string.home_body_start)} ${stringResource(R.string.home_body_start_secondary)}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            softWrap = true,
-                        )
-                    }
-                }
+                Text(
+                    if (sessionState.isSharing) stringResource(R.string.home_button_open_session) else stringResource(R.string.home_button_start_session),
+                    style = MaterialTheme.typography.titleLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
+        }
+        
+        if (!sessionState.isSharing && !canStartSession) {
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = stringResource(R.string.home_no_network),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
 
-            Spacer(modifier = Modifier.height(22.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(
-                    onClick = onOpenLibrary,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(58.dp),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = ghostPrimaryButtonColors(),
-                ) {
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedButton(
+                onClick = onOpenLibrary,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+            ) {
+                Text(
+                    text = if (hasLibraryContent) stringResource(R.string.home_button_add_more) else stringResource(R.string.home_button_add_media),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            OutlinedButton(
+                onClick = {
+                    if (mediaServerModeActive) {
+                        onClearAllMedia()
+                    } else if (hasAllFilesAccess) {
+                        onImportAllMedia()
+                    } else {
+                        onRequestAllFilesAccess()
+                    }
+                },
+                enabled = libraryImportingCount == 0,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
+            ) {
+                if (libraryImportingCount > 0) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        color = MaterialTheme.colorScheme.primary,
+                        strokeWidth = 2.dp,
+                    )
+                } else {
                     Text(
-                        text = if (libraryState.summary.totalItems > 0 || libraryState.folders.isNotEmpty()) {
-                            stringResource(R.string.home_button_add_more)
-                        } else {
-                            stringResource(R.string.home_button_add_media)
-                        },
-                        style = MaterialTheme.typography.titleMedium,
+                        if (mediaServerModeActive) stringResource(R.string.home_btn_stop_media_server) else stringResource(R.string.home_button_share_all_media),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                Button(
-                    onClick = {
-                        if (mediaServerModeActive) {
-                            onClearAllMedia()
-                        } else if (hasAllFilesAccess) {
-                            onImportAllMedia()
-                        } else {
-                            onRequestAllFilesAccess()
-                        }
-                    },
-                    enabled = libraryImportingCount == 0,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(58.dp),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = ghostPrimaryButtonColors(),
-                ) {
-                    if (libraryImportingCount > 0) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(22.dp),
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            strokeWidth = 2.dp,
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            stringResource(R.string.home_button_adding_all),
-                            style = MaterialTheme.typography.titleMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    } else {
-                        Icon(
-                            if (mediaServerModeActive) Icons.Outlined.History else Icons.Outlined.PlayArrow,
-                            contentDescription = null
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            if (mediaServerModeActive) stringResource(R.string.home_btn_stop_media_server) else stringResource(R.string.home_button_share_all_media),
-                            style = MaterialTheme.typography.titleMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
-                OutlinedButton(
-                    onClick = {
-                        if (sessionState.isSharing || canStartSession) {
-                            onStartSharing()
-                        } else {
-                            showNoNetworkDialog = true
-                        }
-                    },
-                    enabled = !isStartingShare,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(58.dp),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = ghostSecondaryButtonColors(),
-                ) {
-                    if (isStartingShare) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(22.dp),
-                            color = MaterialTheme.colorScheme.primary,
-                            strokeWidth = 2.dp,
-                        )
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            stringResource(R.string.home_button_starting),
-                            style = MaterialTheme.typography.titleMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    } else {
-                        Icon(Icons.Outlined.PlayArrow, contentDescription = null)
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            if (sessionState.isSharing) stringResource(R.string.home_button_open_session) else stringResource(R.string.home_button_start_session),
-                            style = MaterialTheme.typography.titleMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
             }
-            if (!sessionState.isSharing && !canStartSession) {
-                Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    text = stringResource(R.string.home_no_network),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
-
-            Spacer(modifier = Modifier.height(18.dp))
-            SummaryStrip(libraryState = libraryState)
         }
-    }
-}
 
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun SummaryStrip(libraryState: LibraryState) {
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        HeroStat(
-            label = stringResource(R.string.home_summary_current_share),
-            value = libraryState.summary.totalItems.toString(),
-            highlight = libraryState.summary.totalItems > 0 || libraryState.folders.isNotEmpty(),
-        )
-        HeroStat(
-            label = stringResource(R.string.home_summary_media),
-            value = (libraryState.summary.videos + libraryState.summary.photos + libraryState.summary.music).toString()
-        )
-        HeroStat(
-            label = stringResource(R.string.home_summary_files),
-            value = libraryState.summary.files.toString()
-        )
-        HeroStat(
-            label = stringResource(R.string.library_info_size),
-            value = LocalizationUtils.formatBytes(androidx.compose.ui.platform.LocalContext.current, libraryState.summary.totalBytes)
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Text(
+            text = "${libraryState.summary.totalItems} ITEMS • ${libraryState.folders.size} FOLDERS",
+            style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.2.sp),
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
         )
     }
 }
@@ -1109,7 +981,6 @@ private fun DateRangePickerDialog(
     )
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SupportPanel(
     sessionState: SessionState,
@@ -1120,51 +991,46 @@ private fun SupportPanel(
     onRefreshNearby: () -> Unit,
     onOpenNearbyDevice: (NearbyDevice) -> Unit,
 ) {
-    Card(
-        modifier = Modifier
-            .padding(horizontal = GhostSpacing.screenHorizontal)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    Column(
+        modifier = Modifier.padding(horizontal = 24.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(GhostSpacing.card),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+            Text(
+                stringResource(R.string.home_nearby_open_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            OutlinedButton(
+                onClick = onRefreshNearby,
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                modifier = Modifier.height(36.dp)
             ) {
-                Text(
-                    stringResource(R.string.home_nearby_open_title),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                OutlinedButton(
-                    onClick = onRefreshNearby,
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ghostSecondaryButtonColors(),
-                ) {
-                    Text(stringResource(R.string.common_refresh), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
+                Text(stringResource(R.string.common_refresh), maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.labelLarge)
             }
+        }
 
-            if (nearbyDiscoveryState.devices.isEmpty()) {
-                Text(
-                    stringResource(R.string.home_nearby_optional_desc),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    softWrap = true,
-                )
-            } else {
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (nearbyDiscoveryState.devices.isEmpty()) {
+            Text(
+                stringResource(R.string.home_nearby_optional_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                softWrap = true,
+            )
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 nearbyDiscoveryState.devices.take(3).forEach { device ->
-                    NearbyDeviceRow(
+                    NearbyDeviceRowFlat(
                         device = device,
                         isConnecting = connectingNearbyDeviceId == device.id,
                         onOpen = { onOpenNearbyDevice(device) },
@@ -1176,108 +1042,34 @@ private fun SupportPanel(
 }
 
 @Composable
-private fun SupportRow(
-    icon: ImageVector,
-    title: String,
-    detail: String,
-) {
-    Surface(
-        shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 13.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier = Modifier
-                    .background(ghostAccentSurface(), RoundedCornerShape(12.dp))
-                    .border(BorderStroke(1.dp, ghostAccentBorder()), RoundedCornerShape(12.dp))
-                    .padding(10.dp),
-            ) {
-                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun NearbyDeviceRow(
+private fun NearbyDeviceRowFlat(
     device: NearbyDevice,
     isConnecting: Boolean,
     onOpen: () -> Unit,
 ) {
-    Surface(
-        shape = RoundedCornerShape(18.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 14.dp),
+        NearbyDeviceSummary(device = device, modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.width(16.dp))
+        Button(
+            onClick = onOpen,
+            enabled = !isConnecting,
+            shape = RoundedCornerShape(16.dp),
+            colors = ghostPrimaryButtonColors(),
         ) {
-            val stacked = maxWidth < 460.dp
-            if (stacked) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    NearbyDeviceSummary(device = device)
-                    Button(
-                        onClick = onOpen,
-                        enabled = !isConnecting,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ghostPrimaryButtonColors(),
-                    ) {
-                        if (isConnecting) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                            )
-                        } else {
-                            Icon(Icons.Outlined.OpenInBrowser, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.home_nearby_action_open_session))
-                        }
-                    }
-                }
+            if (isConnecting) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
             } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    NearbyDeviceSummary(device = device, modifier = Modifier.weight(1f))
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Button(
-                        onClick = onOpen,
-                        enabled = !isConnecting,
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ghostPrimaryButtonColors(),
-                    ) {
-                        if (isConnecting) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                            )
-                        } else {
-                            Icon(Icons.Outlined.OpenInBrowser, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.home_nearby_action_open))
-                        }
-                    }
-                }
+                Icon(Icons.Outlined.OpenInBrowser, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.home_nearby_action_open))
             }
         }
     }
@@ -1318,56 +1110,38 @@ private fun NearbyDeviceSummary(
     }
 }
 
-
 @Composable
-private fun RecentSessionsCard(
+private fun RecentSessionsSection(
     recentSessions: List<RecentSession>,
 ) {
-    Card(
-        modifier = Modifier
-            .padding(horizontal = GhostSpacing.screenHorizontal)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    Column(
+        modifier = Modifier.padding(horizontal = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Column(
-            modifier = Modifier.padding(GhostSpacing.card),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.home_recent_shares),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-            )
-            recentSessions.take(3).forEach { session ->
-                Surface(
-                    shape = RoundedCornerShape(18.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            androidx.compose.ui.res.pluralStringResource(
-                                R.plurals.home_saved_shares_items_count,
-                                session.totalItems,
-                                session.totalItems
-                            ),
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            DateUtils.getRelativeTimeSpanString(session.endedAtEpochMs).toString(),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
+        Text(
+            text = stringResource(R.string.home_recent_shares),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        recentSessions.take(3).forEach { session ->
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    androidx.compose.ui.res.pluralStringResource(
+                        R.plurals.home_saved_shares_items_count,
+                        session.totalItems,
+                        session.totalItems
+                    ),
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    DateUtils.getRelativeTimeSpanString(session.endedAtEpochMs).toString(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
@@ -1434,152 +1208,88 @@ private fun HeroStat(label: String, value: String, highlight: Boolean = false) {
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-private fun ContentFilterCard(
+private fun ContentFilterRow(
     settings: com.ghoststream.core.model.AppSettings,
     libraryState: LibraryState,
     onToggleVideos: (Boolean) -> Unit,
     onToggleMusic: (Boolean) -> Unit,
     onTogglePhotos: (Boolean) -> Unit,
     onToggleFiles: (Boolean) -> Unit,
+    enabled: Boolean = true,
 ) {
-    Card(
+    val chipColors = FilterChipDefaults.filterChipColors(
+        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        containerColor = Color.Transparent,
+        labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        iconColor = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    
+    Column(
         modifier = Modifier
-            .padding(horizontal = GhostSpacing.screenHorizontal)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+            .graphicsLayer { alpha = if (enabled) 1f else 0.45f },
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Column(modifier = Modifier.padding(GhostSpacing.card)) {
-            Text(
-                text = stringResource(R.string.home_content_filter_title),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
+        Text(
+            text = stringResource(R.string.home_content_filter_title),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterChip(
+                selected = settings.shareVideos,
+                onClick = { onToggleVideos(!settings.shareVideos) },
+                label = { Text("${stringResource(R.string.home_content_filter_videos)} (${libraryState.summary.videos})") },
+                leadingIcon = { Icon(Icons.Outlined.PlayCircle, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                colors = chipColors,
+                enabled = enabled,
+                modifier = Modifier.weight(1f)
             )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = stringResource(R.string.home_content_filter_subtitle),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            FilterChip(
+                selected = settings.shareMusic,
+                onClick = { onToggleMusic(!settings.shareMusic) },
+                label = { Text("${stringResource(R.string.home_content_filter_music)} (${libraryState.summary.music})") },
+                leadingIcon = { Icon(Icons.Outlined.LibraryMusic, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                colors = chipColors,
+                enabled = enabled,
+                modifier = Modifier.weight(1f)
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            BoxWithConstraints {
-                val tileWidth = (maxWidth - 10.dp) / 2
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        ContentTypeToggle(
-                            label = stringResource(R.string.home_content_filter_videos),
-                            count = libraryState.summary.videos,
-                            icon = Icons.Outlined.PlayCircle,
-                            enabled = settings.shareVideos,
-                            onToggle = onToggleVideos,
-                            modifier = Modifier.width(tileWidth),
-                        )
-                        ContentTypeToggle(
-                            label = stringResource(R.string.home_content_filter_music),
-                            count = libraryState.summary.music,
-                            icon = Icons.Outlined.LibraryMusic,
-                            enabled = settings.shareMusic,
-                            onToggle = onToggleMusic,
-                            modifier = Modifier.width(tileWidth),
-                        )
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        ContentTypeToggle(
-                            label = stringResource(R.string.home_content_filter_photos),
-                            count = libraryState.summary.photos,
-                            icon = Icons.Outlined.Image,
-                            enabled = settings.sharePhotos,
-                            onToggle = onTogglePhotos,
-                            modifier = Modifier.width(tileWidth),
-                        )
-                        ContentTypeToggle(
-                            label = stringResource(R.string.home_content_filter_files),
-                            count = libraryState.summary.files,
-                            icon = Icons.Outlined.Description,
-                            enabled = settings.shareFiles,
-                            onToggle = onToggleFiles,
-                            modifier = Modifier.width(tileWidth),
-                        )
-                    }
-                }
-            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            FilterChip(
+                selected = settings.sharePhotos,
+                onClick = { onTogglePhotos(!settings.sharePhotos) },
+                label = { Text("${stringResource(R.string.home_content_filter_photos)} (${libraryState.summary.photos})") },
+                leadingIcon = { Icon(Icons.Outlined.Image, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                colors = chipColors,
+                enabled = enabled,
+                modifier = Modifier.weight(1f)
+            )
+            FilterChip(
+                selected = settings.shareFiles,
+                onClick = { onToggleFiles(!settings.shareFiles) },
+                label = { Text("${stringResource(R.string.home_content_filter_files)} (${libraryState.summary.files})") },
+                leadingIcon = { Icon(Icons.Outlined.Description, contentDescription = null, modifier = Modifier.size(18.dp)) },
+                colors = chipColors,
+                enabled = enabled,
+                modifier = Modifier.weight(1f)
+            )
         }
     }
-}
 
-@Composable
-private fun ContentTypeToggle(
-    label: String,
-    count: Int,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    enabled: Boolean,
-    onToggle: (Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    val containerColor by animateColorAsState(
-        targetValue = when {
-            enabled -> ghostAccentSurface()
-            pressed -> ghostAccentSurface()
-            else -> MaterialTheme.colorScheme.surfaceVariant
-        },
-        label = "contentTypeContainer",
-    )
-    val borderColor by animateColorAsState(
-        targetValue = if (enabled) ghostAccentBorder() else MaterialTheme.colorScheme.outline,
-        label = "contentTypeBorder",
-    )
-    Card(
-        modifier = modifier
-            .clickable(
-                interactionSource = interactionSource,
-                indication = LocalIndication.current,
-                onClick = { onToggle(!enabled) },
-            ),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        border = BorderStroke(1.dp, borderColor),
-    ) {
-        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .background(
-                        if (enabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.28f) else MaterialTheme.colorScheme.surfaceVariant,
-                        RoundedCornerShape(8.dp),
-                    )
-                    .border(
-                        BorderStroke(1.dp, if (enabled) ghostAccentBorder() else MaterialTheme.colorScheme.outline),
-                        RoundedCornerShape(8.dp),
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    icon,
-                    contentDescription = null,
-                    tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(15.dp),
-                )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                label,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                count.toString(),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
+
 }
 
 @Composable
@@ -1685,3 +1395,35 @@ private fun heroMessage(
 }
 
 
+
+@Composable
+private fun LiveStatusIndicator(
+    sessionState: SessionState,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        shape = RoundedCornerShape(999.dp),
+        color = if (sessionState.isSharing) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+        border = BorderStroke(1.dp, if (sessionState.isSharing) MaterialTheme.colorScheme.primary.copy(alpha = 0.4f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (sessionState.isSharing) {
+                PulsingLiveDot(dotColor = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(stringResource(R.string.home_chip_sharing), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+            } else if (sessionState.networkAvailability.isWifiOrHotspotReady) {
+                Box(modifier = Modifier.size(8.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(999.dp)))
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(stringResource(R.string.home_chip_ready), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+            } else {
+                Box(modifier = Modifier.size(8.dp).background(MaterialTheme.colorScheme.error, RoundedCornerShape(999.dp)))
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(stringResource(R.string.home_chip_setup_needed), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+            }
+        }
+    }
+}

@@ -69,7 +69,6 @@ fun HistoryScreen(
                     ),
                 shape = RoundedCornerShape(20.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
             ) {
                 TabRow(
                     selectedTabIndex = selectedTab,
@@ -143,14 +142,8 @@ private fun HistoryItem(
         SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(record.timestampMs))
     }
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        shape = RoundedCornerShape(24.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
     ) {
         Column(
             modifier = Modifier.padding(GhostSpacing.listItem),
@@ -258,17 +251,10 @@ private fun HistoryItem(
 @Composable
 private fun EmptyHistoryState(message: String) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Card(
-            modifier = Modifier.padding(horizontal = 24.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        Column(
+            modifier = Modifier.padding(horizontal = 28.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Column(
-                modifier = Modifier.padding(horizontal = 28.dp, vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
             Icon(
                 Icons.Outlined.History,
                 contentDescription = null,
@@ -280,7 +266,6 @@ private fun EmptyHistoryState(message: String) {
                 text = message,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            }
         }
     }
 }

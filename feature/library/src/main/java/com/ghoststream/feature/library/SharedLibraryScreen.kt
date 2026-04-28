@@ -287,16 +287,11 @@ fun SharedLibraryScreen(
 private fun LibraryImportingCard(
     importingCount: Int,
 ) {
-    Card(
-        modifier = Modifier
-            .padding(horizontal = GhostSpacing.screenHorizontal)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    Column(
+        modifier = Modifier.padding(horizontal = GhostSpacing.screenHorizontal).fillMaxWidth().padding(vertical = 8.dp),
     ) {
         Row(
-            modifier = Modifier.padding(GhostSpacing.card),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -327,17 +322,11 @@ private fun LibraryHeader(
     libraryState: LibraryState,
 ) {
     val hasVideos = libraryState.items.any { it.category == MediaCategory.VIDEO }
-    Card(
-        modifier = Modifier
-            .padding(horizontal = GhostSpacing.screenHorizontal)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    Column(
+        modifier = Modifier.padding(horizontal = GhostSpacing.screenHorizontal).fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(GhostSpacing.card),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text(
@@ -427,16 +416,11 @@ private fun LibraryInfoChip(
 
 @Composable
 internal fun LibraryEmptyState(title: String, description: String) {
-    Card(
-        modifier = Modifier
-            .padding(horizontal = GhostSpacing.screenHorizontal)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    Column(
+        modifier = Modifier.padding(horizontal = GhostSpacing.screenHorizontal).fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(GhostSpacing.card),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
@@ -467,17 +451,11 @@ private fun LibraryControlsCard(
     onOpenAddFolder: () -> Unit,
     onOpenBatchSelect: () -> Unit,
 ) {
-    Card(
-        modifier = Modifier
-            .padding(horizontal = GhostSpacing.screenHorizontal)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    Column(
+        modifier = Modifier.padding(horizontal = GhostSpacing.screenHorizontal).fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(GhostSpacing.card),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Surface(
@@ -652,14 +630,12 @@ private fun FolderRow(
 ) {
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        tonalElevation = 1.dp,
+        color = Color.Transparent,
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -710,21 +686,13 @@ private fun LibraryItemRow(
     onPrepareItem: (String) -> Unit,
     onRemoveItem: (String) -> Unit,
 ) {
-    Card(
-        modifier = Modifier
-            .padding(horizontal = GhostSpacing.screenHorizontal)
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    Column(
+        modifier = Modifier.padding(horizontal = GhostSpacing.screenHorizontal).fillMaxWidth(),
     ) {
         BoxWithConstraints {
             val compactActions = maxWidth < 520.dp
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 Row(
