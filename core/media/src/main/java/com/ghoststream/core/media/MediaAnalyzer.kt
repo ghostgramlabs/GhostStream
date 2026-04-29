@@ -9,16 +9,18 @@ interface MediaAnalyzer {
     
     fun decidePlayback(
         inspection: MediaInspection, 
-        capabilities: ClientCapabilities = ClientCapabilities.DEFAULT
+        capabilities: ClientCapabilities = ClientCapabilities.DEFAULT,
+        directPlaybackFailed: Boolean = false,
     ): PlaybackDecision
     
     fun decidePlayback(
         uri: Uri, 
         mimeType: String?, 
         displayName: String, 
-        capabilities: ClientCapabilities = ClientCapabilities.DEFAULT
+        capabilities: ClientCapabilities = ClientCapabilities.DEFAULT,
+        directPlaybackFailed: Boolean = false,
     ): PlaybackDecision {
-        return decidePlayback(inspect(uri, mimeType, displayName), capabilities)
+        return decidePlayback(inspect(uri, mimeType, displayName), capabilities, directPlaybackFailed)
     }
     
     fun readDurationMs(uri: Uri, mimeType: String?): Long?

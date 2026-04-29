@@ -15,11 +15,16 @@ interface SmartPlaybackDecisionEngine {
     fun decide(
         inspection: MediaInspection,
         capabilities: ClientCapabilities = ClientCapabilities.DEFAULT,
+        directPlaybackFailed: Boolean = false,
     ): PlaybackDecision
 }
 
 class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
-    override fun decide(inspection: MediaInspection, capabilities: ClientCapabilities): PlaybackDecision {
+    override fun decide(
+        inspection: MediaInspection,
+        capabilities: ClientCapabilities,
+        directPlaybackFailed: Boolean,
+    ): PlaybackDecision {
         val hasVideo = inspection.videoTrackMimeType != null
         val videoLike = hasVideo ||
             inspection.originalMimeType?.startsWith("video/") == true ||
@@ -39,7 +44,7 @@ class DefaultSmartPlaybackDecisionEngine : SmartPlaybackDecisionEngine {
         val containerSafe = inspection.container == MediaContainer.MP4 || inspection.container == MediaContainer.QUICKTIME
         val videoCodec = normalizeVideoCodec(inspection.videoTrackMimeType)
         val audioCodec = normalizeAudioCodec(inspection.audioTrackMimeType)
-        val directContainerSafe = isDirectContainerSafe(inspection, videoCodec, audioCodec, capabilities)
+        val directContainerSafe = !directPlaybackFailed && isDirectContainerSafe(inspection, videoCodec, audioCodec, capabilities)
         val mp4RemuxEligible = isMp4RemuxEligible(inspection, videoCodec, capabilities)
 
         val hasKnownVideoIncompatibility = when (videoCodec) {

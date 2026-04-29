@@ -735,12 +735,16 @@ function renderCompatibilityProgress(item) {
 }
 
 function resolveStablePlayerSource(item) {
-  if (item.playbackMode === "DIRECT") {
+  state.directPlaybackFailed = state.directPlaybackFailed || {};
+  if (item.playbackMode === "DIRECT" && !state.directPlaybackFailed[item.id]) {
     return {
       kind: "direct",
       url: item.streamUrl,
       mimeType: item.mimeType || "video/mp4",
     };
+  }
+  if (item.playbackMode === "DIRECT" && state.directPlaybackFailed[item.id]) {
+    debugTrace("direct_playback_failed", `id=${item.id} reason=direct source blocked`);
   }
   if (shouldUseDirectCompatMp4(item)) {
     return {
@@ -927,7 +931,8 @@ async function probeCompatiblePlaybackSource(item) {
 }
 
 function shouldStartCompatibilityPlayback(item, job = null) {
-  if (item.playbackMode === "DIRECT") return true;
+  state.directPlaybackFailed = state.directPlaybackFailed || {};
+  if (item.playbackMode === "DIRECT" && !state.directPlaybackFailed[item.id]) return true;
 
   const effectiveStatus = job?.status || item.compatibilityStatus;
   if (effectiveStatus === "FAILED" || effectiveStatus === "STALLED") return false;
@@ -2647,6 +2652,10 @@ function hydrateVideoPlayer(item, options = {}) {
     // If a compatibility path itself fails, the user must explicitly retry.
     const failureCount = (state.compatPlaybackFailures[item.id] || 0) + 1;
     state.compatPlaybackFailures[item.id] = failureCount;
+    if (item.playbackMode === "DIRECT") {
+      state.directPlaybackFailed = state.directPlaybackFailed || {};
+      state.directPlaybackFailed[item.id] = true;
+    }
     if (item.playbackMode === "DIRECT" && failureCount <= 2) {
       // Guard: an auto-TRANSCODE of a huge/high-res file (e.g. 8K HEVC 150Mbps)
       // can OOM-kill the host's foreground service. If the file is beyond what

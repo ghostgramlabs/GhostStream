@@ -143,8 +143,13 @@ class AndroidMediaAnalyzer(
         return true
     }
 
-    override fun decidePlayback(inspection: MediaInspection, capabilities: ClientCapabilities): PlaybackDecision {
-        return decisionEngine.decide(inspection, capabilities)
+    override fun decidePlayback(
+        inspection: MediaInspection,
+        capabilities: ClientCapabilities,
+        directPlaybackFailed: Boolean,
+    ): PlaybackDecision {
+        return (decisionEngine as? DefaultSmartPlaybackDecisionEngine)?.decide(inspection, capabilities, directPlaybackFailed)
+            ?: decisionEngine.decide(inspection, capabilities)
     }
 
     override fun readDurationMs(uri: Uri, mimeType: String?): Long? {

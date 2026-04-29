@@ -123,6 +123,8 @@ class KtorGhostStreamServer(
     private val decisionCache = java.util.concurrent.ConcurrentHashMap<String, PlaybackDecision>()
     /** Per-client playback overrides used to avoid repeating known-bad browser choices within the same session. */
     private val playbackOverrideCache = java.util.concurrent.ConcurrentHashMap<String, PlaybackMode>()
+    /** Tracks items whose DIRECT playback has failed for the specific client. */
+    private val playbackDirectFailedCache = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
     private val thumbnailPlaceholderBytes by lazy { buildThumbnailPlaceholderBytes() }
 
     override suspend fun start(port: Int): ServerBinding {
@@ -820,6 +822,13 @@ class KtorGhostStreamServer(
                 // escalate the file to REMUX so it gets a prepared compatible asset.
                 val forceCompat = call.request.queryParameters["force"] == "true"
                 if (forceCompat) {
+                    val overrideKey = playbackOverrideKey(host, item.id)
+                    playbackDirectFailedCache.add(overrideKey)
+                    // Evict from decisionCache so that a fresh decision is made on next snapshot
+                    val caps = capabilityCache[host] ?: ClientCapabilities.DEFAULT
+                    val cacheKey = "$host|${item.id}|${caps.supportsHevc}|${caps.supportsAv1}|${caps.supportsVp9}|${caps.supportsAc3}|${caps.supportsHdr}"
+                    decisionCache.remove(cacheKey)
+
                     val currentJob = compatibilityPipeline.currentJob(item.id)
                     val currentMode = currentJob?.decision?.mode
                         ?: applyPlaybackOverride(host, item).playbackDecision.mode
@@ -2100,16 +2109,18 @@ class KtorGhostStreamServer(
             )
         } ?: item
 
+        val directFailed = playbackDirectFailedCache.contains(playbackOverrideKey(host, item.id))
         val effectiveDecision = when {
             caps == null || forcedBrowserFallback -> inspectedItem.playbackDecision
             else -> {
                 val cacheKey = buildDecisionCacheKey(host, inspectedItem, caps)
-                decisionCache[cacheKey] ?: (refreshedInspection?.let { mediaAnalyzer.decidePlayback(it, caps) }
+                decisionCache[cacheKey] ?: (refreshedInspection?.let { mediaAnalyzer.decidePlayback(it, caps, directPlaybackFailed = directFailed) }
                     ?: mediaAnalyzer.decidePlayback(
                         Uri.parse(inspectedItem.uri),
                         inspectedItem.mimeType,
                         inspectedItem.displayName,
                         caps,
+                        directPlaybackFailed = directFailed,
                     )).also { decision ->
                     decisionCache[cacheKey] = decision
                     debugLogSink.log(
