@@ -600,7 +600,7 @@ private fun LibraryControlsCard(
                 }
             }
 
-            if (hasNonDirectVideo) {
+            if (false) {
                 Surface(
                     shape = RoundedCornerShape(18.dp),
                     color = Color.Transparent,
@@ -785,7 +785,7 @@ private fun LibraryItemRow(
                         Text(stringResource(R.string.common_remove))
                     }
 
-                    if (item.category == MediaCategory.VIDEO && item.playbackDecision.mode != PlaybackMode.DIRECT) {
+                    if (false) {
                         when (compatibilityJob?.status) {
                             CompatibilityStatus.QUEUED,
                             CompatibilityStatus.ANALYZING,

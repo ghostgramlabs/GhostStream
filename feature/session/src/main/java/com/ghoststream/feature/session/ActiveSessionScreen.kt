@@ -175,7 +175,7 @@ fun ActiveSessionScreen(
             )
         }
 
-        if (browserPrepTargetCount > 0) {
+        if (false) {
             item {
                 SessionBrowserPrepCard(
                     targetCount = browserPrepTargetCount,
