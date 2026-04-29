@@ -35,6 +35,7 @@ const state = {
   compatDirectFallbackTimer: null,
   compatMountToken: 0,
   compatPlaybackFailures: {},
+  compatAutoRetries: {},
   compatProgressMemory: {},
   compatItem: null,
   pendingCompatSeekOffset: {},
@@ -2467,12 +2468,17 @@ function hydrateVideoPlayer(item, options = {}) {
   const oldCancel = cancelCompatPolling;
   cancelCompatPolling = () => {
     window.removeEventListener("keydown", handleKeydown);
+    video.removeEventListener("timeupdate", onTimeUpdate);
     oldCancel();
   };
 
-  video.addEventListener("loadedmetadata", markPlaybackStable);
-  video.addEventListener("canplay", markPlaybackStable);
-  video.addEventListener("playing", markPlaybackStable);
+  const onTimeUpdate = () => {
+    if (video.currentTime > 3) {
+      markPlaybackStable();
+      video.removeEventListener("timeupdate", onTimeUpdate);
+    }
+  };
+  video.addEventListener("timeupdate", onTimeUpdate);
   video.addEventListener("loadedmetadata", () => {
     const w = video.videoWidth;
     const h = video.videoHeight;
@@ -2686,8 +2692,8 @@ function hydrateVideoPlayer(item, options = {}) {
           : gsStr("web_error_video_start", "This browser could not start the video. Try again or download the original file."))
         : "This video is still opening. Try again in a moment.";
     }
-    if (item.playbackMode === "DIRECT" && !autoRetryUsed) {
-      autoRetryUsed = true;
+    if (item.playbackMode === "DIRECT" && !state.compatAutoRetries[item.id]) {
+      state.compatAutoRetries[item.id] = true;
       setTimeout(() => {
         clearVideoError();
         restartPlayback();
@@ -2698,6 +2704,7 @@ function hydrateVideoPlayer(item, options = {}) {
     debugTrace("video_retry_clicked", `id=${item.id} mode=${item.playbackMode} hasHls=${Boolean(state.hls && state.hlsItemId === item.id)}`);
     clearVideoError();
     state.compatPlaybackFailures[item.id] = 0;
+    delete state.compatAutoRetries[item.id];
     if (item.playbackMode !== "DIRECT") {
       showCompatibilityWaitingStage({
         ...item,

@@ -1,7 +1,7 @@
 # Graph Report - C:\Users\sudhi\.gemini\antigravity\scratch\GhostStream  (2026-04-28)
 
 ## Corpus Check
-- 177 files · ~416,195 words
+- 177 files · ~416,201 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -791,10 +791,10 @@ Nodes (0):
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `toString()` connect `Community 2` to `Community 0`, `Community 1`, `Community 3`, `Community 4`, `Community 5`?**
-  _High betweenness centrality (0.030) - this node is a cross-community bridge._
 - **Why does `get()` connect `Community 2` to `Community 0`, `Community 1`, `Community 3`, `Community 4`, `Community 5`?**
-  _High betweenness centrality (0.028) - this node is a cross-community bridge._
+  _High betweenness centrality (0.031) - this node is a cross-community bridge._
+- **Why does `toString()` connect `Community 2` to `Community 0`, `Community 1`, `Community 3`, `Community 4`, `Community 5`?**
+  _High betweenness centrality (0.022) - this node is a cross-community bridge._
 - **Why does `AndroidStorageRepository` connect `Community 10` to `Community 0`?**
   _High betweenness centrality (0.020) - this node is a cross-community bridge._
 - **Are the 102 inferred relationships involving `l()` (e.g. with `qi()` and `ov()`) actually correct?**
