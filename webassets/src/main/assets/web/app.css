@@ -153,7 +153,7 @@ input {
 .gs-shell {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 20px 16px 132px;
+  padding: 12px 16px 132px;
 }
 
 .gs-is-immersive .gs-shell {
@@ -181,7 +181,7 @@ input {
 
 .gs-control-card.sticky-search {
   position: sticky;
-  top: var(--gs-header-height, 156px);
+  top: var(--gs-header-height, 132px);
   z-index: 90;
   margin-top: 12px;
   margin-bottom: 20px;
@@ -200,19 +200,24 @@ input {
   background: rgba(var(--surface-rgb), 0.9);
   backdrop-filter: blur(24px) saturate(180%);
   -webkit-backdrop-filter: blur(24px) saturate(180%);
-  margin: -20px -16px 0;
-  padding: 20px 16px 12px;
+  margin: -12px -16px 0;
+  padding: 12px 16px 10px;
   border-bottom: 1px solid var(--border);
   box-shadow: 0 4px 12px hsl(var(--shadow-color) / 0.04);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  align-items: center;
 }
 
 .gs-nav {
+  grid-column: 1 / -1;
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  padding: 14px 18px;
-  border-radius: 18px;
+  padding: 10px 14px;
+  border-radius: 16px;
   background: rgba(var(--surface-rgb), 0.72);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -256,7 +261,7 @@ input {
 }
 
 .gs-tab {
-  padding: 8px 12px;
+  padding: 6px 10px;
   border-radius: 999px;
   color: var(--text-secondary);
   border: 1px solid transparent;
@@ -297,7 +302,7 @@ input {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 12px;
+  padding: 5px 10px;
   border-radius: 999px;
   background: transparent;
   color: var(--text-secondary);
@@ -321,12 +326,13 @@ input {
 }
 
 .gs-status-strip {
-  margin-top: 10px;
+  grid-column: 1 / 2;
+  margin-top: 0;
   display: flex;
   justify-content: flex-start;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
 }
 
 .gs-send-bar {
@@ -427,18 +433,20 @@ input {
 }
 
 .gs-media-subnav {
-  margin-top: 10px;
+  grid-column: 2 / 3;
+  justify-content: flex-end;
+  margin-top: 0;
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
-  padding-bottom: 4px;
+  padding-bottom: 0;
 }
 
 .gs-media-tab {
   display: inline-flex;
   align-items: center;
-  min-height: 38px;
-  padding: 8px 14px;
+  min-height: 32px;
+  padding: 6px 12px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--surface);
@@ -466,10 +474,10 @@ input {
 .gs-inline-note {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  min-height: 38px;
-  padding: 8px 12px;
-  border-radius: 14px;
+  gap: 8px;
+  min-height: 32px;
+  padding: 5px 10px;
+  border-radius: 12px;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text-secondary);
@@ -567,7 +575,7 @@ input {
 }
 
 .gs-section {
-  margin-top: 24px;
+  margin-top: 18px;
 }
 
 .gs-section-head {
@@ -1747,6 +1755,15 @@ input:focus-visible {
 }
 
 @media (max-width: 720px) {
+  .gs-header {
+    grid-template-columns: 1fr;
+  }
+
+  .gs-status-strip,
+  .gs-media-subnav {
+    grid-column: 1 / -1;
+  }
+
   /* Keep nav as a single horizontal row — stacking to column wastes too much
      vertical space on phones and tablets. Links scroll horizontally instead. */
   .gs-nav {
@@ -2018,13 +2035,13 @@ input:focus-visible {
 
   /* Navigation: Larger touch targets */
   .gs-nav {
-    padding: 16px 20px;
-    gap: 20px;
+    padding: 10px 14px;
+    gap: 14px;
   }
 
   .gs-nav-links a {
-    padding: 12px 20px;
-    font-size: 1.1rem;
+    padding: 8px 14px;
+    font-size: 1rem;
   }
 
   /* Toolbar and controls */
@@ -2043,12 +2060,12 @@ input:focus-visible {
   }
 
   .gs-section-head {
-    margin-bottom: 24px;
+    margin-bottom: 16px;
   }
 
   .gs-section-head h2 {
-    font-size: 1.6rem;
-    margin-bottom: 8px;
+    font-size: 1.45rem;
+    margin-bottom: 4px;
   }
 
   .gs-section-meta {
@@ -2073,8 +2090,8 @@ input:focus-visible {
 
   /* Status indicators */
   .gs-status-pill {
-    padding: 8px 16px;
-    font-size: 1rem;
+    padding: 6px 12px;
+    font-size: 0.9rem;
   }
 
   /* Enhanced focus for keyboard/remote navigation */
