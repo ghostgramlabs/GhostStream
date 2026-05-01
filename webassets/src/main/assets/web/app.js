@@ -541,6 +541,15 @@ function isTvBrowser() {
     || (/\bTV\b/i.test(ua) && !/iPhone|iPad|AppleTV/i.test(ua));
 }
 
+// Fire OS tablets (Silk browser, Chrome on Fire HD) misreport VP9 support via
+// canPlayType but stutter or fail at decode time. Fire TV is excluded because
+// isTvBrowser already routes it to native HLS.
+function isFireOs() {
+  const ua = navigator.userAgent || "";
+  if (isTvBrowser()) return false;
+  return /\bSilk\/|\bKF[A-Z]{2,}\b/i.test(ua);
+}
+
 function detectBrowserFamily() {
   const ua = navigator.userAgent || "";
   if (/Edg\//i.test(ua)) return "Edge";
@@ -584,8 +593,11 @@ function buildClientCapabilities() {
     canPlayMimeType(video, "application/x-mpegURL");
   const supportsHevc = canPlayMimeType(video, 'video/mp4; codecs="hvc1.1.6.L120.B0"') ||
     canPlayMimeType(video, 'video/mp4; codecs="hev1.1.6.L120.B0"');
-  const supportsVp9 = canPlayMimeType(video, 'video/webm; codecs="vp9"') ||
+  const supportsVp9Reported = canPlayMimeType(video, 'video/webm; codecs="vp9"') ||
     canPlayMimeType(video, 'video/mp4; codecs="vp09.00.40.08"');
+  // Fire OS tablets routinely lie about VP9 in canPlayType — force-disable
+  // so the engine routes VP9 files through remux/transmux instead of Direct.
+  const supportsVp9 = isFireOs() ? false : supportsVp9Reported;
   const supportsAv1 = canPlayMimeType(video, 'video/mp4; codecs="av01.0.04M.08"');
   const supportsAac = canPlayMimeType(video, 'audio/mp4; codecs="mp4a.40.2"');
   const supportsMp3 = canPlayMimeType(video, "audio/mpeg");
