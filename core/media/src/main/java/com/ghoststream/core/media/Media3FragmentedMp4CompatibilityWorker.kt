@@ -1,6 +1,7 @@
 package com.ghoststream.core.media
 
 import android.content.Context
+import android.media.MediaCodecInfo
 import android.media.MediaExtractor
 import android.media.MediaMuxer
 import android.net.Uri
@@ -14,6 +15,7 @@ import androidx.media3.effect.Presentation
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.DefaultEncoderFactory
 import androidx.media3.transformer.EditedMediaItem
+import androidx.media3.transformer.EditedMediaItemSequence
 import androidx.media3.transformer.Effects
 import androidx.media3.transformer.ExportException
 import androidx.media3.transformer.ExportResult
@@ -21,6 +23,7 @@ import androidx.media3.transformer.InAppMuxer
 import androidx.media3.transformer.ProgressHolder
 import androidx.media3.transformer.Transformer
 import androidx.media3.transformer.TransformationRequest
+import androidx.media3.transformer.VideoEncoderSettings
 import com.ghoststream.core.model.PlaybackDecision
 import com.ghoststream.core.model.PlaybackMode
 import com.ghoststream.core.model.SharedItem
@@ -373,24 +376,51 @@ class Media3FragmentedMp4CompatibilityWorker(
                     "output_codecs_selected id=${effectiveItem.id} video=${if (effectiveItem.playbackDecision.mode == PlaybackMode.TRANSCODE) MimeTypes.VIDEO_H264 else "copy"} audio=${targetAudioMime ?: "none"}",
                 )
 
-                // Universal format configuration: H.264 Main 4.1 + AAC-LC.
-                // We use setVideoMimeType and setAudioMimeType to trigger re-encoding.
+                // Universal format configuration: H.264 High 4.1 + AAC-LC.
+                // TransformationRequest pins the requested codecs, while the Composition
+                // below forces HDR sources through the SDR rendering path instead of
+                // allowing an HEVC/HDR passthrough fallback.
+                val transformationRequestBuilder = TransformationRequest.Builder()
+                var hasTransformationRequest = false
                 if (effectiveItem.playbackDecision.mode == PlaybackMode.TRANSCODE) {
-                    builder.setVideoMimeType(MimeTypes.VIDEO_H264)
-                    // Note: Media3 Transformer currently doesn't allow direct profile/level 
-                    // setting on the builder, but DefaultEncoderFactory will pick a 
-                    // compatible one for the given MIME. Validation later will catch any deviation.
+                    transformationRequestBuilder
+                        .setVideoMimeType(MimeTypes.VIDEO_H264)
+                        .setHdrMode(Composition.HDR_MODE_TONE_MAP_HDR_TO_SDR_USING_OPEN_GL)
+                    hasTransformationRequest = true
                 }
 
                 if (forceAudioTranscode) {
-                    builder.setAudioMimeType(MimeTypes.AUDIO_AAC)
+                    transformationRequestBuilder.setAudioMimeType(MimeTypes.AUDIO_AAC)
+                    hasTransformationRequest = true
+                }
+
+                if (hasTransformationRequest) {
+                    builder.setTransformationRequest(transformationRequestBuilder.build())
                 }
 
                 // If we are doing any encoding (video or audio), we need an encoder factory.
                 if (effectiveItem.playbackDecision.mode == PlaybackMode.TRANSCODE || forceAudioTranscode) {
-                    val encoderFactory = DefaultEncoderFactory.Builder(context)
+                    val encoderFactoryBuilder = DefaultEncoderFactory.Builder(context)
                         .setEnableFallback(false)
-                        .build()
+                    if (effectiveItem.playbackDecision.mode == PlaybackMode.TRANSCODE) {
+                        val targetSize = targetOutputSize(effectiveItem)
+                        encoderFactoryBuilder.setRequestedVideoEncoderSettings(
+                            VideoEncoderSettings.Builder()
+                                .setEncodingProfileLevel(
+                                    MediaCodecInfo.CodecProfileLevel.AVCProfileHigh,
+                                    MediaCodecInfo.CodecProfileLevel.AVCLevel41,
+                                )
+                                .setBitrate(targetVideoBitrate(targetSize, sourceProbe.frameRate))
+                                .setiFrameIntervalSeconds(2f)
+                                .build(),
+                        )
+                        debugLogSink.log(
+                            "CompatWorker",
+                            "transcode_target id=${effectiveItem.id} source=${sourceProbe.width ?: "unknown"}x${sourceProbe.height ?: "unknown"} " +
+                                "target=${targetSize.width}x${targetSize.height} codec=${MimeTypes.VIDEO_H264} level=4.1 hdr=tonemap_sdr",
+                        )
+                    }
+                    val encoderFactory = encoderFactoryBuilder.build()
                     builder.setEncoderFactory(encoderFactory)
                 }
                 if (effectiveItem.playbackDecision.mode == PlaybackMode.TRANSCODE) {
@@ -432,7 +462,16 @@ class Media3FragmentedMp4CompatibilityWorker(
 
                 val transformer = builder.build()
                 transform.transformer = transformer
-                transformer.start(editedMediaItem, tmpOutputFile.absolutePath)
+                if (effectiveItem.playbackDecision.mode == PlaybackMode.TRANSCODE) {
+                    val composition = Composition.Builder(EditedMediaItemSequence(editedMediaItem))
+                        .setHdrMode(Composition.HDR_MODE_TONE_MAP_HDR_TO_SDR_USING_OPEN_GL)
+                        .setTransmuxVideo(false)
+                        .setTransmuxAudio(false)
+                        .build()
+                    transformer.start(composition, tmpOutputFile.absolutePath)
+                } else {
+                    transformer.start(editedMediaItem, tmpOutputFile.absolutePath)
+                }
                 scheduleProgressUpdates(
                     item = effectiveItem,
                     cache = cache,
@@ -475,11 +514,17 @@ class Media3FragmentedMp4CompatibilityWorker(
             var videoCopySafeToMp4 = false
             var audioCopySafeToMp4 = false
             var audioMissingCodecConfig = false
+            var width: Int? = null
+            var height: Int? = null
+            var frameRate: Float? = null
             for (i in 0 until extractor.trackCount) {
                 val format = extractor.getTrackFormat(i)
                 val mime = format.getString(android.media.MediaFormat.KEY_MIME) ?: continue
                 if (mime.startsWith("video/") && videoMime == null) {
                     videoMime = mime
+                    width = format.getIntegerOrNull(android.media.MediaFormat.KEY_WIDTH)
+                    height = format.getIntegerOrNull(android.media.MediaFormat.KEY_HEIGHT)
+                    frameRate = format.getFrameRateOrNull()
                     videoCopySafeToMp4 = isMp4MuxableTrack(mime, format)
                     // AV1 requires codec-specific data (OBU sequence header) for
                     // FragmentedMp4Muxer to write the av1C box.  If MediaExtractor
@@ -513,6 +558,9 @@ class Media3FragmentedMp4CompatibilityWorker(
                 audioCopySafeToMp4 = audioCopySafeToMp4,
                 audioMissingCodecConfig = audioMissingCodecConfig,
                 remuxEligibleToMp4 = remuxEligibleToMp4,
+                width = width,
+                height = height,
+                frameRate = frameRate,
                 transcodeFallbackReason = when {
                     videoMime == null && audioMime == null ->
                         "Source has no readable audio or video tracks"
@@ -548,6 +596,9 @@ class Media3FragmentedMp4CompatibilityWorker(
         val metadataUpdates = buildMap<String, String> {
             sourceProbe.videoMime?.let { put("video_codec", it) }
             sourceProbe.audioMime?.let { put("audio_codec", it) }
+            sourceProbe.width?.let { put("width", it.toString()) }
+            sourceProbe.height?.let { put("height", it.toString()) }
+            sourceProbe.frameRate?.let { put("frame_rate", it.toString()) }
         }
         val upgradedDecision = upgradedDecisionForSourceProbe(item, sourceProbe)
         if (upgradedDecision != null) {
@@ -890,25 +941,54 @@ class Media3FragmentedMp4CompatibilityWorker(
     }
 
     private fun buildEvenPresentation(item: SharedItem): Presentation {
-        val width = item.metadata["width"]?.toIntOrNull()
-        val height = item.metadata["height"]?.toIntOrNull()
-        if (width == null || height == null || width <= 0 || height <= 0) {
+        val targetSize = targetOutputSize(item)
+        if (targetSize.width == null || targetSize.height == null) {
             return Presentation.createForHeight(MAX_OUTPUT_HEIGHT)
         }
 
-        val scale = minOf(1f, MAX_OUTPUT_HEIGHT.toFloat() / height.toFloat())
-        val scaledWidth = (((width * scale).toInt()) / 2) * 2
-        val scaledHeight = (((height * scale).toInt()) / 2) * 2
-        val targetWidth = scaledWidth.coerceAtLeast(2)
-        val targetHeight = scaledHeight.coerceAtLeast(2)
         return Presentation.createForWidthAndHeight(
-            targetWidth,
-            targetHeight,
+            targetSize.width,
+            targetSize.height,
             Presentation.LAYOUT_SCALE_TO_FIT,
         )
     }
 
+    private fun targetOutputSize(item: SharedItem): OutputSize {
+        val width = item.metadata["width"]?.toIntOrNull()
+        val height = item.metadata["height"]?.toIntOrNull()
+        if (width == null || height == null || width <= 0 || height <= 0) {
+            return OutputSize(width = null, height = null)
+        }
+        val scale = minOf(1f, MAX_OUTPUT_HEIGHT.toFloat() / height.toFloat())
+        val scaledWidth = (((width * scale).toInt()) / 2) * 2
+        val scaledHeight = (((height * scale).toInt()) / 2) * 2
+        return OutputSize(
+            width = scaledWidth.coerceAtLeast(2),
+            height = scaledHeight.coerceAtLeast(2),
+        )
+    }
+
+    private fun targetVideoBitrate(targetSize: OutputSize, frameRate: Float?): Int {
+        val width = targetSize.width ?: 1920
+        val height = targetSize.height ?: MAX_OUTPUT_HEIGHT
+        val fpsScale = ((frameRate ?: 30f) / 30f).coerceIn(1f, 2f)
+        val bitsPerSecond = (width.toLong() * height.toLong() * 4L * fpsScale).toInt()
+        return bitsPerSecond.coerceIn(MIN_VIDEO_BITRATE, MAX_VIDEO_BITRATE)
+    }
+
+    private fun android.media.MediaFormat.getIntegerOrNull(key: String): Int? {
+        return if (containsKey(key)) runCatching { getInteger(key) }.getOrNull() else null
+    }
+
+    private fun android.media.MediaFormat.getFrameRateOrNull(): Float? {
+        if (!containsKey(android.media.MediaFormat.KEY_FRAME_RATE)) return null
+        return runCatching { getInteger(android.media.MediaFormat.KEY_FRAME_RATE).toFloat() }
+            .recoverCatching { getFloat(android.media.MediaFormat.KEY_FRAME_RATE) }
+            .getOrNull()
+    }
+
     private data class ValidationResult(val isValid: Boolean, val error: String? = null)
+    private data class OutputSize(val width: Int?, val height: Int?)
     private data class SourceProbe(
         val videoMime: String? = null,
         val audioMime: String? = null,
@@ -916,6 +996,9 @@ class Media3FragmentedMp4CompatibilityWorker(
         val audioCopySafeToMp4: Boolean = false,
         val audioMissingCodecConfig: Boolean = false,
         val remuxEligibleToMp4: Boolean = false,
+        val width: Int? = null,
+        val height: Int? = null,
+        val frameRate: Float? = null,
         val transcodeFallbackReason: String? = null,
         val transcodeFallbackReasonResId: Int? = null,
         val transcodeFallbackArgs: List<String> = emptyList(),
@@ -925,6 +1008,9 @@ class Media3FragmentedMp4CompatibilityWorker(
         val allowedAudioCodecs: Set<String>,
         val requireAacAudio: Boolean = false,
         val requireUniversalAvc: Boolean = false,
+        val maxLongSide: Int? = null,
+        val maxShortSide: Int? = null,
+        val maxAvcLevel: Int? = null,
     )
 
     /**
@@ -961,6 +1047,19 @@ class Media3FragmentedMp4CompatibilityWorker(
                     if (!profile.requireUniversalAvc && mime !in profile.allowedVideoCodecs) {
                         return ValidationResult(false, "Invalid video codec: $mime")
                     }
+
+                    val width = format.getIntegerOrNull(android.media.MediaFormat.KEY_WIDTH)
+                    val height = format.getIntegerOrNull(android.media.MediaFormat.KEY_HEIGHT)
+                    if (profile.maxLongSide != null && profile.maxShortSide != null && width != null && height != null) {
+                        val longSide = maxOf(width, height)
+                        val shortSide = minOf(width, height)
+                        if (longSide > profile.maxLongSide || shortSide > profile.maxShortSide) {
+                            return ValidationResult(
+                                false,
+                                "Video dimensions ${width}x$height exceed mobile-safe output ${profile.maxLongSide}x${profile.maxShortSide}",
+                            )
+                        }
+                    }
                     
                     val codecProfile = if (format.containsKey(android.media.MediaFormat.KEY_PROFILE)) {
                         format.getInteger(android.media.MediaFormat.KEY_PROFILE)
@@ -970,13 +1069,20 @@ class Media3FragmentedMp4CompatibilityWorker(
                         format.getInteger(android.media.MediaFormat.KEY_LEVEL)
                     } else null
 
-                    // Profile check: 100 = AVCProfileHigh, 77 = AVCProfileMain, 66 = AVCProfileBaseline.
-                    // These are direct numeric values from MediaCodecInfo.CodecProfileLevel.
-                    if (codecProfile != null &&
-                        codecProfile > 100 &&
+                    if (profile.requireUniversalAvc &&
+                        codecProfile != null &&
                         mime == android.media.MediaFormat.MIMETYPE_VIDEO_AVC
                     ) {
-                        return ValidationResult(false, "Incompatible video profile: $codecProfile (expected High=100 or below)")
+                        val allowedProfiles = setOf(
+                            MediaCodecInfo.CodecProfileLevel.AVCProfileBaseline,
+                            MediaCodecInfo.CodecProfileLevel.AVCProfileMain,
+                            MediaCodecInfo.CodecProfileLevel.AVCProfileHigh,
+                            MediaCodecInfo.CodecProfileLevel.AVCProfileConstrainedBaseline,
+                            MediaCodecInfo.CodecProfileLevel.AVCProfileConstrainedHigh,
+                        )
+                        if (codecProfile !in allowedProfiles) {
+                            return ValidationResult(false, "Incompatible AVC profile: $codecProfile")
+                        }
                     }
                     
                     // Level check: Android uses MediaCodecInfo.CodecProfileLevel.AVCLevelXX bitfield constants,
@@ -985,6 +1091,13 @@ class Media3FragmentedMp4CompatibilityWorker(
                     //   AVCLevel4=0x200(512), AVCLevel41=0x400(1024), AVCLevel5=0x1000(4096)
                     // Level 4.1 bitfield constant = 1024 (0x400). Reject anything above 4.1.
                     // NOTE: Do NOT use > 41 here — that incorrectly rejects every real encoder output.
+                    if (level != null &&
+                        profile.maxAvcLevel != null &&
+                        level > profile.maxAvcLevel &&
+                        mime == android.media.MediaFormat.MIMETYPE_VIDEO_AVC
+                    ) {
+                        return ValidationResult(false, "Incompatible AVC level: $level (expected <= ${profile.maxAvcLevel})")
+                    }
                     val AVC_LEVEL_41 = 0x400 // AVCLevel41 = 1024
                     if (level != null &&
                         level > AVC_LEVEL_41 &&
@@ -1057,6 +1170,9 @@ class Media3FragmentedMp4CompatibilityWorker(
                 ),
                 requireAacAudio = true,
                 requireUniversalAvc = true,
+                maxLongSide = 1920,
+                maxShortSide = 1080,
+                maxAvcLevel = MediaCodecInfo.CodecProfileLevel.AVCLevel41,
             )
 
             PlaybackMode.REMUX,
@@ -1355,6 +1471,8 @@ class Media3FragmentedMp4CompatibilityWorker(
         const val FALLBACK_TRANSCODE_REASON_PREFIX = "Falling back to transcode after remux preflight"
         const val FRAGMENT_DURATION_MS = 2_000L
         const val MAX_OUTPUT_HEIGHT = 1080
+        const val MIN_VIDEO_BITRATE = 2_000_000
+        const val MAX_VIDEO_BITRATE = 8_000_000
         const val PROGRESS_POLL_INTERVAL_MS = 700L
     }
 }
