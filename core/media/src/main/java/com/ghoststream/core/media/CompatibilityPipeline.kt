@@ -111,7 +111,7 @@ class QueuedCompatibilityPipeline(
                     messageResId = R.string.compatibility_message_ready,
                     preparedAsset = cachedAsset,
                     progressPercent = 100,
-                    hlsReady = false,
+                    hlsReady = cachedAsset.isFragmentedMp4,
                     directReady = true,
                     streamable = true,
                     isTerminalFailure = false,
@@ -151,6 +151,7 @@ class QueuedCompatibilityPipeline(
                 message = if (isCacheHealthy) "Playback Ready" else "Playback Ready (Pending Request)",
                 messageResId = if (isCacheHealthy) R.string.compatibility_message_ready else R.string.session_browser_prep_message_manual,
                 preparedAsset = if (isCacheHealthy) cachedAsset else null,
+                hlsReady = isCacheHealthy && cachedAsset?.isFragmentedMp4 == true,
                 streamable = isCacheHealthy,
             )
         }
@@ -455,7 +456,7 @@ class QueuedCompatibilityPipeline(
                 messageArgs = result.messageArgs,
                 progressPercent = 100,
                 preparedAsset = result.preparedAsset,
-                hlsReady = false,
+                hlsReady = result.preparedAsset.isFragmentedMp4,
                 directReady = true,
                 streamable = true,
                 updatedAtEpochMs = System.currentTimeMillis()

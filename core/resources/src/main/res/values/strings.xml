@@ -666,6 +666,7 @@
     <string name="web_btn_download_all">Download all</string>
     <string name="web_btn_download_selected">Download selected</string>
     <string name="web_btn_download_original">Download original</string>
+    <string name="web_btn_try_original">Try original file</string>
     <string name="web_btn_fullscreen">Full screen</string>
     <string name="web_error_streaming_codec">This file\'s codec is not supported by the Android server for streaming. Please download.</string>
     <string name="web_error_downloads_disabled">Downloads are disabled by the device owner.</string>

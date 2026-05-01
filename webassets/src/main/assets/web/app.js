@@ -542,8 +542,8 @@ function isTvBrowser() {
 }
 
 // Fire OS tablets (Silk browser, Chrome on Fire HD) misreport VP9 support via
-// canPlayType but stutter or fail at decode time. Fire TV is excluded because
-// isTvBrowser already routes it to native HLS.
+// canPlayType but stutter or fail at decode time. Fire TV is excluded here
+// because it's already classified as a TV browser elsewhere.
 function isFireOs() {
   const ua = navigator.userAgent || "";
   if (isTvBrowser()) return false;
@@ -759,6 +759,18 @@ function renderCompatibilityProgress(item) {
 
 function resolveStablePlayerSource(item) {
   state.directPlaybackFailed = state.directPlaybackFailed || {};
+  state.userForcedDirect = state.userForcedDirect || {};
+  // User clicked "Try original file" in the compat-stage UI. Honor that until
+  // the browser actually errors, in which case the error handler clears the
+  // override and falls through to normal compat escalation.
+  if (state.userForcedDirect[item.id] && !state.directPlaybackFailed[item.id]) {
+    const separator = item.streamUrl && item.streamUrl.includes("?") ? "&" : "?";
+    return {
+      kind: "direct",
+      url: `${item.streamUrl}${separator}original=1`,
+      mimeType: item.mimeType || "video/mp4",
+    };
+  }
   if (item.playbackMode === "DIRECT" && !state.directPlaybackFailed[item.id]) {
     return {
       kind: "direct",
@@ -846,9 +858,11 @@ function nativeHlsEligibility(item) {
   }
   if (!item.hlsUrl) return { allowed: false, reason: "no_hls_url" };
   if (!item.streamReady) return { allowed: false, reason: "not_streamable" };
-  if (!isAppleDevice() && !isTvBrowser()) return { allowed: false, reason: "native_hls_not_required" };
-  if (!buildClientCapabilities().supportsHlsNatively) return { allowed: false, reason: "native_hls_not_supported" };
-  return { allowed: true, reason: isTvBrowser() ? "native_tv_hls" : "native_apple_hls" };
+  // Native HLS is an Apple-only platform guarantee. Chromium-based browsers
+  // (Silk on Fire TV, Tizen, webOS, mobile Chrome) lie via canPlayType and
+  // cannot actually demux m3u8 — they must use hls.js + MSE instead.
+  if (!isAppleDevice()) return { allowed: false, reason: "native_hls_apple_only" };
+  return { allowed: true, reason: "native_apple_hls" };
 }
 
 function shouldUseNativeHlsPlayback(item) {
@@ -863,12 +877,13 @@ function managedHlsEligibility(item) {
   if (!item.hlsUrl) return { allowed: false, reason: "no_hls_url" };
   if (!item.streamReady) return { allowed: false, reason: "not_streamable" };
   if (isAppleDevice()) return { allowed: false, reason: "apple_disabled" };
-  if (isTvBrowser()) return { allowed: false, reason: "tv_disabled" };
-  if (!isDesktopChromiumBrowser()) return { allowed: false, reason: "browser_not_supported" };
+  // hls.js + MSE works on every Chromium-based client (desktop Chrome/Edge,
+  // mobile Chrome, Fire TV / Tizen / webOS / Chromecast — all Chromium under
+  // the hood) plus Firefox. Hls.isSupported() already checks MSE for us.
   if (!(window.Hls && typeof window.Hls.isSupported === "function" && window.Hls.isSupported())) {
     return { allowed: false, reason: "hlsjs_not_supported" };
   }
-  return { allowed: true, reason: "desktop_chromium" };
+  return { allowed: true, reason: isTvBrowser() ? "tv_managed_hls" : "managed_hls" };
 }
 
 /**
@@ -1985,7 +2000,7 @@ function renderVideoStage(item, showPlayer) {
               : item.playbackMode !== "DIRECT"
                 ? `<button class="gs-btn gs-btn-accent gs-btn-sm" onclick="startPreparation('${item.id}')">Prepare for browser</button>`
                 : ""}
-          ${!state.bootstrap?.preventDownload ? `<a class="gs-btn gs-btn-sm" href="${item.downloadUrl}">Try original (may fail)</a>` : ""}
+          ${!state.bootstrap?.preventDownload ? `<button class="gs-btn gs-btn-sm" onclick="playOriginalFile('${item.id}')">${gsStr("web_btn_try_original", "Try original file")}</button>` : ""}
         </div>
       </div>
     `;
@@ -2104,7 +2119,14 @@ function videoMarkup(item) {
 }
 
 function canUseManagedHlsFallback(item, managedHlsAvailable) {
-  return managedHlsAvailable && Boolean(item?.hlsUrl);
+  if (managedHlsAvailable && Boolean(item?.hlsUrl)) return true;
+  return Boolean(item?.hlsUrl) &&
+    !isAppleDevice() &&
+    Boolean(
+      window.Hls &&
+        typeof window.Hls.isSupported === "function" &&
+        window.Hls.isSupported(),
+    );
 }
 
 function showCompatibilityWaitingStage(item) {
@@ -2702,15 +2724,22 @@ function hydrateVideoPlayer(item, options = {}) {
       }
       return;
     }
-    // Only DIRECT gets an automatic fallback into compatibility preparation.
-    // If a compatibility path itself fails, the user must explicitly retry.
+    // Only DIRECT (server-decided or user-forced via "Try original file") gets
+    // an automatic fallback into compatibility preparation. If a compatibility
+    // path itself fails, the user must explicitly retry.
     const failureCount = (state.compatPlaybackFailures[item.id] || 0) + 1;
     state.compatPlaybackFailures[item.id] = failureCount;
-    if (item.playbackMode === "DIRECT") {
+    const wasUserForcedDirect = Boolean(state.userForcedDirect?.[item.id]);
+    const isDirectAttempt = item.playbackMode === "DIRECT" || wasUserForcedDirect;
+    if (isDirectAttempt) {
       state.directPlaybackFailed = state.directPlaybackFailed || {};
       state.directPlaybackFailed[item.id] = true;
     }
-    if (item.playbackMode === "DIRECT" && failureCount <= 2) {
+    if (wasUserForcedDirect) {
+      // Override consumed: don't loop back into direct on the next render.
+      delete state.userForcedDirect[item.id];
+    }
+    if (isDirectAttempt && failureCount <= 2) {
       // Guard: an auto-TRANSCODE of a huge/high-res file (e.g. 8K HEVC 150Mbps)
       // can OOM-kill the host's foreground service. If the file is beyond what
       // the host can safely re-encode, skip auto-fallback and let the user
@@ -2749,13 +2778,13 @@ function hydrateVideoPlayer(item, options = {}) {
       `id=${item.id} ${playbackContextSummary(item, { kind: sourceType })} browserError=${mediaError}`,
     );
     if (errorText) {
-      errorText.textContent = item.playbackMode === "DIRECT"
+      errorText.textContent = isDirectAttempt
         ? (state.bootstrap?.preventDownload
           ? gsStr("web_error_video_start_no_dl", "This browser could not play the video. The server is preparing a compatible version.")
           : gsStr("web_error_video_start", "This browser could not start the video. Try again or download the original file."))
         : "This video is still opening. Try again in a moment.";
     }
-    if (item.playbackMode === "DIRECT" && !state.compatAutoRetries[item.id]) {
+    if (isDirectAttempt && !state.compatAutoRetries[item.id]) {
       state.compatAutoRetries[item.id] = true;
       setTimeout(() => {
         clearVideoError();
@@ -2872,6 +2901,25 @@ function updateCompatElements(job, streamLive) {
   const inline = document.getElementById("compatInline");
   if (inline) {
     inline.classList.toggle("is-visible", streamLive);
+  }
+}
+
+// User-initiated bypass of the compat pipeline. Forces the player to load the
+// raw stream URL (`item.streamUrl`) regardless of the server's playback
+// decision. If the browser actually decodes the file, great — we save a long
+// transmux/transcode. If it errors, the existing direct-fail handler clears
+// the override and falls through to compat preparation as usual.
+async function playOriginalFile(id) {
+  debugTrace("play_original_clicked", `id=${id}`);
+  state.userForcedDirect = state.userForcedDirect || {};
+  state.userForcedDirect[id] = true;
+  if (state.directPlaybackFailed) delete state.directPlaybackFailed[id];
+  if (state.playerSourceLocks) delete state.playerSourceLocks[id];
+  state.compatPlaybackFailures = state.compatPlaybackFailures || {};
+  state.compatPlaybackFailures[id] = 0;
+  if (state.compatAutoRetries) delete state.compatAutoRetries[id];
+  if (location.pathname === `/player/video/${id}`) {
+    renderVideoPlayer(id);
   }
 }
 

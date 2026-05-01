@@ -449,6 +449,7 @@ class KtorGhostStreamServer(
                             "web_btn_download_all" to localizedContext.getString(R.string.web_btn_download_all),
                             "web_btn_download_selected" to localizedContext.getString(R.string.web_btn_download_selected),
                             "web_btn_download_original" to localizedContext.getString(R.string.web_btn_download_original),
+                            "web_btn_try_original" to localizedContext.getString(R.string.web_btn_try_original),
                             "web_error_streaming_codec" to localizedContext.getString(R.string.web_error_streaming_codec),
                             "web_error_downloads_disabled" to localizedContext.getString(R.string.web_error_downloads_disabled),
                             "web_error_video_decode" to localizedContext.getString(R.string.web_error_video_decode),
@@ -974,6 +975,10 @@ class KtorGhostStreamServer(
                     return@get
                 }
 
+                debugLogSink.log(
+                    "WebCompat/file",
+                    "serving id=${item.id} name=${item.displayName} status=${job.status} complete=${preparedAsset.isComplete} bytes=${preparedAsset.sizeBytes}",
+                )
                 call.streamCachedFile(
                     item = item,
                     playbackSource = PlaybackSource.CachedFile(
@@ -1269,10 +1274,15 @@ class KtorGhostStreamServer(
                     item = item,
                     triggerPreparation = false,
                 )
+                val userRequestedOriginal = call.request.queryParameters["original"] == "1"
 
                 // Hard Gate: Prevent browsers from trying to play incompatible raw containers (MKV/TS)
                 // during preparation. They must use HLS or wait for the finalized MP4.
-                if (item.category == MediaCategory.VIDEO && effectiveJob.decision.mode != PlaybackMode.DIRECT) {
+                if (
+                    item.category == MediaCategory.VIDEO &&
+                    effectiveJob.decision.mode != PlaybackMode.DIRECT &&
+                    !userRequestedOriginal
+                ) {
                     debugLogSink.log("WebStream", "REJECTED id=${item.id} name=${item.displayName} mode=${effectiveJob.decision.mode} reason=incompatible-raw")
                     call.respond(HttpStatusCode.Forbidden, ErrorPayload(localizedContext().getString(R.string.web_error_direct_stream_disabled)))
                     return@get
@@ -1284,7 +1294,7 @@ class KtorGhostStreamServer(
                     MediaCategory.MUSIC -> ClientActivity.PLAYING_MUSIC
                     MediaCategory.FILE -> ClientActivity.BROWSING
                 }
-                debugLogSink.log("WebStream", "serving id=${item.id} name=${item.displayName} category=${item.category} mime=${item.mimeType}")
+                debugLogSink.log("WebStream", "serving id=${item.id} name=${item.displayName} category=${item.category} mime=${item.mimeType} userOriginal=$userRequestedOriginal")
                 call.streamItem(
                     itemId = itemId,
                     asAttachment = false,
@@ -2528,7 +2538,6 @@ class KtorGhostStreamServer(
 
     private fun compatibilityHlsUrl(job: CompatibilityJob, allowInProgressHls: Boolean): String? {
         if (!allowInProgressHls) return null
-        if (job.status == CompatibilityStatus.READY || job.preparedAsset?.isComplete == true || job.directReady) return null
         if (job.preparedAsset?.isFragmentedMp4 != true || !job.hlsReady || !job.streamable) return null
         return "/hls/${job.itemId}/master.m3u8"
     }
@@ -2636,47 +2645,21 @@ class KtorGhostStreamServer(
             return InProgressHlsSupport(allowed = false, reason = "missing_client_capabilities")
         }
 
-        val isChromiumDesktop =
-            (ua.contains("Chrome", ignoreCase = true) ||
-                ua.contains("Chromium", ignoreCase = true) ||
-                ua.contains("Edg/", ignoreCase = true)) &&
-                !ua.contains("Android", ignoreCase = true) &&
-                !ua.contains("Mobile", ignoreCase = true)
-        val isAppleFamily = isAppleClient(ua, caps)
-        val isTvBrowser = TV_BROWSER_UA_REGEX.containsMatchIn(ua) ||
-            (TV_TOKEN_REGEX.containsMatchIn(ua) && !APPLE_TV_EXCLUSION_UA_REGEX.containsMatchIn(ua))
-        // Safari/iOS/macOS/AppleTV always support native HLS — it's a platform guarantee
-        // independent of capability telemetry. Don't gate on caps.supportsHlsNatively here;
-        // when caps haven't arrived yet (or report stale data) the gate would force the player
-        // onto a non-existent MSE/MP4 path and stall. Apple = HLS, full stop.
-        if (isAppleFamily) {
+        // Apple devices always support native HLS — it's a platform guarantee
+        // independent of capability telemetry. Don't gate on caps here; when caps
+        // haven't arrived yet the gate would force the player onto a non-existent
+        // MSE/MP4 path and stall. Apple = native HLS, full stop.
+        if (isAppleClient(ua, caps)) {
             return InProgressHlsSupport(allowed = true, reason = "apple_native_hls")
         }
-        val nativeHlsCandidate =
-            caps?.supportsHlsNatively == true &&
-                (isTvBrowser ||
-                    caps.browserFamily.equals("Safari", ignoreCase = true) ||
-                    caps.os.equals("iOS", ignoreCase = true) ||
-                    caps.os.equals("macOS", ignoreCase = true))
-        if (nativeHlsCandidate) {
-            return InProgressHlsSupport(allowed = true, reason = "native_hls")
+        // Everyone else uses hls.js + MSE. This includes desktop Chromium, Android
+        // Chrome, and Chromium-based smart TV browsers (Silk on Fire TV, Tizen,
+        // webOS, Chromecast). canPlayType("application/vnd.apple.mpegurl") lies on
+        // Chromium so we don't trust caps.supportsHlsNatively outside Apple.
+        if (caps?.supportsMse != false) {
+            return InProgressHlsSupport(allowed = true, reason = "managed_hls")
         }
-        val managedHlsCandidate =
-            (caps?.supportsMse != false) &&
-                isChromiumDesktop &&
-                !isTvBrowser
-        if (managedHlsCandidate) {
-            return InProgressHlsSupport(allowed = true, reason = "desktop_chromium")
-        }
-        val reason = when {
-            caps?.supportsHlsNatively == true && isTvBrowser ->
-                "tv_native_hls_waiting_for_streamability"
-            isTvBrowser -> "tv_requires_native_hls"
-            !isChromiumDesktop -> "browser_not_supported"
-            caps?.supportsMse == false -> "mse_not_supported"
-            else -> "stream_not_supported"
-        }
-        return InProgressHlsSupport(allowed = false, reason = reason)
+        return InProgressHlsSupport(allowed = false, reason = "mse_not_supported")
     }
 
     private fun isAppleClient(userAgent: String?, caps: ClientCapabilities? = null): Boolean {
@@ -3624,9 +3607,6 @@ class KtorGhostStreamServer(
         const val MIN_SEGMENTS_BEFORE_PLAY = 2
         const val HLS_FINALIZED_RETRY_COUNT = 5
         const val HLS_FINALIZED_RETRY_INTERVAL_MS = 400L
-        val TV_BROWSER_UA_REGEX = Regex("Tizen|webOS|Web0S|HbbTV|SmartTV|SMART-TV|NetCast|DLNA|Roku|AFTB|AFTS|AFTN|AFTT|FireTV|CrKey|OPR/.*TV|ANT_", RegexOption.IGNORE_CASE)
-        val TV_TOKEN_REGEX = Regex("\\bTV\\b", RegexOption.IGNORE_CASE)
-        val APPLE_TV_EXCLUSION_UA_REGEX = Regex("iPhone|iPad|AppleTV", RegexOption.IGNORE_CASE)
     }
 }
 
