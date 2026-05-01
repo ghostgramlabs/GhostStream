@@ -645,6 +645,7 @@
     <string name="web_btn_download_all">Ladda ner allt</string>
     <string name="web_btn_download_selected">Ladda ner valda</string>
     <string name="web_btn_download_original">Original</string>
+    <string name="web_btn_try_original">Prova originalfilen</string>
     <string name="web_btn_fullscreen">Helskärm</string>
     <string name="web_error_streaming_codec">Format stöds ej. Ladda ner istället.</string>
     <string name="web_error_downloads_disabled">Nedladdning avstängd.</string>
@@ -656,6 +657,16 @@
     <string name="web_status_selection_on">Markering</string>
     <string name="web_btn_select_all">Alla</string>
     <string name="web_btn_clear_selection">Rensa</string>
+    <string name="web_status_selected">Vald</string>
+    <string name="web_action_select">Välja</string>
+    <string name="web_btn_retry">Försöka igen</string>
+    <string name="web_status_preparing">Förbereder...</string>
+    <string name="web_btn_prepare_for_browser">Förbered för webbläsare</string>
+    <string name="web_error_video_opening">Den här videon är fortfarande öppen. Försök igen om ett ögonblick.</string>
+    <string name="web_action_previous">Tidigare</string>
+    <string name="web_action_next">Nästa</string>
+    <string name="web_btn_back_to_photos">Tillbaka till bilder</string>
+    <string name="web_error_no_preview">Ingen förhandsgranskning tillgänglig för den här filtypen</string>
     <string name="web_player_slow_start_hint">Kan ta tid...</string>
     <string name="web_selection_count">Valda: %1$d</string>
     <string name="web_library_desc_download">Titta eller ladda ner.</string>

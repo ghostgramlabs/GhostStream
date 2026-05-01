@@ -9,6 +9,19 @@ def rebuild_locale(res_dir, locale_name, translation_dict):
         os.makedirs(target_dir)
         
     target_path = os.path.join(target_dir, "strings.xml")
+
+    # Read existing translations if they exist
+    existing_dict = {}
+    if os.path.exists(target_path):
+        try:
+            existing_tree = ET.parse(target_path)
+            existing_root = existing_tree.getroot()
+            for child in existing_root:
+                if child.tag == 'string':
+                    existing_dict[child.get('name')] = child.text
+        except:
+            pass
+
     tree = ET.parse(base_path)
     root = tree.getroot()
     new_root = ET.Element('resources')
@@ -22,8 +35,9 @@ def rebuild_locale(res_dir, locale_name, translation_dict):
                 new_node.set('translatable', 'false')
                 new_node.text = child.text
             else:
-                val = translation_dict.get(name)
-                new_node.text = val if val else child.text
+                # Priority: 1. New dictionary, 2. Existing file, 3. Base English
+                val = translation_dict.get(name) or existing_dict.get(name) or child.text
+                new_node.text = val
         elif child.tag == 'plurals':
             name = child.get('name')
             new_node = ET.SubElement(new_root, 'plurals', {'name': name})
@@ -402,6 +416,12 @@ es_data = {
     "compatibility_message_analyzing": "Analizando...", "compatibility_message_finalizing_optimized": "Finalizando...",
     "compatibility_message_finalizing_compatible": "Finalizando...", "compatibility_message_optimizing_web": "Optimizando...",
     "compatibility_message_repackaging_web": "Repaquetizando...", "compatibility_message_converting_web": "Convirtiendo...",
+    "web_status_selected": "Seleccionado", "web_action_select": "Seleccionar", "web_btn_retry": "Reintentar",
+    "web_status_preparing": "Preparando...", "web_btn_prepare_for_browser": "Preparar para navegador",
+    "web_error_video_opening": "Este vídeo se está abriendo. Inténtalo de nuevo en un momento.",
+    "web_btn_try_original": "Probar archivo original",
+    "web_action_previous": "Anterior", "web_action_next": "Siguiente",
+    "web_btn_back_to_photos": "Volver a fotos", "web_error_no_preview": "Vista previa no disponible para este tipo de archivo",
 }
 
 # GERMAN (de)
@@ -756,6 +776,12 @@ de_data = {
     "compatibility_message_analyzing": "Analyse...", "compatibility_message_finalizing_optimized": "Finale...",
     "compatibility_message_finalizing_compatible": "Finale...", "compatibility_message_optimizing_web": "Optimiere...",
     "compatibility_message_repackaging_web": "Repackage...", "compatibility_message_converting_web": "Konvertiere...",
+    "web_status_selected": "Ausgewählt", "web_action_select": "Auswählen", "web_btn_retry": "Wiederholen",
+    "web_status_preparing": "Vorbereitung...", "web_btn_prepare_for_browser": "Für Browser vorbereiten",
+    "web_error_video_opening": "Dieses Video wird noch geöffnet. Versuchen Sie es gleich noch einmal.",
+    "web_btn_try_original": "Originaldatei probieren",
+    "web_action_previous": "Zurück", "web_action_next": "Weiter",
+    "web_btn_back_to_photos": "Zurück zu Fotos", "web_error_no_preview": "Keine Vorschau für diesen Dateityp verfügbar",
 }
 
 # FRENCH (fr)
@@ -1107,6 +1133,12 @@ fr_data = {
     "compatibility_message_analyzing": "Analyse...", "compatibility_message_finalizing_optimized": "Finalisation...",
     "compatibility_message_finalizing_compatible": "Finalisation...", "compatibility_message_optimizing_web": "Optimisation...",
     "compatibility_message_repackaging_web": "Repackage...", "compatibility_message_converting_web": "Conversion...",
+    "web_status_selected": "Sélectionné", "web_action_select": "Sélectionner", "web_btn_retry": "Réessayer",
+    "web_status_preparing": "Préparation...", "web_btn_prepare_for_browser": "Préparer pour le navigateur",
+    "web_error_video_opening": "Cette vidéo est en cours d'ouverture. Réessayez dans un instant.",
+    "web_btn_try_original": "Essayer le fichier original",
+    "web_action_previous": "Précédent", "web_action_next": "Suivant",
+    "web_btn_back_to_photos": "Retour aux photos", "web_error_no_preview": "Aperçu non disponible per ce type de fichier",
 }
 
 # DUTCH (nl)
@@ -1465,6 +1497,12 @@ nl_data = {
     "compatibility_message_analyzing": "Analyse...", "compatibility_message_finalizing_optimized": "Finale...",
     "compatibility_message_finalizing_compatible": "Finale...", "compatibility_message_optimizing_web": "Optimaliseren...",
     "compatibility_message_repackaging_web": "Repackage...", "compatibility_message_converting_web": "Converteren...",
+    "web_status_selected": "Geselecteerd", "web_action_select": "Selecteren", "web_btn_retry": "Opnieuw proberen",
+    "web_status_preparing": "Voorbereiden...", "web_btn_prepare_for_browser": "Voorbereiden voor browser",
+    "web_error_video_opening": "Deze video wordt nog geopend. Probeer het over een moment opnieuw.",
+    "web_btn_try_original": "Origineel bestand proberen",
+    "web_action_previous": "Vorige", "web_action_next": "Volgende",
+    "web_btn_back_to_photos": "Terug naar foto's", "web_error_no_preview": "Geen voorbeeld beschikbaar voor dit bestandstype",
 }
 
 # PORTUGUESE (pt / pt-rBR)
@@ -1808,7 +1846,7 @@ pt_data = {
     "help_line_folders_2": "Organizado por tipo.", "help_section_dlna_tv": "DLNA/TV", "help_line_dlna_1": "Smart TVs OK.",
     "help_line_dlna_2": "Visível como DirectServe.", "help_line_dlna_3": "Opção de rede.", "help_line_dlna_4": "VLC/Kodi OK.",
     "help_section_search_sticky": "Busca", "help_line_search_1": "Ache na hora.", "help_line_search_2": "Sempre no topo.",
-    "settings_dlna": "DLNA", "settings_dlna_desc": "TVs e VLC encontram o host.", "dlna_server_name": "Servidor de mídia DirectServe",
+    "dlna_server_name": "Servidor de mídia DirectServe",
     "dlna_server_name_template": "DirectServe (%1$s)", "web_action_download_zip": "Baixar ZIP",
     "web_btn_download_all_zip": "Tudo ZIP", "web_btn_download_selected_zip": "Coleção ZIP",
     "web_error_no_items_selected": "Nada escolhido.", "web_download_started_hint": "Iniciando download...",
@@ -1819,7 +1857,37 @@ pt_data = {
     "compatibility_message_almost_ready": "Quase lá...", "compatibility_message_ready": "Pronto.",
     "compatibility_message_analyzing": "Analisando...", "compatibility_message_finalizing_optimized": "Finalizando...",
     "compatibility_message_finalizing_compatible": "Finalizando...", "compatibility_message_optimizing_web": "Otimizando...",
-    "compatibility_message_repackaging_web": "Repackaging...", "compatibility_message_converting_web": "Convertendo...",
+    "compatibility_message_repackaging_web": "Repackage...", "compatibility_message_converting_web": "Convertendo...",
+    "web_status_selected": "Selecionado", "web_action_select": "Selecionar", "web_btn_retry": "Repetir",
+    "web_status_preparing": "Preparando...", "web_btn_prepare_for_browser": "Preparar para navegador",
+    "web_error_video_opening": "Este vídeo ainda está sendo aberto. Tente novamente em um momento.",
+    "web_btn_try_original": "Tentar arquivo original",
+    "web_action_previous": "Anterior", "web_action_next": "Próximo",
+    "web_btn_back_to_photos": "Voltar para fotos", "web_error_no_preview": "Visualização não disponível para este tipo de arquivo",
+}
+
+# HINDI (hi)
+hi_data = {
+    "web_status_selected": "चुना गया", "web_action_select": "चुनें", "web_btn_retry": "फिर से कोशिश",
+    "web_status_preparing": "तैयारी हो रही है...", "web_btn_prepare_for_browser": "ब्राउज़र के लिए तैयार करें",
+    "web_status_selected": "चुना गया", "web_action_select": "चुनें", "web_btn_retry": "फिर से कोशिश",
+    "web_status_preparing": "तैयारी हो रही है...", "web_btn_prepare_for_browser": "ब्राउज़र के लिए तैयार करें",
+    "web_error_video_opening": "यह वीडियो अभी भी खुल रहा है। थोड़ी देर में पुनः प्रयास करें।",
+    "web_btn_try_original": "ओरिजिनल फाइल आज़माएं",
+    "web_action_previous": "पिछला", "web_action_next": "अगला",
+    "web_btn_back_to_photos": "फोटो पर वापस जाएं", "web_error_no_preview": "इस फ़ाइल प्रकार के लिए कोई पूर्वावलोकन उपलब्ध नहीं है",
+}
+
+# ITALIAN (it)
+it_data = {
+    "web_status_selected": "Selezionato", "web_action_select": "Seleziona", "web_btn_retry": "Riprova",
+    "web_status_preparing": "Preparazione...", "web_btn_prepare_for_browser": "Prepara per il browser",
+    "web_status_selected": "Selezionato", "web_action_select": "Seleziona", "web_btn_retry": "Riprova",
+    "web_status_preparing": "Preparazione...", "web_btn_prepare_for_browser": "Prepara per il browser",
+    "web_error_video_opening": "Questo video si sta ancora aprendo. Riprova tra un momento.",
+    "web_btn_try_original": "Prova il file originale",
+    "web_action_previous": "Precedente", "web_action_next": "Successivo",
+    "web_btn_back_to_photos": "Torna alle foto", "web_error_no_preview": "Anteprima non disponibile per questo tipo di file",
 }
 
 # Apply batch
@@ -1831,3 +1899,5 @@ rebuild_locale(res_dir, "fr", fr_data)
 rebuild_locale(res_dir, "nl", nl_data)
 rebuild_locale(res_dir, "pt", pt_data)
 rebuild_locale(res_dir, "pt-rBR", pt_data)
+rebuild_locale(res_dir, "hi", hi_data)
+rebuild_locale(res_dir, "it", it_data)

@@ -678,6 +678,17 @@
     <string name="web_status_selection_on">Selection on</string>
     <string name="web_btn_select_all">Select all</string>
     <string name="web_btn_clear_selection">Clear</string>
+    <string name="web_status_selected">Selected</string>
+    <string name="web_action_select">Select</string>
+    <string name="web_btn_retry">Retry</string>
+    <string name="web_status_preparing">Preparing…</string>
+    <string name="web_btn_prepare_for_browser">Prepare for browser</string>
+    <string name="web_error_video_opening">This video is still opening. Try again in a moment.</string>
+    <string name="web_action_previous">Previous</string>
+    <string name="web_action_next">Next</string>
+    <string name="web_btn_back_to_photos">Back to photos</string>
+    <string name="web_error_no_preview">No preview available for this file type</string>
+
     <string name="web_player_slow_start_hint">This video may take a little longer to open on some devices.</string>
     <string name="web_selection_count">%1$d selected</string>
     <string name="web_library_desc_download">Browse this share or download what you need.</string>

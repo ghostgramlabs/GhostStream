@@ -645,6 +645,7 @@
     <string name="web_btn_download_all">అన్నీ డౌన్‌లోడ్</string>
     <string name="web_btn_download_selected">ఎంచుకున్నవి డౌన్‌లోడ్</string>
     <string name="web_btn_download_original">అసలు ఫైల్ డౌన్‌లోడ్</string>
+    <string name="web_btn_try_original">అసలు ఫైల్‌ని ప్రయత్నించండి</string>
     <string name="web_btn_fullscreen">స్క్రీన్ మొత్తం</string>
     <string name="web_error_streaming_codec">డౌన్‌లోడ్ చేసి చూడండి.</string>
     <string name="web_error_downloads_disabled">డౌన్‌లోడ్లు ఆపివేయబడ్డాయి.</string>
@@ -656,6 +657,16 @@
     <string name="web_status_selection_on">ఎంపికలో ఉంది</string>
     <string name="web_btn_select_all">అన్నీ ఎంచుకో</string>
     <string name="web_btn_clear_selection">తీసేయి</string>
+    <string name="web_status_selected">ఎంపిక చేయబడింది</string>
+    <string name="web_action_select">ఎంచుకోండి</string>
+    <string name="web_btn_retry">మళ్లీ ప్రయత్నించండి</string>
+    <string name="web_status_preparing">సిద్ధమవుతోంది...</string>
+    <string name="web_btn_prepare_for_browser">బ్రౌజర్ కోసం సిద్ధం చేయండి</string>
+    <string name="web_error_video_opening">ఈ వీడియో ఇంకా తెరవబడుతోంది. క్షణంలో మళ్లీ ప్రయత్నించండి.</string>
+    <string name="web_action_previous">మునుపటి</string>
+    <string name="web_action_next">తదుపరి</string>
+    <string name="web_btn_back_to_photos">ఫోటోలకు తిరిగి వెళ్ళు</string>
+    <string name="web_error_no_preview">ఈ ఫైల్ రకానికి ప్రివ్యూ అందుబాటులో లేదు</string>
     <string name="web_player_slow_start_hint">మొదలవ్వడానికి సమయం పట్టవచ్చు.</string>
     <string name="web_selection_count">%1$d ఎంచుకున్నారు</string>
     <string name="web_library_desc_download">చూడండి లేదా డౌన్‌లోడ్ చేసుకోండి.</string>

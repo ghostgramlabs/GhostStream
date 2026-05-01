@@ -41,7 +41,7 @@
     <string name="settings_group_advanced">Geavanceerd</string>
     <string name="settings_group_network">Netwerk</string>
     <string name="settings_group_help">Hulp</string>
-    <string name="settings_group_debug">Foutopsporing</string>
+    <string name="settings_group_debug">Debug</string>
     <string name="settings_language">Taal</string>
     <string name="settings_theme">Thema</string>
     <string name="settings_theme_subtitle">Kies je gewenste uiterlijk</string>
@@ -58,8 +58,8 @@
     <string name="settings_show_recent_shares_desc">Houd een korte geschiedenis bij op dit apparaat.</string>
     <string name="settings_auto_stop">Automatisch stoppen</string>
     <string name="settings_auto_stop_never">Nooit</string>
-    <string name="settings_auto_stop_15m">15 minuten</string>
-    <string name="settings_auto_stop_30m">30 minuten</string>
+    <string name="settings_auto_stop_15m">15 min</string>
+    <string name="settings_auto_stop_30m">30 min</string>
     <string name="settings_auto_stop_1h">1 uur</string>
     <string name="settings_connection_alerts">Verbindingsmeldingen</string>
     <string name="settings_connection_alerts_desc">Meld wanneer iemand verbinding maakt met je sessie.</string>
@@ -120,7 +120,7 @@
     <string name="settings_share_debug_log">Debug-log delen</string>
     <string name="settings_share_debug_log_desc">Verstuur diagnostisch logboek via e-mail.</string>
     <string name="settings_clear_debug_log">Debug-log wissen</string>
-    <string name="help_title">Hulp</string>
+    <string name="help_title">Help</string>
     <string name="help_about_title">Over DirectServe</string>
     <string name="help_about_1">DirectServe laat andere apparaten je bestanden openen in een browser zonder accounts of cloud.</string>
     <string name="help_about_2">Elk apparaat met Wi-Fi en een browser kan verbinding maken.</string>
@@ -268,7 +268,7 @@
     <string name="session_state_preparing">Voorbereiden</string>
     <string name="session_state_network_needed">Netwerk nodig</string>
     <string name="session_network_hotspot">Hotspot</string>
-    <string name="session_network_wifi">Wifi</string>
+    <string name="session_network_wifi">Wi-Fi</string>
     <string name="session_network_local">Lokaal</string>
     <string name="session_network_offline">Offline</string>
     <string name="history_title">Recente activiteit</string>
@@ -309,7 +309,7 @@
     <string name="service_start_failed">Starten mislukt.</string>
     <string name="service_auto_stop_message">Gestopt door inactiviteit.</string>
     <string name="service_upload_request_title">Inkomend bestand</string>
-    <string name="service_upload_request_text">%1$s (%2$s) van %3$s</string>
+    <string name="service_upload_request_text">%1$s van %3$s</string>
     <string name="service_upload_progress_title">Ontvangen van %1$s</string>
     <string name="service_upload_progress_text">%1$d%% (%2$s)</string>
     <string name="service_upload_progress_text_unknown">Ontvangen van %1$s</string>
@@ -330,7 +330,7 @@
     <string name="library_header_title">Huidige inhoud</string>
     <string name="library_header_body">Bestanden beschikbaar in deze sessie.</string>
     <string name="library_header_subtitles">Voeg .srt ondertitels toe voor de webplayer.</string>
-    <string name="library_info_items">items</string>
+    <string name="library_info_items">Items</string>
     <string name="library_info_folders">Mappen</string>
     <string name="library_info_size">Grootte</string>
     <string name="library_empty_title">Leeg</string>
@@ -379,7 +379,7 @@
     <string name="library_browser_prep_body">Maakt een lichte versie voor web. Origineel blijft staan.</string>
     <string name="library_folder_summary">%1$d bestanden | %2$s</string>
     <string name="library_unavailable">Niet beschikbaar</string>
-    <string name="library_direct_play">Direct afspelen</string>
+    <string name="library_direct_play">Direct Play</string>
     <string name="library_subtitle">Ondertitel</string>
     <string name="library_selected">Geselecteerd</string>
     <string name="library_tap_to_select">Tikken</string>
@@ -402,7 +402,7 @@
     <string name="library_compat_preparing">Voorbereiden</string>
     <string name="library_compat_ready">Gereed</string>
     <string name="library_compat_unavailable">Niet ondersteund</string>
-    <string name="library_compat_message">%1$s| %2$s</string>
+    <string name="library_compat_message">%1$s | %2$s</string>
     <string name="selection_add_files_title">Bestanden kiezen</string>
     <string name="selection_add_files_body">Kies wat je wilt delen.</string>
     <string name="selection_add_selected">Toevoegen</string>
@@ -513,7 +513,7 @@
     <string name="home_media_server_active">Alles gedeeld</string>
     <string name="home_btn_stop_media_server">Wissen</string>
     <string name="web_folders_title">Mappen</string>
-    <string name="web_folder_items">%1$d artikelen</string>
+    <string name="web_folder_items">%1$d items</string>
     <string name="web_btn_back_to_folders">Terug</string>
     <string name="web_all_media">Alle media</string>
     <string name="home_nearby_title">Netwerk</string>
@@ -540,7 +540,7 @@
     <string name="web_hero_desc2">Snel versturen.</string>
     <string name="web_hero_desc3">Lokaal &amp; privé.</string>
     <string name="web_hero_stat_shared">Actief</string>
-    <string name="web_items">artikelen</string>
+    <string name="web_items">items</string>
     <string name="web_hero_stat_ready">Gereed</string>
     <string name="web_hero_stat_access">Toegang</string>
     <string name="web_access_pin">PIN</string>
@@ -645,6 +645,7 @@
     <string name="web_btn_download_all">Alles downloaden</string>
     <string name="web_btn_download_selected">Selectie laden</string>
     <string name="web_btn_download_original">Origineel</string>
+    <string name="web_btn_try_original">Origineel bestand proberen</string>
     <string name="web_btn_fullscreen">Vollbild</string>
     <string name="web_error_streaming_codec">Codec fout. Laden.</string>
     <string name="web_error_downloads_disabled">Downloads UIT.</string>
@@ -656,6 +657,16 @@
     <string name="web_status_selection_on">Selectie AAN</string>
     <string name="web_btn_select_all">Alle</string>
     <string name="web_btn_clear_selection">Wissen</string>
+    <string name="web_status_selected">Geselecteerd</string>
+    <string name="web_action_select">Selecteren</string>
+    <string name="web_btn_retry">Opnieuw proberen</string>
+    <string name="web_status_preparing">Voorbereiden...</string>
+    <string name="web_btn_prepare_for_browser">Voorbereiden voor browser</string>
+    <string name="web_error_video_opening">Deze video wordt nog geopend. Probeer het over een moment opnieuw.</string>
+    <string name="web_action_previous">Vorige</string>
+    <string name="web_action_next">Volgende</string>
+    <string name="web_btn_back_to_photos">Terug naar foto\'s</string>
+    <string name="web_error_no_preview">Geen voorbeeld beschikbaar voor dit bestandstype</string>
     <string name="web_player_slow_start_hint">Momentje...</string>
     <string name="web_selection_count">%1$d gekozen</string>
     <string name="web_library_desc_download">Blader of download.</string>
@@ -706,8 +717,8 @@
     <string name="web_player_status_ready">OK</string>
     <string name="web_player_status_analyzing">Analyse</string>
     <string name="web_player_status_finalizing">Finale</string>
-    <string name="web_player_status_stalled">Wachtend</string>
-    <string name="web_player_status_playing">Speelt af</string>
+    <string name="web_player_status_stalled">Stuck</string>
+    <string name="web_player_status_playing">Playing</string>
     <string name="web_player_progress_preparing">Voorbereiden</string>
     <string name="web_player_progress_converting">Converteren</string>
     <string name="web_player_status_failed">Fout</string>
@@ -730,25 +741,25 @@
     <string name="web_now_playing">Nu afspelen</string>
     <string name="common_resume">Hervatten</string>
     <string name="web_status_init_progress">0%</string>
-    <string name="common_play">Spelen</string>
+    <string name="common_play">Play</string>
     <string name="common_pause">Pauze</string>
     <string name="common_unit_b">B</string>
     <string name="common_unit_kb">KB</string>
     <string name="common_unit_mb">MB</string>
     <string name="common_unit_gb">GB</string>
     <string name="common_unit_tb">TB</string>
-    <string name="common_unit_s">S</string>
-    <string name="common_unit_m">M</string>
-    <string name="common_unit_h">H</string>
-    <string name="common_byte_format_decimal">%1$.1f%2$s</string>
-    <string name="common_byte_format_integer">%1$d%2$s</string>
-    <string name="common_duration_format_m_s">%1$dm%2$ds</string>
-    <string name="common_duration_format_h_m">%1$dh%2$dm</string>
+    <string name="common_unit_s">s</string>
+    <string name="common_unit_m">m</string>
+    <string name="common_unit_h">h</string>
+    <string name="common_byte_format_decimal">%1$.1f %2$s</string>
+    <string name="common_byte_format_integer">%1$d %2$s</string>
+    <string name="common_duration_format_m_s">%1$dm %2$ds</string>
+    <string name="common_duration_format_h_m">%1$dh %2$dm</string>
     <string name="common_duration_format_s">%1$ds</string>
     <string name="common_duration_timestamp_m_s">%1$d:%2$02d</string>
     <string name="common_duration_timestamp_h_m_s">%1$d:%2$02d:%3$02d</string>
-    <string name="service_file_index_pattern">%1$s(%2$d/%3$d)</string>
-    <string name="service_upload_progress_subtext_pattern">%1$s/%2$s</string>
+    <string name="service_file_index_pattern">%1$s (%2$d/%3$d)</string>
+    <string name="service_upload_progress_subtext_pattern">%1$s / %2$s</string>
     <string name="help_section_media_server">Media Server</string>
     <string name="help_line_media_server_1">Handy als server.</string>
     <string name="help_line_media_server_2">Auto-geordend.</string>
@@ -772,7 +783,7 @@
     <string name="web_btn_download_selected_zip">Snel ZIP</string>
     <string name="web_error_no_items_selected">Niets gekozen.</string>
     <string name="web_download_started_hint">Batch-Laden...</string>
-    <string name="playback_mode_direct">Direct afspelen</string>
+    <string name="playback_mode_direct">Direct Play</string>
     <string name="playback_mode_repackaging">Repackage</string>
     <string name="playback_mode_transcoding">Transcode</string>
     <string name="playback_mode_analyzing">Analyse</string>
@@ -958,15 +969,15 @@
         <item quantity="other">%1$s verbonden. %2$d online.</item>
     </plurals>
     <plurals name="service_devices_connected">
-        <item quantity="one">%1$d apparaat verbonden</item>
+        <item quantity="one">1 apparaat verbonden</item>
         <item quantity="other">%1$d apparaten verbonden</item>
     </plurals>
     <plurals name="library_items_in_view">
-        <item quantity="one">%1$d item in weergave</item>
+        <item quantity="one">1 item</item>
         <item quantity="other">%1$d items</item>
     </plurals>
     <plurals name="home_saved_shares_items_count">
-        <item quantity="one">%1$d artikel</item>
-        <item quantity="other">%1$d artikelen</item>
+        <item quantity="one">1 item</item>
+        <item quantity="other">%1$d items</item>
     </plurals>
 </resources>

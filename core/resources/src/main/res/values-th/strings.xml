@@ -645,6 +645,7 @@
     <string name="web_btn_download_all">โหลดทั้งหมด</string>
     <string name="web_btn_download_selected">โหลดที่เลือก</string>
     <string name="web_btn_download_original">โหลดไฟล์แท้</string>
+    <string name="web_btn_try_original">ลองไฟล์ต้นฉบับ</string>
     <string name="web_btn_fullscreen">เต็มจอ</string>
     <string name="web_error_streaming_codec">ไฟล์นี้แอปแปลงสดไม่ได้ ลองโหลอดไปใช้ดูนะ</string>
     <string name="web_error_downloads_disabled">เครื่องหลักห้ามโหลดจ้า</string>
@@ -656,6 +657,16 @@
     <string name="web_status_selection_on">กำลังเลือก</string>
     <string name="web_btn_select_all">เลือกหมด</string>
     <string name="web_btn_clear_selection">เริ่มใหม่</string>
+    <string name="web_status_selected">เลือกแล้ว</string>
+    <string name="web_action_select">เลือก</string>
+    <string name="web_btn_retry">ลองอีกครั้ง</string>
+    <string name="web_status_preparing">กำลังเตรียม...</string>
+    <string name="web_btn_prepare_for_browser">เตรียมพร้อมสำหรับเบราว์เซอร์</string>
+    <string name="web_error_video_opening">วิดีโอนี้ยังคงเปิดอยู่ โปรดลองอีกครั้งในอีกสักครู่</string>
+    <string name="web_action_previous">ก่อนหน้า</string>
+    <string name="web_action_next">ต่อไป</string>
+    <string name="web_btn_back_to_photos">กลับไปที่รูปถ่าย</string>
+    <string name="web_error_no_preview">ไม่มีการแสดงตัวอย่างสำหรับไฟล์ประเภทนี้</string>
     <string name="web_player_slow_start_hint">ใจเย็นๆ วิดีโอไฟล์ใหญ่เตรียมตัวนานนิดนึง</string>
     <string name="web_selection_count">เลือกอยู่ %1$d</string>
     <string name="web_library_desc_download">เลือกดูหรือโหลดที่ต้องการเลย</string>

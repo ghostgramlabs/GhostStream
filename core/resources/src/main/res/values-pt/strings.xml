@@ -58,8 +58,8 @@
     <string name="settings_show_recent_shares_desc">Mantém um breve histórico local.</string>
     <string name="settings_auto_stop">Parada automática</string>
     <string name="settings_auto_stop_never">Nunca</string>
-    <string name="settings_auto_stop_15m">15 minutos</string>
-    <string name="settings_auto_stop_30m">30 minutos</string>
+    <string name="settings_auto_stop_15m">15 min</string>
+    <string name="settings_auto_stop_30m">30 min</string>
     <string name="settings_auto_stop_1h">1 hora</string>
     <string name="settings_connection_alerts">Alertas de conexão</string>
     <string name="settings_connection_alerts_desc">Avisa quando um novo dispositivo entra na sessão.</string>
@@ -75,14 +75,14 @@
     <string name="settings_use_pin_desc">Solicita um código antes de permitir o acesso.</string>
     <string name="settings_new_pin_each_time">Novo PIN a cada vez</string>
     <string name="settings_new_pin_each_time_desc">Gera um código diferente para cada sessão.</string>
-    <string name="settings_pin_label">ALFINETE</string>
+    <string name="settings_pin_label">PIN</string>
     <string name="settings_pin_placeholder">4-6 dígitos</string>
     <string name="settings_approve_file_uploads">Aprovar envios</string>
     <string name="settings_approve_file_uploads_desc">Pede permissão antes que outros possam enviar arquivos.</string>
     <string name="settings_approve_per_device">Aprovar por dispositivo</string>
     <string name="settings_approve_per_device_desc">Aprova uma vez por dispositivo, não para cada arquivo.</string>
     <string name="settings_received_files_location">Local de download</string>
-    <string name="settings_received_files_location_value">Transferências</string>
+    <string name="settings_received_files_location_value">Downloads</string>
     <string name="settings_show_thumbnails">Mostrar miniaturas</string>
     <string name="settings_show_thumbnails_desc">Miniaturas rápidas para arquivos de mídia.</string>
     <string name="settings_large_tv_layout">Layout para TV</string>
@@ -267,10 +267,10 @@
     <string name="session_state_sharing_now">Compartilhando</string>
     <string name="session_state_preparing">Preparando</string>
     <string name="session_state_network_needed">Sem rede</string>
-    <string name="session_network_hotspot">Ponto de acesso</string>
-    <string name="session_network_wifi">Wi-fi</string>
+    <string name="session_network_hotspot">Hotspot</string>
+    <string name="session_network_wifi">Wi-Fi</string>
     <string name="session_network_local">Local</string>
-    <string name="session_network_offline">Off-line</string>
+    <string name="session_network_offline">Offline</string>
     <string name="history_title">Atividade recente</string>
     <string name="history_tab_all">Tudo</string>
     <string name="history_tab_received">Recebido</string>
@@ -309,7 +309,7 @@
     <string name="service_start_failed">Erro ao iniciar serviço.</string>
     <string name="service_auto_stop_message">Parado por inatividade.</string>
     <string name="service_upload_request_title">Transferência recebida</string>
-    <string name="service_upload_request_text">%1$s (%2$s) de %3$s</string>
+    <string name="service_upload_request_text">%1$s de %3$s</string>
     <string name="service_upload_progress_title">Recebendo %1$s</string>
     <string name="service_upload_progress_text">%1$d%% (%2$s)</string>
     <string name="service_upload_progress_text_unknown">Recebendo de %1$s</string>
@@ -379,7 +379,7 @@
     <string name="library_browser_prep_body">Cria uma versão leve para web. O original não muda.</string>
     <string name="library_folder_summary">%1$d arquivos | %2$s</string>
     <string name="library_unavailable">Indisponível</string>
-    <string name="library_direct_play">Reprodução direta</string>
+    <string name="library_direct_play">Direct Play</string>
     <string name="library_subtitle">Legenda</string>
     <string name="library_selected">Selecionado</string>
     <string name="library_tap_to_select">Tocar</string>
@@ -402,7 +402,7 @@
     <string name="library_compat_preparing">Preparando</string>
     <string name="library_compat_ready">Pronto</string>
     <string name="library_compat_unavailable">Não compatível</string>
-    <string name="library_compat_message">%1$s| %2$s</string>
+    <string name="library_compat_message">%1$s | %2$s</string>
     <string name="selection_add_files_title">Selecionar arquivos</string>
     <string name="selection_add_files_body">Escolha o que deseja compartilhar.</string>
     <string name="selection_add_selected">Adicionar</string>
@@ -645,6 +645,7 @@
     <string name="web_btn_download_all">Baixar tudo</string>
     <string name="web_btn_download_selected">Baixar seleção</string>
     <string name="web_btn_download_original">Original</string>
+    <string name="web_btn_try_original">Tentar arquivo original</string>
     <string name="web_btn_fullscreen">Vollbild</string>
     <string name="web_error_streaming_codec">Codec não suportado. Baixe o arquivo.</string>
     <string name="web_error_downloads_disabled">Downloads OFF.</string>
@@ -656,6 +657,16 @@
     <string name="web_status_selection_on">Seleção ON</string>
     <string name="web_btn_select_all">Tudo</string>
     <string name="web_btn_clear_selection">Limpar</string>
+    <string name="web_status_selected">Selecionado</string>
+    <string name="web_action_select">Selecionar</string>
+    <string name="web_btn_retry">Repetir</string>
+    <string name="web_status_preparing">Preparando...</string>
+    <string name="web_btn_prepare_for_browser">Preparar para navegador</string>
+    <string name="web_error_video_opening">Este vídeo ainda está sendo aberto. Tente novamente em um momento.</string>
+    <string name="web_action_previous">Anterior</string>
+    <string name="web_action_next">Próximo</string>
+    <string name="web_btn_back_to_photos">Voltar para fotos</string>
+    <string name="web_error_no_preview">Visualização não disponível para este tipo de arquivo</string>
     <string name="web_player_slow_start_hint">Pode demorar um pouco.</string>
     <string name="web_selection_count">%1$d selecionados</string>
     <string name="web_library_desc_download">Explore ou baixe arquivos.</string>
@@ -706,8 +717,8 @@
     <string name="web_player_status_ready">OK</string>
     <string name="web_player_status_analyzing">Analizando</string>
     <string name="web_player_status_finalizing">Finalizando</string>
-    <string name="web_player_status_stalled">Parado</string>
-    <string name="web_player_status_playing">A reproduzir</string>
+    <string name="web_player_status_stalled">Stuck</string>
+    <string name="web_player_status_playing">Playing</string>
     <string name="web_player_progress_preparing">Preparação</string>
     <string name="web_player_progress_converting">Conversão</string>
     <string name="web_player_status_failed">Erro</string>
@@ -730,25 +741,25 @@
     <string name="web_now_playing">Reproduzindo agora</string>
     <string name="common_resume">Retomar</string>
     <string name="web_status_init_progress">0%</string>
-    <string name="common_play">Reproduzir</string>
+    <string name="common_play">Play</string>
     <string name="common_pause">Pausa</string>
     <string name="common_unit_b">B</string>
     <string name="common_unit_kb">KB</string>
     <string name="common_unit_mb">MB</string>
     <string name="common_unit_gb">GB</string>
     <string name="common_unit_tb">TB</string>
-    <string name="common_unit_s">é</string>
-    <string name="common_unit_m">eu</string>
+    <string name="common_unit_s">s</string>
+    <string name="common_unit_m">m</string>
     <string name="common_unit_h">h</string>
-    <string name="common_byte_format_decimal">%1$.1f%2$s</string>
-    <string name="common_byte_format_integer">%1$d%2$s</string>
-    <string name="common_duration_format_m_s">%1$dm%2$ds</string>
-    <string name="common_duration_format_h_m">%1$dh%2$dm</string>
+    <string name="common_byte_format_decimal">%1$.1f %2$s</string>
+    <string name="common_byte_format_integer">%1$d %2$s</string>
+    <string name="common_duration_format_m_s">%1$dm %2$ds</string>
+    <string name="common_duration_format_h_m">%1$dh %2$dm</string>
     <string name="common_duration_format_s">%1$ds</string>
     <string name="common_duration_timestamp_m_s">%1$d:%2$02d</string>
     <string name="common_duration_timestamp_h_m_s">%1$d:%2$02d:%3$02d</string>
-    <string name="service_file_index_pattern">%1$s(%2$d/%3$d)</string>
-    <string name="service_upload_progress_subtext_pattern">%1$s/%2$s</string>
+    <string name="service_file_index_pattern">%1$s (%2$d/%3$d)</string>
+    <string name="service_upload_progress_subtext_pattern">%1$s / %2$s</string>
     <string name="help_section_media_server">Servidor de Mídia</string>
     <string name="help_line_media_server_1">Celular como servidor.</string>
     <string name="help_line_media_server_2">Auto-organizado.</string>
@@ -766,13 +777,13 @@
     <string name="settings_dlna">DLNA</string>
     <string name="settings_dlna_desc">TVs e VLC encontram o host.</string>
     <string name="dlna_server_name">DirectServe Media Server</string>
-    <string name="dlna_server_name_template">Serviço Direto (%1$s)</string>
+    <string name="dlna_server_name_template">DirectServe (%1$s)</string>
     <string name="web_action_download_zip">Baixar ZIP</string>
     <string name="web_btn_download_all_zip">Tudo ZIP</string>
     <string name="web_btn_download_selected_zip">Coleção ZIP</string>
     <string name="web_error_no_items_selected">Nada escolhido.</string>
     <string name="web_download_started_hint">Iniciando download...</string>
-    <string name="playback_mode_direct">Reprodução Direta (Direct Play)</string>
+    <string name="playback_mode_direct">Direct Play</string>
     <string name="playback_mode_repackaging">Repackage</string>
     <string name="playback_mode_transcoding">Transcode</string>
     <string name="playback_mode_analyzing">Analisando</string>
@@ -787,7 +798,7 @@
     <string name="compatibility_message_finalizing_optimized">Finalizando...</string>
     <string name="compatibility_message_finalizing_compatible">Finalizando...</string>
     <string name="compatibility_message_optimizing_web">Otimizando...</string>
-    <string name="compatibility_message_repackaging_web">Repackaging...</string>
+    <string name="compatibility_message_repackaging_web">Repackage...</string>
     <string name="compatibility_message_converting_web">Convertendo...</string>
     <string name="compatibility_message_preparing_web">A preparar para reprodução na web…</string>
     <string name="compatibility_message_ready_optimized">A reprodução otimizada está pronta.</string>
@@ -958,15 +969,15 @@
         <item quantity="other">%1$s entrou. %2$d no total.</item>
     </plurals>
     <plurals name="service_devices_connected">
-        <item quantity="one">%1$d dispositivo ligado</item>
+        <item quantity="one">1 dispositivo</item>
         <item quantity="other">%1$d dispositivos</item>
     </plurals>
     <plurals name="library_items_in_view">
-        <item quantity="one">%1$d item em exibição</item>
+        <item quantity="one">1 item</item>
         <item quantity="other">%1$d itens</item>
     </plurals>
     <plurals name="home_saved_shares_items_count">
-        <item quantity="one">item%1$d</item>
+        <item quantity="one">1 item</item>
         <item quantity="other">%1$d itens</item>
     </plurals>
 </resources>

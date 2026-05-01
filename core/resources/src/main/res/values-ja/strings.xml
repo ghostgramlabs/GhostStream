@@ -645,6 +645,7 @@
     <string name="web_btn_download_all">すべてダウンロード</string>
     <string name="web_btn_download_selected">ダウンロード</string>
     <string name="web_btn_download_original">オリジナル</string>
+    <string name="web_btn_try_original">元のファイルを試してみる</string>
     <string name="web_btn_fullscreen">フルスクリーン</string>
     <string name="web_error_streaming_codec">動かない。ダウンロードして。</string>
     <string name="web_error_downloads_disabled">オフ。</string>
@@ -656,6 +657,16 @@
     <string name="web_status_selection_on">オン</string>
     <string name="web_btn_select_all">すべて</string>
     <string name="web_btn_clear_selection">キャンセル</string>
+    <string name="web_status_selected">選択済み</string>
+    <string name="web_action_select">選択</string>
+    <string name="web_btn_retry">リトライ</string>
+    <string name="web_status_preparing">準備中…</string>
+    <string name="web_btn_prepare_for_browser">ブラウザの準備</string>
+    <string name="web_error_video_opening">このビデオはまだオープニング中です。しばらくしてからもう一度試してください。</string>
+    <string name="web_action_previous">前の</string>
+    <string name="web_action_next">次</string>
+    <string name="web_btn_back_to_photos">写真に戻る</string>
+    <string name="web_error_no_preview">このファイルタイプではプレビューが利用できません</string>
     <string name="web_player_slow_start_hint">お待ちを...</string>
     <string name="web_selection_count">%1$d</string>
     <string name="web_library_desc_download">見るか取るか。</string>

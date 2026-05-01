@@ -645,6 +645,7 @@
     <string name="web_btn_download_all">എല്ലാം ആയിട്ട്</string>
     <string name="web_btn_download_selected">തിരഞ്ഞെടുത്തവ</string>
     <string name="web_btn_download_original">ഒറിജിനൽ</string>
+    <string name="web_btn_try_original">യഥാർത്ഥ ഫയൽ പരീക്ഷിക്കുക</string>
     <string name="web_btn_fullscreen">മുഴുവൻ കാണാം</string>
     <string name="web_error_streaming_codec">നേരിട്ട് കിട്ടില്ല, ഡൗൺലോഡ് ചെയ്യൂ.</string>
     <string name="web_error_downloads_disabled">ഇല്ല.</string>
@@ -656,6 +657,16 @@
     <string name="web_status_selection_on">കൂട്ടമായി</string>
     <string name="web_btn_select_all">എല്ലാം ആയിട്ട്</string>
     <string name="web_btn_clear_selection">തിരുത്താം</string>
+    <string name="web_status_selected">തിരഞ്ഞെടുത്തു</string>
+    <string name="web_action_select">തിരഞ്ഞെടുക്കുക</string>
+    <string name="web_btn_retry">വീണ്ടും ശ്രമിക്കുക</string>
+    <string name="web_status_preparing">തയ്യാറെടുക്കുന്നു...</string>
+    <string name="web_btn_prepare_for_browser">ബ്രൗസറിനായി തയ്യാറെടുക്കുക</string>
+    <string name="web_error_video_opening">ഈ വീഡിയോ ഇപ്പോഴും തുറന്നുകൊണ്ടിരിക്കുകയാണ്. ഒരു നിമിഷത്തിനുള്ളിൽ വീണ്ടും ശ്രമിക്കുക.</string>
+    <string name="web_action_previous">മുമ്പത്തെ</string>
+    <string name="web_action_next">അടുത്തത്</string>
+    <string name="web_btn_back_to_photos">ഫോട്ടോകളിലേക്ക് മടങ്ങുക</string>
+    <string name="web_error_no_preview">ഈ ഫയൽ തരത്തിന് പ്രിവ്യൂ ലഭ്യമല്ല</string>
     <string name="web_player_slow_start_hint">നേരം എടുത്തേക്കും.</string>
     <string name="web_selection_count">%1$d എണ്ണം സെലക്ട് ചെയ്തു</string>
     <string name="web_library_desc_download">ഡൗൺലോഡ് ചെയ്യാം.</string>

@@ -645,6 +645,7 @@
     <string name="web_btn_download_all">Laai alles af</string>
     <string name="web_btn_download_selected">Aflaai gekies</string>
     <string name="web_btn_download_original">Laai oorspronklike af</string>
+    <string name="web_btn_try_original">Probeer oorspronklike lêer</string>
     <string name="web_btn_fullscreen">Volskerm</string>
     <string name="web_error_streaming_codec">Hierdie lêer se kodek word nie deur die Android-bediener ondersteun vir stroom nie. Laai asseblief af.</string>
     <string name="web_error_downloads_disabled">Aflaaie word deur die toesteleienaar gedeaktiveer.</string>
@@ -656,6 +657,16 @@
     <string name="web_status_selection_on">Seleksie aan</string>
     <string name="web_btn_select_all">Kies alles</string>
     <string name="web_btn_clear_selection">Duidelik</string>
+    <string name="web_status_selected">Gekies</string>
+    <string name="web_action_select">Kies</string>
+    <string name="web_btn_retry">Probeer weer</string>
+    <string name="web_status_preparing">Berei tans voor …</string>
+    <string name="web_btn_prepare_for_browser">Berei voor vir blaaier</string>
+    <string name="web_error_video_opening">Hierdie video is nog oop. Probeer oor \'n oomblik weer.</string>
+    <string name="web_action_previous">Vorige</string>
+    <string name="web_action_next">Volgende</string>
+    <string name="web_btn_back_to_photos">Terug na foto\'s</string>
+    <string name="web_error_no_preview">Geen voorskou beskikbaar vir hierdie lêertipe nie</string>
     <string name="web_player_slow_start_hint">Hierdie video kan dalk \'n bietjie langer neem om op sommige toestelle oop te maak.</string>
     <string name="web_selection_count">%1$d gekies</string>
     <string name="web_library_desc_download">Blaai deur hierdie deel of laai af wat jy nodig het.</string>

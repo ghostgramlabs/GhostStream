@@ -645,6 +645,7 @@
     <string name="web_btn_download_all">모두 다운</string>
     <string name="web_btn_download_selected">다운</string>
     <string name="web_btn_download_original">원본</string>
+    <string name="web_btn_try_original">원본 파일을 사용해 보세요</string>
     <string name="web_btn_fullscreen">전체</string>
     <string name="web_error_streaming_codec">안됨. 다운.</string>
     <string name="web_error_downloads_disabled">오프.</string>
@@ -656,6 +657,16 @@
     <string name="web_status_selection_on">온</string>
     <string name="web_btn_select_all">모두</string>
     <string name="web_btn_clear_selection">취소</string>
+    <string name="web_status_selected">선택된</string>
+    <string name="web_action_select">선택하다</string>
+    <string name="web_btn_retry">다시 해 보다</string>
+    <string name="web_status_preparing">준비 중…</string>
+    <string name="web_btn_prepare_for_browser">브라우저 준비</string>
+    <string name="web_error_video_opening">이 영상은 아직 개봉 중입니다. 잠시 후에 다시 시도해 보세요.</string>
+    <string name="web_action_previous">이전의</string>
+    <string name="web_action_next">다음</string>
+    <string name="web_btn_back_to_photos">사진으로 돌아가기</string>
+    <string name="web_error_no_preview">이 파일 형식에는 미리보기를 사용할 수 없습니다.</string>
     <string name="web_player_slow_start_hint">기다려...</string>
     <string name="web_selection_count">%1$d</string>
     <string name="web_library_desc_download">보거나 가져가거나.</string>

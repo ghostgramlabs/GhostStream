@@ -58,8 +58,8 @@
     <string name="settings_show_recent_shares_desc">Conserve un court historique sur cet appareil.</string>
     <string name="settings_auto_stop">Arrêt automatique</string>
     <string name="settings_auto_stop_never">Jamais</string>
-    <string name="settings_auto_stop_15m">15 minutes</string>
-    <string name="settings_auto_stop_30m">30 minutes</string>
+    <string name="settings_auto_stop_15m">15 min</string>
+    <string name="settings_auto_stop_30m">30 min</string>
     <string name="settings_auto_stop_1h">1 heure</string>
     <string name="settings_connection_alerts">Alertes de connexion</string>
     <string name="settings_connection_alerts_desc">Avertit lorsqu\'un nouvel appareil rejoint la session.</string>
@@ -75,7 +75,7 @@
     <string name="settings_use_pin_desc">Demande un code aux navigateurs pour accéder à la session.</string>
     <string name="settings_new_pin_each_time">Nouveau PIN à chaque fois</string>
     <string name="settings_new_pin_each_time_desc">Génère un nouveau code pour chaque session.</string>
-    <string name="settings_pin_label">Code PIN</string>
+    <string name="settings_pin_label">PIN</string>
     <string name="settings_pin_placeholder">4-6 chiffres</string>
     <string name="settings_approve_file_uploads">Approuver les envois</string>
     <string name="settings_approve_file_uploads_desc">Demande la permission avant que les navigateurs n\'envoient des fichiers.</string>
@@ -269,7 +269,7 @@
     <string name="session_state_network_needed">Réseau requis</string>
     <string name="session_network_hotspot">Point d\'accès</string>
     <string name="session_network_wifi">Wi-Fi</string>
-    <string name="session_network_local">Locale</string>
+    <string name="session_network_local">Local</string>
     <string name="session_network_offline">Hors ligne</string>
     <string name="history_title">Activité récente</string>
     <string name="history_tab_all">Historique</string>
@@ -309,7 +309,7 @@
     <string name="service_start_failed">Échec du démarrage du service.</string>
     <string name="service_auto_stop_message">Arrêt pour inactivité.</string>
     <string name="service_upload_request_title">Fichier entrant</string>
-    <string name="service_upload_request_text">%1$s (%2$s) depuis %3$s</string>
+    <string name="service_upload_request_text">%1$s de %3$s</string>
     <string name="service_upload_progress_title">Réception de %1$s</string>
     <string name="service_upload_progress_text">%1$d%% (%2$s)</string>
     <string name="service_upload_progress_text_unknown">Réception de %1$s</string>
@@ -330,7 +330,7 @@
     <string name="library_header_title">Contenu actuel</string>
     <string name="library_header_body">Éléments accessibles pour cette session.</string>
     <string name="library_header_subtitles">Ajoutez des sous-titres .srt pour le lecteur web.</string>
-    <string name="library_info_items">Éléments</string>
+    <string name="library_info_items">Items</string>
     <string name="library_info_folders">Dossiers</string>
     <string name="library_info_size">Taille</string>
     <string name="library_empty_title">Partage vide</string>
@@ -379,7 +379,7 @@
     <string name="library_browser_prep_body">Crée une version légère pour le web. L\'original ne change pas.</string>
     <string name="library_folder_summary">%1$d fichiers | %2$s</string>
     <string name="library_unavailable">Indisponible</string>
-    <string name="library_direct_play">Lecture directe</string>
+    <string name="library_direct_play">Direct Play</string>
     <string name="library_subtitle">Sous-titre</string>
     <string name="library_selected">Sélectionné</string>
     <string name="library_tap_to_select">Appuyer</string>
@@ -402,7 +402,7 @@
     <string name="library_compat_preparing">Préparation</string>
     <string name="library_compat_ready">Prêt</string>
     <string name="library_compat_unavailable">Non supporté</string>
-    <string name="library_compat_message">%1$s| %2$s</string>
+    <string name="library_compat_message">%1$s | %2$s</string>
     <string name="selection_add_files_title">Ajouter des fichiers</string>
     <string name="selection_add_files_body">Choisissez quoi partager.</string>
     <string name="selection_add_selected">Ajouter</string>
@@ -473,7 +473,7 @@
     <string name="sharing_server_start_failed">Erreur serveur : %1$s</string>
     <string name="sharing_blocked_by_live_screen">Arrêtez Mirroring d\'abord.</string>
     <string name="sharing_stopped">Partage arrêté.</string>
-    <string name="sharing_device_android">Androïde</string>
+    <string name="sharing_device_android">Android</string>
     <string name="network_helper_wifi_ready">Réseau prêt. Hotspot si besoin.</string>
     <string name="network_helper_local_ready">Réseau local OK.</string>
     <string name="network_helper_wifi_found">IP trouvée.</string>
@@ -513,7 +513,7 @@
     <string name="home_media_server_active">Tout est partagé</string>
     <string name="home_btn_stop_media_server">Vider</string>
     <string name="web_folders_title">Dossiers</string>
-    <string name="web_folder_items">%1$d éléments</string>
+    <string name="web_folder_items">%1$d items</string>
     <string name="web_btn_back_to_folders">Retour</string>
     <string name="web_all_media">Tous les médias</string>
     <string name="home_nearby_title">Réseau</string>
@@ -540,7 +540,7 @@
     <string name="web_hero_desc2">Envoi rapide.</string>
     <string name="web_hero_desc3">Local et privé.</string>
     <string name="web_hero_stat_shared">Actif</string>
-    <string name="web_items">éléments</string>
+    <string name="web_items">items</string>
     <string name="web_hero_stat_ready">Prêt</string>
     <string name="web_hero_stat_access">Accès</string>
     <string name="web_access_pin">PIN</string>
@@ -645,6 +645,7 @@
     <string name="web_btn_download_all">Tout sauver</string>
     <string name="web_btn_download_selected">Sélection</string>
     <string name="web_btn_download_original">Original</string>
+    <string name="web_btn_try_original">Essayer le fichier original</string>
     <string name="web_btn_fullscreen">Vollbild</string>
     <string name="web_error_streaming_codec">Codec non supporté. Sauvez-le.</string>
     <string name="web_error_downloads_disabled">Downloads OFF.</string>
@@ -656,6 +657,16 @@
     <string name="web_status_selection_on">Sélection ON</string>
     <string name="web_btn_select_all">Tout</string>
     <string name="web_btn_clear_selection">Vider</string>
+    <string name="web_status_selected">Sélectionné</string>
+    <string name="web_action_select">Sélectionner</string>
+    <string name="web_btn_retry">Réessayer</string>
+    <string name="web_status_preparing">Préparation...</string>
+    <string name="web_btn_prepare_for_browser">Préparer pour le navigateur</string>
+    <string name="web_error_video_opening">Cette vidéo est en cours d\'ouverture. Réessayez dans un instant.</string>
+    <string name="web_action_previous">Précédent</string>
+    <string name="web_action_next">Suivant</string>
+    <string name="web_btn_back_to_photos">Retour aux photos</string>
+    <string name="web_error_no_preview">Aperçu non disponible per ce type de fichier</string>
     <string name="web_player_slow_start_hint">Un instant...</string>
     <string name="web_selection_count">%1$d sélectionnés</string>
     <string name="web_library_desc_download">Explorez ou sauvez.</string>
@@ -706,8 +717,8 @@
     <string name="web_player_status_ready">OK</string>
     <string name="web_player_status_analyzing">Analyse</string>
     <string name="web_player_status_finalizing">Final</string>
-    <string name="web_player_status_stalled">Bloqué</string>
-    <string name="web_player_status_playing">Lecture</string>
+    <string name="web_player_status_stalled">Stuck</string>
+    <string name="web_player_status_playing">Playing</string>
     <string name="web_player_progress_preparing">Préparation</string>
     <string name="web_player_progress_converting">Conversion</string>
     <string name="web_player_status_failed">Erreur</string>
@@ -730,25 +741,25 @@
     <string name="web_now_playing">Lecture</string>
     <string name="common_resume">Reprendre</string>
     <string name="web_status_init_progress">0%</string>
-    <string name="common_play">Lecture</string>
+    <string name="common_play">Play</string>
     <string name="common_pause">Pause</string>
-    <string name="common_unit_b">o</string>
-    <string name="common_unit_kb">Ko</string>
-    <string name="common_unit_mb">Mo</string>
-    <string name="common_unit_gb">Go</string>
-    <string name="common_unit_tb">To</string>
+    <string name="common_unit_b">B</string>
+    <string name="common_unit_kb">KB</string>
+    <string name="common_unit_mb">MB</string>
+    <string name="common_unit_gb">GB</string>
+    <string name="common_unit_tb">TB</string>
     <string name="common_unit_s">s</string>
     <string name="common_unit_m">m</string>
     <string name="common_unit_h">h</string>
-    <string name="common_byte_format_decimal">%1$.1f%2$s</string>
-    <string name="common_byte_format_integer">%1$d%2$s</string>
-    <string name="common_duration_format_m_s">%1$dm%2$ds</string>
-    <string name="common_duration_format_h_m">%1$dheures%2$dheures</string>
+    <string name="common_byte_format_decimal">%1$.1f %2$s</string>
+    <string name="common_byte_format_integer">%1$d %2$s</string>
+    <string name="common_duration_format_m_s">%1$dm %2$ds</string>
+    <string name="common_duration_format_h_m">%1$dh %2$dm</string>
     <string name="common_duration_format_s">%1$ds</string>
-    <string name="common_duration_timestamp_m_s">%1$d :%2$02d</string>
-    <string name="common_duration_timestamp_h_m_s">%1$d :%2$02d :%3$02d</string>
-    <string name="service_file_index_pattern">%1$s(%2$d/%3$d)</string>
-    <string name="service_upload_progress_subtext_pattern">%1$s/%2$s</string>
+    <string name="common_duration_timestamp_m_s">%1$d:%2$02d</string>
+    <string name="common_duration_timestamp_h_m_s">%1$d:%2$02d:%3$02d</string>
+    <string name="service_file_index_pattern">%1$s (%2$d/%3$d)</string>
+    <string name="service_upload_progress_subtext_pattern">%1$s / %2$s</string>
     <string name="help_section_media_server">Serveur Médias</string>
     <string name="help_line_media_server_1">Hub complet.</string>
     <string name="help_line_media_server_2">Auto-classé.</string>
@@ -766,13 +777,13 @@
     <string name="settings_dlna">DLNA</string>
     <string name="settings_dlna_desc">TV/VLC trouvent l\'hôte.</string>
     <string name="dlna_server_name">DirectServe Media Server</string>
-    <string name="dlna_server_name_template">Service Direct (%1$s)</string>
+    <string name="dlna_server_name_template">DirectServe (%1$s)</string>
     <string name="web_action_download_zip">Sauver ZIP</string>
     <string name="web_btn_download_all_zip">Tout ZIP</string>
     <string name="web_btn_download_selected_zip">Sélect. ZIP</string>
     <string name="web_error_no_items_selected">Rien choisi.</string>
     <string name="web_download_started_hint">Batch-Laden...</string>
-    <string name="playback_mode_direct">Lecture directe</string>
+    <string name="playback_mode_direct">Direct Play</string>
     <string name="playback_mode_repackaging">Repackage</string>
     <string name="playback_mode_transcoding">Transcode</string>
     <string name="playback_mode_analyzing">Analyse</string>
@@ -958,15 +969,15 @@
         <item quantity="other">%1$s a rejoint. %2$d actifs.</item>
     </plurals>
     <plurals name="service_devices_connected">
-        <item quantity="one">%1$d appareil connecté</item>
+        <item quantity="one">1 appareil connecté</item>
         <item quantity="other">%1$d appareils connectés</item>
     </plurals>
     <plurals name="library_items_in_view">
-        <item quantity="one">%1$d élément en vue</item>
+        <item quantity="one">1 élément</item>
         <item quantity="other">%1$d éléments</item>
     </plurals>
     <plurals name="home_saved_shares_items_count">
-        <item quantity="one">%1$d article</item>
-        <item quantity="other">%1$d éléments</item>
+        <item quantity="one">1 item</item>
+        <item quantity="other">%1$d items</item>
     </plurals>
 </resources>

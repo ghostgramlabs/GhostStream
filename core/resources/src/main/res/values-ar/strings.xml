@@ -645,6 +645,7 @@
     <string name="web_btn_download_all">تحميل الكل</string>
     <string name="web_btn_download_selected">تحميل المحدد</string>
     <string name="web_btn_download_original">تحميل الأصلي</string>
+    <string name="web_btn_try_original">جرب الملف الأصلي</string>
     <string name="web_btn_fullscreen">شاشة كاملة</string>
     <string name="web_error_streaming_codec">برنامج الترميز لهذا الملف غير مدعوم من قبل خادم Android للبث. يرجى التنزيل.</string>
     <string name="web_error_downloads_disabled">يتم تعطيل التنزيلات من قبل مالك الجهاز.</string>
@@ -656,6 +657,16 @@
     <string name="web_status_selection_on">الاختيار قيد التشغيل</string>
     <string name="web_btn_select_all">حدد الكل</string>
     <string name="web_btn_clear_selection">واضح</string>
+    <string name="web_status_selected">مختارة</string>
+    <string name="web_action_select">يختار</string>
+    <string name="web_btn_retry">أعد المحاولة</string>
+    <string name="web_status_preparing">جارٍ التحضير…</string>
+    <string name="web_btn_prepare_for_browser">الاستعداد للمتصفح</string>
+    <string name="web_error_video_opening">هذا الفيديو لا يزال مفتوحا. حاول مرة أخرى بعد قليل.</string>
+    <string name="web_action_previous">سابق</string>
+    <string name="web_action_next">التالي</string>
+    <string name="web_btn_back_to_photos">العودة إلى الصور</string>
+    <string name="web_error_no_preview">لا تتوفر معاينة لهذا النوع من الملفات</string>
     <string name="web_player_slow_start_hint">قد يستغرق فتح هذا الفيديو وقتًا أطول قليلاً على بعض الأجهزة.</string>
     <string name="web_selection_count">تم تحديد %1$d</string>
     <string name="web_library_desc_download">تصفح هذه المشاركة أو قم بتنزيل ما تحتاجه.</string>

@@ -645,6 +645,7 @@
     <string name="web_btn_download_all">İndir</string>
     <string name="web_btn_download_selected">İndir</string>
     <string name="web_btn_download_original">Normal</string>
+    <string name="web_btn_try_original">Orijinal dosyayı deneyin</string>
     <string name="web_btn_fullscreen">Tam Ekran</string>
     <string name="web_error_streaming_codec">Oynamıyor. İndir.</string>
     <string name="web_error_downloads_disabled">Kapalı.</string>
@@ -656,6 +657,16 @@
     <string name="web_status_selection_on">AÇIK</string>
     <string name="web_btn_select_all">Hepsi</string>
     <string name="web_btn_clear_selection">İptal</string>
+    <string name="web_status_selected">Seçildi</string>
+    <string name="web_action_select">Seçme</string>
+    <string name="web_btn_retry">Yeniden dene</string>
+    <string name="web_status_preparing">Hazırlanıyor…</string>
+    <string name="web_btn_prepare_for_browser">Tarayıcı için hazırlanın</string>
+    <string name="web_error_video_opening">Bu video hala açılıyor. Birazdan tekrar deneyin.</string>
+    <string name="web_action_previous">Öncesi</string>
+    <string name="web_action_next">Sonraki</string>
+    <string name="web_btn_back_to_photos">Fotoğraflara dön</string>
+    <string name="web_error_no_preview">Bu dosya türü için önizleme mevcut değil</string>
     <string name="web_player_slow_start_hint">Bekle...</string>
     <string name="web_selection_count">%1$d</string>
     <string name="web_library_desc_download">Gör veya al.</string>

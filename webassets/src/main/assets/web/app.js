@@ -1533,7 +1533,7 @@ function renderFolderGrid(folders) {
     const isSelected = state.selected.has(folder.id);
     return `
       <div class="gs-folder-card${state.selectMode ? " gs-card-selectable" : ""}${isSelected ? " is-selected" : ""}" data-select-card="${folder.id}">
-        ${state.selectMode ? `<button class="gs-card-toggle is-visible" data-select-toggle="${folder.id}">${isSelected ? "Selected" : "Select"}</button>` : ""}
+        ${state.selectMode ? `<button class="gs-card-toggle is-visible" data-select-toggle="${folder.id}">${isSelected ? gsStr("web_status_selected", "Selected") : gsStr("web_action_select", "Select")}</button>` : ""}
         <a class="gs-folder-link" data-link href="/?folderId=${encodeURIComponent(folder.id)}&folderName=${encodeURIComponent(folder.displayName)}">
           <div class="gs-folder-icon">
             <svg fill="currentColor" viewBox="0 0 24 24"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>
@@ -1994,11 +1994,11 @@ function renderVideoStage(item, showPlayer) {
         <div class="gs-compat-progress-shell" data-compat-progress-wrap>${renderCompatibilityProgress(item)}</div>
         <div class="gs-toolbar-actions gs-mt-2">
           ${status === "FAILED" || status === "STALLED"
-            ? `<button class="gs-btn gs-btn-accent gs-btn-sm" onclick="retryPreparation('${item.id}')">Retry</button>`
+            ? `<button class="gs-btn gs-btn-accent gs-btn-sm" onclick="retryPreparation('${item.id}')">${gsStr("web_btn_retry", "Retry")}</button>`
             : isActive
-              ? `<button class="gs-btn gs-btn-sm" disabled>Preparing...</button>`
+              ? `<button class="gs-btn gs-btn-sm" disabled>${gsStr("web_status_preparing", "Preparing...")}</button>`
               : item.playbackMode !== "DIRECT"
-                ? `<button class="gs-btn gs-btn-accent gs-btn-sm" onclick="startPreparation('${item.id}')">Prepare for browser</button>`
+                ? `<button class="gs-btn gs-btn-accent gs-btn-sm" onclick="startPreparation('${item.id}')">${gsStr("web_btn_prepare_for_browser", "Prepare for browser")}</button>`
                 : ""}
           ${!state.bootstrap?.preventDownload ? `<button class="gs-btn gs-btn-sm" onclick="playOriginalFile('${item.id}')">${gsStr("web_btn_try_original", "Try original file")}</button>` : ""}
         </div>
@@ -2782,7 +2782,7 @@ function hydrateVideoPlayer(item, options = {}) {
         ? (state.bootstrap?.preventDownload
           ? gsStr("web_error_video_start_no_dl", "This browser could not play the video. The server is preparing a compatible version.")
           : gsStr("web_error_video_start", "This browser could not start the video. Try again or download the original file."))
-        : "This video is still opening. Try again in a moment.";
+        : gsStr("web_error_video_opening", "This video is still opening. Try again in a moment.");
     }
     if (isDirectAttempt && !state.compatAutoRetries[item.id]) {
       state.compatAutoRetries[item.id] = true;
@@ -3008,9 +3008,9 @@ async function renderPhotoViewer(id) {
             <div class="gs-meta">${fmtBytes(item.sizeBytes)}</div>
           </div>
           <div class="gs-toolbar-actions">
-            ${prev ? `<a class="gs-btn gs-btn-sm" data-link href="/photo/${prev}">Previous</a>` : ""}
-            ${next ? `<a class="gs-btn gs-btn-sm" data-link href="/photo/${next}">Next</a>` : ""}
-            <a class="gs-btn gs-btn-sm" data-link href="/photos">Gallery</a>
+            ${prev ? `<a class="gs-btn gs-btn-sm" data-link href="/photo/${prev}">${gsStr("web_action_previous", "Previous")}</a>` : ""}
+            ${next ? `<a class="gs-btn gs-btn-sm" data-link href="/photo/${next}">${gsStr("web_action_next", "Next")}</a>` : ""}
+            <a class="gs-btn gs-btn-sm" data-link href="/photos">${gsStr("web_btn_back_to_photos", "Gallery")}</a>
             ${allowDownloads ? `<a class="gs-btn gs-btn-download" href="${item.downloadUrl}">${gsStr("web_btn_download_original", "Download original")}</a>` : ""}
           </div>
         </div>
@@ -3018,7 +3018,7 @@ async function renderPhotoViewer(id) {
           ? `<iframe class="gs-preview gs-preview-pdf" src="${item.streamUrl}" title="${esc(item.title)}"></iframe>`
           : (item.category === "photo" || (item.mimeType && item.mimeType.startsWith("image/")))
             ? `<img class="gs-preview gs-photo-preview" src="${item.streamUrl}" alt="${esc(item.title)}">`
-            : `<div class="gs-preview gs-no-preview">No preview available for this file type</div>`}
+            : `<div class="gs-preview gs-no-preview">${gsStr("web_error_no_preview", "No preview available for this file type")}</div>`}
       </div>
     </section>
   `);
@@ -3055,7 +3055,7 @@ function renderLogin(errorMessage = "") {
       });
       navigate("/", true);
     } catch (error) {
-      renderLogin(error.message || "That PIN did not match.");
+      renderLogin(error.message || gsStr("web_error_pin_mismatch", "That PIN did not match."));
     }
   });
 }
@@ -3129,7 +3129,7 @@ function card(item, selectable = false) {
 
   return `
     <article class="gs-card gs-card--${item.category}${selectable && state.selectMode ? " gs-card-selectable" : ""}${state.selected.has(item.id) ? " is-selected" : ""}" data-select-card="${selectable ? item.id : ""}">
-      ${selectable ? `<button class="gs-card-toggle${state.selectMode ? " is-visible" : ""}" data-select-toggle="${item.id}">${state.selected.has(item.id) ? "Selected" : "Select"}</button>` : ""}
+      ${selectable ? `<button class="gs-card-toggle${state.selectMode ? " is-visible" : ""}" data-select-toggle="${item.id}">${state.selected.has(item.id) ? gsStr("web_status_selected", "Selected") : gsStr("web_action_select", "Select")}</button>` : ""}
       ${item.thumbnailUrl
         ? `<img class="gs-card-img" loading="lazy" decoding="async" fetchpriority="low" src="${THUMBNAIL_PLACEHOLDER_SRC}" data-thumb-src="${item.thumbnailUrl}" data-thumb-state="idle" alt="">`
         : `<div class="gs-card-img gs-card-placeholder"><span>${item.category === "file" ? fileTypeLabel(item.mimeType, item.title) : esc(item.category.toUpperCase())}</span></div>`}

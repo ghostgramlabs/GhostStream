@@ -645,6 +645,7 @@
     <string name="web_btn_download_all">Скачать всё</string>
     <string name="web_btn_download_selected">Скачать выбранное</string>
     <string name="web_btn_download_original">Оригинал</string>
+    <string name="web_btn_try_original">Попробуйте оригинальный файл</string>
     <string name="web_btn_fullscreen">На весь экран</string>
     <string name="web_error_streaming_codec">Кодек не поддерживается. Скачайте файл.</string>
     <string name="web_error_downloads_disabled">Скачивание отключено.</string>
@@ -656,6 +657,16 @@
     <string name="web_status_selection_on">Выбор ВКЛ</string>
     <string name="web_btn_select_all">Всё</string>
     <string name="web_btn_clear_selection">Очистить</string>
+    <string name="web_status_selected">Выбрано</string>
+    <string name="web_action_select">Выбирать</string>
+    <string name="web_btn_retry">Повторить попытку</string>
+    <string name="web_status_preparing">Подготовка…</string>
+    <string name="web_btn_prepare_for_browser">Подготовьтесь к использованию браузера</string>
+    <string name="web_error_video_opening">Это видео все еще открывается. Повторите попытку через минуту.</string>
+    <string name="web_action_previous">Предыдущий</string>
+    <string name="web_action_next">Следующий</string>
+    <string name="web_btn_back_to_photos">Вернуться к фотографиям</string>
+    <string name="web_error_no_preview">Для этого типа файла предварительный просмотр недоступен.</string>
     <string name="web_player_slow_start_hint">Может занять время.</string>
     <string name="web_selection_count">Выбрано: %1$d</string>
     <string name="web_library_desc_download">Просматривайте или скачивайте.</string>

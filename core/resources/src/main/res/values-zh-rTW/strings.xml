@@ -645,6 +645,7 @@
     <string name="web_btn_download_all">下載全部</string>
     <string name="web_btn_download_selected">下載</string>
     <string name="web_btn_download_original">原檔案</string>
+    <string name="web_btn_try_original">嘗試原始文件</string>
     <string name="web_btn_fullscreen">全螢幕</string>
     <string name="web_error_streaming_codec">無法播放。請下載。</string>
     <string name="web_error_downloads_disabled">已關閉。</string>
@@ -656,6 +657,16 @@
     <string name="web_status_selection_on">開啟</string>
     <string name="web_btn_select_all">全部</string>
     <string name="web_btn_clear_selection">取消</string>
+    <string name="web_status_selected">已選擇</string>
+    <string name="web_action_select">選擇</string>
+    <string name="web_btn_retry">重試</string>
+    <string name="web_status_preparing">正在準備…</string>
+    <string name="web_btn_prepare_for_browser">準備瀏覽器</string>
+    <string name="web_error_video_opening">該視頻仍在打開。稍後再試一次。</string>
+    <string name="web_action_previous">以前的</string>
+    <string name="web_action_next">下一個</string>
+    <string name="web_btn_back_to_photos">回照片</string>
+    <string name="web_error_no_preview">此文件類型沒有可用的預覽</string>
     <string name="web_player_slow_start_hint">稍等...</string>
     <string name="web_selection_count">%1$d</string>
     <string name="web_library_desc_download">觀看或保存。</string>

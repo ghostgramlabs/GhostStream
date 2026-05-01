@@ -645,6 +645,7 @@
     <string name="web_btn_download_all">Scarica tutto</string>
     <string name="web_btn_download_selected">Scarica selezione</string>
     <string name="web_btn_download_original">Originale</string>
+    <string name="web_btn_try_original">Prova il file originale</string>
     <string name="web_btn_fullscreen">Vollbild</string>
     <string name="web_error_streaming_codec">Codec non supportato. Scarica.</string>
     <string name="web_error_downloads_disabled">Downloads OFF.</string>
@@ -656,6 +657,16 @@
     <string name="web_status_selection_on">Selezione ON</string>
     <string name="web_btn_select_all">Tutto</string>
     <string name="web_btn_clear_selection">Pulisci</string>
+    <string name="web_status_selected">Selezionato</string>
+    <string name="web_action_select">Seleziona</string>
+    <string name="web_btn_retry">Riprova</string>
+    <string name="web_status_preparing">Preparazione...</string>
+    <string name="web_btn_prepare_for_browser">Prepara per il browser</string>
+    <string name="web_error_video_opening">Questo video si sta ancora aprendo. Riprova tra un momento.</string>
+    <string name="web_action_previous">Precedente</string>
+    <string name="web_action_next">Successivo</string>
+    <string name="web_btn_back_to_photos">Torna alle foto</string>
+    <string name="web_error_no_preview">Anteprima non disponibile per questo tipo di file</string>
     <string name="web_player_slow_start_hint">Un momento...</string>
     <string name="web_selection_count">%1$d scelti</string>
     <string name="web_library_desc_download">Sfoglia o scarica.</string>
@@ -950,23 +961,23 @@
     <string name="history_clear_title">Cancella cronologia trasferimenti</string>
     <string name="history_clear_message">Sei sicuro di voler eliminare definitivamente tutti i record della cronologia dei trasferimenti? Questa azione non può essere annullata.</string>
     <plurals name="service_new_devices_connected">
-        <item quantity="one">Dispositivo unito</item>
-        <item quantity="other">%1$d dispositivi uniti</item>
+        <item quantity="one">New device connected</item>
+        <item quantity="other">%1$d new devices connected</item>
     </plurals>
     <plurals name="service_devices_joined">
-        <item quantity="one">%1$s si è unito.</item>
-        <item quantity="other">%1$s si è unito. %2$d attivi.</item>
+        <item quantity="one">%1$s joined your DirectServe session.</item>
+        <item quantity="other">%1$s joined. %2$d devices are connected now.</item>
     </plurals>
     <plurals name="service_devices_connected">
-        <item quantity="one">%1$d dispositivo connesso</item>
-        <item quantity="other">%1$d dispositivi connessi</item>
+        <item quantity="one">%1$d device connected</item>
+        <item quantity="other">%1$d devices connected</item>
     </plurals>
     <plurals name="library_items_in_view">
-        <item quantity="one">%1$d elemento in visualizzazione</item>
-        <item quantity="other">%1$d elementi</item>
+        <item quantity="one">%1$d item in view</item>
+        <item quantity="other">%1$d items in view</item>
     </plurals>
     <plurals name="home_saved_shares_items_count">
-        <item quantity="one">%1$d articolo</item>
-        <item quantity="other">%1$d elementi</item>
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
     </plurals>
 </resources>

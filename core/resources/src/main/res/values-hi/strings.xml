@@ -645,6 +645,7 @@
     <string name="web_btn_download_all">डाउनलोड</string>
     <string name="web_btn_download_selected">डाउनलोड</string>
     <string name="web_btn_download_original">नॉर्मल</string>
+    <string name="web_btn_try_original">ओरिजिनल फाइल आज़माएं</string>
     <string name="web_btn_fullscreen">फुल</string>
     <string name="web_error_streaming_codec">नहीं चलेगा। डाउनलोड करें।</string>
     <string name="web_error_downloads_disabled">बंद।</string>
@@ -656,6 +657,16 @@
     <string name="web_status_selection_on">ऑन</string>
     <string name="web_btn_select_all">सब</string>
     <string name="web_btn_clear_selection">रद्द</string>
+    <string name="web_status_selected">चुना गया</string>
+    <string name="web_action_select">चुनें</string>
+    <string name="web_btn_retry">फिर से कोशिश</string>
+    <string name="web_status_preparing">तैयारी हो रही है...</string>
+    <string name="web_btn_prepare_for_browser">ब्राउज़र के लिए तैयार करें</string>
+    <string name="web_error_video_opening">यह वीडियो अभी भी खुल रहा है। थोड़ी देर में पुनः प्रयास करें।</string>
+    <string name="web_action_previous">पिछला</string>
+    <string name="web_action_next">अगला</string>
+    <string name="web_btn_back_to_photos">फोटो पर वापस जाएं</string>
+    <string name="web_error_no_preview">इस फ़ाइल प्रकार के लिए कोई पूर्वावलोकन उपलब्ध नहीं है</string>
     <string name="web_player_slow_start_hint">इंतज़ार...</string>
     <string name="web_selection_count">%1$d</string>
     <string name="web_library_desc_download">देखें या लें।</string>
@@ -950,23 +961,23 @@
     <string name="history_clear_title">स्थानांतरण इतिहास साफ़ करें</string>
     <string name="history_clear_message">क्या आप वाकई सभी स्थानांतरण इतिहास रिकॉर्ड को स्थायी रूप से हटाना चाहते हैं? इस एक्शन को वापस नहीं किया जा सकता।</string>
     <plurals name="service_new_devices_connected">
-        <item quantity="one">डिवाइस जुड़ा</item>
-        <item quantity="other">%1$d डिवाइस</item>
+        <item quantity="one">New device connected</item>
+        <item quantity="other">%1$d new devices connected</item>
     </plurals>
     <plurals name="service_devices_joined">
-        <item quantity="one">%1$s आया।</item>
-        <item quantity="other">%1$s आया (%2$d)।</item>
+        <item quantity="one">%1$s joined your DirectServe session.</item>
+        <item quantity="other">%1$s joined. %2$d devices are connected now.</item>
     </plurals>
     <plurals name="service_devices_connected">
-        <item quantity="one">%1$d डिवाइस कनेक्ट हुआ</item>
-        <item quantity="other">%1$d डिवाइस</item>
+        <item quantity="one">%1$d device connected</item>
+        <item quantity="other">%1$d devices connected</item>
     </plurals>
     <plurals name="library_items_in_view">
-        <item quantity="one">%1$d आइटम दृश्य में</item>
-        <item quantity="other">%1$d</item>
+        <item quantity="one">%1$d item in view</item>
+        <item quantity="other">%1$d items in view</item>
     </plurals>
     <plurals name="home_saved_shares_items_count">
-        <item quantity="one">%1$d आइटम</item>
-        <item quantity="other">%1$d</item>
+        <item quantity="one">%1$d item</item>
+        <item quantity="other">%1$d items</item>
     </plurals>
 </resources>

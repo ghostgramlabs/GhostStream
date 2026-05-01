@@ -645,6 +645,7 @@
     <string name="web_btn_download_all">Tải tất cả</string>
     <string name="web_btn_download_selected">Tải</string>
     <string name="web_btn_download_original">Gốc</string>
+    <string name="web_btn_try_original">Thử tập tin gốc</string>
     <string name="web_btn_fullscreen">Toàn màn hình</string>
     <string name="web_error_streaming_codec">Không chạy. Tải.</string>
     <string name="web_error_downloads_disabled">Đã tắt.</string>
@@ -656,6 +657,16 @@
     <string name="web_status_selection_on">Bật</string>
     <string name="web_btn_select_all">Tất cả</string>
     <string name="web_btn_clear_selection">Bỏ</string>
+    <string name="web_status_selected">Đã chọn</string>
+    <string name="web_action_select">Lựa chọn</string>
+    <string name="web_btn_retry">Thử lại</string>
+    <string name="web_status_preparing">Chuẩn bị…</string>
+    <string name="web_btn_prepare_for_browser">Chuẩn bị cho trình duyệt</string>
+    <string name="web_error_video_opening">Video này vẫn đang mở. Hãy thử lại sau giây lát.</string>
+    <string name="web_action_previous">Trước</string>
+    <string name="web_action_next">Kế tiếp</string>
+    <string name="web_btn_back_to_photos">Quay lại ảnh</string>
+    <string name="web_error_no_preview">Không có bản xem trước cho loại tệp này</string>
     <string name="web_player_slow_start_hint">Đợi xíu...</string>
     <string name="web_selection_count">%1$d</string>
     <string name="web_library_desc_download">Xem hoặc lấy.</string>

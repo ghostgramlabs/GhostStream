@@ -645,6 +645,7 @@
     <string name="web_btn_download_all">அனைத்தையும் பதிவிறக்கு</string>
     <string name="web_btn_download_selected">தேர்ந்தெடுத்தவற்றைப் பதிவிறக்கு</string>
     <string name="web_btn_download_original">அசல் பதிவிறக்கம்</string>
+    <string name="web_btn_try_original">அசல் கோப்பை முயற்சிக்கவும்</string>
     <string name="web_btn_fullscreen">முழுத் திரை</string>
     <string name="web_error_streaming_codec">இக்கோப்பை நேரடியாக இயக்க முடியாது, பதிவிறக்கவும்.</string>
     <string name="web_error_downloads_disabled">பதிவிறக்கம் முடக்கப்பட்டுள்ளது.</string>
@@ -656,6 +657,16 @@
     <string name="web_status_selection_on">தேர்வு செய்யும் முறை</string>
     <string name="web_btn_select_all">அனைத்தையும் தேர்ந்தெடு</string>
     <string name="web_btn_clear_selection">நீக்கு</string>
+    <string name="web_status_selected">தேர்ந்தெடுக்கப்பட்டது</string>
+    <string name="web_action_select">தேர்ந்தெடு</string>
+    <string name="web_btn_retry">மீண்டும் முயற்சிக்கவும்</string>
+    <string name="web_status_preparing">தயாராகிறது…</string>
+    <string name="web_btn_prepare_for_browser">உலாவிக்குத் தயாராகுங்கள்</string>
+    <string name="web_error_video_opening">இந்த வீடியோ இன்னும் திறக்கப்படுகிறது. சிறிது நேரத்தில் மீண்டும் முயற்சிக்கவும்.</string>
+    <string name="web_action_previous">முந்தைய</string>
+    <string name="web_action_next">அடுத்து</string>
+    <string name="web_btn_back_to_photos">புகைப்படங்களுக்குத் திரும்பு</string>
+    <string name="web_error_no_preview">இந்தக் கோப்பு வகைக்கான மாதிரிக்காட்சி இல்லை</string>
     <string name="web_player_slow_start_hint">வீடியோ தொடங்கச் சிறிது நேரம் ஆகலாம்.</string>
     <string name="web_selection_count">%1$d தேர்ந்தெடுக்கப்பட்டது</string>
     <string name="web_library_desc_download">பகிரப்பட்டவற்றைப் பதிவிறக்கவும்.</string>

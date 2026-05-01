@@ -645,6 +645,7 @@
     <string name="web_btn_download_all">Unduh Semua</string>
     <string name="web_btn_download_selected">Unduh</string>
     <string name="web_btn_download_original">Asli</string>
+    <string name="web_btn_try_original">Coba file asli</string>
     <string name="web_btn_fullscreen">Penuh</string>
     <string name="web_error_streaming_codec">Tidak Jalan. Unduh.</string>
     <string name="web_error_downloads_disabled">Mati.</string>
@@ -656,6 +657,16 @@
     <string name="web_status_selection_on">Nyala</string>
     <string name="web_btn_select_all">Semua</string>
     <string name="web_btn_clear_selection">Batal</string>
+    <string name="web_status_selected">Terpilih</string>
+    <string name="web_action_select">Memilih</string>
+    <string name="web_btn_retry">Mencoba kembali</string>
+    <string name="web_status_preparing">Mempersiapkan…</string>
+    <string name="web_btn_prepare_for_browser">Mempersiapkan peramban</string>
+    <string name="web_error_video_opening">Video ini masih dibuka. Coba lagi sebentar lagi.</string>
+    <string name="web_action_previous">Sebelumnya</string>
+    <string name="web_action_next">Berikutnya</string>
+    <string name="web_btn_back_to_photos">Kembali ke foto</string>
+    <string name="web_error_no_preview">Tidak ada pratinjau yang tersedia untuk jenis file ini</string>
     <string name="web_player_slow_start_hint">Tunggu...</string>
     <string name="web_selection_count">%1$d</string>
     <string name="web_library_desc_download">Lihat atau ambil.</string>

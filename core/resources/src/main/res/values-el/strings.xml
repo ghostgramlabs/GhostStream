@@ -645,6 +645,7 @@
     <string name="web_btn_download_all">Λήψη όλων</string>
     <string name="web_btn_download_selected">Επιλέχθηκε η λήψη</string>
     <string name="web_btn_download_original">Κατεβάστε το πρωτότυπο</string>
+    <string name="web_btn_try_original">Δοκιμάστε το αρχικό αρχείο</string>
     <string name="web_btn_fullscreen">Πλήρης οθόνη</string>
     <string name="web_error_streaming_codec">Ο κωδικοποιητής αυτού του αρχείου δεν υποστηρίζεται από τον διακομιστή Android για ροή. Παρακαλώ κατεβάστε.</string>
     <string name="web_error_downloads_disabled">Οι λήψεις είναι απενεργοποιημένες από τον κάτοχο της συσκευής.</string>
@@ -656,6 +657,16 @@
     <string name="web_status_selection_on">Επιλογή ενεργοποιημένη</string>
     <string name="web_btn_select_all">Επιλέξτε όλα</string>
     <string name="web_btn_clear_selection">Σαφής</string>
+    <string name="web_status_selected">Επιλεγμένο</string>
+    <string name="web_action_select">Επιλέγω</string>
+    <string name="web_btn_retry">Δοκιμάζω πάλι</string>
+    <string name="web_status_preparing">Προετοιμασία…</string>
+    <string name="web_btn_prepare_for_browser">Προετοιμασία για πρόγραμμα περιήγησης</string>
+    <string name="web_error_video_opening">Αυτό το βίντεο ανοίγει ακόμα. Δοκιμάστε ξανά σε λίγο.</string>
+    <string name="web_action_previous">Προηγούμενος</string>
+    <string name="web_action_next">Επόμενος</string>
+    <string name="web_btn_back_to_photos">Επιστροφή στις φωτογραφίες</string>
+    <string name="web_error_no_preview">Δεν υπάρχει διαθέσιμη προεπισκόπηση για αυτόν τον τύπο αρχείου</string>
     <string name="web_player_slow_start_hint">Αυτό το βίντεο μπορεί να χρειαστεί λίγο περισσότερο χρόνο για να ανοίξει σε ορισμένες συσκευές.</string>
     <string name="web_selection_count">%1$d επιλεγμένο</string>
     <string name="web_library_desc_download">Περιηγηθείτε σε αυτό το κοινόχρηστο στοιχείο ή κατεβάστε αυτό που χρειάζεστε.</string>
