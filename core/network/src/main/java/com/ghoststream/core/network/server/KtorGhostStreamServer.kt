@@ -774,7 +774,12 @@ class KtorGhostStreamServer(
                 rememberPlaybackOverride(
                     host = host,
                     item = item,
-                    mode = nextBrowserFallbackMode(currentMode),
+                    mode = nextBrowserFallbackMode(
+                        mode = currentMode,
+                        item = item,
+                        userAgent = call.request.header(HttpHeaders.UserAgent),
+                        caps = capabilityCache[host],
+                    ),
                     reason = "manual_retry",
                 )
                 compatibilityPipeline.invalidate(item.id)
@@ -844,7 +849,12 @@ class KtorGhostStreamServer(
                         rememberPlaybackOverride(
                             host = host,
                             item = item,
-                            mode = nextBrowserFallbackMode(currentMode),
+                            mode = nextBrowserFallbackMode(
+                                mode = currentMode,
+                                item = item,
+                                userAgent = call.request.header(HttpHeaders.UserAgent),
+                                caps = capabilityCache[host],
+                            ),
                             reason = "browser_decode_failed",
                         )
                         compatibilityPipeline.invalidate(item.id)
@@ -930,12 +940,14 @@ class KtorGhostStreamServer(
                     return@get
                 }
 
-                // Apple Gate: Safari/iOS/macOS must use HLS for any non-DIRECT playback
-                // because progressive MP4 fed mid-encode triggers MSE-style stalls (Safari's
-                // partial-content handling chokes on torn moof boxes the same way as Chromium).
-                // Reject the endpoint outright for Apple clients on non-DIRECT decisions and
-                // tell the player to switch to HLS.
+                val isFinalizedPreparedAsset = job.isFinalized || job.directReady
+
+                // Apple Gate: Safari/iOS/macOS must not use a growing prepared MP4
+                // because partial-content reads against a mid-write fMP4 can fail. Once
+                // the asset is finalized, the browser payload exposes this URL and the
+                // endpoint must allow it so iOS has a stable VOD source.
                 if (job.decision.mode != PlaybackMode.DIRECT &&
+                    !isFinalizedPreparedAsset &&
                     isAppleClient(
                         call.request.header(HttpHeaders.UserAgent),
                         capabilityCache[call.request.origin.remoteHost],
@@ -952,7 +964,7 @@ class KtorGhostStreamServer(
                 // Hard Gate: Only expose the prepared-file endpoint once the worker has marked
                 // the growing asset as playable for this session. PLAYABLE_NOW, directReady,
                 // and streamable all qualify here.
-                if (!preparedAsset.isComplete &&
+                if (!isFinalizedPreparedAsset &&
                     job.status != CompatibilityStatus.PLAYABLE_NOW &&
                     !job.directReady &&
                     !job.streamable
@@ -991,7 +1003,12 @@ class KtorGhostStreamServer(
                 rememberPlaybackOverride(
                     host = host,
                     item = item,
-                    mode = nextBrowserFallbackMode(currentMode),
+                    mode = nextBrowserFallbackMode(
+                        mode = currentMode,
+                        item = item,
+                        userAgent = call.request.header(HttpHeaders.UserAgent),
+                        caps = capabilityCache[host],
+                    ),
                     reason = "client_reported_failure",
                 )
                 compatibilityPipeline.invalidate(item.id)
@@ -2529,11 +2546,38 @@ class KtorGhostStreamServer(
     // TRANSCODE) used to make every browser-reported failure pay a full re-encode
     // even when a cheaper repackage would have worked. Walk the ladder one rung at
     // a time; TRANSCODE is the terminal mode.
-    private fun nextBrowserFallbackMode(mode: PlaybackMode): PlaybackMode = when (mode) {
-        PlaybackMode.DIRECT -> PlaybackMode.REMUX
-        PlaybackMode.REMUX -> PlaybackMode.TRANSMUX
-        PlaybackMode.TRANSMUX -> PlaybackMode.TRANSCODE
-        PlaybackMode.TRANSCODE -> PlaybackMode.TRANSCODE
+    private fun nextBrowserFallbackMode(
+        mode: PlaybackMode,
+        item: SharedItem? = null,
+        userAgent: String? = null,
+        caps: ClientCapabilities? = null,
+    ): PlaybackMode {
+        val isAppleFamily = isAppleClient(userAgent, caps)
+        if (isAppleFamily && mode == PlaybackMode.REMUX) {
+            return PlaybackMode.TRANSCODE
+        }
+        if (isAppleFamily && mode == PlaybackMode.DIRECT && item?.hasHevcSignal() == true) {
+            return PlaybackMode.TRANSCODE
+        }
+        return when (mode) {
+            PlaybackMode.DIRECT -> PlaybackMode.REMUX
+            PlaybackMode.REMUX -> PlaybackMode.TRANSMUX
+            PlaybackMode.TRANSMUX -> PlaybackMode.TRANSCODE
+            PlaybackMode.TRANSCODE -> PlaybackMode.TRANSCODE
+        }
+    }
+
+    private fun SharedItem.hasHevcSignal(): Boolean {
+        val videoCodec = metadata["video_codec"].orEmpty().lowercase(Locale.US)
+        val fileName = displayName.lowercase(Locale.US)
+        return videoCodec.contains("hevc") ||
+            videoCodec.contains("h265") ||
+            videoCodec.contains("h.265") ||
+            videoCodec.contains("hvc1") ||
+            videoCodec.contains("hev1") ||
+            fileName.contains("hevc") ||
+            fileName.contains("h265") ||
+            fileName.contains("h.265")
     }
 
     private fun rememberPlaybackOverride(
@@ -3478,7 +3522,7 @@ class KtorGhostStreamServer(
                         streamReady &&
                         hasProgressedAsset &&
                         decision.mode != PlaybackMode.DIRECT &&
-                        !isAppleClient
+                        (!isAppleClient || isComplete)
                     ) {
                         "/api/compat/${item.id}/file"
                     } else {
@@ -3520,7 +3564,7 @@ class KtorGhostStreamServer(
                 val canExposeMp4 = ready &&
                     job.decision.mode != PlaybackMode.DIRECT &&
                     job.preparedAsset != null &&
-                    !isAppleClient
+                    (!isAppleClient || isComplete)
                 return CompatibilityStatusPayload(
                     itemId = job.itemId,
                     playbackMode = job.decision.mode,
