@@ -30,6 +30,7 @@ const state = {
   musicPlayers: [],
   pendingUploadFiles: [],
   searchTimer: null,
+  searchSeq: 0,
   compatPollToken: 0,
   compatPollTimer: null,
   compatDirectFallbackTimer: null,
@@ -1395,10 +1396,20 @@ async function renderLibrary(category, title) {
   document.getElementById("libSearch")?.addEventListener("input", (event) => {
     state.query = event.target.value;
     clearTimeout(state.searchTimer);
-    state.searchTimer = setTimeout(() => {
+    state.searchTimer = setTimeout(async () => {
+      const seq = ++state.searchSeq;
       state.libraryCache.delete(libraryCacheKey(category, state.query, folderId));
-      renderLibrary(category, title);
-    }, 180);
+      const grid = document.getElementById("grid");
+      if (grid) grid.innerHTML = skeletons(6);
+      const page = await fetchLibraryPage(category, state.query, 0, LIBRARY_BATCH_SIZE, folderId);
+      if (seq !== state.searchSeq) return;
+      state.libraryItems = page.items;
+      state.libraryTotalCount = page.totalCount;
+      state.libraryHasMore = page.hasMore;
+      state.libraryLoadingMore = false;
+      renderLibraryGrid();
+      syncLibraryDownloadControls();
+    }, 300);
   });
 
   const cacheKey = libraryCacheKey(category, state.query, folderId);
@@ -1451,10 +1462,21 @@ async function renderFolders(title) {
   document.getElementById("folderSearch")?.addEventListener("input", (event) => {
     state.query = event.target.value;
     clearTimeout(state.searchTimer);
-    state.searchTimer = setTimeout(() => renderFolders(title), 180);
+    state.searchTimer = setTimeout(async () => {
+      const seq = ++state.searchSeq;
+      const grid = document.getElementById("grid");
+      if (grid) grid.innerHTML = skeletons(6);
+      const folders = await api(`/api/folders?q=${encodeURIComponent(state.query)}`);
+      if (seq !== state.searchSeq) return;
+      renderFolderGrid(folders);
+    }, 300);
   });
 
   const folders = await api(`/api/folders?q=${encodeURIComponent(state.query)}`);
+  renderFolderGrid(folders);
+}
+
+function renderFolderGrid(folders) {
   const grid = document.getElementById("grid");
   if (!grid) return;
 
@@ -1465,7 +1487,6 @@ async function renderFolders(title) {
 
   grid.innerHTML = folders.map(folder => {
     const isSelected = state.selected.has(folder.id);
-    const item = { id: folder.id, title: folder.displayName, category: "folder" };
     return `
       <div class="gs-folder-card${state.selectMode ? " gs-card-selectable" : ""}${isSelected ? " is-selected" : ""}" data-select-card="${folder.id}">
         ${state.selectMode ? `<button class="gs-card-toggle is-visible" data-select-toggle="${folder.id}">${isSelected ? "Selected" : "Select"}</button>` : ""}
@@ -1481,7 +1502,7 @@ async function renderFolders(title) {
       </div>
     `;
   }).join("");
-  
+
   if (state.selectMode) {
     bindSelectableCards();
   }
