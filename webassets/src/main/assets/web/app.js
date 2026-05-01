@@ -646,6 +646,11 @@ async function reportClientCapabilities() {
 // helpers (which themselves guard against prepared MP4).
 function hasUsableHlsPath(item) {
   if (!item || !item.hlsUrl || !item.streamReady) return false;
+  // iOS Safari treats EVENT-type playlists as live (no proper seek bar).
+  // Defer HLS until the playlist is finalized with VOD + ENDLIST so iOS
+  // gets a fully seekable scrub bar. Other Apple devices and TV browsers
+  // tolerate EVENT well enough that we keep the existing behavior.
+  if (detectBrowserOs() === "iOS" && !item.compatibilityComplete) return false;
   if (isAppleDevice() || isTvBrowser()) {
     return buildClientCapabilities().supportsHlsNatively === true;
   }
@@ -670,6 +675,11 @@ function shouldUseDirectCompatMp4(item) {
   // Once the prepared file is finalized, prepared MP4 is the cheapest path
   // (progressive Range, no MSE overhead).
   if (item.compatibilityComplete) return true;
+  // iOS Safari snaps far seeks back to the writer head on a growing .tmp
+  // file (no useful HLS fallback either, since EVENT playlists also lock
+  // iOS into a live UI). Defer playback to the finalized .mp4 so iOS gets
+  // a proper seekable VOD instead.
+  if (detectBrowserOs() === "iOS") return false;
   // While the prepared .tmp is still growing, far seeks land beyond the
   // writer head and the browser snaps back. HLS handles seek-beyond-buffer
   // gracefully (managed segment refetch + worker CRITICAL re-seek), so when
@@ -949,6 +959,13 @@ function shouldStartCompatibilityPlayback(item, job = null) {
 
   const effectiveStatus = job?.status || item.compatibilityStatus;
   if (effectiveStatus === "FAILED" || effectiveStatus === "STALLED") return false;
+
+  // iOS-only: defer non-DIRECT playback until the prep job is fully complete.
+  // EVENT-type HLS shows as live in Safari (no proper seek bar) and the
+  // growing prepared .tmp causes far-seeks to snap back to the writer head.
+  // Wait for the finalized asset so iOS users get a true seekable VOD.
+  const effectiveCompatComplete = job?.compatibilityComplete ?? item.compatibilityComplete;
+  if (detectBrowserOs() === "iOS" && !effectiveCompatComplete) return false;
   const effectiveItem = {
     ...item,
     playbackMode: job?.playbackMode || item.playbackMode,
@@ -1897,7 +1914,11 @@ async function renderVideoPlayer(id) {
   // Decide the initial view state
   const isDirect = item.playbackMode === "DIRECT";
   const isStreamLive = Boolean(item.streamReady);
-  const isPreparedReady = Boolean(item.preparedMp4Url);
+  // iOS-only: don't treat a growing prepared .tmp as ready — wait for the
+  // finalized .mp4 so Safari gets a real seekable VOD instead of snapping
+  // back on far seeks. Other clients keep the existing fast-start behavior.
+  const isPreparedReady = Boolean(item.preparedMp4Url) &&
+    (detectBrowserOs() !== "iOS" || Boolean(item.compatibilityComplete));
   const isTerminalFailure = item.compatibilityStatus === "FAILED" || item.compatibilityStatus === "STALLED";
   const isPreparationActive = isPreparationActiveStatus(item.compatibilityStatus);
   const showPlayerImmediately = !isTerminalFailure && (
