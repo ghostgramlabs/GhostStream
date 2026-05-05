@@ -769,8 +769,34 @@ private fun GhostStreamApp(viewModel: MainViewModel, uiState: com.ghostgramlabs.
                             }
                         }
                     },
-                    onOpenWifiSettings = { context.startActivity(Intent(Settings.ACTION_WIFI_SETTINGS)) },
-                    onOpenHotspotSettings = { context.startActivity(Intent("android.settings.TETHER_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) },
+                    onOpenWifiSettings = {
+                        runCatching {
+                            context.startActivity(
+                                Intent(Settings.ACTION_WIFI_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                            )
+                        }.onFailure {
+                            scope.launch {
+                                snackbarHostState.showSnackbar(context.getString(SharedR.string.main_no_file_app))
+                            }
+                        }
+                    },
+                    onOpenHotspotSettings = {
+                        runCatching {
+                            context.startActivity(
+                                Intent("android.settings.TETHER_SETTINGS").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                            )
+                        }.onFailure {
+                            runCatching {
+                                context.startActivity(
+                                    Intent(Settings.ACTION_WIRELESS_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                                )
+                            }.onFailure {
+                                scope.launch {
+                                    snackbarHostState.showSnackbar(context.getString(SharedR.string.main_no_file_app))
+                                }
+                            }
+                        }
+                    },
                     onOpenHelp = { navController.navigate(Routes.Help) },
                     onOpenPrivacyPolicy = { navController.navigate(Routes.PrivacyPolicy) },
                     onViewOnboarding = { navController.navigate(Routes.OnboardingPreview) },

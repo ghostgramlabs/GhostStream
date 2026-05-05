@@ -1171,10 +1171,12 @@ class LiveScreenCaptureService : Service() {
     private suspend fun waitForLocalIceGathering(connection: PeerConnection?) {
         val peer = connection ?: return
         val startedAt = System.currentTimeMillis()
-        while (
-            peer.iceGatheringState() != PeerConnection.IceGatheringState.COMPLETE &&
-            System.currentTimeMillis() - startedAt < ICE_GATHERING_SIGNAL_TIMEOUT_MS
-        ) {
+        while (System.currentTimeMillis() - startedAt < ICE_GATHERING_SIGNAL_TIMEOUT_MS) {
+            // Bail out if the connection has been closed/replaced — the native peer may already
+            // be disposed, and calling iceGatheringState() on a disposed peer crashes in JNI.
+            if (peerConnection !== peer) return
+            val state = runCatching { peer.iceGatheringState() }.getOrNull() ?: return
+            if (state == PeerConnection.IceGatheringState.COMPLETE) return
             delay(ICE_GATHERING_SIGNAL_POLL_MS)
         }
     }

@@ -69,16 +69,6 @@ class QueuedCompatibilityPipeline(
         CompatibilityFailureType.VALIDATION,
     )
 
-    
-    init {
-        scope.launch {
-            // Startup cleanup only; no job spawning here.
-            cache.cleanupOrphans(_jobs.value.keys)
-            cache.cleanupStabilizedSources(_jobs.value.keys)
-            cache.enforceBudget(TempPlaybackCache.DEFAULT_CACHE_BUDGET_BYTES, protectedIds = _jobs.value.keys)
-        }
-    }
-
     private val _jobs = MutableStateFlow<Map<String, CompatibilityJob>>(emptyMap())
     private val queueMutex = Mutex()
     private val pendingRequests = mutableListOf<PreparationRequest>()
@@ -88,6 +78,15 @@ class QueuedCompatibilityPipeline(
     private var activeRequest: PreparationRequest? = null
 
     override val jobs: StateFlow<Map<String, CompatibilityJob>> = _jobs.asStateFlow()
+
+    init {
+        scope.launch {
+            // Startup cleanup only; no job spawning here.
+            cache.cleanupOrphans(_jobs.value.keys)
+            cache.cleanupStabilizedSources(_jobs.value.keys)
+            cache.enforceBudget(TempPlaybackCache.DEFAULT_CACHE_BUDGET_BYTES, protectedIds = _jobs.value.keys)
+        }
+    }
 
     override suspend fun inspect(item: SharedItem, capabilities: ClientCapabilities?): CompatibilityJob {
         val cachedAsset = cache.lookup(item)
