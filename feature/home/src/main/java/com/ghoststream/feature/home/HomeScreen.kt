@@ -1082,14 +1082,6 @@ private fun NearbyDeviceSummary(
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
         )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = listOfNotNull(device.friendlyUrl, identity.ipAddress)
-                .distinct()
-                .joinToString(stringResource(R.string.common_separator_pipe)),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
         Spacer(modifier = Modifier.height(8.dp))
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),

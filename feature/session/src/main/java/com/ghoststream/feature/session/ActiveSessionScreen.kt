@@ -82,7 +82,6 @@ import com.ghoststream.core.model.ConnectedClient
 import com.ghoststream.core.model.SessionState
 import com.ghoststream.core.model.UploadRequest
 import com.ghoststream.core.model.deviceIdentity
-import com.ghoststream.core.model.displayAccessUrl
 import com.ghoststream.core.model.resolvedAccessUrl
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
@@ -124,15 +123,6 @@ fun ActiveSessionScreen(
     val accessUrl = remember(sessionState.sessionUrl, sessionState.networkAvailability.localAddress, sessionState.serverPort) {
         sessionState.resolvedAccessUrl()
     }
-    val displayUrl = remember(
-        sessionState.hostname,
-        sessionState.sessionUrl,
-        sessionState.networkAvailability.localAddress,
-        sessionState.serverPort,
-    ) {
-        sessionState.displayAccessUrl()
-    }
-
     LaunchedEffect(sessionState.connectedClients.size, hapticOnDeviceConnect) {
         if (hapticOnDeviceConnect && sessionState.connectedClients.isNotEmpty()) {
             haptics.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -153,7 +143,7 @@ fun ActiveSessionScreen(
             SessionHeroCard(
                 sessionState = sessionState,
                     accessUrl = accessUrl,
-                    displayUrl = displayUrl ?: accessUrl ?: stringResource(R.string.session_waiting_local_link),
+                    displayUrl = accessUrl ?: stringResource(R.string.session_waiting_local_link),
                     onCopyLink = onCopyLink,
                     onShareLink = onShareLink,
                     onTogglePinProtection = onTogglePinProtection,
@@ -826,10 +816,6 @@ private fun SessionAccessPanel(
                     else -> stringResource(R.string.session_devices_connected_now, sessionState.connectedClients.size)
                 },
             )
-            sessionState.hostname?.takeIf { it.isNotBlank() }?.let { host ->
-                SessionInfoRow(title = stringResource(R.string.session_friendly_local_name), value = host)
-            }
-
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),

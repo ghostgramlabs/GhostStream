@@ -17,7 +17,7 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "com.ghostgramlabs.directserve"
-    compileSdk = 35
+    compileSdk = 36
     val releaseKeystorePath = keystoreProperties.getProperty("storeFile") ?: "ghoststream-release.jks"
     val releaseKeystoreFile = rootProject.file(releaseKeystorePath)
     val hasReleaseSigning = releaseKeystoreFile.exists() &&
@@ -28,9 +28,9 @@ android {
     defaultConfig {
         applicationId = "com.ghostgramlabs.directserve"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 27
-        versionName = "1.0.25"
+        targetSdk = 36
+        versionCode = 28
+        versionName = "1.0.26"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
